@@ -132,8 +132,12 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 {"role": "user", "content": prompt}
             ],
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+
+        # Only set max_tokens if explicitly specified (non-zero)
+        # Reasoning models need unlimited tokens to complete their analysis
+        if self.max_tokens > 0:
+            payload["max_tokens"] = self.max_tokens
 
         timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move (reasoning models need more time)
         async with session.post(
