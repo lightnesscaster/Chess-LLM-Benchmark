@@ -57,6 +57,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         Parse UCI move from LLM response.
 
         Tries to extract a valid UCI move pattern from potentially noisy output.
+        Handles both pure UCI (e2e4) and SAN-style with piece prefix (Nb1c3).
 
         Args:
             response_text: Raw response from LLM
@@ -80,6 +81,13 @@ class OpenRouterPlayer(BaseLLMPlayer):
         if matches:
             return matches[0]
 
+        # Try to find SAN-style moves with piece prefix (e.g., Nb1c3, Qd1d3)
+        # Pattern: optional piece letter + UCI move
+        san_uci_pattern = r'\b[KQRBN]?([a-h][1-8][a-h][1-8][qrbn]?)\b'
+        matches = re.findall(san_uci_pattern, text, re.IGNORECASE)
+        if matches:
+            return matches[0].lower()
+
         # If no UCI pattern found, try taking first word/token
         tokens = text.split()
         if tokens:
@@ -87,6 +95,10 @@ class OpenRouterPlayer(BaseLLMPlayer):
             # Check if it looks like a UCI move
             if re.match(r'^[a-h][1-8][a-h][1-8][qrbn]?$', first_token):
                 return first_token
+            # Check if it's a piece prefix + UCI move
+            if re.match(r'^[kqrbn]?([a-h][1-8][a-h][1-8][qrbn]?)$', first_token):
+                match = re.match(r'^[kqrbn]?([a-h][1-8][a-h][1-8][qrbn]?)$', first_token)
+                return match.group(1)
 
         return None
 
