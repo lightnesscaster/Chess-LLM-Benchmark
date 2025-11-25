@@ -14,7 +14,7 @@ engines:
     type: maia
     lc0_path: "/opt/homebrew/bin/lc0"
     weights_path: "/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1100.pb"
-    rating: 1100
+    rating: 1628
     nodes: 1
 
 # LLM players
