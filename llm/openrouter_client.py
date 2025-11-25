@@ -151,12 +151,17 @@ class OpenRouterPlayer(BaseLLMPlayer):
         # Extract response text
         try:
             response_text = data["choices"][0]["message"]["content"]
+            # Debug: check for empty responses
+            if not response_text:
+                print(f"  [DEBUG] Empty response. Full API data: {data}")
         except (KeyError, IndexError) as e:
             raise RuntimeError(f"Unexpected API response format: {data}") from e
 
         # Parse and return the move
         move = self._parse_move(response_text)
         if move is None:
+            # Debug: print raw response when parsing fails
+            print(f"  [DEBUG] Raw LLM response: {repr(response_text[:200] if response_text else '')}")
             # Return raw response for logging, will be marked as illegal
             return response_text.strip()[:20] if response_text else ""
 

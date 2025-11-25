@@ -199,6 +199,7 @@ async def run_test_game(args):
             player_id=args.white_model.split("/")[-1],
             model_name=args.white_model,
             api_key=api_key,
+            max_tokens=args.max_tokens,
         )
 
     if args.black_engine:
@@ -208,6 +209,7 @@ async def run_test_game(args):
             player_id=args.black_model.split("/")[-1],
             model_name=args.black_model,
             api_key=api_key,
+            max_tokens=args.max_tokens,
         )
 
     print(f"Test game: {white.player_id} vs {black.player_id}")
@@ -326,6 +328,12 @@ def main():
         "--lc0-path",
         default="/opt/homebrew/bin/lc0",
         help="Path to lc0 executable",
+    )
+    test_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=10,
+        help="Max tokens for LLM response (increase for reasoning models)",
     )
     test_parser.add_argument(
         "--max-moves",
