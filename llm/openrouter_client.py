@@ -135,7 +135,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             "max_tokens": self.max_tokens,
         }
 
-        timeout = aiohttp.ClientTimeout(total=120)  # 2 minute timeout per move
+        timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move (reasoning models need more time)
         async with session.post(
             self.OPENROUTER_API_URL,
             headers=headers,

@@ -10,6 +10,8 @@ Handles:
 
 import uuid
 import asyncio
+import tempfile
+import os
 from datetime import datetime, timezone
 from typing import Union, Tuple, Optional
 
@@ -19,6 +21,9 @@ import chess.pgn
 from engines.base_engine import BaseEngine
 from llm.base_llm import BaseLLMPlayer
 from .models import GameResult
+
+# Live game file for following along
+LIVE_GAME_FILE = "/tmp/chess_llm_live_game.txt"
 
 
 # Type alias for players (either engine or LLM)
@@ -55,6 +60,23 @@ class GameRunner:
         self.max_moves = max_moves
         self.verbose = verbose
 
+    def _write_live_game(self, white_id: str, black_id: str, board: chess.Board,
+                          moves_played: int, last_move: str = None, status: str = "in_progress"):
+        """Write current game state to live file for following along."""
+        try:
+            with open(LIVE_GAME_FILE, 'w') as f:
+                f.write(f"=== LIVE GAME ===\n")
+                f.write(f"White: {white_id}\n")
+                f.write(f"Black: {black_id}\n")
+                f.write(f"Status: {status}\n")
+                f.write(f"Moves played: {moves_played}\n")
+                if last_move:
+                    f.write(f"Last move: {last_move}\n")
+                f.write(f"\nBoard:\n{board}\n")
+                f.write(f"\nFEN: {board.fen()}\n")
+        except Exception:
+            pass  # Don't fail the game if we can't write the live file
+
     async def play_game(self) -> Tuple[GameResult, str]:
         """
         Play a complete game.
@@ -83,6 +105,13 @@ class GameRunner:
         winner = "draw"
         termination = "normal"
         moves_played = 0
+
+        # Write initial game state
+        self._write_live_game(
+            self._get_player_id(self.white),
+            self._get_player_id(self.black),
+            board, 0, status="starting"
+        )
 
         while not board.is_game_over() and moves_played < self.max_moves:
             side = board.turn
@@ -116,6 +145,13 @@ class GameRunner:
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
                     print(f"  {moves_played}. {side_name}: {move_uci}")
+
+                # Write live game state
+                self._write_live_game(
+                    self._get_player_id(self.white),
+                    self._get_player_id(self.black),
+                    board, moves_played, move_uci
+                )
 
             except Exception as e:
                 # Should not happen if validation is correct, but safety check
