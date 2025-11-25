@@ -332,8 +332,8 @@ def main():
     test_parser.add_argument(
         "--max-tokens",
         type=int,
-        default=10,
-        help="Max tokens for LLM response (increase for reasoning models)",
+        default=0,
+        help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
     )
     test_parser.add_argument(
         "--max-moves",
