@@ -9,63 +9,13 @@ benchmark:
 
 # Engine anchors (fixed ratings)
 engines:
-  # Stockfish at various skill levels as rating anchors
-  - player_id: "sf-skill-0"
-    type: stockfish
-    path: "stockfish"
-    rating: 800
-    skill_level: 0
-    move_time: 0.1
-
-  - player_id: "sf-skill-3"
-    type: stockfish
-    path: "stockfish"
+  # Maia engines trained to play at specific human Elo levels
+  - player_id: "maia-1100"
+    type: maia
+    lc0_path: "/opt/homebrew/bin/lc0"
+    weights_path: "/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1100.pb"
     rating: 1100
-    skill_level: 3
-    move_time: 0.1
-
-  - player_id: "sf-skill-5"
-    type: stockfish
-    path: "stockfish"
-    rating: 1300
-    skill_level: 5
-    move_time: 0.1
-
-  - player_id: "sf-skill-8"
-    type: stockfish
-    path: "stockfish"
-    rating: 1500
-    skill_level: 8
-    move_time: 0.1
-
-  - player_id: "sf-skill-10"
-    type: stockfish
-    path: "stockfish"
-    rating: 1700
-    skill_level: 10
-    move_time: 0.1
-
-  # Uncomment below for Maia engines if installed
-  # - player_id: "maia-1100"
-  #   type: maia
-  #   lc0_path: "lc0"
-  #   weights_path: "/path/to/maia-1100.pb.gz"
-  #   rating: 1100
-  #   nodes: 1
-
-  # - player_id: "maia-1500"
-  #   type: maia
-  #   lc0_path: "lc0"
-  #   weights_path: "/path/to/maia-1500.pb.gz"
-  #   rating: 1500
-  #   nodes: 1
-
-  # - player_id: "maia-1900"
-  #   type: maia
-  #   lc0_path: "lc0"
-  #   weights_path: "/path/to/maia-1900.pb.gz"
-  #   rating: 1900
-  #   nodes: 1
+    nodes: 1
 
 # LLM players
 llms:
