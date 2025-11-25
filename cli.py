@@ -174,13 +174,26 @@ async def run_test_game(args):
         print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
         return 1
 
+    # Helper to create engine based on type
+    def create_engine(engine_type):
+        if engine_type == "maia":
+            return MaiaEngine(
+                player_id="maia-1100",
+                rating=1628,
+                lc0_path=args.lc0_path,
+                weights_path=args.maia_weights,
+                nodes=1,
+            )
+        else:
+            return StockfishEngine(
+                player_id="stockfish-test",
+                rating=1500,
+                skill_level=args.stockfish_skill,
+            )
+
     # Create players
     if args.white_engine:
-        white = StockfishEngine(
-            player_id="stockfish-test",
-            rating=1500,
-            skill_level=args.stockfish_skill,
-        )
+        white = create_engine(args.engine_type)
     else:
         white = OpenRouterPlayer(
             player_id=args.white_model.split("/")[-1],
@@ -189,11 +202,7 @@ async def run_test_game(args):
         )
 
     if args.black_engine:
-        black = StockfishEngine(
-            player_id="stockfish-test",
-            rating=1500,
-            skill_level=args.stockfish_skill,
-        )
+        black = create_engine(args.engine_type)
     else:
         black = OpenRouterPlayer(
             player_id=args.black_model.split("/")[-1],
@@ -289,18 +298,34 @@ def main():
     test_parser.add_argument(
         "--white-engine",
         action="store_true",
-        help="Use Stockfish as white",
+        help="Use engine as white",
     )
     test_parser.add_argument(
         "--black-engine",
         action="store_true",
-        help="Use Stockfish as black",
+        help="Use engine as black",
+    )
+    test_parser.add_argument(
+        "--engine-type",
+        choices=["stockfish", "maia"],
+        default="stockfish",
+        help="Engine type to use (stockfish or maia)",
     )
     test_parser.add_argument(
         "--stockfish-skill",
         type=int,
         default=5,
         help="Stockfish skill level (0-20)",
+    )
+    test_parser.add_argument(
+        "--maia-weights",
+        default="/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1100.pb",
+        help="Path to Maia weights file",
+    )
+    test_parser.add_argument(
+        "--lc0-path",
+        default="/opt/homebrew/bin/lc0",
+        help="Path to lc0 executable",
     )
     test_parser.add_argument(
         "--max-moves",
