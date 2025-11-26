@@ -43,7 +43,7 @@ Your task:
 
 Output format:
 - Only the move in UCI, e.g.:
-e2e4"""
+b1c3"""
 
 
 RETRY_PROMPT_TEMPLATE = """You are playing chess as {side_to_move}.
@@ -63,7 +63,7 @@ Your task:
 
 Output format:
 - Only the move in UCI, e.g.:
-e2e4"""
+b1c3"""
 
 
 def build_chess_prompt(board: chess.Board, is_retry: bool = False,
