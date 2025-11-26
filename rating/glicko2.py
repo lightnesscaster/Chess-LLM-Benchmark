@@ -41,6 +41,9 @@ class PlayerRating:
 class Glicko2System:
     """Implements the Glicko-2 rating system."""
 
+    # Rating floor (like Lichess)
+    RATING_FLOOR = 400
+
     def __init__(self, tau: float = 1.2):
         """
         Initialize the Glicko-2 system.
@@ -218,6 +221,9 @@ class Glicko2System:
             new_rd = player.rating_deviation
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
+
+        # Apply rating floor (like Lichess)
+        new_rating = max(new_rating, self.RATING_FLOOR)
 
         return PlayerRating(
             player_id=player.player_id,
