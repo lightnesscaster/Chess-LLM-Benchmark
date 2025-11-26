@@ -66,14 +66,20 @@ class RatingStore:
             self._ratings[player_id] = PlayerRating(player_id=player_id)
         return self._ratings[player_id]
 
-    def set(self, rating: PlayerRating) -> None:
+    def set(self, rating: PlayerRating, auto_save: bool = True) -> None:
         """
         Set a player's rating.
 
         Args:
             rating: The PlayerRating to store
+            auto_save: Whether to save to disk immediately (default True)
         """
         self._ratings[rating.player_id] = rating
+        if auto_save:
+            self._save()
+
+    def save(self) -> None:
+        """Manually save ratings to disk."""
         self._save()
 
     def is_anchor(self, player_id: str) -> bool:

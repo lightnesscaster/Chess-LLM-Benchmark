@@ -298,6 +298,7 @@ async def recalculate_ratings(args):
     # Multi-pass convergence
     max_passes = 10
     convergence_threshold = 30.0  # Stop when no rating changes by more than this
+    random.seed(42)  # Fixed seed for reproducible results
 
     # Count actual games per player and get all unique player IDs
     all_players = set()
@@ -320,20 +321,25 @@ async def recalculate_ratings(args):
         if args.verbose:
             print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (shuffled)")
 
-        # Process each game with symmetric updates
+        # Process each game with symmetric updates (batch save at end of pass)
         for game in valid_games:
             # Get BOTH ratings BEFORE any updates (symmetric)
+            # Even though we call set() for white before black, we use the
+            # pre-stored white_rating object for black's update, ensuring symmetry
             white_rating = rating_store.get(game['white_id'])
             black_rating = rating_store.get(game['black_id'])
 
             # Update non-anchor ratings using same pre-update opponent ratings
             if not rating_store.is_anchor(game['white_id']):
                 new_white = glicko.update_rating(white_rating, [black_rating], [game['white_score']])
-                rating_store.set(new_white)
+                rating_store.set(new_white, auto_save=False)
 
             if not rating_store.is_anchor(game['black_id']):
                 new_black = glicko.update_rating(black_rating, [white_rating], [game['black_score']])
-                rating_store.set(new_black)
+                rating_store.set(new_black, auto_save=False)
+
+        # Save once per pass (not per game)
+        rating_store.save()
 
         # Check convergence
         max_change = 0.0
@@ -355,7 +361,8 @@ async def recalculate_ratings(args):
         if not rating_store.is_anchor(pid):
             player = rating_store.get(pid)
             player.games_played = actual_game_counts.get(pid, 0)
-            rating_store.set(player)
+            rating_store.set(player, auto_save=False)
+    rating_store.save()
 
     processed = len(valid_games)
     print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
