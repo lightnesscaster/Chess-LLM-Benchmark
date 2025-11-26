@@ -162,11 +162,7 @@ def build_chess_prompt(
 
     # Build previous thinking section (only include if we have a previous response)
     if previous_response and previous_response.strip():
-        # Truncate if too long
-        truncated = previous_response[:500]
-        if len(previous_response) > 500:
-            truncated += "..."
-        previous_thinking_section = f"\nYour previous thinking:\n{truncated}\n"
+        previous_thinking_section = f"\nYour previous thinking:\n{previous_response}\n"
     else:
         previous_thinking_section = ""
 
