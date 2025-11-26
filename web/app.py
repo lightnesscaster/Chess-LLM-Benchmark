@@ -10,6 +10,8 @@ import re
 import sys
 from pathlib import Path
 
+import yaml
+
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -27,7 +29,19 @@ logging.basicConfig(level=logging.INFO)
 
 # Data paths
 DATA_DIR = Path(__file__).parent.parent / "data"
+CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 RATINGS_PATH = DATA_DIR / "ratings.json"
+
+
+def get_anchor_ids() -> set:
+    """Load anchor IDs from config file."""
+    try:
+        with open(CONFIG_PATH) as f:
+            config = yaml.safe_load(f)
+        return {engine["player_id"] for engine in config.get("engines", [])}
+    except Exception as e:
+        app.logger.warning(f"Could not load anchors from config: {e}")
+        return set()
 
 # Game ID validation pattern (UUID format or alphanumeric with hyphens/underscores)
 VALID_GAME_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
@@ -43,7 +57,8 @@ def is_valid_game_id(game_id: str) -> bool:
 def get_leaderboard_data(min_games: int = 1) -> list:
     """Get leaderboard data from rating store."""
     try:
-        rating_store = RatingStore(path=str(RATINGS_PATH))
+        anchor_ids = get_anchor_ids()
+        rating_store = RatingStore(path=str(RATINGS_PATH), anchor_ids=anchor_ids)
         pgn_logger = PGNLogger()
         stats_collector = StatsCollector()
         stats_collector.add_results(pgn_logger.load_all_results())

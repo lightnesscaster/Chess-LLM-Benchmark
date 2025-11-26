@@ -122,14 +122,14 @@ class RatingStore:
         Get ratings sorted by rating (descending).
 
         Args:
-            min_games: Minimum games played to include
+            min_games: Minimum games played to include (anchors always included)
 
         Returns:
             List of PlayerRating sorted by rating
         """
         ratings = [
             r for r in self._ratings.values()
-            if r.games_played >= min_games
+            if r.games_played >= min_games or r.player_id in self.anchor_ids
         ]
         return sorted(ratings, key=lambda r: r.rating, reverse=True)
 
