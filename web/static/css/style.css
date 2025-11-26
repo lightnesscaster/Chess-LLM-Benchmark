@@ -203,13 +203,10 @@ body {
 
 .games-table .winner {
     font-weight: bold;
+    color: var(--success);
 }
 
-.games-table .white.winner {
-    color: var(--white-player);
-}
-
-.games-table .black.winner {
+.games-table .loser {
     color: var(--accent-light);
 }
 
