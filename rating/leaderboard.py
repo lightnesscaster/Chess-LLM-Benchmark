@@ -99,9 +99,12 @@ class Leaderboard:
             wld = f"{entry.get('wins', '-')}-{entry.get('losses', '-')}-{entry.get('draws', '-')}"
             legal_pct = entry.get("legal_move_rate", 1.0) * 100
 
+            # Show N/A for RD on anchor models (fixed ratings)
+            rd_str = "N/A" if entry.get("is_anchor") else str(entry['rating_deviation'])
+
             lines.append(
                 f"{entry['rank']:<5} {player:<25} {entry['rating']:<8} "
-                f"{entry['rating_deviation']:<5} {entry['games_played']:<6} "
+                f"{rd_str:<5} {entry['games_played']:<6} "
                 f"{wld:<12} {legal_pct:>6.1f}%"
             )
 
