@@ -401,6 +401,11 @@ async def run_test_game(args):
                 weights_path=args.maia_weights,
                 nodes=1,
             )
+        elif engine_type == "random":
+            return RandomEngine(
+                player_id="random-bot",
+                rating=200,
+            )
         else:
             return StockfishEngine(
                 player_id="stockfish-test",
@@ -594,9 +599,9 @@ def main():
     )
     test_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia"],
+        choices=["stockfish", "maia", "random"],
         default="stockfish",
-        help="Engine type to use (stockfish or maia)",
+        help="Engine type to use (stockfish, maia, or random)",
     )
     test_parser.add_argument(
         "--stockfish-skill",
