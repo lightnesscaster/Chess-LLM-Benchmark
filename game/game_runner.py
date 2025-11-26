@@ -87,6 +87,12 @@ class GameRunner:
         game_id = str(uuid.uuid4())
         board = chess.Board()
 
+        # Reset token counters for LLM players
+        if isinstance(self.white, BaseLLMPlayer):
+            self.white.reset_token_usage()
+        if isinstance(self.black, BaseLLMPlayer):
+            self.black.reset_token_usage()
+
         # Set up PGN
         pgn_game = chess.pgn.Game()
         pgn_game.headers["Event"] = "LLM Chess Benchmark"
@@ -187,6 +193,14 @@ class GameRunner:
         pgn_game.headers["Termination"] = termination
         pgn_str = str(pgn_game)
 
+        # Collect token usage from LLM players
+        tokens_white = None
+        tokens_black = None
+        if isinstance(self.white, BaseLLMPlayer):
+            tokens_white = self.white.get_token_usage()
+        if isinstance(self.black, BaseLLMPlayer):
+            tokens_black = self.black.get_token_usage()
+
         # Build result object
         game_result = GameResult(
             game_id=game_id,
@@ -201,6 +215,8 @@ class GameRunner:
             total_moves_black=total_moves[chess.BLACK],
             pgn_path="",  # Will be set by logger
             created_at=datetime.now(timezone.utc).isoformat(),
+            tokens_white=tokens_white,
+            tokens_black=tokens_black,
         )
 
         return game_result, pgn_str

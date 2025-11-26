@@ -152,6 +152,13 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
             data = await response.json()
 
+        # Track token usage
+        if "usage" in data:
+            usage = data["usage"]
+            self.prompt_tokens += usage.get("prompt_tokens", 0)
+            self.completion_tokens += usage.get("completion_tokens", 0)
+            self.total_tokens += usage.get("total_tokens", 0)
+
         # Extract response text
         try:
             response_text = data["choices"][0]["message"]["content"]

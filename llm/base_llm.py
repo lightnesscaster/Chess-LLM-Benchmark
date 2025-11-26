@@ -19,6 +19,24 @@ class BaseLLMPlayer(abc.ABC):
         """
         self.player_id = player_id
         self.model_name = model_name
+        # Token usage tracking
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+        self.total_tokens = 0
+
+    def reset_token_usage(self) -> None:
+        """Reset token counters (call at start of each game)."""
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+        self.total_tokens = 0
+
+    def get_token_usage(self) -> dict:
+        """Get current token usage stats."""
+        return {
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.total_tokens,
+        }
 
     @abc.abstractmethod
     async def select_move(self, board: chess.Board, is_retry: bool = False,

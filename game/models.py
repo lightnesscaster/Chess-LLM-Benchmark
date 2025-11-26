@@ -46,6 +46,9 @@ class GameResult(BaseModel):
     total_moves_black: int      # Moves attempted by black
     pgn_path: str
     created_at: str             # ISO timestamp
+    # Token usage for LLM players (None for engine players)
+    tokens_white: Optional[dict] = None  # {"prompt_tokens", "completion_tokens", "total_tokens"}
+    tokens_black: Optional[dict] = None
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""
