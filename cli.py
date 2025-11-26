@@ -404,7 +404,7 @@ async def run_test_game(args):
         elif engine_type == "random":
             return RandomEngine(
                 player_id="random-bot",
-                rating=200,
+                rating=400,
             )
         else:
             return StockfishEngine(
