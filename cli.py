@@ -93,6 +93,7 @@ def create_llm_players(config: dict, api_key: str = None) -> dict:
             temperature=llm_cfg.get("temperature", 0.0),
             max_tokens=llm_cfg.get("max_tokens", 10),
             reasoning=llm_cfg.get("reasoning", False),
+            reasoning_effort=llm_cfg.get("reasoning_effort"),
         )
 
     return players
