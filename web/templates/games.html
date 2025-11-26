@@ -67,29 +67,39 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('search');
-    const resultFilter = document.getElementById('result-filter');
+    const modelFilter = document.getElementById('model-filter');
     const tbody = document.getElementById('games-tbody');
+    const rows = tbody.querySelectorAll('tr');
+
+    // Collect unique models from all games
+    const models = new Set();
+    rows.forEach(row => {
+        models.add(row.dataset.white);
+        models.add(row.dataset.black);
+    });
+
+    // Populate dropdown with sorted models
+    Array.from(models).sort().forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelFilter.appendChild(option);
+    });
 
     function filterGames() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const resultValue = resultFilter.value;
-        const rows = tbody.querySelectorAll('tr');
+        const selectedModel = modelFilter.value;
 
         rows.forEach(row => {
-            const white = row.dataset.white.toLowerCase();
-            const black = row.dataset.black.toLowerCase();
-            const winner = row.dataset.winner;
+            const white = row.dataset.white;
+            const black = row.dataset.black;
 
-            const matchesSearch = !searchTerm || white.includes(searchTerm) || black.includes(searchTerm);
-            const matchesResult = !resultValue || winner === resultValue;
+            const matchesModel = !selectedModel || white === selectedModel || black === selectedModel;
 
-            row.style.display = matchesSearch && matchesResult ? '' : 'none';
+            row.style.display = matchesModel ? '' : 'none';
         });
     }
 
-    searchInput.addEventListener('input', filterGames);
-    resultFilter.addEventListener('change', filterGames);
+    modelFilter.addEventListener('change', filterGames);
 });
 </script>
 {% endblock %}
