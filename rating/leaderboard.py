@@ -52,15 +52,16 @@ class Leaderboard:
                 "confidence_high": round(rating.rating + ci),
                 "games_played": rating.games_played,
                 "is_anchor": self.rating_store.is_anchor(rating.player_id),
+                # W-L-D from rating store (single source of truth)
+                "wins": rating.wins,
+                "losses": rating.losses,
+                "draws": rating.draws,
             }
 
-            # Add stats if available
+            # Add additional stats if available (legal move rate, forfeit rate, etc.)
             if rating.player_id in player_stats:
                 pstats = player_stats[rating.player_id]
                 entry.update({
-                    "wins": pstats.get("wins", 0),
-                    "losses": pstats.get("losses", 0),
-                    "draws": pstats.get("draws", 0),
                     "win_rate": pstats.get("win_rate", 0),
                     "legal_move_rate": pstats.get("legal_move_rate", 1.0),
                     "forfeit_rate": pstats.get("forfeit_rate", 0),

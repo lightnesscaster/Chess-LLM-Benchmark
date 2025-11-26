@@ -19,6 +19,9 @@ class PlayerRating:
     rating_deviation: float = 350.0  # φ (phi) - rating deviation
     volatility: float = 0.06        # σ (sigma) - volatility
     games_played: int = 0
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> dict:
@@ -29,6 +32,9 @@ class PlayerRating:
             "rating_deviation": self.rating_deviation,
             "volatility": self.volatility,
             "games_played": self.games_played,
+            "wins": self.wins,
+            "losses": self.losses,
+            "draws": self.draws,
             "last_updated": self.last_updated,
         }
 
@@ -225,12 +231,27 @@ class Glicko2System:
         # Apply rating floor (like Lichess)
         new_rating = max(new_rating, self.RATING_FLOOR)
 
+        # Calculate W-L-D from scores
+        new_wins = player.wins
+        new_losses = player.losses
+        new_draws = player.draws
+        for score in scores:
+            if score == 1.0:
+                new_wins += 1
+            elif score == 0.0:
+                new_losses += 1
+            else:  # 0.5 = draw
+                new_draws += 1
+
         return PlayerRating(
             player_id=player.player_id,
             rating=new_rating,
             rating_deviation=new_rd,
             volatility=new_sigma,
             games_played=player.games_played + len(opponents),
+            wins=new_wins,
+            losses=new_losses,
+            draws=new_draws,
             last_updated=datetime.now(timezone.utc).isoformat(),
         )
 

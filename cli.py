@@ -302,14 +302,32 @@ async def recalculate_ratings(args):
     convergence_threshold = 30.0  # Stop when no rating changes by more than this
     random.seed(42)  # Fixed seed for reproducible results
 
-    # Count actual games per player and get all unique player IDs
+    # Count actual games and W-L-D per player, get all unique player IDs
     all_players = set()
     actual_game_counts = {}
+    actual_wld = {}  # {player_id: {'wins': N, 'losses': N, 'draws': N}}
     for game in valid_games:
         all_players.add(game['white_id'])
         all_players.add(game['black_id'])
         actual_game_counts[game['white_id']] = actual_game_counts.get(game['white_id'], 0) + 1
         actual_game_counts[game['black_id']] = actual_game_counts.get(game['black_id'], 0) + 1
+
+        # Initialize W-L-D if needed
+        if game['white_id'] not in actual_wld:
+            actual_wld[game['white_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
+        if game['black_id'] not in actual_wld:
+            actual_wld[game['black_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
+
+        # Track W-L-D from scores
+        if game['white_score'] == 1.0:
+            actual_wld[game['white_id']]['wins'] += 1
+            actual_wld[game['black_id']]['losses'] += 1
+        elif game['white_score'] == 0.0:
+            actual_wld[game['white_id']]['losses'] += 1
+            actual_wld[game['black_id']]['wins'] += 1
+        else:  # draw
+            actual_wld[game['white_id']]['draws'] += 1
+            actual_wld[game['black_id']]['draws'] += 1
 
     print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
 
@@ -358,11 +376,15 @@ async def recalculate_ratings(args):
             print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
             break
 
-    # Fix game counts to actual values (multi-pass inflates them)
+    # Fix game counts and W-L-D to actual values (multi-pass inflates them)
     for pid in all_players:
         if not rating_store.is_anchor(pid):
             player = rating_store.get(pid)
             player.games_played = actual_game_counts.get(pid, 0)
+            wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
+            player.wins = wld['wins']
+            player.losses = wld['losses']
+            player.draws = wld['draws']
             rating_store.set(player, auto_save=False)
     rating_store.save()
 
