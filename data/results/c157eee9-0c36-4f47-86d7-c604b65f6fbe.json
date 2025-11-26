@@ -1,0 +1,21 @@
+{
+  "game_id": "c157eee9-0c36-4f47-86d7-c604b65f6fbe",
+  "white_id": "maia-1100",
+  "black_id": "grok-4.1-fast",
+  "winner": "draw",
+  "termination": "fivefold_repetition",
+  "moves": 98,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 49,
+  "total_moves_black": 49,
+  "pgn_path": "data/games/c157eee9-0c36-4f47-86d7-c604b65f6fbe.pgn",
+  "created_at": "2025-11-26T11:32:09.514264+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 29791,
+    "completion_tokens": 341422,
+    "total_tokens": 371213
+  },
+  "illegal_move_details": null
+}

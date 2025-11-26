@@ -2,7 +2,7 @@
 [Site "Local"]
 [Date "2025.11.26"]
 [Round "1"]
-[White "gpt-5.1 (high)"]
+[White "grok-4.1-fast"]
 [Black "maia-1100"]
 [Result "1-0"]
 [Termination "checkmate"]
