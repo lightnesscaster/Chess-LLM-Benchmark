@@ -11,11 +11,6 @@ env/
 dist/
 build/
 
-# Data (don't commit game results)
-data/games/
-data/results/
-data/ratings.json
-
 # IDE
 .idea/
 .vscode/

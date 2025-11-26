@@ -1,0 +1,38 @@
+{
+  "game_id": "1a7345de-7498-415e-bba1-69da063c8733",
+  "white_id": "random-bot",
+  "black_id": "llama-4-maverick",
+  "winner": "white",
+  "termination": "forfeit_illegal_move",
+  "moves": 17,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 2,
+  "total_moves_white": 9,
+  "total_moves_black": 8,
+  "pgn_path": "data/games/1a7345de-7498-415e-bba1-69da063c8733.pgn",
+  "created_at": "2025-11-26T07:46:23.567196+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 2938,
+    "completion_tokens": 50,
+    "total_tokens": 2988
+  },
+  "illegal_move_details": [
+    {
+      "side": "black",
+      "move_number": 4,
+      "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nc3\n\n>>> White's last move: Nc3 (b1c3) <<<\n\n\nCurrent position (FEN):\nrnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2\n\nBoard:\n8 | r n b q k b n r\n7 | p p p p . p p p\n6 | . . . . . . . .\n5 | . . . . p . . .\n4 | . . . . P . . .\n3 | . . N . . . . .\n2 | P P P P . P P P\n1 | R . B Q K B N R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "e7e6",
+      "parsed_move": "e7e6"
+    },
+    {
+      "side": "black",
+      "move_number": 18,
+      "fen": "r1bqkb1r/1pp2p2/p1n2np1/1N2p2p/1P1pP1QP/5N2/P1PP1PPR/1RB1KB2 b kq - 1 9",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nc3 Nc6 3. Nb5 a6 4. h4 Nf6 5. Rb1 d5 6. b4 d4 7. Qg4 g6 8. Nf3 h5 9. Rh2\n\n>>> White's last move: Rh2 (h1h2) <<<\n\n\nCurrent position (FEN):\nr1bqkb1r/1pp2p2/p1n2np1/1N2p2p/1P1pP1QP/5N2/P1PP1PPR/1RB1KB2 b kq - 1 9\n\nBoard:\n8 | r . b q k b . r\n7 | . p p . . p . .\n6 | p . n . . n p .\n5 | . N . . p . . p\n4 | . P . p P . Q P\n3 | . . . . . N . .\n2 | P . P P . P P R\n1 | . R B . K B . .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "g7g5",
+      "parsed_move": "g7g5"
+    }
+  ]
+}

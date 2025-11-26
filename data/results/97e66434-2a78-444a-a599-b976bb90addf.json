@@ -1,0 +1,42 @@
+{
+  "game_id": "97e66434-2a78-444a-a599-b976bb90addf",
+  "white_id": "gpt-oss-120b",
+  "black_id": "llama-4-maverick",
+  "winner": "white",
+  "termination": "forfeit_illegal_move",
+  "moves": 21,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 2,
+  "total_moves_white": 11,
+  "total_moves_black": 10,
+  "pgn_path": "data/games/97e66434-2a78-444a-a599-b976bb90addf.pgn",
+  "created_at": "2025-11-26T05:18:06.398268+00:00",
+  "tokens_white": {
+    "prompt_tokens": 3913,
+    "completion_tokens": 17977,
+    "total_tokens": 21890
+  },
+  "tokens_black": {
+    "prompt_tokens": 3908,
+    "completion_tokens": 58,
+    "total_tokens": 3966
+  },
+  "illegal_move_details": [
+    {
+      "side": "black",
+      "move_number": 10,
+      "fen": "r1bqkbnr/1ppp1ppp/2n5/p3p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 5",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 a5 5. O-O\n\n>>> White's last move: O-O (e1g1) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/1ppp1ppp/2n5/p3p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 5\n\nBoard:\n8 | r . b q k b n r\n7 | . p p p . p p p\n6 | . . n . . . . .\n5 | p . . . p . . .\n4 | B . . . P . . .\n3 | . . . . . N . .\n2 | P P P P . P P P\n1 | R N B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "b8a6",
+      "parsed_move": "b8a6"
+    },
+    {
+      "side": "black",
+      "move_number": 22,
+      "fen": "2b1kbnr/2ppqppp/8/Q3P3/B3P3/8/PPp2PPP/RNB2RK1 b k - 0 11",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 a5 5. O-O b5 6. Nxe5 Nxe5 7. d4 b4 8. dxe5 Qe7 9. Qd5 b3 10. Qxa8 bxc2 11. Qxa5\n\n>>> White's last move: Qxa5 (a8a5) <<<\n\n\nCurrent position (FEN):\n2b1kbnr/2ppqppp/8/Q3P3/B3P3/8/PPp2PPP/RNB2RK1 b k - 0 11\n\nBoard:\n8 | . . b . k b n r\n7 | . . p p q p p p\n6 | . . . . . . . .\n5 | Q . . . P . . .\n4 | B . . . P . . .\n3 | . . . . . . . .\n2 | P P p . . P P P\n1 | R N B . . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "c2c1q",
+      "parsed_move": "c2c1q"
+    }
+  ]
+}

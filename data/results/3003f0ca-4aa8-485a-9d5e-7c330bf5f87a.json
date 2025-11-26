@@ -1,0 +1,42 @@
+{
+  "game_id": "3003f0ca-4aa8-485a-9d5e-7c330bf5f87a",
+  "white_id": "gpt-oss-120b",
+  "black_id": "llama-4-maverick",
+  "winner": "white",
+  "termination": "forfeit_illegal_move",
+  "moves": 9,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 2,
+  "total_moves_white": 5,
+  "total_moves_black": 4,
+  "pgn_path": "data/games/3003f0ca-4aa8-485a-9d5e-7c330bf5f87a.pgn",
+  "created_at": "2025-11-26T05:20:33.811056+00:00",
+  "tokens_white": {
+    "prompt_tokens": 1670,
+    "completion_tokens": 4535,
+    "total_tokens": 6205
+  },
+  "tokens_black": {
+    "prompt_tokens": 1676,
+    "completion_tokens": 71,
+    "total_tokens": 1747
+  },
+  "illegal_move_details": [
+    {
+      "side": "black",
+      "move_number": 8,
+      "fen": "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 4",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. O-O\n\n>>> White's last move: O-O (e1g1) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 4\n\nBoard:\n8 | r . b q k b n r\n7 | . p p p . p p p\n6 | p . n . . . . .\n5 | . B . . p . . .\n4 | . . . . P . . .\n3 | . . . . . N . .\n2 | P P P P . P P P\n1 | R N B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "Ba7 is not a valid move, the correct response is to develop or react to the current position. \nThe best move here is to respond to White's last move by playing b7b5.\n\nb7b5",
+      "parsed_move": "b7b5"
+    },
+    {
+      "side": "black",
+      "move_number": 10,
+      "fen": "r1bqkbnr/1ppp1ppp/2n5/1p2p3/4P3/2N2N2/PPPP1PPP/R1BQ1RK1 b kq - 1 5",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. O-O axb5 5. Nc3\n\n>>> White's last move: Nc3 (b1c3) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/1ppp1ppp/2n5/1p2p3/4P3/2N2N2/PPPP1PPP/R1BQ1RK1 b kq - 1 5\n\nBoard:\n8 | r . b q k b n r\n7 | . p p p . p p p\n6 | . . n . . . . .\n5 | . p . . p . . .\n4 | . . . . P . . .\n3 | . . N . . N . .\n2 | P P P P . P P P\n1 | R . B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "b8d7",
+      "parsed_move": "b8d7"
+    }
+  ]
+}

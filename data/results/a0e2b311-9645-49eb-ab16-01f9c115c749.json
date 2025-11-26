@@ -1,0 +1,38 @@
+{
+  "game_id": "a0e2b311-9645-49eb-ab16-01f9c115c749",
+  "white_id": "llama-4-maverick",
+  "black_id": "maia-1100",
+  "winner": "black",
+  "termination": "forfeit_illegal_move",
+  "moves": 12,
+  "illegal_moves_white": 2,
+  "illegal_moves_black": 0,
+  "total_moves_white": 6,
+  "total_moves_black": 6,
+  "pgn_path": "data/games/a0e2b311-9645-49eb-ab16-01f9c115c749.pgn",
+  "created_at": "2025-11-26T04:43:58.164761+00:00",
+  "tokens_white": {
+    "prompt_tokens": 2381,
+    "completion_tokens": 148,
+    "total_tokens": 2529
+  },
+  "tokens_black": null,
+  "illegal_move_details": [
+    {
+      "side": "white",
+      "move_number": 11,
+      "fen": "r1bqkb1r/pppp1ppp/5n2/6B1/3nP3/2N5/PPP2PPP/R3KBNR w KQkq - 0 6",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nc3 Nf6 3. d4 exd4 4. Qxd4 Nc6 5. Bg5 Nxd4\n\n>>> Black's last move: Nxd4 (c6d4) <<<\n\n\nCurrent position (FEN):\nr1bqkb1r/pppp1ppp/5n2/6B1/3nP3/2N5/PPP2PPP/R3KBNR w KQkq - 0 6\n\nBoard:\n8 | r . b q k b . r\n7 | p p p p . p p p\n6 | . . . . . n . .\n5 | . . . . . . B .\n4 | . . . n P . . .\n3 | . . N . . . . .\n2 | P P P . . P P P\n1 | R . . . K B N R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "Qd1d4",
+      "parsed_move": "d1d4"
+    },
+    {
+      "side": "white",
+      "move_number": 13,
+      "fen": "r1bqkb1r/pppp1ppp/5n2/3N2B1/4P3/8/PPn2PPP/R3KBNR w KQkq - 0 7",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nc3 Nf6 3. d4 exd4 4. Qxd4 Nc6 5. Bg5 Nxd4 6. Nd5 Nxc2+\n\n>>> Black's last move: Nxc2+ (d4c2) <<<\n\n\nYour previous thinking:\nQd4 is not a valid move because the Queen is already captured. The correct move is to recapture the Knight. \nThe best move is: c3d5 \nHowever, a more straightforward recapture is: Qd1d4 \n\nThe move is: d1d4 is not valid because the Queen is taken. An alternative is: Nb1d4 is also not valid. The valid move is c3d5.\n\nThe output is:\nc3d5\n\nCurrent position (FEN):\nr1bqkb1r/pppp1ppp/5n2/3N2B1/4P3/8/PPn2PPP/R3KBNR w KQkq - 0 7\n\nBoard:\n8 | r . b q k b . r\n7 | p p p p . p p p\n6 | . . . . . n . .\n5 | . . . N . . B .\n4 | . . . . P . . .\n3 | . . . . . . . .\n2 | P P n . . P P P\n1 | R . . . K B N R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "b1c3",
+      "parsed_move": "b1c3"
+    }
+  ]
+}

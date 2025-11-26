@@ -1,0 +1,38 @@
+{
+  "game_id": "7bf54110-7cbb-4edd-90f2-dc0f638836d0",
+  "white_id": "llama-4-maverick",
+  "black_id": "maia-1100",
+  "winner": "black",
+  "termination": "forfeit_illegal_move",
+  "moves": 12,
+  "illegal_moves_white": 2,
+  "illegal_moves_black": 0,
+  "total_moves_white": 6,
+  "total_moves_black": 6,
+  "pgn_path": "data/games/7bf54110-7cbb-4edd-90f2-dc0f638836d0.pgn",
+  "created_at": "2025-11-26T04:43:20.036115+00:00",
+  "tokens_white": {
+    "prompt_tokens": 2791,
+    "completion_tokens": 302,
+    "total_tokens": 3093
+  },
+  "tokens_black": null,
+  "illegal_move_details": [
+    {
+      "side": "white",
+      "move_number": 11,
+      "fen": "rnbqk2r/pppp1ppp/5n2/8/3PPp2/2b2N2/PPP3PP/R1BQKB1R w KQkq - 0 6",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nc3 Nf6 3. f4 exf4 4. d4 Bb4 5. Nf3 Bxc3+\n\n>>> Black's last move: Bxc3+ (b4c3) <<<\n\n\nYour previous thinking:\ne2e4 -> No, the task is to provide a move. The current position is given. I will make a move.\nd3 -> No, the move should be in the format of the starting and ending square.\nLet's make a valid move: g1f3 -> No, it is not g1f3.\n\nThe best move is: Bc1xf4 or simply developing a piece. A simple and reasonable move is: d2d3.\n\nThe move will be in the format e2e4. Let's develop the Knight: g1f3.\n\nThe best response is: g1f3 \n\nSo the output should be: \ng1f3 \n\nNo. The output should be the move only.\n\nThe output is: e1d2 \nNo. The task is to provide one move.\n\nThe move is e1d2.\n\nThe output is g1f3.\n\nThe output is: Nf3 \nNo.\n\nThe output is: Bf1 \n\nThe output is d2d4.\n\nNo.\n\nLet's try: a2a3\n\nNo.\n\nThe output is e1d2.\n\nLet's output: g1f3\n\nThe final answer is: e1d2 \n\nThe final answer is g1f3. \n\nSo the final answer is: g1f3\n\nCurrent position (FEN):\nrnbqk2r/pppp1ppp/5n2/8/3PPp2/2b2N2/PPP3PP/R1BQKB1R w KQkq - 0 6\n\nBoard:\n8 | r n b q k . . r\n7 | p p p p . p p p\n6 | . . . . . n . .\n5 | . . . . . . . .\n4 | . . . P P p . .\n3 | . . b . . N . .\n2 | P P P . . . P P\n1 | R . B Q K B . R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "e1d2",
+      "parsed_move": "e1d2"
+    },
+    {
+      "side": "white",
+      "move_number": 13,
+      "fen": "rnbqk2r/pppp1ppp/8/8/3Pnp2/2P2N2/P1P3PP/R1BQKB1R w KQkq - 0 7",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nc3 Nf6 3. f4 exf4 4. d4 Bb4 5. Nf3 Bxc3+ 6. bxc3 Nxe4\n\n>>> Black's last move: Nxe4 (f6e4) <<<\n\n\nCurrent position (FEN):\nrnbqk2r/pppp1ppp/8/8/3Pnp2/2P2N2/P1P3PP/R1BQKB1R w KQkq - 0 7\n\nBoard:\n8 | r n b q k . . r\n7 | p p p p . p p p\n6 | . . . . . . . .\n5 | . . . . . . . .\n4 | . . . P n p . .\n3 | . . P . . N . .\n2 | P . P . . . P P\n1 | R . B Q K B . R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "d2d3",
+      "parsed_move": "d2d3"
+    }
+  ]
+}
