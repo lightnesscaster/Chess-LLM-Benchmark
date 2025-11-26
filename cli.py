@@ -183,7 +183,13 @@ async def recalculate_ratings(args):
 
     # Build anchor map from config
     anchors = {}
-    for engine_cfg in config.get("engines", []):
+    for i, engine_cfg in enumerate(config.get("engines", [])):
+        if "player_id" not in engine_cfg:
+            print(f"Error: Engine {i+1} missing required 'player_id' field")
+            return 1
+        if "rating" not in engine_cfg:
+            print(f"Error: Engine '{engine_cfg['player_id']}' missing required 'rating' field")
+            return 1
         anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
 
     if not anchors:
@@ -194,7 +200,7 @@ async def recalculate_ratings(args):
 
     # Load all results
     pgn_logger = PGNLogger()
-    results = pgn_logger.load_all_results()
+    results = pgn_logger.load_all_results(verbose=args.verbose)
 
     if not results:
         print("No game results found in data/results/")
@@ -247,8 +253,9 @@ async def recalculate_ratings(args):
             continue
 
         if result.winner not in ("white", "black", "draw"):
-            if args.verbose:
-                print(f"[{i+1}/{len(results)}] Warning: unexpected winner value '{result.winner}', treating as draw")
+            print(f"[{i+1}/{len(results)}] Skipping: invalid winner value '{result.winner}'")
+            skipped += 1
+            continue
 
         white_rating = rating_store.get(result.white_id)
         black_rating = rating_store.get(result.black_id)

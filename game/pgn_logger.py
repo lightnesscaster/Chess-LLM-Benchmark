@@ -81,18 +81,28 @@ class PGNLogger:
 
         return GameResult.from_json(data)
 
-    def load_all_results(self) -> list[GameResult]:
+    def load_all_results(self, verbose: bool = False) -> list[GameResult]:
         """
         Load all game results.
 
+        Args:
+            verbose: If True, print warnings for corrupted files
+
         Returns:
-            List of GameResult objects
+            List of GameResult objects (skips corrupted files)
         """
         results = []
         for path in self.results_dir.glob("*.json"):
-            with open(path) as f:
-                data = json.load(f)
-            results.append(GameResult.from_json(data))
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+                results.append(GameResult.from_json(data))
+            except json.JSONDecodeError as e:
+                if verbose:
+                    print(f"Warning: Skipping corrupted JSON file {path.name}: {e}")
+            except (KeyError, TypeError, ValueError) as e:
+                if verbose:
+                    print(f"Warning: Skipping invalid result file {path.name}: {e}")
 
         return results
 
