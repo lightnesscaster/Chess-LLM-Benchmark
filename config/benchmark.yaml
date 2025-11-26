@@ -22,6 +22,13 @@ engines:
     rating: 1628
     nodes: 1
 
+  - player_id: "maia-1900"
+    type: maia
+    lc0_path: "/opt/homebrew/bin/lc0"
+    weights_path: "/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1900.pb.gz"
+    rating: 1816
+    nodes: 1
+
 # LLM players
 llms:
   - player_id: "llama-4-maverick"
