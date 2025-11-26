@@ -23,6 +23,9 @@ class BaseLLMPlayer(abc.ABC):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        # Last request/response for debugging illegal moves
+        self.last_prompt: str = ""
+        self.last_raw_response: str = ""
 
     def reset_token_usage(self) -> None:
         """Reset token counters (call at start of each game)."""

@@ -3,7 +3,7 @@ Data models for the chess LLM benchmark.
 """
 
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -49,6 +49,8 @@ class GameResult(BaseModel):
     # Token usage for LLM players (None for engine players)
     tokens_white: Optional[dict] = None  # {"prompt_tokens", "completion_tokens", "total_tokens"}
     tokens_black: Optional[dict] = None
+    # Details about illegal moves for debugging (prompt, response, parsed move)
+    illegal_move_details: Optional[List[dict]] = None
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""
