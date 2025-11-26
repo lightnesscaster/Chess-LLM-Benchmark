@@ -26,6 +26,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
     """
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+    VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
 
     def __init__(
         self,
@@ -47,12 +48,18 @@ class OpenRouterPlayer(BaseLLMPlayer):
             temperature: Sampling temperature (0.0 for deterministic)
             max_tokens: Maximum tokens in response
             reasoning: Enable reasoning mode for hybrid models
-            reasoning_effort: Reasoning effort level (low, medium, high, xhigh)
+            reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
+                If set, automatically enables reasoning mode.
         """
         super().__init__(player_id, model_name)
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         if not self.api_key:
             raise ValueError("OpenRouter API key required")
+        if reasoning_effort is not None and reasoning_effort not in self.VALID_REASONING_EFFORTS:
+            raise ValueError(
+                f"Invalid reasoning_effort: '{reasoning_effort}'. "
+                f"Must be one of: {', '.join(sorted(self.VALID_REASONING_EFFORTS))}"
+            )
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.reasoning = reasoning
@@ -191,9 +198,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
             payload["max_tokens"] = self.max_tokens
 
         # Enable reasoning mode for hybrid models
-        if self.reasoning or self.reasoning_effort:
+        if self.reasoning or self.reasoning_effort is not None:
             reasoning_config = {"enabled": True}
-            if self.reasoning_effort:
+            if self.reasoning_effort is not None:
                 reasoning_config["effort"] = self.reasoning_effort
             payload["reasoning"] = reasoning_config
 
