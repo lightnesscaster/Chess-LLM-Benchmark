@@ -421,6 +421,7 @@ async def run_test_game(args):
             api_key=api_key,
             max_tokens=args.max_tokens,
             reasoning=args.reasoning,
+            reasoning_effort=args.reasoning_effort,
         )
 
     # Track results across games
@@ -629,6 +630,11 @@ def main():
         "--reasoning",
         action="store_true",
         help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
+    )
+    test_parser.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        help="Reasoning effort level (low, medium, high, xhigh)",
     )
     test_parser.add_argument(
         "--max-moves",
