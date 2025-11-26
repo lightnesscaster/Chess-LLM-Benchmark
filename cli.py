@@ -458,7 +458,7 @@ async def run_test_game(args):
     # Helper to create LLM player
     def create_llm(model_name):
         player_id = model_name.split("/")[-1]
-        if args.reasoning_effort:
+        if args.reasoning_effort and f"({args.reasoning_effort})" not in player_id:
             player_id = f"{player_id} ({args.reasoning_effort})"
         return OpenRouterPlayer(
             player_id=player_id,
