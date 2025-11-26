@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LLM Chess Benchmark{% endblock %}</title>
+
+    <!-- Chess.js and Chessboard.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LLM Chess Benchmark</a>
+        </div>
+        <div class="nav-links">
+            <a href="/leaderboard" class="{% if request.path == '/leaderboard' or request.path == '/' %}active{% endif %}">Leaderboard</a>
+            <a href="/games" class="{% if request.path.startswith('/game') %}active{% endif %}">Games</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>LLM Chess Benchmark - Evaluating AI chess-playing ability with Glicko-2 ratings</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

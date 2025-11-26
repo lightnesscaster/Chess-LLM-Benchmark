@@ -11,6 +11,7 @@ Commands:
 import argparse
 import asyncio
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -255,28 +256,25 @@ async def recalculate_ratings(args):
     glicko = Glicko2System()
     skipped = 0
 
-    # Process each game
-    for i, result in enumerate(results):
-        # Validate game result
+    # Filter valid games first
+    valid_games = []
+    for result in results:
         if not result.white_id or not result.black_id:
             if args.verbose:
-                print(f"[{i+1}/{len(results)}] Skipping: missing player ID")
+                print(f"Skipping: missing player ID")
             skipped += 1
             continue
 
         if result.white_id == result.black_id:
             if args.verbose:
-                print(f"[{i+1}/{len(results)}] Skipping: player vs themselves")
+                print(f"Skipping: player vs themselves")
             skipped += 1
             continue
 
         if result.winner not in ("white", "black", "draw"):
-            print(f"[{i+1}/{len(results)}] Skipping: invalid winner value '{result.winner}'")
+            print(f"Skipping: invalid winner value '{result.winner}'")
             skipped += 1
             continue
-
-        white_rating = rating_store.get(result.white_id)
-        black_rating = rating_store.get(result.black_id)
 
         # Determine scores
         if result.winner == "white":
@@ -286,19 +284,80 @@ async def recalculate_ratings(args):
         else:
             white_score, black_score = 0.5, 0.5
 
+        valid_games.append({
+            'white_id': result.white_id,
+            'black_id': result.black_id,
+            'white_score': white_score,
+            'black_score': black_score,
+        })
+
+    if not valid_games:
+        print("No valid games to process")
+        return 1
+
+    # Multi-pass convergence
+    max_passes = 10
+    convergence_threshold = 30.0  # Stop when no rating changes by more than this
+
+    # Count actual games per player and get all unique player IDs
+    all_players = set()
+    actual_game_counts = {}
+    for game in valid_games:
+        all_players.add(game['white_id'])
+        all_players.add(game['black_id'])
+        actual_game_counts[game['white_id']] = actual_game_counts.get(game['white_id'], 0) + 1
+        actual_game_counts[game['black_id']] = actual_game_counts.get(game['black_id'], 0) + 1
+
+    print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
+
+    for pass_num in range(1, max_passes + 1):
+        # Store ratings at start of pass to check convergence
+        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
+
+        # Shuffle games to eliminate order bias
+        random.shuffle(valid_games)
+
         if args.verbose:
-            print(f"[{i+1}/{len(results)}] {result.white_id} vs {result.black_id}: {result.winner}")
+            print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (shuffled)")
 
-        # Update non-anchor ratings
-        if not rating_store.is_anchor(result.white_id):
-            new_white = glicko.update_rating(white_rating, [black_rating], [white_score])
-            rating_store.set(new_white)
+        # Process each game with symmetric updates
+        for game in valid_games:
+            # Get BOTH ratings BEFORE any updates (symmetric)
+            white_rating = rating_store.get(game['white_id'])
+            black_rating = rating_store.get(game['black_id'])
 
-        if not rating_store.is_anchor(result.black_id):
-            new_black = glicko.update_rating(black_rating, [white_rating], [black_score])
-            rating_store.set(new_black)
+            # Update non-anchor ratings using same pre-update opponent ratings
+            if not rating_store.is_anchor(game['white_id']):
+                new_white = glicko.update_rating(white_rating, [black_rating], [game['white_score']])
+                rating_store.set(new_white)
 
-    processed = len(results) - skipped
+            if not rating_store.is_anchor(game['black_id']):
+                new_black = glicko.update_rating(black_rating, [white_rating], [game['black_score']])
+                rating_store.set(new_black)
+
+        # Check convergence
+        max_change = 0.0
+        for pid in all_players:
+            if not rating_store.is_anchor(pid):
+                old_rating = pass_start_ratings[pid]
+                new_rating = rating_store.get(pid).rating
+                change = abs(new_rating - old_rating)
+                max_change = max(max_change, change)
+
+        print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
+
+        if pass_num > 1 and max_change < convergence_threshold:
+            print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
+            break
+
+    # Fix game counts to actual values (multi-pass inflates them)
+    for pid in all_players:
+        if not rating_store.is_anchor(pid):
+            player = rating_store.get(pid)
+            player.games_played = actual_game_counts.get(pid, 0)
+            rating_store.set(player)
+
+    processed = len(valid_games)
     print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
     print()
 

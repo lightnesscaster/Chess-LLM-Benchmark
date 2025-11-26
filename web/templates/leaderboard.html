@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Leaderboard</h1>
+    <p class="subtitle">Glicko-2 ratings calibrated against engine anchors</p>
+</div>
+
+<div class="leaderboard-container">
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th class="rank">#</th>
+                <th class="player">Player</th>
+                <th class="rating">Rating</th>
+                <th class="rd">RD</th>
+                <th class="ci">95% CI</th>
+                <th class="games">Games</th>
+                <th class="record">W-L-D</th>
+                <th class="legal">Legal%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard %}
+            <tr class="{% if entry.is_anchor %}anchor{% endif %}">
+                <td class="rank">{{ entry.rank }}</td>
+                <td class="player">
+                    {{ entry.player_id }}
+                    {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
+                </td>
+                <td class="rating">{{ entry.rating }}</td>
+                <td class="rd">{{ entry.rating_deviation }}</td>
+                <td class="ci">{{ entry.confidence_low }} - {{ entry.confidence_high }}</td>
+                <td class="games">{{ entry.games_played }}</td>
+                <td class="record">{{ entry.wins|default(0) }}-{{ entry.losses|default(0) }}-{{ entry.draws|default(0) }}</td>
+                <td class="legal">{{ "%.1f"|format((entry.legal_move_rate|default(1.0)) * 100) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="legend">
+    <p><span class="anchor-badge">*</span> = Anchor player (fixed rating, used for calibration)</p>
+    <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
+    <p><strong>95% CI</strong> = 95% Confidence Interval</p>
+    <p><strong>Legal%</strong> = Percentage of moves that were legal on first attempt</p>
+</div>
+{% endblock %}
