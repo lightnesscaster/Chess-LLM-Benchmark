@@ -167,6 +167,85 @@ async def show_leaderboard(args):
     return 0
 
 
+async def recalculate_ratings(args):
+    """Recalculate ratings from stored game results."""
+    # Load config for anchors
+    config = load_config(args.config)
+
+    # Build anchor map from config
+    anchors = {}
+    for engine_cfg in config.get("engines", []):
+        anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+
+    if args.verbose:
+        print(f"Anchors: {anchors}")
+
+    # Load all results
+    pgn_logger = PGNLogger()
+    results = pgn_logger.load_all_results()
+
+    if not results:
+        print("No game results found in data/results/")
+        return 1
+
+    # Sort by creation time for chronological processing
+    results.sort(key=lambda r: r.created_at)
+
+    if args.verbose:
+        print(f"Found {len(results)} game results")
+
+    # Initialize rating store
+    rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()))
+
+    # Reset if requested
+    if args.reset:
+        rating_store.reset()
+        if args.verbose:
+            print("Reset existing ratings")
+
+    # Set anchor ratings
+    for anchor_id, rating in anchors.items():
+        rating_store.set_anchor(anchor_id, rating)
+
+    glicko = Glicko2System()
+
+    # Process each game
+    for i, result in enumerate(results):
+        white_rating = rating_store.get(result.white_id)
+        black_rating = rating_store.get(result.black_id)
+
+        # Determine scores
+        if result.winner == "white":
+            white_score, black_score = 1.0, 0.0
+        elif result.winner == "black":
+            white_score, black_score = 0.0, 1.0
+        else:
+            white_score, black_score = 0.5, 0.5
+
+        if args.verbose:
+            print(f"[{i+1}/{len(results)}] {result.white_id} vs {result.black_id}: {result.winner}")
+
+        # Update non-anchor ratings
+        if not rating_store.is_anchor(result.white_id):
+            new_white = glicko.update_rating(white_rating, [black_rating], [white_score])
+            rating_store.set(new_white)
+
+        if not rating_store.is_anchor(result.black_id):
+            new_black = glicko.update_rating(black_rating, [white_rating], [black_score])
+            rating_store.set(new_black)
+
+    print(f"\nProcessed {len(results)} games")
+    print()
+
+    # Show leaderboard
+    stats_collector = StatsCollector()
+    stats_collector.add_results(results)
+    leaderboard = Leaderboard(rating_store, stats_collector)
+    print(leaderboard.format_table(min_games=1))
+
+    return 0
+
+
 async def run_test_game(args):
     """Run test game(s)."""
     # Validate arguments
@@ -346,6 +425,24 @@ def main():
         help="Minimum games to include",
     )
 
+    # Recalculate command
+    recalc_parser = subparsers.add_parser("recalculate", help="Recalculate ratings from stored results")
+    recalc_parser.add_argument(
+        "--config", "-c",
+        default="config/benchmark.yaml",
+        help="Path to config file (for anchor definitions)",
+    )
+    recalc_parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Reset existing ratings before recalculating",
+    )
+    recalc_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show each game as it's processed",
+    )
+
     # Test game command
     test_parser = subparsers.add_parser("test", help="Run a test game")
     test_parser.add_argument(
@@ -429,6 +526,8 @@ def main():
         return asyncio.run(run_benchmark(args))
     elif args.command == "leaderboard":
         return asyncio.run(show_leaderboard(args))
+    elif args.command == "recalculate":
+        return asyncio.run(recalculate_ratings(args))
     elif args.command == "test":
         return asyncio.run(run_test_game(args))
     else:
