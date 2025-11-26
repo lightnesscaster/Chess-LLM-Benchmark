@@ -167,7 +167,7 @@ async def show_leaderboard(args):
 
 
 async def run_test_game(args):
-    """Run a single test game."""
+    """Run test game(s)."""
     # Get API key
     api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
@@ -191,66 +191,120 @@ async def run_test_game(args):
                 skill_level=args.stockfish_skill,
             )
 
-    # Create players
-    if args.white_engine:
-        white = create_engine(args.engine_type)
-    else:
-        white = OpenRouterPlayer(
-            player_id=args.white_model.split("/")[-1],
-            model_name=args.white_model,
+    # Helper to create LLM player
+    def create_llm(model_name):
+        return OpenRouterPlayer(
+            player_id=model_name.split("/")[-1],
+            model_name=model_name,
             api_key=api_key,
             max_tokens=args.max_tokens,
         )
 
-    if args.black_engine:
-        black = create_engine(args.engine_type)
-    else:
-        black = OpenRouterPlayer(
-            player_id=args.black_model.split("/")[-1],
-            model_name=args.black_model,
-            api_key=api_key,
-            max_tokens=args.max_tokens,
-        )
-
-    print(f"Test game: {white.player_id} vs {black.player_id}")
-    print()
-
-    runner = GameRunner(
-        white=white,
-        black=black,
-        max_moves=args.max_moves,
-        verbose=True,
-    )
+    # Track results across games
+    results_summary = {"white": 0, "black": 0, "draw": 0}
+    total_illegal_white = 0
+    total_illegal_black = 0
+    pgn_logger = PGNLogger() if args.save else None
 
     try:
-        result, pgn_str = await runner.play_game()
+        for game_num in range(args.games):
+            # Alternate colors if playing multiple games
+            swap_colors = (game_num % 2 == 1) and args.games > 1
 
-        print()
-        print("=" * 50)
-        print(f"Result: {result.winner} ({result.termination})")
-        print(f"Moves: {result.moves}")
-        print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
-        print()
-        print("PGN:")
-        print(pgn_str)
+            # Create players for this game
+            if swap_colors:
+                # Swapped: original black plays white, original white plays black
+                if args.black_engine:
+                    white = create_engine(args.engine_type)
+                else:
+                    white = create_llm(args.black_model)
 
-        # Save if requested
-        if args.save:
-            pgn_logger = PGNLogger()
-            result = pgn_logger.save_game(result, pgn_str)
-            print(f"\nSaved to: {result.pgn_path}")
-
-    finally:
-        if hasattr(white, "close"):
-            if asyncio.iscoroutinefunction(white.close):
-                await white.close()
+                if args.white_engine:
+                    black = create_engine(args.engine_type)
+                else:
+                    black = create_llm(args.white_model)
             else:
-                white.close()
-        if hasattr(black, "close"):
-            if asyncio.iscoroutinefunction(black.close):
-                await black.close()
+                # Normal: original assignments
+                if args.white_engine:
+                    white = create_engine(args.engine_type)
+                else:
+                    white = create_llm(args.white_model)
+
+                if args.black_engine:
+                    black = create_engine(args.engine_type)
+                else:
+                    black = create_llm(args.black_model)
+
+            if args.games > 1:
+                print(f"\n{'='*50}")
+                print(f"Game {game_num + 1}/{args.games}: {white.player_id} vs {black.player_id}")
+                print("=" * 50)
             else:
-                black.close()
+                print(f"Test game: {white.player_id} vs {black.player_id}")
+            print()
+
+            runner = GameRunner(
+                white=white,
+                black=black,
+                max_moves=args.max_moves,
+                verbose=True,
+            )
+
+            try:
+                result, pgn_str = await runner.play_game()
+
+                print()
+                print("-" * 50)
+                print(f"Result: {result.winner} ({result.termination})")
+                print(f"Moves: {result.moves}")
+                print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
+
+                # Track results
+                results_summary[result.winner] += 1
+                total_illegal_white += result.illegal_moves_white
+                total_illegal_black += result.illegal_moves_black
+
+                if args.games == 1:
+                    print()
+                    print("PGN:")
+                    print(pgn_str)
+
+                # Save if requested
+                if pgn_logger:
+                    result = pgn_logger.save_game(result, pgn_str)
+                    print(f"Saved to: {result.pgn_path}")
+
+            finally:
+                # Close players after each game
+                if hasattr(white, "close"):
+                    if asyncio.iscoroutinefunction(white.close):
+                        await white.close()
+                    else:
+                        white.close()
+                if hasattr(black, "close"):
+                    if asyncio.iscoroutinefunction(black.close):
+                        await black.close()
+                    else:
+                        black.close()
+
+        # Print summary if multiple games
+        if args.games > 1:
+            print()
+            print("=" * 50)
+            print("SUMMARY")
+            print("=" * 50)
+            print(f"Games played: {args.games}")
+            print(f"White wins: {results_summary['white']}")
+            print(f"Black wins: {results_summary['black']}")
+            print(f"Draws: {results_summary['draw']}")
+            print(f"Total illegal moves - White: {total_illegal_white}, Black: {total_illegal_black}")
+
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user")
+        if args.games > 1:
+            games_played = sum(results_summary.values())
+            print(f"Games completed: {games_played}/{args.games}")
+            print(f"White wins: {results_summary['white']}, Black wins: {results_summary['black']}, Draws: {results_summary['draw']}")
 
     return 0
 
@@ -349,6 +403,12 @@ def main():
         "--save",
         action="store_true",
         help="Save the game",
+    )
+    test_parser.add_argument(
+        "--games",
+        type=int,
+        default=1,
+        help="Number of games to play (alternates colors if > 1)",
     )
 
     args = parser.parse_args()
