@@ -127,9 +127,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
         """
         session = await self._ensure_session()
 
-        # Pass previous response for context (before clearing it)
-        previous_response = self.last_raw_response if not is_retry else None
-        prompt = build_chess_prompt(board, is_retry, last_move_illegal, previous_response)
+        # Pass previous successful response for context
+        # (use last_successful_response so retries still have context from last good move)
+        prompt = build_chess_prompt(board, is_retry, last_move_illegal, self.last_successful_response)
         self.last_prompt = prompt  # Store for debugging illegal moves
         self.last_raw_response = ""  # Clear stale data before API call
 

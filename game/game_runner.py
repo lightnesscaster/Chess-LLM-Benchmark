@@ -158,6 +158,10 @@ class GameRunner:
                 node = node.add_variation(chess_move)
                 moves_played += 1
 
+                # Mark response as successful for LLM players (for context in next prompt)
+                if isinstance(player, BaseLLMPlayer):
+                    player.mark_move_successful()
+
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
                     print(f"  {moves_played}. {side_name}: {move_uci}")
