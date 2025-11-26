@@ -168,6 +168,11 @@ async def show_leaderboard(args):
 
 async def run_test_game(args):
     """Run test game(s)."""
+    # Validate arguments
+    if args.games < 1:
+        print("Error: --games must be at least 1")
+        return 1
+
     # Get API key
     api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
@@ -213,7 +218,7 @@ async def run_test_game(args):
 
             # Create players for this game
             if swap_colors:
-                # Swapped: original black plays white, original white plays black
+                # Swapped: original black config plays white, original white config plays black
                 if args.black_engine:
                     white = create_engine(args.engine_type)
                 else:
@@ -271,8 +276,8 @@ async def run_test_game(args):
 
                 # Save if requested
                 if pgn_logger:
-                    result = pgn_logger.save_game(result, pgn_str)
-                    print(f"Saved to: {result.pgn_path}")
+                    saved_result = pgn_logger.save_game(result, pgn_str)
+                    print(f"Saved to: {saved_result.pgn_path}")
 
             finally:
                 # Close players after each game
