@@ -40,8 +40,10 @@ class PlayerRating:
 
     @classmethod
     def from_dict(cls, data: dict) -> "PlayerRating":
-        """Create from dictionary."""
-        return cls(**data)
+        """Create from dictionary (handles old data without W-L-D fields)."""
+        # Ensure backwards compatibility with old ratings.json files
+        defaults = {'wins': 0, 'losses': 0, 'draws': 0}
+        return cls(**{**defaults, **data})
 
 
 class Glicko2System:
@@ -231,16 +233,16 @@ class Glicko2System:
         # Apply rating floor (like Lichess)
         new_rating = max(new_rating, self.RATING_FLOOR)
 
-        # Calculate W-L-D from scores
+        # Calculate W-L-D from scores (use threshold for float safety)
         new_wins = player.wins
         new_losses = player.losses
         new_draws = player.draws
         for score in scores:
-            if score == 1.0:
+            if score > 0.75:  # Win (1.0)
                 new_wins += 1
-            elif score == 0.0:
+            elif score < 0.25:  # Loss (0.0)
                 new_losses += 1
-            else:  # 0.5 = draw
+            else:  # Draw (0.5)
                 new_draws += 1
 
         return PlayerRating(
