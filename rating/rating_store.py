@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-from .glicko2 import PlayerRating
+from .glicko2 import PlayerRating, Glicko2System
 
 
 class RatingStore:
@@ -35,7 +35,11 @@ class RatingStore:
             with open(self.path) as f:
                 data = json.load(f)
             for player_id, rating_data in data.items():
-                self._ratings[player_id] = PlayerRating.from_dict(rating_data)
+                player_rating = PlayerRating.from_dict(rating_data)
+                # Enforce rating floor on loaded ratings
+                if player_rating.rating < Glicko2System.RATING_FLOOR:
+                    player_rating.rating = Glicko2System.RATING_FLOOR
+                self._ratings[player_id] = player_rating
 
     def _save(self) -> None:
         """Save ratings to file."""
