@@ -36,9 +36,10 @@ class RatingStore:
                 data = json.load(f)
             for player_id, rating_data in data.items():
                 player_rating = PlayerRating.from_dict(rating_data)
-                # Enforce rating floor on loaded ratings
-                if player_rating.rating < Glicko2System.RATING_FLOOR:
-                    player_rating.rating = Glicko2System.RATING_FLOOR
+                # Enforce rating floor on loaded ratings (anchors exempt)
+                if player_id not in self.anchor_ids:
+                    if player_rating.rating < Glicko2System.RATING_FLOOR:
+                        player_rating.rating = Glicko2System.RATING_FLOOR
                 self._ratings[player_id] = player_rating
 
     def _save(self) -> None:
