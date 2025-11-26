@@ -456,17 +456,17 @@ async def run_test_game(args):
             )
 
     # Helper to create LLM player
-    def create_llm(model_name):
+    def create_llm(model_name, reasoning_effort=None):
         player_id = model_name.split("/")[-1]
-        if args.reasoning_effort and f"({args.reasoning_effort})" not in player_id:
-            player_id = f"{player_id} ({args.reasoning_effort})"
+        if reasoning_effort and f"({reasoning_effort})" not in player_id:
+            player_id = f"{player_id} ({reasoning_effort})"
         return OpenRouterPlayer(
             player_id=player_id,
             model_name=model_name,
             api_key=api_key,
             max_tokens=args.max_tokens,
             reasoning=args.reasoning,
-            reasoning_effort=args.reasoning_effort,
+            reasoning_effort=reasoning_effort,
         )
 
     # Track results across games
@@ -486,23 +486,23 @@ async def run_test_game(args):
                 if args.black_engine:
                     white = create_engine(args.engine_type)
                 else:
-                    white = create_llm(args.black_model)
+                    white = create_llm(args.black_model, args.black_reasoning_effort)
 
                 if args.white_engine:
                     black = create_engine(args.engine_type)
                 else:
-                    black = create_llm(args.white_model)
+                    black = create_llm(args.white_model, args.white_reasoning_effort)
             else:
                 # Normal: original assignments
                 if args.white_engine:
                     white = create_engine(args.engine_type)
                 else:
-                    white = create_llm(args.white_model)
+                    white = create_llm(args.white_model, args.white_reasoning_effort)
 
                 if args.black_engine:
                     black = create_engine(args.engine_type)
                 else:
-                    black = create_llm(args.black_model)
+                    black = create_llm(args.black_model, args.black_reasoning_effort)
 
             if args.games > 1:
                 print(f"\n{'='*50}")
@@ -672,9 +672,14 @@ def main():
         help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
     )
     test_parser.add_argument(
-        "--reasoning-effort",
+        "--white-reasoning-effort",
         choices=["low", "medium", "high", "xhigh"],
-        help="Reasoning effort level (low, medium, high, xhigh)",
+        help="Reasoning effort level for white (low, medium, high, xhigh)",
+    )
+    test_parser.add_argument(
+        "--black-reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        help="Reasoning effort level for black (low, medium, high, xhigh)",
     )
     test_parser.add_argument(
         "--max-moves",
