@@ -29,6 +29,8 @@ class RandomEngine(BaseEngine):
     def select_move(self, board: chess.Board) -> chess.Move:
         """Select a random legal move."""
         legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            raise ValueError("No legal moves available - game is over")
         return self._rng.choice(legal_moves)
 
     def close(self) -> None:
