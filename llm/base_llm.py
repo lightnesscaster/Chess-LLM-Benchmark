@@ -28,10 +28,12 @@ class BaseLLMPlayer(abc.ABC):
         self.last_raw_response: str = ""
 
     def reset_token_usage(self) -> None:
-        """Reset token counters (call at start of each game)."""
+        """Reset token counters and debug state (call at start of each game)."""
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        self.last_prompt = ""
+        self.last_raw_response = ""
 
     def get_token_usage(self) -> dict:
         """Get current token usage stats."""

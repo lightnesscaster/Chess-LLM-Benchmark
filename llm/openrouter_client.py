@@ -129,6 +129,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         prompt = build_chess_prompt(board, is_retry, last_move_illegal)
         self.last_prompt = prompt  # Store for debugging illegal moves
+        self.last_raw_response = ""  # Clear stale data before API call
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
