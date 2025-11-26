@@ -160,9 +160,16 @@ def build_chess_prompt(
     last_move_info = get_last_move_info(board)
     last_move_section = f"\n>>> {last_move_info} <<<\n" if last_move_info else ""
 
-    # Build previous thinking section (only include if we have a previous response)
+    # Build previous thinking section (only include if we have substantive reasoning)
+    # Skip if response is just a short move without chain of thought
     if previous_response and previous_response.strip():
-        previous_thinking_section = f"\nYour previous thinking:\n{previous_response}\n"
+        stripped = previous_response.strip()
+        # Only include if it's more than just a move (has actual reasoning)
+        # Heuristic: if it's longer than 20 chars, it's probably chain of thought
+        if len(stripped) > 20:
+            previous_thinking_section = f"\nYour previous thinking:\n{previous_response}\n"
+        else:
+            previous_thinking_section = ""
     else:
         previous_thinking_section = ""
 
