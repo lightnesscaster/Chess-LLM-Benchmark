@@ -89,86 +89,91 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const pgn = {{ game.pgn|tojson }};
-
-    // Parse PGN to extract moves
-    const chess = new Chess();
-    const moves = [];
-    const positions = [chess.fen()];
-
-    // Extract just the moves part (after headers)
-    const pgnLines = pgn.split('\n');
-    let movesText = '';
-    let inMoves = false;
-
-    for (const line of pgnLines) {
-        if (line.startsWith('[')) continue;
-        if (line.trim() === '') {
-            inMoves = true;
-            continue;
-        }
-        if (inMoves) {
-            movesText += ' ' + line;
-        }
-    }
-
-    // Parse moves
-    const moveRegex = /(\d+)\.\s*(\S+)(?:\s+(\S+))?/g;
-    let match;
-
-    while ((match = moveRegex.exec(movesText)) !== null) {
-        const whiteMove = match[2];
-        const blackMove = match[3];
-
-        // Skip result markers
-        if (whiteMove && !['1-0', '0-1', '1/2-1/2', '*'].includes(whiteMove)) {
-            const result = chess.move(whiteMove, { sloppy: true });
-            if (result) {
-                moves.push({ san: result.san, color: 'w', moveNum: match[1] });
-                positions.push(chess.fen());
-            }
-        }
-
-        if (blackMove && !['1-0', '0-1', '1/2-1/2', '*'].includes(blackMove)) {
-            const result = chess.move(blackMove, { sloppy: true });
-            if (result) {
-                moves.push({ san: result.san, color: 'b', moveNum: match[1] });
-                positions.push(chess.fen());
-            }
-        }
-    }
+    const movesContainer = document.getElementById('moves-container');
 
     // Initialize board
     let currentPosition = 0;
     let flipped = false;
+    let positions = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']; // Starting position
+    let moves = [];
 
     const board = Chessboard('board', {
         position: 'start',
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     });
 
-    // Render moves list
-    const movesContainer = document.getElementById('moves-container');
-    let html = '<table class="moves-table"><tbody>';
-    let lastMoveNum = 0;
+    try {
+        // Parse PGN to extract moves
+        const chess = new Chess();
+        positions = [chess.fen()];
 
-    for (let i = 0; i < moves.length; i++) {
-        const move = moves[i];
-        if (move.color === 'w') {
-            html += `<tr><td class="move-num">${move.moveNum}.</td>`;
-            html += `<td class="move white-move" data-index="${i+1}">${move.san}</td>`;
-        } else {
-            html += `<td class="move black-move" data-index="${i+1}">${move.san}</td></tr>`;
+        // Extract just the moves part (after headers)
+        const pgnLines = pgn.split('\n');
+        let movesText = '';
+        let inMoves = false;
+
+        for (const line of pgnLines) {
+            if (line.startsWith('[')) continue;
+            if (line.trim() === '') {
+                inMoves = true;
+                continue;
+            }
+            if (inMoves) {
+                movesText += ' ' + line;
+            }
         }
-        lastMoveNum = move.moveNum;
-    }
 
-    // Handle odd number of moves (white's last move without black response)
-    if (moves.length > 0 && moves[moves.length - 1].color === 'w') {
-        html += '<td></td></tr>';
-    }
+        // Parse moves
+        const moveRegex = /(\d+)\.\s*(\S+)(?:\s+(\S+))?/g;
+        let match;
 
-    html += '</tbody></table>';
-    movesContainer.innerHTML = html;
+        while ((match = moveRegex.exec(movesText)) !== null) {
+            const whiteMove = match[2];
+            const blackMove = match[3];
+
+            // Skip result markers
+            if (whiteMove && !['1-0', '0-1', '1/2-1/2', '*'].includes(whiteMove)) {
+                const result = chess.move(whiteMove, { sloppy: true });
+                if (result) {
+                    moves.push({ san: result.san, color: 'w', moveNum: match[1] });
+                    positions.push(chess.fen());
+                }
+            }
+
+            if (blackMove && !['1-0', '0-1', '1/2-1/2', '*'].includes(blackMove)) {
+                const result = chess.move(blackMove, { sloppy: true });
+                if (result) {
+                    moves.push({ san: result.san, color: 'b', moveNum: match[1] });
+                    positions.push(chess.fen());
+                }
+            }
+        }
+
+        // Render moves list
+        let html = '<table class="moves-table"><tbody>';
+
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            if (move.color === 'w') {
+                html += `<tr><td class="move-num">${move.moveNum}.</td>`;
+                html += `<td class="move white-move" data-index="${i+1}">${move.san}</td>`;
+            } else {
+                html += `<td class="move black-move" data-index="${i+1}">${move.san}</td></tr>`;
+            }
+        }
+
+        // Handle odd number of moves (white's last move without black response)
+        if (moves.length > 0 && moves[moves.length - 1].color === 'w') {
+            html += '<td></td></tr>';
+        }
+
+        html += '</tbody></table>';
+        movesContainer.innerHTML = html;
+
+    } catch (error) {
+        console.error('Failed to parse PGN:', error);
+        movesContainer.innerHTML = '<p style="color: #e94560;">Error: Unable to parse PGN. The game moves may be corrupted.</p>';
+    }
 
     // Update display
     function updateDisplay() {
@@ -227,8 +232,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Keyboard navigation
+    // Keyboard navigation (skip if user is typing in an input)
     document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
         if (e.key === 'ArrowLeft') {
             if (currentPosition > 0) {
                 currentPosition--;
