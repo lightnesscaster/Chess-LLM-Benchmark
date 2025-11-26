@@ -417,8 +417,12 @@ async def run_test_game(args):
     # Helper to create engine based on type
     def create_engine(engine_type):
         if engine_type == "maia":
+            # Extract maia model name from weights path (e.g., "maia-1900.pb.gz" -> "maia-1900")
+            weights_name = Path(args.maia_weights).name
+            # Remove extensions like .pb.gz or .pb
+            maia_id = weights_name.replace(".pb.gz", "").replace(".pb", "")
             return MaiaEngine(
-                player_id="maia-1100",
+                player_id=maia_id,
                 rating=1628,
                 lc0_path=args.lc0_path,
                 weights_path=args.maia_weights,
