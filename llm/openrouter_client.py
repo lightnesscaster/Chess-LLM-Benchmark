@@ -128,6 +128,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         session = await self._ensure_session()
 
         prompt = build_chess_prompt(board, is_retry, last_move_illegal)
+        self.last_prompt = prompt  # Store for debugging illegal moves
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -207,10 +208,12 @@ class OpenRouterPlayer(BaseLLMPlayer):
         # Extract response text
         try:
             response_text = data["choices"][0]["message"]["content"]
+            self.last_raw_response = response_text or ""  # Store for debugging illegal moves
             # Debug: check for empty responses
             if not response_text:
                 print(f"  [DEBUG] Empty response. Full API data: {data}")
         except (KeyError, IndexError) as e:
+            self.last_raw_response = f"[Failed to extract: {data}]"
             raise RuntimeError(f"Unexpected API response format: {data}") from e
 
         # Parse and return the move

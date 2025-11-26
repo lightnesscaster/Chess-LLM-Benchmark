@@ -107,6 +107,7 @@ class GameRunner:
         # Track illegal moves per player for this game
         illegal_count = {chess.WHITE: 0, chess.BLACK: 0}
         total_moves = {chess.WHITE: 0, chess.BLACK: 0}
+        illegal_move_details = []  # List of dicts with debugging info
 
         winner = "draw"
         termination = "normal"
@@ -126,7 +127,7 @@ class GameRunner:
             # Get move with illegal retry policy
             try:
                 move_result = await self._get_move_with_retry(
-                    player, board, side, illegal_count
+                    player, board, side, illegal_count, illegal_move_details, moves_played
                 )
             except TransientAPIError as e:
                 # Network error after retries - end as draw, not a forfeit
@@ -226,6 +227,7 @@ class GameRunner:
             created_at=datetime.now(timezone.utc).isoformat(),
             tokens_white=tokens_white,
             tokens_black=tokens_black,
+            illegal_move_details=illegal_move_details if illegal_move_details else None,
         )
 
         return game_result, pgn_str
@@ -236,6 +238,8 @@ class GameRunner:
         board: chess.Board,
         side: chess.Color,
         illegal_count: dict,
+        illegal_move_details: list,
+        move_number: int,
     ) -> Optional[Tuple[str, bool]]:
         """
         Get a move from the player with illegal move retry policy.
@@ -245,6 +249,8 @@ class GameRunner:
             board: Current board state
             side: Which side is to move
             illegal_count: Dict tracking illegal moves per side
+            illegal_move_details: List to append illegal move debug info to
+            move_number: Current move number in the game
 
         Returns:
             Tuple of (uci_move, was_retry) or None if player forfeits
@@ -277,6 +283,17 @@ class GameRunner:
             if self.verbose:
                 side_name = "White" if side == chess.WHITE else "Black"
                 print(f"  {side_name} illegal move #{illegal_count[side]}: {last_illegal_move}")
+
+            # Capture debugging details for LLM players
+            if isinstance(player, BaseLLMPlayer):
+                illegal_move_details.append({
+                    "side": "white" if side == chess.WHITE else "black",
+                    "move_number": move_number + 1,  # 1-indexed for readability
+                    "fen": board.fen(),
+                    "prompt": player.last_prompt,
+                    "raw_response": player.last_raw_response,
+                    "parsed_move": last_illegal_move,
+                })
 
             # Check if this is the second illegal move
             if illegal_count[side] >= 2:
