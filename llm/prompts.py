@@ -118,7 +118,7 @@ Current position (FEN):
 Board:
 {ascii_board}
 
-Your previous move "{illegal_move}" was ILLEGAL. Please try again.
+Your previous attempted move "{illegal_move}" was ILLEGAL. Please try again.
 
 Your task:
 - Play exactly ONE LEGAL move for {side_to_move}.
