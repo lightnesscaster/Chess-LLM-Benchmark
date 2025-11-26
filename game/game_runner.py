@@ -19,7 +19,7 @@ import chess
 import chess.pgn
 
 from engines.base_engine import BaseEngine
-from llm.base_llm import BaseLLMPlayer
+from llm import BaseLLMPlayer, TransientAPIError
 from .models import GameResult
 
 # Live game file for following along
@@ -124,9 +124,18 @@ class GameRunner:
             player = self.white if side == chess.WHITE else self.black
 
             # Get move with illegal retry policy
-            move_result = await self._get_move_with_retry(
-                player, board, side, illegal_count
-            )
+            try:
+                move_result = await self._get_move_with_retry(
+                    player, board, side, illegal_count
+                )
+            except TransientAPIError as e:
+                # Network error after retries - end as draw, not a forfeit
+                if self.verbose:
+                    side_name = "White" if side == chess.WHITE else "Black"
+                    print(f"  {side_name} API error (not counted as illegal move): {e}")
+                winner = "draw"
+                termination = "api_error"
+                break
 
             if move_result is None:
                 # Player forfeited due to second illegal move
@@ -239,6 +248,9 @@ class GameRunner:
 
         Returns:
             Tuple of (uci_move, was_retry) or None if player forfeits
+
+        Raises:
+            TransientAPIError: If the API call fails due to network issues
         """
         max_attempts = 2
         last_illegal_move = None
@@ -246,7 +258,7 @@ class GameRunner:
         for attempt in range(max_attempts):
             is_retry = attempt > 0
 
-            # Get move from player
+            # Get move from player (may raise TransientAPIError)
             move_uci = await self._ask_player_for_move(
                 player, board, is_retry, last_illegal_move
             )
@@ -293,6 +305,9 @@ class GameRunner:
 
         Returns:
             UCI move string or None
+
+        Raises:
+            TransientAPIError: If the API call fails due to network issues (not an illegal move)
         """
         try:
             if isinstance(player, BaseEngine):
@@ -307,6 +322,10 @@ class GameRunner:
                     last_move_illegal=last_illegal_move,
                 )
                 return move_uci.strip() if move_uci else None
+
+        except TransientAPIError:
+            # Let transient API errors propagate - these aren't illegal moves
+            raise
 
         except Exception as e:
             if self.verbose:

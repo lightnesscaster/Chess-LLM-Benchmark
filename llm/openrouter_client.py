@@ -4,11 +4,17 @@ OpenRouter API client for LLM chess players.
 
 import os
 import re
+import asyncio
 import aiohttp
 import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
 from .prompts import build_chess_prompt
+
+
+class TransientAPIError(Exception):
+    """Raised when API call fails due to transient network issues after retries."""
+    pass
 
 
 class OpenRouterPlayer(BaseLLMPlayer):
@@ -114,6 +120,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         Returns:
             A move in UCI format
+
+        Raises:
+            TransientAPIError: If the API call fails after retries due to network issues
         """
         session = await self._ensure_session()
 
@@ -139,18 +148,42 @@ class OpenRouterPlayer(BaseLLMPlayer):
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
 
-        timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move (reasoning models need more time)
-        async with session.post(
-            self.OPENROUTER_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=timeout,
-        ) as response:
-            if response.status != 200:
-                error_text = await response.text()
-                raise RuntimeError(f"OpenRouter API error {response.status}: {error_text}")
+        # Retry logic for transient network errors
+        max_retries = 3
+        retry_delay = 2.0  # seconds
+        last_error = None
 
-            data = await response.json()
+        for attempt in range(max_retries):
+            try:
+                timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move
+                async with session.post(
+                    self.OPENROUTER_API_URL,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout,
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise RuntimeError(f"OpenRouter API error {response.status}: {error_text}")
+
+                    data = await response.json()
+
+                # Success - break out of retry loop
+                break
+
+            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError) as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    print(f"  [Network error, retrying in {retry_delay}s]: {type(e).__name__}: {e}")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    # Recreate session in case connection is stale
+                    await self.close()
+                    session = await self._ensure_session()
+                else:
+                    raise TransientAPIError(
+                        f"API call failed after {max_retries} retries: {e}"
+                    ) from e
 
         # Track token usage
         if "usage" in data:
