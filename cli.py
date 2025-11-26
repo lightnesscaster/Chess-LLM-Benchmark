@@ -169,13 +169,25 @@ async def show_leaderboard(args):
 
 async def recalculate_ratings(args):
     """Recalculate ratings from stored game results."""
+    from datetime import datetime
+
     # Load config for anchors
-    config = load_config(args.config)
+    try:
+        config = load_config(args.config)
+    except FileNotFoundError:
+        print(f"Error: Config file not found: {args.config}")
+        return 1
+    except yaml.YAMLError as e:
+        print(f"Error: Invalid YAML in config file: {e}")
+        return 1
 
     # Build anchor map from config
     anchors = {}
     for engine_cfg in config.get("engines", []):
         anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+
+    if not anchors:
+        print("Warning: No anchors (engines) defined in config")
 
     if args.verbose:
         print(f"Anchors: {anchors}")
@@ -188,29 +200,56 @@ async def recalculate_ratings(args):
         print("No game results found in data/results/")
         return 1
 
-    # Sort by creation time for chronological processing
-    results.sort(key=lambda r: r.created_at)
+    # Sort by creation time for chronological processing (using datetime for robustness)
+    def parse_timestamp(r):
+        try:
+            # Handle ISO format with timezone
+            ts = r.created_at
+            if ts:
+                return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            pass
+        return datetime.min  # Put invalid timestamps first
+
+    results.sort(key=parse_timestamp)
 
     if args.verbose:
         print(f"Found {len(results)} game results")
 
-    # Initialize rating store
+    # Initialize rating store with anchors
     rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()))
 
-    # Reset if requested
-    if args.reset:
-        rating_store.reset()
-        if args.verbose:
-            print("Reset existing ratings")
+    # Always reset when recalculating to avoid double-counting
+    rating_store.reset()
+    if args.verbose:
+        print("Reset existing ratings")
 
     # Set anchor ratings
     for anchor_id, rating in anchors.items():
         rating_store.set_anchor(anchor_id, rating)
 
     glicko = Glicko2System()
+    skipped = 0
 
     # Process each game
     for i, result in enumerate(results):
+        # Validate game result
+        if not result.white_id or not result.black_id:
+            if args.verbose:
+                print(f"[{i+1}/{len(results)}] Skipping: missing player ID")
+            skipped += 1
+            continue
+
+        if result.white_id == result.black_id:
+            if args.verbose:
+                print(f"[{i+1}/{len(results)}] Skipping: player vs themselves")
+            skipped += 1
+            continue
+
+        if result.winner not in ("white", "black", "draw"):
+            if args.verbose:
+                print(f"[{i+1}/{len(results)}] Warning: unexpected winner value '{result.winner}', treating as draw")
+
         white_rating = rating_store.get(result.white_id)
         black_rating = rating_store.get(result.black_id)
 
@@ -234,7 +273,8 @@ async def recalculate_ratings(args):
             new_black = glicko.update_rating(black_rating, [white_rating], [black_score])
             rating_store.set(new_black)
 
-    print(f"\nProcessed {len(results)} games")
+    processed = len(results) - skipped
+    print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
     print()
 
     # Show leaderboard
@@ -431,11 +471,6 @@ def main():
         "--config", "-c",
         default="config/benchmark.yaml",
         help="Path to config file (for anchor definitions)",
-    )
-    recalc_parser.add_argument(
-        "--reset",
-        action="store_true",
-        help="Reset existing ratings before recalculating",
     )
     recalc_parser.add_argument(
         "--verbose", "-v",
