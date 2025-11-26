@@ -203,6 +203,7 @@ async def run_test_game(args):
             model_name=model_name,
             api_key=api_key,
             max_tokens=args.max_tokens,
+            reasoning=args.reasoning,
         )
 
     # Track results across games
@@ -393,6 +394,11 @@ def main():
         type=int,
         default=0,
         help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
+    )
+    test_parser.add_argument(
+        "--reasoning",
+        action="store_true",
+        help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
     )
     test_parser.add_argument(
         "--max-moves",
