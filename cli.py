@@ -18,6 +18,7 @@ import yaml
 
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
+from engines.random_engine import RandomEngine
 from llm.openrouter_client import OpenRouterPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
@@ -65,6 +66,12 @@ def create_engines(config: dict) -> dict:
                 lc0_path=engine_cfg.get("lc0_path", "lc0"),
                 weights_path=engine_cfg.get("weights_path"),
                 nodes=engine_cfg.get("nodes", 1),
+            )
+        elif engine_type == "random":
+            engines[player_id] = RandomEngine(
+                player_id=player_id,
+                rating=rating,
+                seed=engine_cfg.get("seed"),
             )
 
     return engines

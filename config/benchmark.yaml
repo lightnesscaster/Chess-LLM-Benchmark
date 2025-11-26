@@ -9,6 +9,11 @@ benchmark:
 
 # Engine anchors (fixed ratings)
 engines:
+  # Random move bot - floor anchor
+  - player_id: "random-bot"
+    type: random
+    rating: 400
+
   # Maia engines trained to play at specific human Elo levels
   - player_id: "maia-1100"
     type: maia
