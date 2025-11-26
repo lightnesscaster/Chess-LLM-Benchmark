@@ -202,7 +202,6 @@ body {
 }
 
 .games-table .winner {
-    font-weight: bold;
     color: var(--success);
 }
 
