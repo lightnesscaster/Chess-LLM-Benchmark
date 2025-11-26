@@ -85,6 +85,11 @@ def create_llm_players(config: dict, api_key: str = None) -> dict:
     for llm_cfg in config.get("llms", []):
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
+        reasoning_effort = llm_cfg.get("reasoning_effort")
+
+        # Append reasoning effort to player_id if set and not already included
+        if reasoning_effort and f"({reasoning_effort})" not in player_id:
+            player_id = f"{player_id} ({reasoning_effort})"
 
         players[player_id] = OpenRouterPlayer(
             player_id=player_id,
@@ -93,7 +98,7 @@ def create_llm_players(config: dict, api_key: str = None) -> dict:
             temperature=llm_cfg.get("temperature", 0.0),
             max_tokens=llm_cfg.get("max_tokens", 10),
             reasoning=llm_cfg.get("reasoning", False),
-            reasoning_effort=llm_cfg.get("reasoning_effort"),
+            reasoning_effort=reasoning_effort,
         )
 
     return players
@@ -452,8 +457,11 @@ async def run_test_game(args):
 
     # Helper to create LLM player
     def create_llm(model_name):
+        player_id = model_name.split("/")[-1]
+        if args.reasoning_effort:
+            player_id = f"{player_id} ({args.reasoning_effort})"
         return OpenRouterPlayer(
-            player_id=model_name.split("/")[-1],
+            player_id=player_id,
             model_name=model_name,
             api_key=api_key,
             max_tokens=args.max_tokens,
