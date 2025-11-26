@@ -249,9 +249,10 @@ async def recalculate_ratings(args):
     if args.verbose:
         print("Reset existing ratings")
 
-    # Set anchor ratings
+    # Set anchor ratings (batch save)
     for anchor_id, rating in anchors.items():
-        rating_store.set_anchor(anchor_id, rating)
+        rating_store.set_anchor(anchor_id, rating, auto_save=False)
+    rating_store.save()
 
     glicko = Glicko2System()
     skipped = 0

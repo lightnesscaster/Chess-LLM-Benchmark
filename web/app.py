@@ -4,6 +4,9 @@ Flask web application for LLM Chess Benchmark.
 Displays leaderboard and game library with PGN viewer.
 """
 
+import logging
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -19,69 +22,105 @@ from game.stats_collector import StatsCollector
 
 app = Flask(__name__)
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 # Data paths
 DATA_DIR = Path(__file__).parent.parent / "data"
 RATINGS_PATH = DATA_DIR / "ratings.json"
 
+# Game ID validation pattern (UUID format or alphanumeric with hyphens/underscores)
+VALID_GAME_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+
+def is_valid_game_id(game_id: str) -> bool:
+    """Validate game_id to prevent path traversal attacks."""
+    if not game_id or len(game_id) > 100:
+        return False
+    return bool(VALID_GAME_ID_PATTERN.match(game_id))
+
 
 def get_leaderboard_data(min_games: int = 1) -> list:
     """Get leaderboard data from rating store."""
-    rating_store = RatingStore(path=str(RATINGS_PATH))
-    pgn_logger = PGNLogger()
-    stats_collector = StatsCollector()
-    stats_collector.add_results(pgn_logger.load_all_results())
+    try:
+        rating_store = RatingStore(path=str(RATINGS_PATH))
+        pgn_logger = PGNLogger()
+        stats_collector = StatsCollector()
+        stats_collector.add_results(pgn_logger.load_all_results())
 
-    leaderboard = Leaderboard(rating_store, stats_collector)
-    return leaderboard.get_leaderboard(min_games=min_games)
+        leaderboard = Leaderboard(rating_store, stats_collector)
+        return leaderboard.get_leaderboard(min_games=min_games)
+    except Exception as e:
+        app.logger.error(f"Error loading leaderboard: {e}")
+        return []
 
 
 def get_all_games() -> list:
     """Get all games with metadata."""
-    pgn_logger = PGNLogger()
-    results = pgn_logger.load_all_results()
+    try:
+        pgn_logger = PGNLogger()
+        results = pgn_logger.load_all_results()
 
-    # Sort by date descending (most recent first)
-    results.sort(key=lambda r: r.created_at or "", reverse=True)
+        # Sort by date descending (most recent first)
+        results.sort(key=lambda r: r.created_at or "", reverse=True)
 
-    games = []
-    for result in results:
-        games.append({
+        games = []
+        for result in results:
+            games.append({
+                "game_id": result.game_id,
+                "white": result.white_id,
+                "black": result.black_id,
+                "winner": result.winner,
+                "termination": result.termination,
+                "moves": result.moves or 0,
+                "illegal_moves_white": result.illegal_moves_white or 0,
+                "illegal_moves_black": result.illegal_moves_black or 0,
+                "created_at": result.created_at,
+            })
+
+        return games
+    except Exception as e:
+        app.logger.error(f"Error loading games: {e}")
+        return []
+
+
+def get_game(game_id: str) -> dict | None:
+    """Get a single game with PGN."""
+    try:
+        pgn_logger = PGNLogger()
+        result = pgn_logger.load_result(game_id)
+
+        if not result:
+            return None
+
+        pgn = pgn_logger.load_pgn(game_id)
+        if not pgn:
+            pgn = "[PGN file not found]"
+
+        return {
             "game_id": result.game_id,
             "white": result.white_id,
             "black": result.black_id,
             "winner": result.winner,
             "termination": result.termination,
-            "moves": result.moves,
-            "illegal_moves_white": result.illegal_moves_white,
-            "illegal_moves_black": result.illegal_moves_black,
+            "moves": result.moves or 0,
+            "illegal_moves_white": result.illegal_moves_white or 0,
+            "illegal_moves_black": result.illegal_moves_black or 0,
             "created_at": result.created_at,
-        })
-
-    return games
-
-
-def get_game(game_id: str) -> dict | None:
-    """Get a single game with PGN."""
-    pgn_logger = PGNLogger()
-    result = pgn_logger.load_result(game_id)
-
-    if not result:
+            "pgn": pgn,
+        }
+    except Exception as e:
+        app.logger.error(f"Error loading game {game_id}: {e}")
         return None
 
-    pgn = pgn_logger.load_pgn(game_id)
 
-    return {
-        "game_id": result.game_id,
-        "white": result.white_id,
-        "black": result.black_id,
-        "winner": result.winner,
-        "termination": result.termination,
-        "moves": result.moves,
-        "illegal_moves_white": result.illegal_moves_white,
-        "illegal_moves_black": result.illegal_moves_black,
-        "created_at": result.created_at,
-        "pgn": pgn,
-    }
+@app.after_request
+def set_security_headers(response):
+    """Add security headers to all responses."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
 
 @app.route("/")
@@ -106,6 +145,8 @@ def games():
 @app.route("/game/<game_id>")
 def game(game_id: str):
     """Show individual game viewer."""
+    if not is_valid_game_id(game_id):
+        abort(400)  # Bad request for invalid game_id
     game_data = get_game(game_id)
     if not game_data:
         abort(404)
@@ -128,6 +169,8 @@ def api_games():
 @app.route("/api/game/<game_id>")
 def api_game(game_id: str):
     """Get single game as JSON."""
+    if not is_valid_game_id(game_id):
+        abort(400)
     game_data = get_game(game_id)
     if not game_data:
         abort(404)
@@ -135,4 +178,5 @@ def api_game(game_id: str):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    debug_mode = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
+    app.run(debug=debug_mode, port=5000)

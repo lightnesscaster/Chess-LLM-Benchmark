@@ -49,8 +49,8 @@
                 </td>
                 <td class="termination">{{ game.termination }}</td>
                 <td class="moves">{{ game.moves }}</td>
-                <td class="illegal" title="White: {{ game.illegal_moves_white }}, Black: {{ game.illegal_moves_black }}">
-                    {{ game.illegal_moves_white + game.illegal_moves_black }}
+                <td class="illegal" title="White: {{ game.illegal_moves_white|default(0) }}, Black: {{ game.illegal_moves_black|default(0) }}">
+                    {{ (game.illegal_moves_white|default(0)) + (game.illegal_moves_black|default(0)) }}
                 </td>
                 <td class="view">
                     <a href="/game/{{ game.game_id }}" class="view-btn">View</a>
