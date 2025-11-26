@@ -91,6 +91,7 @@ class RatingStore:
         player_id: str,
         rating: float,
         rating_deviation: float = 50.0,
+        auto_save: bool = True,
     ) -> None:
         """
         Set an anchor player with fixed rating.
@@ -99,6 +100,7 @@ class RatingStore:
             player_id: The anchor player ID
             rating: The fixed rating
             rating_deviation: Low RD for anchors (default 50)
+            auto_save: Whether to save to disk immediately (default True)
         """
         self.anchor_ids.add(player_id)
         self._ratings[player_id] = PlayerRating(
@@ -108,7 +110,8 @@ class RatingStore:
             volatility=0.03,  # Low volatility for anchors
             games_played=0,
         )
-        self._save()
+        if auto_save:
+            self._save()
 
     def get_all(self) -> Dict[str, PlayerRating]:
         """Get all player ratings."""

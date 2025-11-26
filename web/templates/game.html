@@ -63,11 +63,11 @@
                 </tr>
                 <tr>
                     <td>Illegal (White):</td>
-                    <td>{{ game.illegal_moves_white }}</td>
+                    <td>{{ game.illegal_moves_white|default(0) }}</td>
                 </tr>
                 <tr>
                     <td>Illegal (Black):</td>
-                    <td>{{ game.illegal_moves_black }}</td>
+                    <td>{{ game.illegal_moves_black|default(0) }}</td>
                 </tr>
             </table>
         </div>

@@ -8,6 +8,7 @@
     <p class="subtitle">Glicko-2 ratings calibrated against engine anchors</p>
 </div>
 
+{% if leaderboard %}
 <div class="leaderboard-container">
     <table class="leaderboard-table">
         <thead>
@@ -48,4 +49,9 @@
     <p><strong>95% CI</strong> = 95% Confidence Interval</p>
     <p><strong>Legal%</strong> = Percentage of moves that were legal on first attempt</p>
 </div>
+{% else %}
+<div class="empty-state">
+    <p>No players in the leaderboard yet. Run some benchmark games to populate ratings.</p>
+</div>
+{% endif %}
 {% endblock %}
