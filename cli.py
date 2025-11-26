@@ -641,10 +641,12 @@ def main():
         help="OpenRouter API key",
     )
     test_parser.add_argument(
-        "--save",
-        action="store_true",
-        help="Save the game",
+        "--no-save",
+        action="store_false",
+        dest="save",
+        help="Don't save the game (saves by default)",
     )
+    test_parser.set_defaults(save=True)
     test_parser.add_argument(
         "--games",
         type=int,
