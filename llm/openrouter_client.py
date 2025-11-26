@@ -87,14 +87,15 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         matches = re.findall(uci_pattern, text.lower())
         if matches:
-            return matches[0]
+            # Return last match - models often explain failed moves before giving correct one
+            return matches[-1]
 
         # Try to find SAN-style moves with piece prefix (e.g., Nb1c3, Qd1d3)
         # Pattern: optional piece letter + UCI move
         san_uci_pattern = r'\b[KQRBN]?([a-h][1-8][a-h][1-8][qrbn]?)\b'
         matches = re.findall(san_uci_pattern, text, re.IGNORECASE)
         if matches:
-            return matches[0].lower()
+            return matches[-1].lower()
 
         # If no UCI pattern found, try taking first word/token
         tokens = text.split()
