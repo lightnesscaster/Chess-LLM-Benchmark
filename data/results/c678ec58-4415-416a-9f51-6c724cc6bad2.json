@@ -1,0 +1,30 @@
+{
+  "game_id": "c678ec58-4415-416a-9f51-6c724cc6bad2",
+  "white_id": "gpt-oss-120b",
+  "black_id": "maia-1100",
+  "winner": "black",
+  "termination": "checkmate",
+  "moves": 40,
+  "illegal_moves_white": 1,
+  "illegal_moves_black": 0,
+  "total_moves_white": 20,
+  "total_moves_black": 20,
+  "pgn_path": "data/games/c678ec58-4415-416a-9f51-6c724cc6bad2.pgn",
+  "created_at": "2025-11-26T05:06:28.956653+00:00",
+  "tokens_white": {
+    "prompt_tokens": 8390,
+    "completion_tokens": 54521,
+    "total_tokens": 62911
+  },
+  "tokens_black": null,
+  "illegal_move_details": [
+    {
+      "side": "white",
+      "move_number": 35,
+      "fen": "r3r1k1/ppp2ppp/5n2/8/5b2/P7/1PPN3P/R1BK1B1q w - - 0 18",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nxd4 5. Qxd4 Nf6 6. Qe5+ Be7 7. Nd2 d6 8. Qg5 O-O 9. Qg3 d5 10. exd5 Qxd5 11. a3 Bd6 12. Qf3 Re8+ 13. Kd1 Bg4 14. Qe2 Bxe2+ 15. Bxe2 Qxg2 16. f4 Qxh1+ 17. Bf1 Bxf4\n\n>>> Black's last move: Bxf4 (d6f4) <<<\n\n\nCurrent position (FEN):\nr3r1k1/ppp2ppp/5n2/8/5b2/P7/1PPN3P/R1BK1B1q w - - 0 18\n\nBoard:\n8 | r . . . r . k .\n7 | p p p . . p p p\n6 | . . . . . n . .\n5 | . . . . . . . .\n4 | . . . . . b . .\n3 | P . . . . . . .\n2 | . P P N . . . P\n1 | R . B K . B . q\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "f1g2",
+      "parsed_move": "f1g2"
+    }
+  ]
+}

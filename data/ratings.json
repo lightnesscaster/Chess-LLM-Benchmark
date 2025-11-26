@@ -1,0 +1,79 @@
+{
+  "maia-1900": {
+    "player_id": "maia-1900",
+    "rating": 1816,
+    "rating_deviation": 50.0,
+    "volatility": 0.03,
+    "games_played": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.035818+00:00"
+  },
+  "random-bot": {
+    "player_id": "random-bot",
+    "rating": 400,
+    "rating_deviation": 50.0,
+    "volatility": 0.03,
+    "games_played": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.035805+00:00"
+  },
+  "maia-1100": {
+    "player_id": "maia-1100",
+    "rating": 1628,
+    "rating_deviation": 50.0,
+    "volatility": 0.03,
+    "games_played": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.035815+00:00"
+  },
+  "gpt-5.1": {
+    "player_id": "gpt-5.1",
+    "rating": 1622.0211291464673,
+    "rating_deviation": 122.74769625625741,
+    "volatility": 0.06001556947285861,
+    "games_played": 2,
+    "wins": 1,
+    "losses": 1,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.037636+00:00"
+  },
+  "llama-4-maverick": {
+    "player_id": "llama-4-maverick",
+    "rating": 400,
+    "rating_deviation": 77.84592557744774,
+    "volatility": 0.0600587083558033,
+    "games_played": 45,
+    "wins": 0,
+    "losses": 45,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.037779+00:00"
+  },
+  "gpt-oss-120b": {
+    "player_id": "gpt-oss-120b",
+    "rating": 1148.8461150890798,
+    "rating_deviation": 122.22821593616032,
+    "volatility": 0.05987440140058878,
+    "games_played": 10,
+    "wins": 5,
+    "losses": 5,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.037766+00:00"
+  },
+  "gemini-3-pro-preview": {
+    "player_id": "gemini-3-pro-preview",
+    "rating": 1905.7435180669663,
+    "rating_deviation": 99.59719004441304,
+    "volatility": 0.059965987249183526,
+    "games_played": 4,
+    "wins": 3,
+    "losses": 1,
+    "draws": 0,
+    "last_updated": "2025-11-26T09:26:39.037697+00:00"
+  }
+}

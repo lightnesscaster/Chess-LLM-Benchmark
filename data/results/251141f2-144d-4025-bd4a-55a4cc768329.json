@@ -1,0 +1,21 @@
+{
+  "game_id": "251141f2-144d-4025-bd4a-55a4cc768329",
+  "white_id": "gemini-3-pro-preview",
+  "black_id": "maia-1100",
+  "winner": "white",
+  "termination": "checkmate",
+  "moves": 91,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 46,
+  "total_moves_black": 45,
+  "pgn_path": "data/games/251141f2-144d-4025-bd4a-55a4cc768329.pgn",
+  "created_at": "2025-11-26T06:33:52.363150+00:00",
+  "tokens_white": {
+    "prompt_tokens": 22975,
+    "completion_tokens": 212167,
+    "total_tokens": 235142
+  },
+  "tokens_black": null,
+  "illegal_move_details": null
+}
