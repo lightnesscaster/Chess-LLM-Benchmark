@@ -26,6 +26,8 @@ class BaseLLMPlayer(abc.ABC):
         # Last request/response for debugging illegal moves
         self.last_prompt: str = ""
         self.last_raw_response: str = ""
+        # Last successful response (for context in next move's prompt)
+        self.last_successful_response: str = ""
 
     def reset_token_usage(self) -> None:
         """Reset token counters and debug state (call at start of each game)."""
@@ -34,6 +36,11 @@ class BaseLLMPlayer(abc.ABC):
         self.total_tokens = 0
         self.last_prompt = ""
         self.last_raw_response = ""
+        self.last_successful_response = ""
+
+    def mark_move_successful(self) -> None:
+        """Mark the last response as successful (called after a legal move)."""
+        self.last_successful_response = self.last_raw_response
 
     def get_token_usage(self) -> dict:
         """Get current token usage stats."""
