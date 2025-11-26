@@ -29,7 +29,7 @@
             <button id="btn-flip" title="Flip board">Flip</button>
         </div>
         <div class="move-indicator">
-            Move: <span id="current-move">0</span> / <span id="total-moves">{{ game.moves }}</span>
+            Move: <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
         </div>
     </div>
 
@@ -59,7 +59,7 @@
                 </tr>
                 <tr>
                     <td>Moves:</td>
-                    <td>{{ game.moves }}</td>
+                    <td>{{ ((game.moves|default(0)) + 1) // 2 }}</td>
                 </tr>
                 <tr>
                     <td>Illegal (White):</td>
@@ -178,7 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update display
     function updateDisplay() {
         board.position(positions[currentPosition]);
-        document.getElementById('current-move').textContent = currentPosition;
+        // Show full move number (not half-moves)
+        document.getElementById('current-move').textContent = Math.ceil(currentPosition / 2);
 
         // Highlight current move in list
         document.querySelectorAll('.move').forEach(el => el.classList.remove('current'));
@@ -257,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Set total moves
-    document.getElementById('total-moves').textContent = positions.length - 1;
+    // Set total moves (full moves, not half-moves)
+    document.getElementById('total-moves').textContent = Math.ceil((positions.length - 1) / 2);
 });
 </script>
 {% endblock %}
