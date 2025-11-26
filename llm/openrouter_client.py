@@ -167,6 +167,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
+                        # Store error for debugging before raising
+                        self.last_raw_response = f"[HTTP {response.status}] {error_text[:500]}"
                         # Retry on transient server errors and rate limits
                         if response.status in retryable_http_codes:
                             raise aiohttp.ClientResponseError(
