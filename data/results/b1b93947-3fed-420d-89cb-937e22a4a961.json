@@ -1,0 +1,25 @@
+{
+  "game_id": "b1b93947-3fed-420d-89cb-937e22a4a961",
+  "white_id": "gemini-3-pro-preview",
+  "black_id": "gpt-5.1 (high)",
+  "winner": "white",
+  "termination": "checkmate",
+  "moves": 57,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 29,
+  "total_moves_black": 28,
+  "pgn_path": "data/games/b1b93947-3fed-420d-89cb-937e22a4a961.pgn",
+  "created_at": "2025-11-26T14:03:06.670883+00:00",
+  "tokens_white": {
+    "prompt_tokens": 11487,
+    "completion_tokens": 46318,
+    "total_tokens": 57805
+  },
+  "tokens_black": {
+    "prompt_tokens": 10351,
+    "completion_tokens": 102925,
+    "total_tokens": 113276
+  },
+  "illegal_move_details": null
+}

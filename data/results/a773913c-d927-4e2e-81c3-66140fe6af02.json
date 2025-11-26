@@ -1,0 +1,30 @@
+{
+  "game_id": "a773913c-d927-4e2e-81c3-66140fe6af02",
+  "white_id": "gpt-5.1 (high)",
+  "black_id": "maia-1100",
+  "winner": "black",
+  "termination": "checkmate",
+  "moves": 134,
+  "illegal_moves_white": 1,
+  "illegal_moves_black": 0,
+  "total_moves_white": 67,
+  "total_moves_black": 67,
+  "pgn_path": "data/games/a773913c-d927-4e2e-81c3-66140fe6af02.pgn",
+  "created_at": "2025-11-26T13:09:30.792759+00:00",
+  "tokens_white": {
+    "prompt_tokens": 35081,
+    "completion_tokens": 303657,
+    "total_tokens": 338738
+  },
+  "tokens_black": null,
+  "illegal_move_details": [
+    {
+      "side": "white",
+      "move_number": 117,
+      "fen": "8/p1N5/3q4/8/3K3k/8/8/8 w - - 2 59",
+      "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 5. Re1 d5 6. d3 Nf6 7. Nxe5 Bd7 8. Nxc6+ Be7 9. Nxd8 Bxb5 10. Nc3 Rxd8 11. Nxb5 O-O 12. a3 Bc5 13. a4 c6 14. d4 Bb4 15. c3 Ba5 16. b4 Bb6 17. a5 Bc7 18. Nxc7 Rc8 19. Re7 Ne4 20. Rxe4 dxe4 21. Bf4 f5 22. Qb3+ Kh8 23. Ne6 Rfe8 24. Nc5 e3 25. fxe3 Rxe3 26. Bxe3 Re8 27. Nxb7 Rxe3 28. Qg8+ Kxg8 29. g3 Rxc3 30. Nc5 Rc4 31. a6 Rxb4 32. g4 Rxd4 33. gxf5 Rd5 34. Rc1 Rxf5 35. Kg2 Rg5+ 36. Kf2 Rf5+ 37. Ke3 Re5+ 38. Kd4 Rd5+ 39. Ke3 Re5+ 40. Ne4 c5 41. Rxc5 Rxc5 42. Nxc5 Kf7 43. Kd4 Ke7 44. Kd5 Kf6 45. h4 Kf5 46. Kc4 Kg4 47. Kd4 Kxh4 48. Kd5 g5 49. Ne4 g4 50. Ke5 Kh3 51. Ng5+ Kh4 52. Nxh7 g3 53. Nf6 g2 54. Nd5 g1=Q 55. Kf4 Qg4+ 56. Ke3 Qe6+ 57. Kd4 Qxa6 58. Nc7 Qd6+\n\n>>> Black's last move: Qd6+ (a6d6) <<<\n\n\nCurrent position (FEN):\n8/p1N5/3q4/8/3K3k/8/8/8 w - - 2 59\n\nBoard:\n8 | . . . . . . . .\n7 | p . N . . . . .\n6 | . . . q . . . .\n5 | . . . . . . . .\n4 | . . . K . . . k\n3 | . . . . . . . .\n2 | . . . . . . . .\n1 | . . . . . . . .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "",
+      "parsed_move": "invalid"
+    }
+  ]
+}

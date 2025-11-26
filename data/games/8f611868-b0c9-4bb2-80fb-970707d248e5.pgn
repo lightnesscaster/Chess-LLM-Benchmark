@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.11.26"]
+[Round "1"]
+[White "gpt-5.1 (high)"]
+[Black "gemini-3-pro-preview"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4 Qb6 8. Qd2 Qxb2 9. Rb1 Qa3 10. e5 dxe5 11. fxe5 Nfd7 12. g3 h6 13. Nxe6 fxe6 14. Rb3 hxg5 15. Rxa3 Bxa3 16. Ne4 Be7 17. h3 Nxe5 18. Qxg5 Nf3+ 19. Ke2 Nxg5 20. Nxg5 Bxg5 21. Bg2 Nc6 22. Bxc6+ bxc6 23. h4 Bf6 24. g4 Bxh4 25. Rxh4 Rxh4 26. g5 e5 27. g6 Bf5 28. c4 Rxc4 29. Ke3 Rc3+ 30. Kd2 Rd3+ 31. Ke2 O-O-O 32. a3 Rd2+ 33. Ke3 R8d3# 0-1

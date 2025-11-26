@@ -1,6 +1,6 @@
 {
   "game_id": "a26fb0fc-085c-4aa9-b2ec-792d126ad742",
-  "white_id": "gpt-5.1",
+  "white_id": "gpt-5.1 (high)",
   "black_id": "maia-1100",
   "winner": "white",
   "termination": "checkmate",
