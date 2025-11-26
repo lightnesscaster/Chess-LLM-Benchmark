@@ -34,6 +34,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         api_key: Optional[str] = None,
         temperature: float = 0.0,
         max_tokens: int = 10,
+        reasoning: bool = False,
     ):
         """
         Initialize OpenRouter player.
@@ -44,6 +45,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
             temperature: Sampling temperature (0.0 for deterministic)
             max_tokens: Maximum tokens in response
+            reasoning: Enable reasoning mode for hybrid models
         """
         super().__init__(player_id, model_name)
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
@@ -51,6 +53,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             raise ValueError("OpenRouter API key required")
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.reasoning = reasoning
         self._session: Optional[aiohttp.ClientSession] = None
 
     async def _ensure_session(self) -> aiohttp.ClientSession:
@@ -183,6 +186,10 @@ class OpenRouterPlayer(BaseLLMPlayer):
         # Reasoning models need unlimited tokens to complete their analysis
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
+
+        # Enable reasoning mode for hybrid models
+        if self.reasoning:
+            payload["reasoning"] = {"enabled": True}
 
         # Retry logic for transient network and HTTP errors
         max_retries = 3
