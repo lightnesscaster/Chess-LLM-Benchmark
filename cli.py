@@ -38,7 +38,12 @@ def create_engines(config: dict) -> dict:
     """Create engine players from config."""
     engines = {}
 
-    for engine_cfg in config.get("engines", []):
+    for i, engine_cfg in enumerate(config.get("engines", [])):
+        if "player_id" not in engine_cfg:
+            raise ValueError(f"Engine {i+1} missing required 'player_id' field")
+        if "rating" not in engine_cfg:
+            raise ValueError(f"Engine '{engine_cfg['player_id']}' missing required 'rating' field")
+
         engine_type = engine_cfg.get("type", "stockfish")
         player_id = engine_cfg["player_id"]
         rating = engine_cfg["rating"]
@@ -207,6 +212,8 @@ async def recalculate_ratings(args):
         return 1
 
     # Sort by creation time for chronological processing (using datetime for robustness)
+    invalid_timestamps = []
+
     def parse_timestamp(r):
         try:
             # Handle ISO format with timezone
@@ -215,9 +222,13 @@ async def recalculate_ratings(args):
                 return datetime.fromisoformat(ts.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
             pass
+        invalid_timestamps.append(r.game_id)
         return datetime.min  # Put invalid timestamps first
 
     results.sort(key=parse_timestamp)
+
+    if invalid_timestamps and args.verbose:
+        print(f"Warning: {len(invalid_timestamps)} result(s) with invalid timestamps (sorted to beginning)")
 
     if args.verbose:
         print(f"Found {len(results)} game results")

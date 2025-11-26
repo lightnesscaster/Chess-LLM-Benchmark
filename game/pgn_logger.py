@@ -100,6 +100,9 @@ class PGNLogger:
             except json.JSONDecodeError as e:
                 if verbose:
                     print(f"Warning: Skipping corrupted JSON file {path.name}: {e}")
+            except (FileNotFoundError, OSError) as e:
+                if verbose:
+                    print(f"Warning: Skipping unreadable file {path.name}: {e}")
             except (KeyError, TypeError, ValueError) as e:
                 if verbose:
                     print(f"Warning: Skipping invalid result file {path.name}: {e}")
