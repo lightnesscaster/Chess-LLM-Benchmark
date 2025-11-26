@@ -423,11 +423,11 @@ async def run_test_game(args):
     def create_engine(engine_type):
         # Maia engine configurations
         maia_configs = {
-            "maia1100": {
+            "maia-1100": {
                 "weights": "maia-1100.pb.gz",
                 "rating": 1628,
             },
-            "maia1900": {
+            "maia-1900": {
                 "weights": "maia-1900.pb.gz",
                 "rating": 1816,
             },
@@ -645,9 +645,9 @@ def main():
     )
     test_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia1100", "maia1900", "random"],
+        choices=["stockfish", "maia-1100", "maia-1900", "random"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia1100, maia1900, or random)",
+        help="Engine type to use (stockfish, maia-1100, maia-1900, or random)",
     )
     test_parser.add_argument(
         "--stockfish-skill",
