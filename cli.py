@@ -416,16 +416,26 @@ async def run_test_game(args):
 
     # Helper to create engine based on type
     def create_engine(engine_type):
-        if engine_type == "maia":
-            # Extract maia model name from weights path (e.g., "maia-1900.pb.gz" -> "maia-1900")
-            weights_name = Path(args.maia_weights).name
-            # Remove extensions like .pb.gz or .pb
-            maia_id = weights_name.replace(".pb.gz", "").replace(".pb", "")
+        # Maia engine configurations
+        maia_configs = {
+            "maia1100": {
+                "weights": "maia-1100.pb.gz",
+                "rating": 1628,
+            },
+            "maia1900": {
+                "weights": "maia-1900.pb.gz",
+                "rating": 1816,
+            },
+        }
+
+        if engine_type in maia_configs:
+            config = maia_configs[engine_type]
+            weights_path = Path(__file__).parent / config["weights"]
             return MaiaEngine(
-                player_id=maia_id,
-                rating=1628,
+                player_id=engine_type,
+                rating=config["rating"],
                 lc0_path=args.lc0_path,
-                weights_path=args.maia_weights,
+                weights_path=str(weights_path),
                 nodes=1,
             )
         elif engine_type == "random":
@@ -627,20 +637,15 @@ def main():
     )
     test_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia", "random"],
+        choices=["stockfish", "maia1100", "maia1900", "random"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia, or random)",
+        help="Engine type to use (stockfish, maia1100, maia1900, or random)",
     )
     test_parser.add_argument(
         "--stockfish-skill",
         type=int,
         default=5,
         help="Stockfish skill level (0-20)",
-    )
-    test_parser.add_argument(
-        "--maia-weights",
-        default="/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1100.pb",
-        help="Path to Maia weights file",
     )
     test_parser.add_argument(
         "--lc0-path",
