@@ -5,6 +5,7 @@ OpenRouter API client for LLM chess players.
 import os
 import re
 import asyncio
+import random
 import aiohttp
 import chess
 from typing import Optional
@@ -148,10 +149,10 @@ class OpenRouterPlayer(BaseLLMPlayer):
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
 
-        # Retry logic for transient network errors
+        # Retry logic for transient network and HTTP errors
         max_retries = 3
         retry_delay = 2.0  # seconds
-        last_error = None
+        retryable_http_codes = {429, 500, 502, 503, 504}
 
         for attempt in range(max_retries):
             try:
@@ -164,6 +165,15 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
+                        # Retry on transient server errors and rate limits
+                        if response.status in retryable_http_codes:
+                            raise aiohttp.ClientResponseError(
+                                response.request_info,
+                                response.history,
+                                status=response.status,
+                                message=f"HTTP {response.status}: {error_text[:200]}"
+                            )
+                        # Non-retryable error (4xx client errors except 429)
                         raise RuntimeError(f"OpenRouter API error {response.status}: {error_text}")
 
                     data = await response.json()
@@ -172,11 +182,13 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 break
 
             except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError) as e:
-                last_error = e
                 if attempt < max_retries - 1:
-                    print(f"  [Network error, retrying in {retry_delay}s]: {type(e).__name__}: {e}")
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
+                    # Add jitter to prevent thundering herd
+                    jitter = random.uniform(0, 0.1 * retry_delay)
+                    sleep_time = retry_delay + jitter
+                    print(f"  [Transient error, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
+                    await asyncio.sleep(sleep_time)
+                    retry_delay = min(retry_delay * 2, 60)  # Exponential backoff with cap
                     # Recreate session in case connection is stale
                     await self.close()
                     session = await self._ensure_session()
