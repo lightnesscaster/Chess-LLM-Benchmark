@@ -59,15 +59,16 @@ class OpenRouterPlayer(BaseLLMPlayer):
             self._session = aiohttp.ClientSession()
         return self._session
 
-    def _parse_move(self, response_text: str) -> Optional[str]:
+    def _parse_move(self, response_text: str, board: chess.Board = None) -> Optional[str]:
         """
         Parse UCI move from LLM response.
 
         Tries to extract a valid UCI move pattern from potentially noisy output.
-        Handles both pure UCI (e2e4) and SAN-style with piece prefix (Nb1c3).
+        Also attempts to parse SAN notation (e.g., Nf6, Bc4) if UCI not found.
 
         Args:
             response_text: Raw response from LLM
+            board: Current board position (needed for SAN parsing)
 
         Returns:
             UCI move string or None if no valid pattern found
@@ -106,6 +107,35 @@ class OpenRouterPlayer(BaseLLMPlayer):
             if re.match(r'^[kqrbn]?([a-h][1-8][a-h][1-8][qrbn]?)$', first_token):
                 match = re.match(r'^[kqrbn]?([a-h][1-8][a-h][1-8][qrbn]?)$', first_token)
                 return match.group(1)
+
+        # Try to parse as SAN notation (e.g., Nf6, Bc4, O-O) if board provided
+        if board is not None:
+            # Try first token as SAN
+            for token in tokens[:3]:  # Check first few tokens
+                clean_token = token.strip(".,;:!?")
+                try:
+                    move = board.parse_san(clean_token)
+                    return move.uci()
+                except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
+                    continue
+
+            # Try to find SAN pattern anywhere in text
+            # Match piece moves: Nf3, Bb5, Qd1, Kf1, Rh8
+            # Match pawn moves: e4, d5, exd5, fxg6
+            # Match castling: O-O, O-O-O
+            san_patterns = [
+                r'\b([KQRBN][a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?)\b',  # Piece moves
+                r'\b([a-h]x?[a-h]?[1-8](?:=[QRBN])?[+#]?)\b',  # Pawn moves
+                r'\b(O-O-O|O-O)\b',  # Castling
+            ]
+            for pattern in san_patterns:
+                matches = re.findall(pattern, text)
+                for match in matches:
+                    try:
+                        move = board.parse_san(match)
+                        return move.uci()
+                    except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
+                        continue
 
         return None
 
@@ -222,7 +252,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             raise RuntimeError(f"Unexpected API response format: {data}") from e
 
         # Parse and return the move
-        move = self._parse_move(response_text)
+        move = self._parse_move(response_text, board)
         if move is None:
             # Debug: print raw response when parsing fails
             print(f"  [DEBUG] Raw LLM response: {repr(response_text[:200] if response_text else '')}")
