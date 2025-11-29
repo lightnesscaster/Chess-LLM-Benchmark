@@ -104,13 +104,7 @@ Uses Glicko-2 with:
 - **Volatility (σ)**: Expected rating fluctuation
 
 Engine anchors have fixed ratings based on their approximate Elo:
-| Engine | Rating |
-|--------|--------|
-| Stockfish Skill 0 | 800 |
-| Stockfish Skill 3 | 1100 |
-| Stockfish Skill 5 | 1300 |
-| Stockfish Skill 8 | 1500 |
-| Stockfish Skill 10 | 1700 |
+
 
 ## Illegal Move Policy
 
