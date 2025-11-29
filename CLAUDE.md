@@ -14,14 +14,26 @@ python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --st
 # Run a test game (LLM vs LLM)
 python cli.py test --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
 
+# Run multiple games with color alternation
+python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --games 10
+
+# Run with reasoning model
+python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high
+
 # Run full benchmark
 python cli.py run -c config/benchmark.yaml -v
 
 # View leaderboard
 python cli.py leaderboard --min-games 5
+
+# Recalculate ratings from stored results
+python cli.py recalculate -c config/benchmark.yaml
+
+# Run web interface
+python web/app.py
 ```
 
-Requires `OPENROUTER_API_KEY` environment variable and Stockfish installed in PATH.
+Requires `OPENROUTER_API_KEY` environment variable. Stockfish/lc0 required for engine anchors.
 
 ## Architecture
 
@@ -29,11 +41,12 @@ This is an async Python benchmark that evaluates LLM chess-playing ability using
 
 ### Core Flow
 
-1. **CLI (`cli.py`)** - Entry point with three commands: `run`, `test`, `leaderboard`
+1. **CLI (`cli.py`)** - Entry point with four commands: `run`, `test`, `leaderboard`, `recalculate`
 2. **MatchScheduler (`game/match_scheduler.py`)** - Orchestrates parallel game execution with semaphore-based concurrency control
 3. **GameRunner (`game/game_runner.py`)** - Runs individual games, enforces illegal move policy (2 strikes = forfeit)
-4. **OpenRouterPlayer (`llm/openrouter_client.py`)** - Async LLM client that parses UCI moves from responses
+4. **OpenRouterPlayer (`llm/openrouter_client.py`)** - Async LLM client that parses UCI/SAN moves from responses
 5. **Glicko2System (`rating/glicko2.py`)** - Updates ratings after each game; anchors have fixed ratings
+6. **Web App (`web/app.py`)** - Flask app for viewing leaderboard and game library with PGN viewer
 
 ### Player Abstraction
 
@@ -50,7 +63,8 @@ LLMs receive FEN + ASCII board and must return a single UCI move. On illegal mov
 ### Rating System
 
 - LLM ratings are updated incrementally after each game via `RatingStore`
-- Engine anchors (Stockfish at skill levels 0/3/5/8/10) have fixed ratings and are never updated
+- Engine anchors (Stockfish, Maia, Random) have fixed ratings and are never updated
+- Multi-pass convergence algorithm in `recalculate` command for stable ratings
 - Ratings stored in `data/ratings.json`
 
 ### Data Output
@@ -63,6 +77,7 @@ LLMs receive FEN + ASCII board and must return a single UCI move. On illegal mov
 
 Edit `config/benchmark.yaml` to configure:
 - `benchmark.games_vs_anchor_per_color`: Games per LLM vs each anchor
+- `benchmark.games_vs_llm_per_color`: Games per LLM pair
 - `benchmark.max_concurrent`: Parallel game limit
-- `engines`: Stockfish/Maia anchors with fixed ratings
-- `llms`: Models to benchmark (OpenRouter model names)
+- `engines`: Anchors with fixed ratings (types: `stockfish`, `maia`, `random`)
+- `llms`: Models to benchmark with optional `reasoning` and `reasoning_effort` settings

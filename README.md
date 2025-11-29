@@ -15,7 +15,9 @@ Benchmark suite for evaluating LLM chess-playing ability using Glicko-2 ratings 
 pip install -r requirements.txt
 ```
 
-Requires Stockfish installed and available in PATH (or specify path in config).
+Requires:
+- Stockfish in PATH (or specify path in config) for Stockfish anchors
+- lc0 for Maia anchors (optional)
 
 ## Usage
 
@@ -33,6 +35,16 @@ python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --st
 
 # LLM vs LLM
 python cli.py test --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
+
+# Multiple games (alternates colors)
+python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --games 10
+
+# Against Maia or Random engine
+python cli.py test --white-model gpt-4o --black-engine --engine-type maia-1100
+python cli.py test --white-model gpt-4o --black-engine --engine-type random
+
+# With reasoning models
+python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high
 ```
 
 ### Run Full Benchmark
@@ -47,21 +59,50 @@ python cli.py run -c config/benchmark.yaml -v
 python cli.py leaderboard --min-games 5
 ```
 
+### Recalculate Ratings
+
+Recalculate all ratings from stored game results (useful after changing anchor ratings):
+
+```bash
+python cli.py recalculate -c config/benchmark.yaml
+```
+
+### Web Interface
+
+View leaderboard and browse games with PGN viewer:
+
+```bash
+python web/app.py
+# Open http://localhost:5000
+```
+
 ## Configuration
 
 Edit `config/benchmark.yaml` to configure:
 
 - **LLM models** to benchmark (via OpenRouter)
-- **Engine anchors** (Stockfish skill levels, Maia models)
+- **Engine anchors** (Stockfish, Maia, Random)
 - **Games per matchup** and concurrency settings
 
 Example:
 ```yaml
 benchmark:
   games_vs_anchor_per_color: 10
+  games_vs_llm_per_color: 5
   max_concurrent: 4
+  max_moves: 200
 
 engines:
+  - player_id: "random-bot"
+    type: random
+    rating: 400
+
+  - player_id: "maia-1100"
+    type: maia
+    lc0_path: "/opt/homebrew/bin/lc0"
+    weights_path: "maia-1100.pb.gz"
+    rating: 1628
+
   - player_id: "sf-skill-5"
     type: stockfish
     rating: 1300
@@ -70,6 +111,12 @@ engines:
 llms:
   - player_id: "llama-4-maverick"
     model_name: "meta-llama/llama-4-maverick"
+    temperature: 0.0
+    max_tokens: 10
+
+  - player_id: "deepseek-r1"
+    model_name: "deepseek/deepseek-r1"
+    reasoning_effort: "medium"  # low, medium, high, xhigh
 ```
 
 ## Project Structure
@@ -80,16 +127,25 @@ llms:
 │   └── benchmark.yaml     # Benchmark configuration
 ├── engines/               # Chess engine wrappers
 │   ├── stockfish_engine.py
-│   └── maia_engine.py
+│   ├── maia_engine.py
+│   └── random_engine.py
 ├── llm/                   # LLM player clients
 │   ├── openrouter_client.py
 │   └── prompts.py         # Chess prompt templates
 ├── game/                  # Game execution
 │   ├── game_runner.py     # Core game loop
-│   └── match_scheduler.py # Parallel game execution
+│   ├── match_scheduler.py # Parallel game execution
+│   ├── models.py          # Pydantic data models
+│   ├── pgn_logger.py      # PGN/result saving
+│   └── stats_collector.py # Win/loss/draw stats
 ├── rating/                # Rating system
 │   ├── glicko2.py         # Glicko-2 implementation
-│   └── rating_store.py    # Local JSON storage
+│   ├── rating_store.py    # Local JSON storage
+│   └── leaderboard.py     # Leaderboard formatting
+├── web/                   # Web interface
+│   ├── app.py             # Flask application
+│   ├── templates/         # HTML templates
+│   └── static/            # CSS/JS assets
 └── data/                  # Output (gitignored)
     ├── games/             # PGN files
     ├── results/           # JSON game results
