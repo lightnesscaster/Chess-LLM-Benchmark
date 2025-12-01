@@ -83,7 +83,5 @@ class UCIEngine(BaseEngine):
         if self._engine is not None:
             try:
                 self._engine.quit()
-            except Exception:
-                pass  # Best effort cleanup
             finally:
                 self._engine = None
