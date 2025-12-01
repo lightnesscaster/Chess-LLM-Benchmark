@@ -146,6 +146,12 @@ class MatchScheduler:
 
             result, pgn_str = await runner.play_game()
 
+            # Don't save games that ended due to API errors
+            if result.termination == "api_error":
+                if self.verbose:
+                    print(f"  API error - game not saved")
+                return None
+
             # Save PGN and result
             result = self.pgn_logger.save_game(result, pgn_str)
 
@@ -251,17 +257,20 @@ class MatchScheduler:
             return_exceptions=True,
         )
 
-        # Filter out exceptions and count them
+        # Filter out exceptions and None results (API errors)
         good_results = []
         errors = 0
+        api_errors = 0
         for r in results:
             if isinstance(r, Exception):
                 print(f"Game error: {r}")
                 errors += 1
+            elif r is None:
+                api_errors += 1
             else:
                 good_results.append(r)
 
-        print(f"\nBenchmark complete: {len(good_results)} games, {errors} errors")
+        print(f"\nBenchmark complete: {len(good_results)} games, {errors} errors, {api_errors} API errors (not saved)")
 
         return {
             "total_games": total_games,
@@ -303,4 +312,4 @@ class MatchScheduler:
             return_exceptions=True,
         )
 
-        return [r for r in results if not isinstance(r, Exception)]
+        return [r for r in results if r is not None and not isinstance(r, Exception)]
