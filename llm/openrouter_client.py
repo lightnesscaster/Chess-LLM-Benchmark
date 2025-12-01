@@ -273,9 +273,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
         try:
             response_text = data["choices"][0]["message"]["content"]
             self.last_raw_response = response_text or ""  # Store for debugging illegal moves
-            # Debug: check for empty responses
-            if not response_text:
-                print(f"  [DEBUG] Empty response. Full API data: {data}")
+            # Debug: check for empty or suspiciously short responses
+            if not response_text or len(response_text.strip()) < 4:
+                print(f"  [DEBUG] Short/empty response. Full API data: {data}")
         except (KeyError, IndexError) as e:
             self.last_raw_response = f"[Failed to extract: {data}]"
             raise RuntimeError(f"Unexpected API response format: {data}") from e
