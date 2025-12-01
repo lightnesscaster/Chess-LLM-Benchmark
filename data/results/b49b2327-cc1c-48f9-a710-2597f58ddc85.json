@@ -1,0 +1,21 @@
+{
+  "game_id": "b49b2327-cc1c-48f9-a710-2597f58ddc85",
+  "white_id": "claude-opus-4.5 (high)",
+  "black_id": "random-bot",
+  "winner": "white",
+  "termination": "checkmate",
+  "moves": 5,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 3,
+  "total_moves_black": 2,
+  "pgn_path": "data/games/b49b2327-cc1c-48f9-a710-2597f58ddc85.pgn",
+  "created_at": "2025-12-01T09:05:39.502455+00:00",
+  "tokens_white": {
+    "prompt_tokens": 956,
+    "completion_tokens": 3269,
+    "total_tokens": 4225
+  },
+  "tokens_black": null,
+  "illegal_move_details": null
+}
