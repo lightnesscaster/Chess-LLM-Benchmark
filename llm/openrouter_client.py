@@ -28,6 +28,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
     VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+    REASONING_EXTRACTION_MODEL = "deepseek/deepseek-v3.2-exp"
 
     def __init__(
         self,
@@ -161,6 +162,130 @@ class OpenRouterPlayer(BaseLLMPlayer):
                         continue
 
         return None
+
+    async def _extract_move_from_reasoning(
+        self, reasoning_text: str, board: chess.Board
+    ) -> Optional[str]:
+        """
+        Use a secondary LLM to extract a move from a reasoning trace.
+
+        When a model's response content is truncated but reasoning is available,
+        this method attempts to extract the intended move from the reasoning.
+
+        Args:
+            reasoning_text: The reasoning trace from the original model
+            board: Current board position for move validation
+
+        Returns:
+            UCI move string if extraction succeeds, None otherwise
+        """
+        if not reasoning_text or len(reasoning_text) < 50:
+            return None
+
+        session = await self._ensure_session()
+
+        # Truncate reasoning if too long (keep last portion which likely has conclusion)
+        max_reasoning_chars = 8000
+        if len(reasoning_text) > max_reasoning_chars:
+            reasoning_text = "..." + reasoning_text[-max_reasoning_chars:]
+
+        extraction_prompt = f"""A chess-playing AI was analyzing a position and produced the following reasoning trace, but its final response was truncated/corrupted.
+
+Your task: Extract the UCI move (e.g., e2e4, g1f3, e7e8q) that the AI concluded was best.
+
+REASONING TRACE:
+{reasoning_text}
+
+INSTRUCTIONS:
+- Look for the final conclusion/answer in the reasoning
+- The move should be in UCI format: source square + destination square (+ optional promotion piece)
+- Examples: e2e4, g1f3, e7e8q, a7a8n
+- If you can clearly identify the intended move, respond with ONLY that move
+- If the reasoning is unclear or no definitive move was reached, respond with: UNCLEAR
+
+Your response (just the UCI move or UNCLEAR):"""
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/chess-llm-benchmark",
+            "X-Title": "Chess LLM Benchmark",
+        }
+
+        payload = {
+            "model": self.REASONING_EXTRACTION_MODEL,
+            "messages": [{"role": "user", "content": extraction_prompt}],
+            "temperature": 0.0,
+            "max_tokens": 20,
+            "reasoning": {"enabled": True},
+        }
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with session.post(
+                self.OPENROUTER_API_URL,
+                headers=headers,
+                json=payload,
+                timeout=timeout,
+            ) as response:
+                if response.status != 200:
+                    return None
+
+                data = await response.json()
+                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+                if not response_text or "UNCLEAR" in response_text.upper():
+                    return None
+
+                # Try to parse the extracted move
+                move = self._parse_move(response_text.strip(), board)
+                if move:
+                    # Validate it's a legal move
+                    try:
+                        chess_move = chess.Move.from_uci(move)
+                        if chess_move in board.legal_moves:
+                            print(f"  [Reasoning extraction] Successfully extracted move: {move}")
+                            return move
+                    except (ValueError, chess.InvalidMoveError):
+                        pass
+
+                return None
+
+        except Exception as e:
+            print(f"  [Reasoning extraction failed]: {type(e).__name__}: {e}")
+            return None
+
+    def _get_reasoning_text(self, data: dict) -> Optional[str]:
+        """
+        Extract reasoning text from API response data.
+
+        Handles various formats providers use for reasoning content.
+        """
+        try:
+            message = data.get("choices", [{}])[0].get("message", {})
+
+            # Check reasoning_details (used by some providers)
+            reasoning_details = message.get("reasoning_details", [])
+            if reasoning_details:
+                texts = []
+                for item in reasoning_details:
+                    if isinstance(item, dict):
+                        text = item.get("text", "")
+                        if text:
+                            texts.append(text)
+                    elif isinstance(item, str):
+                        texts.append(item)
+                if texts:
+                    return "\n".join(texts)
+
+            # Check reasoning field (simpler format)
+            reasoning = message.get("reasoning", "")
+            if reasoning:
+                return reasoning
+
+            return None
+        except Exception:
+            return None
 
     async def select_move(self, board: chess.Board, is_retry: bool = False,
                           last_move_illegal: str = None) -> str:
@@ -305,7 +430,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
             response_text = data["choices"][0]["message"]["content"]
             self.last_raw_response = response_text or ""  # Store for debugging illegal moves
             # Debug: check for empty or suspiciously short responses
-            if not response_text or len(response_text.strip()) < 4:
+            is_truncated = not response_text or len(response_text.strip()) < 4
+            if is_truncated:
                 print(f"  [DEBUG] Short/empty response. Full API data: {data}")
         except (KeyError, IndexError) as e:
             self.last_raw_response = f"[Failed to extract: {data}]"
@@ -313,6 +439,16 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         # Parse and return the move
         move = self._parse_move(response_text, board)
+
+        # If response was truncated but we have reasoning, try to extract move from it
+        if move is None and is_truncated:
+            reasoning_text = self._get_reasoning_text(data)
+            if reasoning_text:
+                print(f"  [DEBUG] Attempting to extract move from reasoning trace ({len(reasoning_text)} chars)")
+                extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
+                if extracted_move:
+                    return extracted_move
+
         if move is None:
             # Debug: print raw response when parsing fails
             print(f"  [DEBUG] Raw LLM response: {repr(response_text[:200] if response_text else '')}")
