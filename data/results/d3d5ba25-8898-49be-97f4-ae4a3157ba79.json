@@ -1,0 +1,21 @@
+{
+  "game_id": "d3d5ba25-8898-49be-97f4-ae4a3157ba79",
+  "white_id": "maia-1900",
+  "black_id": "gemini-3-pro-preview",
+  "winner": "draw",
+  "termination": "api_error",
+  "moves": 113,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 57,
+  "total_moves_black": 56,
+  "pgn_path": "data/games/d3d5ba25-8898-49be-97f4-ae4a3157ba79.pgn",
+  "created_at": "2025-12-01T08:29:22.553883+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 28747,
+    "completion_tokens": 137406,
+    "total_tokens": 166153
+  },
+  "illegal_move_details": null
+}
