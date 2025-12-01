@@ -8,7 +8,7 @@ Handles:
 """
 
 import asyncio
-from typing import List, Dict, Any, Union, Tuple
+from typing import List, Dict, Any, Union, Tuple, Optional
 from dataclasses import dataclass
 
 from engines.base_engine import BaseEngine
@@ -120,7 +120,7 @@ class MatchScheduler:
 
         return pairings
 
-    async def run_single_game(self, task: GameTask) -> GameResult:
+    async def run_single_game(self, task: GameTask) -> Optional[GameResult]:
         """
         Run a single game with concurrency control.
 
@@ -128,7 +128,7 @@ class MatchScheduler:
             task: The game task
 
         Returns:
-            GameResult
+            GameResult if game completes normally, None if API error occurs
         """
         async with self._semaphore:
             white_id = task.white.player_id

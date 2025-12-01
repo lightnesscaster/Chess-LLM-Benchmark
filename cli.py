@@ -528,6 +528,11 @@ async def run_test_game(args):
                 print(f"Moves: {result.moves}")
                 print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
 
+                # Don't count or save games that ended due to API errors
+                if result.termination == "api_error":
+                    print("API error - game not saved or counted")
+                    continue
+
                 # Track results
                 results_summary[result.winner] += 1
                 total_illegal_white += result.illegal_moves_white
