@@ -19,6 +19,11 @@ class TransientAPIError(Exception):
     pass
 
 
+class TruncatedResponseError(Exception):
+    """Raised when response content appears truncated (short content but long reasoning)."""
+    pass
+
+
 class OpenRouterPlayer(BaseLLMPlayer):
     """
     LLM player using OpenRouter API.
@@ -400,11 +405,27 @@ Your response (just the UCI move or UNCLEAR):"""
                         # Non-retryable embedded error - still an API error, not an illegal move
                         raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
 
+                    # Check for truncated response (short content but long reasoning)
+                    # This indicates network-level truncation, worth retrying
+                    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    reasoning_text = self._get_reasoning_text(data)
+                    if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
+                        print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
+                        # Try reasoning extraction first before retrying API call
+                        extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
+                        if extracted_move:
+                            # Extraction succeeded - use this move, no need to retry
+                            return extracted_move
+                        # Extraction failed - retry API call with fresh session
+                        raise TruncatedResponseError(
+                            f"Response truncated and extraction failed: content='{content}'"
+                        )
+
                 # Success - break out of retry loop
                 break
 
             except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
-                    json.JSONDecodeError, aiohttp.ContentTypeError) as e:
+                    json.JSONDecodeError, aiohttp.ContentTypeError, TruncatedResponseError) as e:
                 if attempt < max_retries - 1:
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * retry_delay)
