@@ -262,7 +262,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
                             error_msg = str(error_info)
                             error_code = 0
                         self.last_raw_response = f"[API Error {error_code}] {error_msg}"
-                        # Treat as transient if it's a network/server error
+                        # Treat as transient (retryable) if it's a network/server error
                         if error_code in retryable_http_codes or "network" in error_msg.lower():
                             raise aiohttp.ClientResponseError(
                                 response.request_info,
@@ -270,7 +270,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
                                 status=error_code if error_code else 500,
                                 message=f"Embedded error {error_code}: {error_msg}"
                             )
-                        raise RuntimeError(f"API error in response: {error_code} - {error_msg}")
+                        # Non-retryable embedded error - still an API error, not an illegal move
+                        raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
 
                 # Success - break out of retry loop
                 break
