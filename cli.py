@@ -473,6 +473,7 @@ async def run_test_game(args):
     results_summary = {"white": 0, "black": 0, "draw": 0}
     total_illegal_white = 0
     total_illegal_black = 0
+    api_error_count = 0
     pgn_logger = PGNLogger() if args.save else None
 
     try:
@@ -531,6 +532,7 @@ async def run_test_game(args):
                 # Don't count or save games that ended due to API errors
                 if result.termination == "api_error":
                     print("API error - game not saved or counted")
+                    api_error_count += 1
                     continue
 
                 # Track results
@@ -563,11 +565,14 @@ async def run_test_game(args):
 
         # Print summary if multiple games
         if args.games > 1:
+            games_completed = sum(results_summary.values())
             print()
             print("=" * 50)
             print("SUMMARY")
             print("=" * 50)
-            print(f"Games played: {args.games}")
+            print(f"Games completed: {games_completed}/{args.games}")
+            if api_error_count > 0:
+                print(f"API errors: {api_error_count} (not saved)")
             print(f"White wins: {results_summary['white']}")
             print(f"Black wins: {results_summary['black']}")
             print(f"Draws: {results_summary['draw']}")
@@ -576,8 +581,10 @@ async def run_test_game(args):
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
         if args.games > 1:
-            games_played = sum(results_summary.values())
-            print(f"Games completed: {games_played}/{args.games}")
+            games_completed = sum(results_summary.values())
+            print(f"Games completed: {games_completed}/{args.games}")
+            if api_error_count > 0:
+                print(f"API errors: {api_error_count} (not saved)")
             print(f"White wins: {results_summary['white']}, Black wins: {results_summary['black']}, Draws: {results_summary['draw']}")
 
     return 0
