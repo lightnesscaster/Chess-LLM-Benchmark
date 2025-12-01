@@ -1,0 +1,38 @@
+{
+  "game_id": "188e8d4f-4d86-460b-a1b2-edffcede1727",
+  "white_id": "maia-1100",
+  "black_id": "grok-4.1-fast",
+  "winner": "white",
+  "termination": "forfeit_illegal_move",
+  "moves": 47,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 2,
+  "total_moves_white": 24,
+  "total_moves_black": 23,
+  "pgn_path": "data/games/188e8d4f-4d86-460b-a1b2-edffcede1727.pgn",
+  "created_at": "2025-12-01T11:16:41.646306+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 12582,
+    "completion_tokens": 145340,
+    "total_tokens": 157922
+  },
+  "illegal_move_details": [
+    {
+      "side": "black",
+      "move_number": 42,
+      "fen": "4k2r/p4ppp/3b4/8/3P1p2/1QP2B2/P3K1PP/RN2R3 b k - 2 21",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Ba4 Qd4 9. c3 Qf4 10. d4 Qxg5 11. Bxg5 Ne4 12. Be3 Nc4 13. Bxc6+ Bd7 14. Bxa8 Nxb2 15. Qb3 Nd3+ 16. Ke2 Nf4+ 17. Bxf4 Bg4+ 18. f3 exf4 19. Bxe4 Bxf3+ 20. Bxf3 Bd6 21. Re1\n\n>>> White's last move: Re1 (h1e1) <<<\n\n\nCurrent position (FEN):\n4k2r/p4ppp/3b4/8/3P1p2/1QP2B2/P3K1PP/RN2R3 b k - 2 21\n\nBoard:\n8 | . . . . k . . r\n7 | p . . . . p p p\n6 | . . . b . . . .\n5 | . . . . . . . .\n4 | . . . P . p . .\n3 | . Q P . . B . .\n2 | P . . . K . P P\n1 | R N . . R . . .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "h8e8",
+      "parsed_move": "h8e8"
+    },
+    {
+      "side": "black",
+      "move_number": 48,
+      "fen": "3r2k1/p4ppp/3b4/3Q4/3P1p2/2P2B2/P2N2PP/R3RK2 b - - 8 24",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Ba4 Qd4 9. c3 Qf4 10. d4 Qxg5 11. Bxg5 Ne4 12. Be3 Nc4 13. Bxc6+ Bd7 14. Bxa8 Nxb2 15. Qb3 Nd3+ 16. Ke2 Nf4+ 17. Bxf4 Bg4+ 18. f3 exf4 19. Bxe4 Bxf3+ 20. Bxf3 Bd6 21. Re1 O-O 22. Kf1 Rb8 23. Qd5 Rd8 24. Nd2\n\n>>> White's last move: Nd2 (b1d2) <<<\n\n\nCurrent position (FEN):\n3r2k1/p4ppp/3b4/3Q4/3P1p2/2P2B2/P2N2PP/R3RK2 b - - 8 24\n\nBoard:\n8 | . . . r . . k .\n7 | p . . . . p p p\n6 | . . . b . . . .\n5 | . . . Q . . . .\n4 | . . . P . p . .\n3 | . . P . . B . .\n2 | P . . N . . P P\n1 | R . . . R K . .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "b8b2",
+      "parsed_move": "b8b2"
+    }
+  ]
+}

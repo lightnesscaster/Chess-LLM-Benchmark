@@ -1,0 +1,21 @@
+{
+  "game_id": "10da66b4-743f-4eeb-a608-9d6c14855a5e",
+  "white_id": "maia-1100",
+  "black_id": "grok-4.1-fast",
+  "winner": "white",
+  "termination": "checkmate",
+  "moves": 47,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 24,
+  "total_moves_black": 23,
+  "pgn_path": "data/games/10da66b4-743f-4eeb-a608-9d6c14855a5e.pgn",
+  "created_at": "2025-12-01T13:02:21.382042+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 11348,
+    "completion_tokens": 130575,
+    "total_tokens": 141923
+  },
+  "illegal_move_details": null
+}
