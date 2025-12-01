@@ -136,6 +136,14 @@ body {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
+.leaderboard-table tbody tr.clickable-row {
+    cursor: pointer;
+}
+
+.leaderboard-table tbody tr.clickable-row:hover {
+    background-color: rgba(233, 69, 96, 0.15);
+}
+
 .leaderboard-table tr.anchor {
     background-color: rgba(233, 69, 96, 0.1);
 }

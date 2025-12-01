@@ -25,7 +25,7 @@
         </thead>
         <tbody>
             {% for entry in leaderboard %}
-            <tr class="{% if entry.is_anchor %}anchor{% endif %}">
+            <tr class="{% if entry.is_anchor %}anchor{% endif %} clickable-row" data-player-id="{{ entry.player_id }}">
                 <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
@@ -54,4 +54,18 @@
     <p>No players in the leaderboard yet. Run some benchmark games to populate ratings.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.clickable-row');
+    rows.forEach(row => {
+        row.addEventListener('click', function() {
+            const playerId = this.dataset.playerId;
+            window.location.href = '/games?model=' + encodeURIComponent(playerId);
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -86,6 +86,13 @@ document.addEventListener('DOMContentLoaded', function() {
         modelFilter.appendChild(option);
     });
 
+    // Check for model parameter in URL and pre-select
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelParam = urlParams.get('model');
+    if (modelParam && models.has(modelParam)) {
+        modelFilter.value = modelParam;
+    }
+
     function filterGames() {
         const selectedModel = modelFilter.value;
 
@@ -100,6 +107,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     modelFilter.addEventListener('change', filterGames);
+
+    // Apply filter on page load if model param exists
+    if (modelParam) {
+        filterGames();
+    }
 });
 </script>
 {% endblock %}
