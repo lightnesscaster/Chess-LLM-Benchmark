@@ -127,11 +127,17 @@ class OpenRouterPlayer(BaseLLMPlayer):
             # Try first token as SAN
             for token in tokens[:3]:  # Check first few tokens
                 clean_token = token.strip(".,;:!?")
-                try:
-                    move = board.parse_san(clean_token)
-                    return move.uci()
-                except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
-                    continue
+                # Try variations: as-is, with first letter capitalized (for piece prefix)
+                variations = [clean_token]
+                if clean_token and clean_token[0].lower() in 'kqrbn':
+                    # LLM might have used lowercase piece letter (e.g., "nbd7" instead of "Nbd7")
+                    variations.append(clean_token[0].upper() + clean_token[1:])
+                for variant in variations:
+                    try:
+                        move = board.parse_san(variant)
+                        return move.uci()
+                    except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
+                        continue
 
             # Try to find SAN pattern anywhere in text
             # Match piece moves: Nf3, Bb5, Qd1, Kf1, Rh8
