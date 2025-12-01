@@ -1,101 +1,35 @@
 {
-  "random-bot": {
-    "player_id": "random-bot",
-    "rating": 400,
-    "rating_deviation": 50.0,
+  "maia-1900": {
+    "player_id": "maia-1900",
+    "rating": 1816,
+    "rating_deviation": 30.0,
     "volatility": 0.03,
     "games_played": 0,
     "wins": 0,
     "losses": 0,
     "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.795385+00:00"
+    "last_updated": "2025-12-01T20:26:00.465577+00:00"
+  },
+  "random-bot": {
+    "player_id": "random-bot",
+    "rating": 400,
+    "rating_deviation": 30.0,
+    "volatility": 0.03,
+    "games_played": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2025-12-01T20:26:00.465568+00:00"
   },
   "maia-1100": {
     "player_id": "maia-1100",
     "rating": 1628,
-    "rating_deviation": 50.0,
+    "rating_deviation": 30.0,
     "volatility": 0.03,
     "games_played": 0,
     "wins": 0,
     "losses": 0,
     "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.795397+00:00"
-  },
-  "maia-1900": {
-    "player_id": "maia-1900",
-    "rating": 1816,
-    "rating_deviation": 50.0,
-    "volatility": 0.03,
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.795400+00:00"
-  },
-  "gemini-3-pro-preview": {
-    "player_id": "gemini-3-pro-preview",
-    "rating": 2022.4340482625166,
-    "rating_deviation": 87.18167576722865,
-    "volatility": 0.059942807615008115,
-    "games_played": 8,
-    "wins": 7,
-    "losses": 1,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.798218+00:00"
-  },
-  "claude-opus-4.5 (high)": {
-    "player_id": "claude-opus-4.5 (high)",
-    "rating": 1512.5016605323158,
-    "rating_deviation": 339.3041294501982,
-    "volatility": 0.05999860596956944,
-    "games_played": 2,
-    "wins": 2,
-    "losses": 0,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.797925+00:00"
-  },
-  "llama-4-maverick": {
-    "player_id": "llama-4-maverick",
-    "rating": 400,
-    "rating_deviation": 76.46599983408066,
-    "volatility": 0.060011661528244546,
-    "games_played": 45,
-    "wins": 0,
-    "losses": 45,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.798258+00:00"
-  },
-  "grok-4.1-fast": {
-    "player_id": "grok-4.1-fast",
-    "rating": 1569.9359074358779,
-    "rating_deviation": 72.36909182680914,
-    "volatility": 0.05993717712041182,
-    "games_played": 6,
-    "wins": 2,
-    "losses": 3,
-    "draws": 1,
-    "last_updated": "2025-12-01T09:21:51.798097+00:00"
-  },
-  "gpt-5.1 (high)": {
-    "player_id": "gpt-5.1 (high)",
-    "rating": 1526.0079274986615,
-    "rating_deviation": 76.39679452287226,
-    "volatility": 0.0599617131652336,
-    "games_played": 8,
-    "wins": 2,
-    "losses": 6,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.798237+00:00"
-  },
-  "gpt-oss-120b (medium)": {
-    "player_id": "gpt-oss-120b",
-    "rating": 997.6301134579995,
-    "rating_deviation": 101.00521046419247,
-    "volatility": 0.05957872566386215,
-    "games_played": 27,
-    "wins": 5,
-    "losses": 22,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.798254+00:00"
+    "last_updated": "2025-12-01T20:26:00.465575+00:00"
   }
 }
