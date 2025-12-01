@@ -2,6 +2,7 @@
 OpenRouter API client for LLM chess players.
 """
 
+import json
 import os
 import re
 import asyncio
@@ -244,17 +245,29 @@ class OpenRouterPlayer(BaseLLMPlayer):
                     data = await response.json()
 
                     # Check for embedded errors (API returns 200 but with error in body)
-                    if data.get("choices") and "error" in data["choices"][0]:
-                        error_info = data["choices"][0]["error"]
-                        error_msg = error_info.get("message", "Unknown error")
-                        error_code = error_info.get("code", 0)
+                    choices = data.get("choices")
+                    if (isinstance(choices, list) and len(choices) > 0 and
+                        isinstance(choices[0], dict) and "error" in choices[0]):
+                        error_info = choices[0]["error"]
+                        # Handle error_info being a string or dict
+                        if isinstance(error_info, dict):
+                            error_msg = error_info.get("message", "Unknown error")
+                            error_code = error_info.get("code", 0)
+                            # Ensure error_code is int for comparison
+                            try:
+                                error_code = int(error_code) if error_code else 0
+                            except (ValueError, TypeError):
+                                error_code = 0
+                        else:
+                            error_msg = str(error_info)
+                            error_code = 0
                         self.last_raw_response = f"[API Error {error_code}] {error_msg}"
                         # Treat as transient if it's a network/server error
                         if error_code in retryable_http_codes or "network" in error_msg.lower():
                             raise aiohttp.ClientResponseError(
                                 response.request_info,
                                 response.history,
-                                status=error_code,
+                                status=error_code if error_code else 500,
                                 message=f"Embedded error {error_code}: {error_msg}"
                             )
                         raise RuntimeError(f"API error in response: {error_code} - {error_msg}")
@@ -262,7 +275,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 # Success - break out of retry loop
                 break
 
-            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError) as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
+                    json.JSONDecodeError, aiohttp.ContentTypeError) as e:
                 if attempt < max_retries - 1:
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * retry_delay)
