@@ -269,6 +269,21 @@ class OpenRouterPlayer(BaseLLMPlayer):
             self.completion_tokens += usage.get("completion_tokens", 0)
             self.total_tokens += usage.get("total_tokens", 0)
 
+        # Check for embedded errors in the response (API returns 200 but with error in body)
+        try:
+            choice = data["choices"][0]
+            if "error" in choice:
+                error_info = choice["error"]
+                error_msg = error_info.get("message", "Unknown error")
+                error_code = error_info.get("code", 0)
+                self.last_raw_response = f"[API Error {error_code}] {error_msg}"
+                # Treat as transient if it's a network/server error
+                if error_code in (429, 500, 502, 503, 504) or "network" in error_msg.lower():
+                    raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
+                raise RuntimeError(f"API error in response: {error_code} - {error_msg}")
+        except KeyError:
+            pass  # No error field, continue normally
+
         # Extract response text
         try:
             response_text = data["choices"][0]["message"]["content"]
