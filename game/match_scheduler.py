@@ -184,7 +184,7 @@ class MatchScheduler:
             else:
                 white_score, black_score = 0.5, 0.5
 
-            # Update non-anchor players
+            # Update non-anchor players (full rating update)
             if not self.rating_store.is_anchor(white_id):
                 new_white = self.glicko.update_rating(
                     white_rating,
@@ -192,6 +192,9 @@ class MatchScheduler:
                     scores=[white_score],
                 )
                 self.rating_store.set(new_white)
+            else:
+                # Anchors: track game stats without changing rating
+                self._update_anchor_stats(white_rating, white_score)
 
             if not self.rating_store.is_anchor(black_id):
                 new_black = self.glicko.update_rating(
@@ -200,6 +203,20 @@ class MatchScheduler:
                     scores=[black_score],
                 )
                 self.rating_store.set(new_black)
+            else:
+                # Anchors: track game stats without changing rating
+                self._update_anchor_stats(black_rating, black_score)
+
+    def _update_anchor_stats(self, rating: PlayerRating, score: float) -> None:
+        """Update game statistics for an anchor without changing its rating."""
+        rating.games_played += 1
+        if score > 0.75:  # Win
+            rating.wins += 1
+        elif score < 0.25:  # Loss
+            rating.losses += 1
+        else:  # Draw
+            rating.draws += 1
+        self.rating_store.set(rating)
 
     async def run_benchmark(
         self,

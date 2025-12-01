@@ -381,16 +381,15 @@ async def recalculate_ratings(args):
             print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
             break
 
-    # Fix game counts and W-L-D to actual values (multi-pass inflates them)
+    # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
     for pid in all_players:
-        if not rating_store.is_anchor(pid):
-            player = rating_store.get(pid)
-            player.games_played = actual_game_counts.get(pid, 0)
-            wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
-            player.wins = wld['wins']
-            player.losses = wld['losses']
-            player.draws = wld['draws']
-            rating_store.set(player, auto_save=False)
+        player = rating_store.get(pid)
+        player.games_played = actual_game_counts.get(pid, 0)
+        wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
+        player.wins = wld['wins']
+        player.losses = wld['losses']
+        player.draws = wld['draws']
+        rating_store.set(player, auto_save=False)
     rating_store.save()
 
     processed = len(valid_games)
