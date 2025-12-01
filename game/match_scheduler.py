@@ -210,9 +210,9 @@ class MatchScheduler:
     def _update_anchor_stats(self, rating: PlayerRating, score: float) -> None:
         """Update game statistics for an anchor without changing its rating."""
         rating.games_played += 1
-        if score == 1.0:  # Win
+        if score > 0.75:  # Win (1.0)
             rating.wins += 1
-        elif score == 0.0:  # Loss
+        elif score < 0.25:  # Loss (0.0)
             rating.losses += 1
         else:  # Draw (0.5)
             rating.draws += 1

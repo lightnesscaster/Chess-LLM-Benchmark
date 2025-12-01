@@ -233,14 +233,14 @@ class Glicko2System:
         # Apply rating floor (like Lichess)
         new_rating = max(new_rating, self.RATING_FLOOR)
 
-        # Calculate W-L-D from scores
+        # Calculate W-L-D from scores (use threshold for float safety)
         new_wins = player.wins
         new_losses = player.losses
         new_draws = player.draws
         for score in scores:
-            if score == 1.0:  # Win
+            if score > 0.75:  # Win (1.0)
                 new_wins += 1
-            elif score == 0.0:  # Loss
+            elif score < 0.25:  # Loss (0.0)
                 new_losses += 1
             else:  # Draw (0.5)
                 new_draws += 1
