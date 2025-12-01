@@ -29,6 +29,13 @@ engines:
     rating: 1816
     nodes: 1
 
+  # Eubos - Java UCI engine (~2500 Elo)
+  - player_id: "eubos"
+    type: uci
+    path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
+    rating: 2500
+    move_time: 0.1
+
 # LLM players
 llms:
   - player_id: "llama-4-maverick"

@@ -20,6 +20,7 @@ import yaml
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
+from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
@@ -73,6 +74,15 @@ def create_engines(config: dict) -> dict:
                 player_id=player_id,
                 rating=rating,
                 seed=engine_cfg.get("seed"),
+            )
+        elif engine_type == "uci":
+            engines[player_id] = UCIEngine(
+                player_id=player_id,
+                rating=rating,
+                engine_path=engine_cfg.get("path"),
+                move_time=engine_cfg.get("move_time"),
+                nodes=engine_cfg.get("nodes"),
+                depth=engine_cfg.get("depth"),
             )
 
     return engines
@@ -447,6 +457,13 @@ async def run_test_game(args):
                 player_id="random-bot",
                 rating=400,
             )
+        elif engine_type == "eubos":
+            return UCIEngine(
+                player_id="eubos",
+                rating=2500,
+                engine_path="/Volumes/MainStorage/Programming/EubosChess/eubos.sh",
+                move_time=0.1,
+            )
         else:
             return StockfishEngine(
                 player_id="stockfish-test",
@@ -656,9 +673,9 @@ def main():
     )
     test_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia-1100", "maia-1900", "random"],
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia-1100, maia-1900, or random)",
+        help="Engine type to use (stockfish, maia-1100, maia-1900, random, or eubos)",
     )
     test_parser.add_argument(
         "--stockfish-skill",
