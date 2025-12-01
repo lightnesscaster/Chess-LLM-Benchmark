@@ -239,8 +239,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
                                 status=response.status,
                                 message=f"HTTP {response.status}: {error_text[:200]}"
                             )
-                        # Non-retryable error (4xx client errors except 429)
-                        raise RuntimeError(f"OpenRouter API error {response.status}: {error_text}")
+                        # Non-retryable error (4xx client errors except 429) - still an API error, not illegal move
+                        raise TransientAPIError(f"OpenRouter API error {response.status}: {error_text}")
 
                     data = await response.json()
 
@@ -309,7 +309,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 print(f"  [DEBUG] Short/empty response. Full API data: {data}")
         except (KeyError, IndexError) as e:
             self.last_raw_response = f"[Failed to extract: {data}]"
-            raise RuntimeError(f"Unexpected API response format: {data}") from e
+            raise TransientAPIError(f"Unexpected API response format: {data}") from e
 
         # Parse and return the move
         move = self._parse_move(response_text, board)
