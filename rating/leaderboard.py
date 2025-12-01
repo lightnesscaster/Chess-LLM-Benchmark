@@ -4,7 +4,7 @@ Leaderboard display and formatting.
 
 from typing import Dict, Any, List, Optional
 
-from .glicko2 import PlayerRating
+from .glicko2 import PlayerRating, Glicko2System
 from .rating_store import RatingStore
 from game.stats_collector import StatsCollector
 
@@ -40,15 +40,16 @@ class Leaderboard:
 
         leaderboard = []
         for i, rating in enumerate(ratings, 1):
-            # 95% confidence interval
+            # 95% confidence interval (clamped to rating floor)
             ci = 1.96 * rating.rating_deviation
+            ci_low = max(rating.rating - ci, Glicko2System.RATING_FLOOR)
 
             entry = {
                 "rank": i,
                 "player_id": rating.player_id,
                 "rating": round(rating.rating),
                 "rating_deviation": round(rating.rating_deviation),
-                "confidence_low": round(rating.rating - ci),
+                "confidence_low": round(ci_low),
                 "confidence_high": round(rating.rating + ci),
                 "games_played": rating.games_played,
                 "is_anchor": self.rating_store.is_anchor(rating.player_id),
