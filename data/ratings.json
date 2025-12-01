@@ -8,18 +8,7 @@
     "wins": 0,
     "losses": 0,
     "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.473261+00:00"
-  },
-  "maia-1100": {
-    "player_id": "maia-1100",
-    "rating": 1628,
-    "rating_deviation": 50.0,
-    "volatility": 0.03,
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.473270+00:00"
+    "last_updated": "2025-12-01T07:22:39.799713+00:00"
   },
   "maia-1900": {
     "player_id": "maia-1900",
@@ -30,51 +19,18 @@
     "wins": 0,
     "losses": 0,
     "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.473272+00:00"
+    "last_updated": "2025-12-01T07:22:39.799727+00:00"
   },
-  "gemini-3-pro-preview": {
-    "player_id": "gemini-3-pro-preview",
-    "rating": 1960.050625129512,
-    "rating_deviation": 98.36393832485906,
-    "volatility": 0.0599635822658141,
-    "games_played": 7,
-    "wins": 6,
-    "losses": 1,
-    "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.475370+00:00"
-  },
-  "gpt-5.1 (high)": {
-    "player_id": "gpt-5.1 (high)",
-    "rating": 1516.8806819833717,
-    "rating_deviation": 81.93451262941943,
-    "volatility": 0.05997483370982187,
-    "games_played": 8,
-    "wins": 2,
-    "losses": 6,
-    "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.475374+00:00"
-  },
-  "gpt-oss-120b": {
-    "player_id": "gpt-oss-120b",
-    "rating": 1138.9876795333912,
-    "rating_deviation": 124.96122909458944,
-    "volatility": 0.05988045506851259,
-    "games_played": 10,
-    "wins": 5,
-    "losses": 5,
-    "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.475382+00:00"
-  },
-  "llama-4-maverick": {
-    "player_id": "llama-4-maverick",
-    "rating": 400,
-    "rating_deviation": 78.03922438256775,
-    "volatility": 0.060059252637428145,
-    "games_played": 45,
+  "maia-1100": {
+    "player_id": "maia-1100",
+    "rating": 1628,
+    "rating_deviation": 50.0,
+    "volatility": 0.03,
+    "games_played": 0,
     "wins": 0,
-    "losses": 45,
+    "losses": 0,
     "draws": 0,
-    "last_updated": "2025-11-26T14:19:34.475389+00:00"
+    "last_updated": "2025-12-01T07:22:39.799724+00:00"
   },
   "grok-4.1-fast": {
     "player_id": "grok-4.1-fast",
@@ -85,6 +41,50 @@
     "wins": 1,
     "losses": 3,
     "draws": 1,
-    "last_updated": "2025-11-26T14:19:34.475212+00:00"
+    "last_updated": "2025-12-01T07:22:39.801787+00:00"
+  },
+  "gemini-3-pro-preview": {
+    "player_id": "gemini-3-pro-preview",
+    "rating": 1960.050625129512,
+    "rating_deviation": 98.36393832485906,
+    "volatility": 0.0599635822658141,
+    "games_played": 7,
+    "wins": 6,
+    "losses": 1,
+    "draws": 0,
+    "last_updated": "2025-12-01T07:22:39.801983+00:00"
+  },
+  "llama-4-maverick": {
+    "player_id": "llama-4-maverick",
+    "rating": 400,
+    "rating_deviation": 78.03922438256775,
+    "volatility": 0.060059252637428145,
+    "games_played": 45,
+    "wins": 0,
+    "losses": 45,
+    "draws": 0,
+    "last_updated": "2025-12-01T07:22:39.802005+00:00"
+  },
+  "gpt-5.1 (high)": {
+    "player_id": "gpt-5.1 (high)",
+    "rating": 1516.8806819833717,
+    "rating_deviation": 81.93451262941943,
+    "volatility": 0.05997483370982187,
+    "games_played": 8,
+    "wins": 2,
+    "losses": 6,
+    "draws": 0,
+    "last_updated": "2025-12-01T07:22:39.801987+00:00"
+  },
+  "gpt-oss-120b": {
+    "player_id": "gpt-oss-120b",
+    "rating": 1138.9876795333912,
+    "rating_deviation": 124.96122909458944,
+    "volatility": 0.05988045506851259,
+    "games_played": 10,
+    "wins": 5,
+    "losses": 5,
+    "draws": 0,
+    "last_updated": "2025-12-01T07:22:39.801996+00:00"
   }
 }
