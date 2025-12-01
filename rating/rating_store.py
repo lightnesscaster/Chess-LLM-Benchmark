@@ -165,7 +165,7 @@ class RatingStore:
         self,
         player_id: str,
         rating: float,
-        rating_deviation: float = 50.0,
+        rating_deviation: float = 30.0,
         auto_save: bool = True,
     ) -> None:
         """
@@ -174,7 +174,7 @@ class RatingStore:
         Args:
             player_id: The anchor player ID
             rating: The fixed rating
-            rating_deviation: Low RD for anchors (default 50)
+            rating_deviation: Low RD for anchors (default 30)
             auto_save: Whether to save to disk immediately (default True)
         """
         self.anchor_ids.add(player_id)
