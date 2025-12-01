@@ -1,0 +1,21 @@
+{
+  "game_id": "0d5c2355-84ad-41ea-928e-1a5ec16c39c7",
+  "white_id": "maia-1100",
+  "black_id": "gpt-oss-120b",
+  "winner": "white",
+  "termination": "checkmate",
+  "moves": 35,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 0,
+  "total_moves_white": 18,
+  "total_moves_black": 17,
+  "pgn_path": "data/games/0d5c2355-84ad-41ea-928e-1a5ec16c39c7.pgn",
+  "created_at": "2025-12-01T08:12:46.590880+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 6588,
+    "completion_tokens": 38766,
+    "total_tokens": 45354
+  },
+  "illegal_move_details": null
+}

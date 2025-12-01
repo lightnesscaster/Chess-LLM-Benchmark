@@ -1,0 +1,38 @@
+{
+  "game_id": "605dac23-766d-4351-9745-dcdb3493ea22",
+  "white_id": "maia-1100",
+  "black_id": "gpt-oss-120b",
+  "winner": "white",
+  "termination": "forfeit_illegal_move",
+  "moves": 1,
+  "illegal_moves_white": 0,
+  "illegal_moves_black": 2,
+  "total_moves_white": 1,
+  "total_moves_black": 0,
+  "pgn_path": "data/games/605dac23-766d-4351-9745-dcdb3493ea22.pgn",
+  "created_at": "2025-12-01T08:15:12.895530+00:00",
+  "tokens_white": null,
+  "tokens_black": {
+    "prompt_tokens": 656,
+    "completion_tokens": 208,
+    "total_tokens": 864
+  },
+  "illegal_move_details": [
+    {
+      "side": "black",
+      "move_number": 2,
+      "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4\n\n>>> White's last move: e4 (e2e4) <<<\n\n\nCurrent position (FEN):\nrnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1\n\nBoard:\n8 | r n b q k b n r\n7 | p p p p p p p p\n6 | . . . . . . . .\n5 | . . . . . . . .\n4 | . . . . P . . .\n3 | . . . . . . . .\n2 | P P P P . P P P\n1 | R N B Q K B N R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "e",
+      "parsed_move": "e"
+    },
+    {
+      "side": "black",
+      "move_number": 2,
+      "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4\n\n>>> White's last move: e4 (e2e4) <<<\n\n\nCurrent position (FEN):\nrnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1\n\nBoard:\n8 | r n b q k b n r\n7 | p p p p p p p p\n6 | . . . . . . . .\n5 | . . . . . . . .\n4 | . . . . P . . .\n3 | . . . . . . . .\n2 | P P P P . P P P\n1 | R N B Q K B N R\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"e\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+      "raw_response": "e",
+      "parsed_move": "e"
+    }
+  ]
+}
