@@ -2,6 +2,7 @@
 Firebase client initialization and utilities.
 """
 
+import json
 import os
 from pathlib import Path
 from functools import lru_cache
@@ -10,12 +11,21 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 
-def _find_credentials_path() -> str:
-    """Find the Firebase credentials file."""
-    # Check environment variable first
+def _get_credentials():
+    """Get Firebase credentials from file or environment variable."""
+    # Check for JSON credentials in environment variable (for Render/production)
+    creds_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if creds_json:
+        try:
+            creds_dict = json.loads(creds_json)
+            return credentials.Certificate(creds_dict)
+        except json.JSONDecodeError:
+            pass
+
+    # Check GOOGLE_APPLICATION_CREDENTIALS path
     env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     if env_path and Path(env_path).exists():
-        return env_path
+        return credentials.Certificate(env_path)
 
     # Check common locations
     possible_paths = [
@@ -26,11 +36,11 @@ def _find_credentials_path() -> str:
 
     for path in possible_paths:
         if path.exists():
-            return str(path)
+            return credentials.Certificate(str(path))
 
     raise FileNotFoundError(
-        "Firebase credentials not found. Set GOOGLE_APPLICATION_CREDENTIALS "
-        "or place firebase-key.json in the project root."
+        "Firebase credentials not found. Set FIREBASE_CREDENTIALS_JSON, "
+        "GOOGLE_APPLICATION_CREDENTIALS, or place firebase-key.json in the project root."
     )
 
 
@@ -43,8 +53,7 @@ def get_firestore_client():
         Firestore client
     """
     if not firebase_admin._apps:
-        cred_path = _find_credentials_path()
-        cred = credentials.Certificate(cred_path)
+        cred = _get_credentials()
         firebase_admin.initialize_app(cred)
 
     return firestore.client()

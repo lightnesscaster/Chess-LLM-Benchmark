@@ -7,3 +7,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
+      - key: FIREBASE_ENABLED
+        value: "true"
+      # FIREBASE_CREDENTIALS_JSON must be set manually in Render dashboard
+      # Copy the contents of firebase-key.json as the value
