@@ -24,3 +24,6 @@ Thumbs.db
 # Environment
 .env
 *.env.local
+
+# Firebase
+firebase-key.json
