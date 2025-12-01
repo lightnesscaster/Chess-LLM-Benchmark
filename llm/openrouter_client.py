@@ -229,6 +229,8 @@ Your response (just the UCI move or UNCLEAR):"""
                 timeout=timeout,
             ) as response:
                 if response.status != 200:
+                    error_text = await response.text()
+                    print(f"  [Reasoning extraction API error {response.status}]: {error_text[:200]}")
                     return None
 
                 data = await response.json()
@@ -426,6 +428,7 @@ Your response (just the UCI move or UNCLEAR):"""
             self.total_tokens += usage.get("total_tokens", 0)
 
         # Extract response text
+        is_truncated = False
         try:
             response_text = data["choices"][0]["message"]["content"]
             self.last_raw_response = response_text or ""  # Store for debugging illegal moves
