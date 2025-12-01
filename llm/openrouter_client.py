@@ -243,6 +243,22 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
                     data = await response.json()
 
+                    # Check for embedded errors (API returns 200 but with error in body)
+                    if data.get("choices") and "error" in data["choices"][0]:
+                        error_info = data["choices"][0]["error"]
+                        error_msg = error_info.get("message", "Unknown error")
+                        error_code = error_info.get("code", 0)
+                        self.last_raw_response = f"[API Error {error_code}] {error_msg}"
+                        # Treat as transient if it's a network/server error
+                        if error_code in retryable_http_codes or "network" in error_msg.lower():
+                            raise aiohttp.ClientResponseError(
+                                response.request_info,
+                                response.history,
+                                status=error_code,
+                                message=f"Embedded error {error_code}: {error_msg}"
+                            )
+                        raise RuntimeError(f"API error in response: {error_code} - {error_msg}")
+
                 # Success - break out of retry loop
                 break
 
@@ -268,21 +284,6 @@ class OpenRouterPlayer(BaseLLMPlayer):
             self.prompt_tokens += usage.get("prompt_tokens", 0)
             self.completion_tokens += usage.get("completion_tokens", 0)
             self.total_tokens += usage.get("total_tokens", 0)
-
-        # Check for embedded errors in the response (API returns 200 but with error in body)
-        try:
-            choice = data["choices"][0]
-            if "error" in choice:
-                error_info = choice["error"]
-                error_msg = error_info.get("message", "Unknown error")
-                error_code = error_info.get("code", 0)
-                self.last_raw_response = f"[API Error {error_code}] {error_msg}"
-                # Treat as transient if it's a network/server error
-                if error_code in (429, 500, 502, 503, 504) or "network" in error_msg.lower():
-                    raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
-                raise RuntimeError(f"API error in response: {error_code} - {error_msg}")
-        except KeyError:
-            pass  # No error field, continue normally
 
         # Extract response text
         try:
