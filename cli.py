@@ -76,10 +76,12 @@ def create_engines(config: dict) -> dict:
                 seed=engine_cfg.get("seed"),
             )
         elif engine_type == "uci":
+            if "path" not in engine_cfg:
+                raise ValueError(f"UCI engine '{player_id}' missing required 'path' field")
             engines[player_id] = UCIEngine(
                 player_id=player_id,
                 rating=rating,
-                engine_path=engine_cfg.get("path"),
+                engine_path=engine_cfg["path"],
                 move_time=engine_cfg.get("move_time"),
                 nodes=engine_cfg.get("nodes"),
                 depth=engine_cfg.get("depth"),

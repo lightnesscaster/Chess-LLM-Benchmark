@@ -45,7 +45,14 @@ class UCIEngine(BaseEngine):
     def _ensure_engine(self) -> chess.engine.SimpleEngine:
         """Lazily initialize the engine."""
         if self._engine is None:
-            self._engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
+            try:
+                self._engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"UCI engine not found at path: {self.engine_path}")
+            except PermissionError:
+                raise PermissionError(f"UCI engine not executable: {self.engine_path}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize UCI engine at {self.engine_path}: {e}")
         return self._engine
 
     def select_move(self, board: chess.Board) -> chess.Move:
@@ -67,10 +74,16 @@ class UCIEngine(BaseEngine):
 
         limit = chess.engine.Limit(**limit_kwargs)
         result = engine.play(board, limit)
+        if result is None or result.move is None:
+            raise RuntimeError(f"UCI engine {self.player_id} failed to return a move")
         return result.move
 
     def close(self) -> None:
         """Close the engine process."""
         if self._engine is not None:
-            self._engine.quit()
-            self._engine = None
+            try:
+                self._engine.quit()
+            except Exception:
+                pass  # Best effort cleanup
+            finally:
+                self._engine = None
