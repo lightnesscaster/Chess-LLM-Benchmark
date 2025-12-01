@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.11.26"]
+[Round "1"]
+[White "gpt-5.1 (high)"]
+[Black "gemini-3-pro-preview"]
+[Result "1/2-1/2"]
+[Termination "api_error"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. Qd2 Be7 8. O-O-O O-O 9. f4 h6 10. h4 Nc6 11. Nxc6 bxc6 12. Bxf6 Bxf6 13. Qxd6 Qb6 14. e5 Rd8 15. Qxd8+ Bxd8 16. g4 Qe3+ 17. Rd2 Bb6 18. Rh2 Qxf4 19. Kb1 Qxf1+ 20. Rd1 Qf4 21. Rd8+ Bxd8 22. Rd2 Qxd2 23. Ka1 Qc1+ 24. Nb1 Bb6 25. a3 1/2-1/2
