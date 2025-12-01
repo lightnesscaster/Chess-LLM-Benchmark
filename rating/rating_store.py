@@ -3,6 +3,7 @@ Rating storage and persistence.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -13,24 +14,92 @@ class RatingStore:
     """
     Stores and manages player ratings.
 
-    Uses a JSON file for persistence.
+    Supports both local JSON file and Firestore backends.
     """
 
-    def __init__(self, path: str = "data/ratings.json", anchor_ids: Set[str] = None):
+    def __init__(
+        self,
+        path: str = "data/ratings.json",
+        anchor_ids: Set[str] = None,
+        use_firestore: bool = None,
+    ):
         """
         Initialize the rating store.
 
         Args:
-            path: Path to the ratings JSON file
+            path: Path to the ratings JSON file (used for local storage)
             anchor_ids: Set of player IDs that are anchors (fixed ratings)
+            use_firestore: If True, use Firestore. If None, auto-detect based on
+                          FIREBASE_ENABLED env var or presence of firebase-key.json
         """
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
         self._ratings: Dict[str, PlayerRating] = {}
-        self._load()
+
+        # Determine storage backend
+        if use_firestore is None:
+            use_firestore = self._should_use_firestore()
+        self._use_firestore = use_firestore
+
+        if self._use_firestore:
+            self._init_firestore()
+        else:
+            self._load()
+
+    def _should_use_firestore(self) -> bool:
+        """Check if we should use Firestore."""
+        # Check env var
+        if os.environ.get("FIREBASE_ENABLED", "").lower() in ("1", "true", "yes"):
+            return True
+
+        # Check for credentials file
+        from pathlib import Path
+        possible_paths = [
+            Path(__file__).parent.parent / "firebase-key.json",
+            Path.cwd() / "firebase-key.json",
+        ]
+        for p in possible_paths:
+            if p.exists():
+                return True
+
+        return False
+
+    def _init_firestore(self) -> None:
+        """Initialize Firestore connection and load ratings."""
+        from firebase_client import get_firestore_client, RATINGS_COLLECTION
+        self._db = get_firestore_client()
+        self._collection = RATINGS_COLLECTION
+        self._load_from_firestore()
+
+    def _load_from_firestore(self) -> None:
+        """Load ratings from Firestore."""
+        docs = self._db.collection(self._collection).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            player_rating = PlayerRating.from_dict(data)
+            # Enforce rating floor on loaded ratings (anchors exempt)
+            if data["player_id"] not in self.anchor_ids:
+                if player_rating.rating < Glicko2System.RATING_FLOOR:
+                    player_rating.rating = Glicko2System.RATING_FLOOR
+            self._ratings[data["player_id"]] = player_rating
+
+    def _save_to_firestore(self, player_id: str) -> None:
+        """Save a single player's rating to Firestore."""
+        if player_id in self._ratings:
+            self._db.collection(self._collection).document(player_id).set(
+                self._ratings[player_id].to_dict()
+            )
+
+    def _save_all_to_firestore(self) -> None:
+        """Save all ratings to Firestore."""
+        batch = self._db.batch()
+        for player_id, rating in self._ratings.items():
+            ref = self._db.collection(self._collection).document(player_id)
+            batch.set(ref, rating.to_dict())
+        batch.commit()
 
     def _load(self) -> None:
-        """Load ratings from file."""
+        """Load ratings from local file."""
         if self.path.exists():
             with open(self.path) as f:
                 data = json.load(f)
@@ -43,7 +112,7 @@ class RatingStore:
                 self._ratings[player_id] = player_rating
 
     def _save(self) -> None:
-        """Save ratings to file."""
+        """Save ratings to local file."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             player_id: rating.to_dict()
@@ -76,11 +145,17 @@ class RatingStore:
         """
         self._ratings[rating.player_id] = rating
         if auto_save:
-            self._save()
+            if self._use_firestore:
+                self._save_to_firestore(rating.player_id)
+            else:
+                self._save()
 
     def save(self) -> None:
         """Manually save ratings to disk."""
-        self._save()
+        if self._use_firestore:
+            self._save_all_to_firestore()
+        else:
+            self._save()
 
     def is_anchor(self, player_id: str) -> bool:
         """Check if a player is an anchor with fixed rating."""
@@ -111,7 +186,10 @@ class RatingStore:
             games_played=0,
         )
         if auto_save:
-            self._save()
+            if self._use_firestore:
+                self._save_to_firestore(player_id)
+            else:
+                self._save()
 
     def get_all(self) -> Dict[str, PlayerRating]:
         """Get all player ratings."""
@@ -141,4 +219,14 @@ class RatingStore:
             if pid in self._ratings
         }
         self._ratings = anchors
-        self._save()
+        if self._use_firestore:
+            # Delete all non-anchor documents
+            docs = self._db.collection(self._collection).stream()
+            batch = self._db.batch()
+            for doc in docs:
+                if doc.id not in self.anchor_ids:
+                    batch.delete(doc.reference)
+            batch.commit()
+            self._save_all_to_firestore()
+        else:
+            self._save()

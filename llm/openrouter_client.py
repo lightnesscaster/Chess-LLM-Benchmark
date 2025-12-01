@@ -129,9 +129,11 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 clean_token = token.strip(".,;:!?")
                 # Try variations: as-is, with first letter capitalized (for piece prefix)
                 variations = [clean_token]
-                if clean_token and clean_token[0].lower() in 'kqrbn':
+                if len(clean_token) > 1 and clean_token[0].lower() in 'kqrbn':
                     # LLM might have used lowercase piece letter (e.g., "nbd7" instead of "Nbd7")
-                    variations.append(clean_token[0].upper() + clean_token[1:])
+                    capitalized = clean_token[0].upper() + clean_token[1:]
+                    if capitalized != clean_token:
+                        variations.append(capitalized)
                 for variant in variations:
                     try:
                         move = board.parse_san(variant)
