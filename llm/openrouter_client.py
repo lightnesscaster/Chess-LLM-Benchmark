@@ -346,7 +346,7 @@ Your response (just the UCI move or UNCLEAR):"""
             payload["reasoning"] = reasoning_config
 
         # Retry logic for transient network and HTTP errors
-        max_retries = 3
+        max_retries = 5
         retry_delay = 2.0  # seconds
         retryable_http_codes = {429, 500, 502, 503, 504}
 
