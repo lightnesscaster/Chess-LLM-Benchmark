@@ -462,7 +462,7 @@ async def run_test_game(args):
         elif engine_type == "eubos":
             return UCIEngine(
                 player_id="eubos",
-                rating=2500,
+                rating=2344,
                 engine_path="/Volumes/MainStorage/Programming/EubosChess/eubos.sh",
                 move_time=0.1,
             )
