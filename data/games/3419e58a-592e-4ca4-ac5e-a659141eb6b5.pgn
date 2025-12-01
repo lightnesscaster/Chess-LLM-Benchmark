@@ -2,7 +2,7 @@
 [Site "Local"]
 [Date "2025.12.01"]
 [Round "1"]
-[White "gpt-oss-120b"]
+[White "gpt-oss-120b (medium)"]
 [Black "maia-1100"]
 [Result "0-1"]
 [Termination "checkmate"]

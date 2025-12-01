@@ -3,7 +3,7 @@
 [Date "2025.11.26"]
 [Round "1"]
 [White "maia-1100"]
-[Black "gpt-oss-120b"]
+[Black "gpt-oss-120b (medium)"]
 [Result "1-0"]
 [Termination "checkmate"]
 

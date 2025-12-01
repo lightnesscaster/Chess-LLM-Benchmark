@@ -1,7 +1,7 @@
 {
   "game_id": "a0646ad0-e8ed-468d-92e7-8fe74c576c16",
   "white_id": "maia-1100",
-  "black_id": "gpt-oss-120b",
+  "black_id": "gpt-oss-120b (medium)",
   "winner": "white",
   "termination": "checkmate",
   "moves": 27,

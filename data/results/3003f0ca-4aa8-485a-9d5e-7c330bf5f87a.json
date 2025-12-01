@@ -1,6 +1,6 @@
 {
   "game_id": "3003f0ca-4aa8-485a-9d5e-7c330bf5f87a",
-  "white_id": "gpt-oss-120b",
+  "white_id": "gpt-oss-120b (medium)",
   "black_id": "llama-4-maverick",
   "winner": "white",
   "termination": "forfeit_illegal_move",

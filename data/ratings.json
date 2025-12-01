@@ -76,17 +76,6 @@
     "draws": 1,
     "last_updated": "2025-12-01T09:21:51.798097+00:00"
   },
-  "gpt-oss-120b": {
-    "player_id": "gpt-oss-120b",
-    "rating": 997.6301134579995,
-    "rating_deviation": 101.00521046419247,
-    "volatility": 0.05957872566386215,
-    "games_played": 27,
-    "wins": 5,
-    "losses": 22,
-    "draws": 0,
-    "last_updated": "2025-12-01T09:21:51.798254+00:00"
-  },
   "gpt-5.1 (high)": {
     "player_id": "gpt-5.1 (high)",
     "rating": 1526.0079274986615,
@@ -97,5 +86,16 @@
     "losses": 6,
     "draws": 0,
     "last_updated": "2025-12-01T09:21:51.798237+00:00"
+  },
+  "gpt-oss-120b (medium)": {
+    "player_id": "gpt-oss-120b",
+    "rating": 997.6301134579995,
+    "rating_deviation": 101.00521046419247,
+    "volatility": 0.05957872566386215,
+    "games_played": 27,
+    "wins": 5,
+    "losses": 22,
+    "draws": 0,
+    "last_updated": "2025-12-01T09:21:51.798254+00:00"
   }
 }

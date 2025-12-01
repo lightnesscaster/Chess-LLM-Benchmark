@@ -1,6 +1,6 @@
 {
   "game_id": "aa20ae14-34a6-440d-acd2-4f5465f5e23b",
-  "white_id": "gpt-oss-120b",
+  "white_id": "gpt-oss-120b (medium)",
   "black_id": "maia-1100",
   "winner": "black",
   "termination": "forfeit_illegal_move",
