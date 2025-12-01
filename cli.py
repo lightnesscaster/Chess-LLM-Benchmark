@@ -85,6 +85,8 @@ def create_engines(config: dict) -> dict:
                 move_time=engine_cfg.get("move_time"),
                 nodes=engine_cfg.get("nodes"),
                 depth=engine_cfg.get("depth"),
+                initial_time=engine_cfg.get("initial_time"),
+                increment=engine_cfg.get("increment"),
             )
 
     return engines
@@ -464,7 +466,8 @@ async def run_test_game(args):
                 player_id="eubos",
                 rating=2344,
                 engine_path="/Volumes/MainStorage/Programming/EubosChess/eubos.sh",
-                move_time=0.1,
+                initial_time=900,  # 15 minutes
+                increment=10,      # 10 seconds
             )
         else:
             return StockfishEngine(

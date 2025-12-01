@@ -29,12 +29,13 @@ engines:
     rating: 1816
     nodes: 1
 
-  # Eubos - Java UCI engine
+  # Eubos - Java UCI engine (15+10 rapid time control)
   - player_id: "eubos"
     type: uci
     path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
     rating: 2344
-    move_time: 0.1
+    initial_time: 900   # 15 minutes
+    increment: 10       # 10 seconds
 
 # LLM players
 llms:
