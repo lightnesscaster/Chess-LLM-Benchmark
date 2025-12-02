@@ -249,6 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Create worker from Blob URL
                 stockfish = new Worker(blobUrl);
+                // Revoke immediately - Worker has loaded the script, URL no longer needed
+                URL.revokeObjectURL(blobUrl);
 
                 stockfish.onmessage = function(event) {
                     const line = event.data;
