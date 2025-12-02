@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Module-level cache for Firestore data
 _firestore_cache: Dict[str, "PlayerRating"] = {}
 _firestore_cache_time: float = 0
-_FIRESTORE_CACHE_TTL = 300  # 5 minutes
+_FIRESTORE_CACHE_TTL = 3600  # 1 hour
 
 
 class RatingStore:

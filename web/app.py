@@ -29,7 +29,7 @@ app = Flask(__name__)
 # Leaderboard cache
 _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
-_LEADERBOARD_CACHE_TTL = 60  # 1 minute
+_LEADERBOARD_CACHE_TTL = 3600  # 1 hour
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
