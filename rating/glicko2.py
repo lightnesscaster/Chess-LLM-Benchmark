@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 class PlayerRating:
     """Represents a player's Glicko-2 rating."""
     player_id: str
-    rating: float = 1500.0          # μ (mu) - rating (clamped to floor)
+    rating: float = 1500.0          # μ (mu) - rating
     rating_deviation: float = 350.0  # φ (phi) - rating deviation
     volatility: float = 0.06        # σ (sigma) - volatility
     games_played: int = 0
@@ -23,7 +23,7 @@ class PlayerRating:
     losses: int = 0
     draws: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    unclamped_rating: float = None  # True rating before floor is applied
+    unclamped_rating: float = None  # Legacy field, kept for backwards compatibility
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -53,7 +53,7 @@ class PlayerRating:
 class Glicko2System:
     """Implements the Glicko-2 rating system."""
 
-    # Rating floor (like Lichess)
+    # Legacy constant, kept for backwards compatibility (no longer enforced)
     RATING_FLOOR = 400
 
     def __init__(self, tau: float = 1.2):
@@ -196,18 +196,14 @@ class Glicko2System:
         if not opponents or not scores or len(opponents) != len(scores):
             return player
 
-        # Use unclamped rating for calculations if available (allows proper accumulation)
-        player_rating = player.unclamped_rating if player.unclamped_rating is not None else player.rating
-
         # Convert to Glicko-2 scale
-        mu, phi = self.glicko_to_glicko2(player_rating, player.rating_deviation)
+        mu, phi = self.glicko_to_glicko2(player.rating, player.rating_deviation)
         sigma = player.volatility
 
-        # Convert opponent ratings (also use unclamped for opponents)
+        # Convert opponent ratings
         opponent_params = []
         for opp in opponents:
-            opp_rating = opp.unclamped_rating if opp.unclamped_rating is not None else opp.rating
-            opp_mu, opp_phi = self.glicko_to_glicko2(opp_rating, opp.rating_deviation)
+            opp_mu, opp_phi = self.glicko_to_glicko2(opp.rating, opp.rating_deviation)
             opponent_params.append((opp_mu, opp_phi))
 
         # Step 3: Compute variance

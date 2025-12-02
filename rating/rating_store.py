@@ -118,7 +118,7 @@ class RatingStore:
             self._ratings = {
                 pid: PlayerRating(
                     player_id=pr.player_id,
-                    rating=max(pr.rating, Glicko2System.RATING_FLOOR) if pid not in self.anchor_ids else pr.rating,
+                    rating=pr.rating,
                     rating_deviation=pr.rating_deviation,
                     volatility=pr.volatility,
                     games_played=pr.games_played,
@@ -140,11 +140,6 @@ class RatingStore:
                 data = doc.to_dict()
                 player_rating = PlayerRating.from_dict(data)
                 new_cache[data["player_id"]] = player_rating
-
-                # Enforce rating floor on loaded ratings (anchors exempt)
-                if data["player_id"] not in self.anchor_ids:
-                    if player_rating.rating < Glicko2System.RATING_FLOOR:
-                        player_rating.rating = Glicko2System.RATING_FLOOR
                 self._ratings[data["player_id"]] = player_rating
 
             # Update the cache on success
@@ -162,7 +157,7 @@ class RatingStore:
                 self._ratings = {
                     pid: PlayerRating(
                         player_id=pr.player_id,
-                        rating=max(pr.rating, Glicko2System.RATING_FLOOR) if pid not in self.anchor_ids else pr.rating,
+                        rating=pr.rating,
                         rating_deviation=pr.rating_deviation,
                         volatility=pr.volatility,
                         games_played=pr.games_played,
@@ -237,10 +232,6 @@ class RatingStore:
                 data = json.load(f)
             for player_id, rating_data in data.items():
                 player_rating = PlayerRating.from_dict(rating_data)
-                # Enforce rating floor on loaded ratings (anchors exempt)
-                if player_id not in self.anchor_ids:
-                    if player_rating.rating < Glicko2System.RATING_FLOOR:
-                        player_rating.rating = Glicko2System.RATING_FLOOR
                 self._ratings[player_id] = player_rating
 
     def _save(self) -> None:

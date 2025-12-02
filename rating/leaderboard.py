@@ -4,7 +4,7 @@ Leaderboard display and formatting.
 
 from typing import Dict, Any, List, Optional
 
-from .glicko2 import PlayerRating, Glicko2System
+from .glicko2 import PlayerRating
 from .rating_store import RatingStore
 from .fide_estimate import estimate_fide
 from game.stats_collector import StatsCollector
@@ -41,21 +41,16 @@ class Leaderboard:
 
         leaderboard = []
         for i, rating in enumerate(ratings, 1):
-            # 95% confidence interval (clamped to rating floor)
+            # 95% confidence interval
             ci = 1.96 * rating.rating_deviation
-            ci_low = max(rating.rating - ci, Glicko2System.RATING_FLOOR)
-
-            # Use unclamped rating for sorting; fall back to clamped if not available
-            unclamped = rating.unclamped_rating if rating.unclamped_rating is not None else rating.rating
 
             entry = {
                 "rank": i,
                 "player_id": rating.player_id,
                 "rating": round(rating.rating),
-                "unclamped_rating": round(unclamped),
                 "fide_estimate": estimate_fide(rating.rating),
                 "rating_deviation": round(rating.rating_deviation),
-                "confidence_low": round(ci_low),
+                "confidence_low": round(rating.rating - ci),
                 "confidence_high": round(rating.rating + ci),
                 "games_played": rating.games_played,
                 "is_anchor": self.rating_store.is_anchor(rating.player_id),
@@ -76,8 +71,8 @@ class Leaderboard:
 
             leaderboard.append(entry)
 
-        # Sort by unclamped rating (desc) - this naturally handles ties at the floor
-        leaderboard.sort(key=lambda e: -e["unclamped_rating"])
+        # Sort by rating (desc)
+        leaderboard.sort(key=lambda e: -e["rating"])
 
         # Re-number ranks after sorting
         for i, entry in enumerate(leaderboard, 1):

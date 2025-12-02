@@ -376,14 +376,9 @@ async def recalculate_ratings(args):
 
     print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
 
-    # Helper to get unclamped rating (for convergence detection at the floor)
-    def get_unclamped(pid):
-        r = rating_store.get(pid)
-        return r.unclamped_rating if r.unclamped_rating is not None else r.rating
-
     for pass_num in range(1, max_passes + 1):
-        # Store unclamped ratings at start of pass to check convergence
-        pass_start_ratings = {pid: get_unclamped(pid) for pid in all_players}
+        # Store ratings at start of pass to check convergence
+        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
 
         # Shuffle games to eliminate order bias
         random.shuffle(valid_games)
@@ -411,12 +406,12 @@ async def recalculate_ratings(args):
         # Save once per pass (not per game)
         rating_store.save()
 
-        # Check convergence using unclamped ratings
+        # Check convergence
         max_change = 0.0
         for pid in all_players:
             if not rating_store.is_anchor(pid):
                 old_rating = pass_start_ratings[pid]
-                new_rating = get_unclamped(pid)
+                new_rating = rating_store.get(pid).rating
                 change = abs(new_rating - old_rating)
                 max_change = max(max_change, change)
 
