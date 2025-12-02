@@ -209,13 +209,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Stockfish Web Worker initialization
-    function initStockfish() {
-        if (stockfish) return Promise.resolve();
+    async function initStockfish() {
+        if (stockfish) return;
+
+        const linesContainer = document.getElementById('analysis-lines');
+        linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
+
+        // Fetch the Stockfish script and create a Blob URL to work around CORS
+        const STOCKFISH_URL = 'https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16-single.js';
+
+        let scriptBlob;
+        try {
+            const response = await fetch(STOCKFISH_URL);
+            if (!response.ok) throw new Error('Failed to fetch Stockfish');
+            const scriptText = await response.text();
+            scriptBlob = new Blob([scriptText], { type: 'application/javascript' });
+        } catch (error) {
+            console.error('Failed to download Stockfish:', error);
+            linesContainer.innerHTML = '<div class="analysis-error">Failed to download engine</div>';
+            throw error;
+        }
+
+        const blobUrl = URL.createObjectURL(scriptBlob);
 
         return new Promise((resolve, reject) => {
-            const linesContainer = document.getElementById('analysis-lines');
-            linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
-
             // Timeout for initialization (15 seconds)
             let initTimeout = setTimeout(() => {
                 currentAnalysisFen = null;
@@ -224,13 +241,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     stockfish.terminate();
                     stockfish = null;
                 }
+                URL.revokeObjectURL(blobUrl);
                 linesContainer.innerHTML = '<div class="analysis-error">Engine load timeout. Try refreshing.</div>';
                 reject(new Error('Stockfish initialization timeout'));
             }, 15000);
 
             try {
-                // Load Stockfish from CDN
-                stockfish = new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16-single.js');
+                // Create worker from Blob URL
+                stockfish = new Worker(blobUrl);
 
                 stockfish.onmessage = function(event) {
                     const line = event.data;
@@ -253,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     linesContainer.innerHTML = '<div class="analysis-error">Failed to load engine</div>';
                     currentAnalysisFen = null;
                     analysisLines = [{}, {}, {}];
+                    URL.revokeObjectURL(blobUrl);
                     if (stockfish) {
                         stockfish.terminate();
                         stockfish = null;
@@ -266,6 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearTimeout(initTimeout);
                 console.error('Failed to create worker:', error);
                 linesContainer.innerHTML = '<div class="analysis-error">Browser not supported</div>';
+                URL.revokeObjectURL(blobUrl);
                 reject(error);
             }
         });
