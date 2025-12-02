@@ -97,10 +97,12 @@ class StatsCollector:
                 player_stats["forfeit_rate"] = player_stats["forfeits"] / games
                 player_stats["avg_game_length"] = player_stats["total_game_moves"] / games
 
-            total_moves = player_stats["total_moves"]
+            total_moves = player_stats["total_moves"]  # Actually: successful legal moves
             illegal = player_stats["illegal_moves"]
-            if total_moves > 0:
-                player_stats["legal_move_rate"] = 1 - (illegal / total_moves)
+            total_attempts = total_moves + illegal
+            if total_attempts > 0:
+                # Legal move rate = legal moves / total attempts
+                player_stats["legal_move_rate"] = total_moves / total_attempts
             else:
                 player_stats["legal_move_rate"] = 1.0
 

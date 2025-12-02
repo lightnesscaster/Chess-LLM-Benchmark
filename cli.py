@@ -343,7 +343,7 @@ async def recalculate_ratings(args):
         return 1
 
     # Multi-pass convergence
-    max_passes = 1
+    max_passes = 100
     convergence_threshold = 10.0  # Stop when no rating changes by more than this
     random.seed(42)  # Fixed seed for reproducible results
 
