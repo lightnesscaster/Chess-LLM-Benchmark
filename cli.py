@@ -27,7 +27,7 @@ from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
 from rating.glicko2 import Glicko2System
-from rating.rating_store import RatingStore
+from rating.rating_store import RatingStore, invalidate_cache
 from rating.leaderboard import Leaderboard
 
 
@@ -181,6 +181,9 @@ async def run_benchmark(args):
             engine.close()
         for llm in llm_players.values():
             await llm.close()
+
+    # Invalidate web cache so leaderboard refreshes
+    invalidate_cache()
 
     return 0
 
@@ -416,6 +419,9 @@ async def recalculate_ratings(args):
     leaderboard = Leaderboard(rating_store, stats_collector)
     print(leaderboard.format_table(min_games=1))
 
+    # Invalidate web cache so leaderboard refreshes
+    invalidate_cache()
+
     return 0
 
 
@@ -598,6 +604,10 @@ async def run_manual_game(args):
             print(f"Black wins: {results_summary['black']}")
             print(f"Draws: {results_summary['draw']}")
             print(f"Total illegal moves - White: {total_illegal_white}, Black: {total_illegal_black}")
+
+        # Invalidate web cache if games were saved
+        if pgn_logger and sum(results_summary.values()) > 0:
+            invalidate_cache()
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")

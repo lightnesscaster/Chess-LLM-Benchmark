@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from flask import Flask, render_template, jsonify, abort, request
 
-from rating.rating_store import RatingStore
+from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
@@ -30,6 +30,14 @@ app = Flask(__name__)
 _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
 _LEADERBOARD_CACHE_TTL = 3600  # 1 hour
+
+
+def _should_invalidate_leaderboard_cache() -> bool:
+    """Check if leaderboard cache should be invalidated based on signal file."""
+    if not _CACHE_INVALIDATE_FILE.exists():
+        return False
+    file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
+    return file_mtime > _leaderboard_cache_time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -67,9 +75,10 @@ def get_leaderboard_data(min_games: int = 1) -> list:
     """Get leaderboard data from rating store with caching."""
     global _leaderboard_cache, _leaderboard_cache_time
 
-    # Check cache first
+    # Check cache first (not expired and not invalidated)
     cache_age = time.time() - _leaderboard_cache_time
-    if _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL:
+    cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
+    if cache_valid and not _should_invalidate_leaderboard_cache():
         app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
         return list(_leaderboard_cache)  # Return copy to prevent mutation
 

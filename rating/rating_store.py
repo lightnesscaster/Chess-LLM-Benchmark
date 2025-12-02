@@ -18,6 +18,25 @@ _firestore_cache: Dict[str, "PlayerRating"] = {}
 _firestore_cache_time: float = 0
 _FIRESTORE_CACHE_TTL = 3600  # 1 hour
 
+# Cache invalidation signal file
+_CACHE_INVALIDATE_FILE = Path(__file__).parent.parent / "data" / ".cache_invalidate"
+
+
+def invalidate_cache() -> None:
+    """Touch the cache invalidation file to signal all processes to refresh."""
+    _CACHE_INVALIDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _CACHE_INVALIDATE_FILE.touch()
+    logger.info(f"Cache invalidation signal sent: {_CACHE_INVALIDATE_FILE}")
+
+
+def _should_invalidate_cache() -> bool:
+    """Check if cache should be invalidated based on signal file."""
+    global _firestore_cache_time
+    if not _CACHE_INVALIDATE_FILE.exists():
+        return False
+    file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
+    return file_mtime > _firestore_cache_time
+
 
 class RatingStore:
     """
@@ -84,9 +103,10 @@ class RatingStore:
         """Load ratings from Firestore with caching and error handling."""
         global _firestore_cache, _firestore_cache_time
 
-        # Check if we have a valid cache
+        # Check if we have a valid cache (not expired and not invalidated)
         cache_age = time.time() - _firestore_cache_time
-        if _firestore_cache and cache_age < _FIRESTORE_CACHE_TTL:
+        cache_valid = _firestore_cache and cache_age < _FIRESTORE_CACHE_TTL
+        if cache_valid and not _should_invalidate_cache():
             logger.info(f"Using cached Firestore data ({cache_age:.0f}s old)")
             # Copy the entire cache dict efficiently
             self._ratings = {
