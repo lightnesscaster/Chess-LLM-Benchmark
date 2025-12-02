@@ -35,13 +35,8 @@ engines:
     initial_time: 900
     increment: 10
 
-# LLM players - all models below 400 rating + gpt-5.1-chat
+# LLM players - budget models only
 llms:
-  # gpt-5.1-chat (827) - included by request
-  - player_id: "gpt-5.1-chat"
-    model_name: "openai/gpt-5.1-chat"
-    temperature: 0.0
-
   # gpt-5-chat (228)
   - player_id: "gpt-5-chat"
     model_name: "openai/gpt-5-chat"
@@ -52,56 +47,9 @@ llms:
     model_name: "google/gemini-2.5-flash"
     temperature: 0.0
 
-  # gpt-4o-2024-11-20 (186)
-  - player_id: "gpt-4o-2024-11-20"
-    model_name: "openai/gpt-4o-2024-11-20"
-    temperature: 0.0
-
   # gemini-2.0-flash-001 (180)
   - player_id: "gemini-2.0-flash-001"
     model_name: "google/gemini-2.0-flash-001"
-    temperature: 0.0
-
-  # gpt-4.1 (minimal) (170)
-  - player_id: "gpt-4.1 (minimal)"
-    model_name: "openai/gpt-4.1"
-    temperature: 0.0
-    reasoning_effort: minimal
-
-  # gpt-5 (minimal) (157)
-  - player_id: "gpt-5 (minimal)"
-    model_name: "openai/gpt-5"
-    temperature: 0.0
-    reasoning_effort: minimal
-
-  # claude-opus-4 (no thinking) (143)
-  - player_id: "claude-opus-4 (no thinking)"
-    model_name: "anthropic/claude-opus-4"
-    temperature: 0.0
-
-  # claude-opus-4.1 (no thinking) (59)
-  - player_id: "claude-opus-4.1 (no thinking)"
-    model_name: "anthropic/claude-opus-4.1"
-    temperature: 0.0
-
-  # gpt-4 (16)
-  - player_id: "gpt-4"
-    model_name: "openai/gpt-4"
-    temperature: 0.0
-
-  # claude-3.5-sonnet (12)
-  - player_id: "claude-3.5-sonnet"
-    model_name: "anthropic/claude-3.5-sonnet"
-    temperature: 0.0
-
-  # claude-3.7-sonnet (no thinking) (-60)
-  - player_id: "claude-3.7-sonnet (no thinking)"
-    model_name: "anthropic/claude-3.7-sonnet"
-    temperature: 0.0
-
-  # qwen3-max (-62)
-  - player_id: "qwen3-max"
-    model_name: "qwen/qwen3-max"
     temperature: 0.0
 
   # glm-4.6 (no thinking) (-62)
@@ -112,21 +60,6 @@ llms:
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
-    temperature: 0.0
-
-  # claude-sonnet-4 (no thinking) (-164)
-  - player_id: "claude-sonnet-4 (no thinking)"
-    model_name: "anthropic/claude-sonnet-4"
-    temperature: 0.0
-
-  # claude-sonnet-4.5 (no thinking) (-165)
-  - player_id: "claude-sonnet-4.5 (no thinking)"
-    model_name: "anthropic/claude-sonnet-4.5"
-    temperature: 0.0
-
-  # grok-3 (-240)
-  - player_id: "grok-3"
-    model_name: "x-ai/grok-3"
     temperature: 0.0
 
   # kimi-k2-0905 (-240)
@@ -149,16 +82,6 @@ llms:
     model_name: "qwen/qwen3-235b-a22b-2507"
     temperature: 0.0
 
-  # gpt-4-turbo (-453)
-  - player_id: "gpt-4-turbo"
-    model_name: "openai/gpt-4-turbo"
-    temperature: 0.0
-
-  # claude-3-opus (-453)
-  - player_id: "claude-3-opus"
-    model_name: "anthropic/claude-3-opus"
-    temperature: 0.0
-
   # deepseek-chat-v3-0324 (-453)
   - player_id: "deepseek-chat-v3-0324"
     model_name: "deepseek/deepseek-chat-v3-0324"
@@ -167,11 +90,6 @@ llms:
   # mistral-medium-3 (-453)
   - player_id: "mistral-medium-3"
     model_name: "mistralai/mistral-medium-3"
-    temperature: 0.0
-
-  # claude-haiku-4.5 (no thinking) (-453)
-  - player_id: "claude-haiku-4.5 (no thinking)"
-    model_name: "anthropic/claude-4.5-haiku"
     temperature: 0.0
 
   # gpt-3.5-turbo-0613 (-453)
