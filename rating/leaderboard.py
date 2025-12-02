@@ -72,6 +72,16 @@ class Leaderboard:
 
             leaderboard.append(entry)
 
+        # Sort by rating (desc), then by legal move rate (desc) for ties
+        leaderboard.sort(
+            key=lambda e: (e["rating"], e.get("legal_move_rate", 1.0)),
+            reverse=True
+        )
+
+        # Re-number ranks after sorting
+        for i, entry in enumerate(leaderboard, 1):
+            entry["rank"] = i
+
         return leaderboard
 
     def format_table(self, min_games: int = 1) -> str:
