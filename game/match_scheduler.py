@@ -38,6 +38,11 @@ class MatchScheduler:
     Schedules and runs benchmark games.
     """
 
+    # Game caps for reasoning models
+    REASONING_BASE_CAP = 10  # Default cap for reasoning models
+    REASONING_HIGH_RATING_CAP = 25  # Cap for reasoning models rated > 600
+    REASONING_HIGH_RATING_THRESHOLD = 600  # Rating threshold for higher cap
+
     def __init__(
         self,
         players: Dict[str, Player],
@@ -48,6 +53,7 @@ class MatchScheduler:
         max_concurrent: int = 4,
         max_moves: int = 200,
         verbose: bool = False,
+        reasoning_ids: Optional[set] = None,
     ):
         """
         Initialize the scheduler.
@@ -61,6 +67,7 @@ class MatchScheduler:
             max_concurrent: Maximum concurrent games
             max_moves: Maximum moves per game
             verbose: Print verbose output
+            reasoning_ids: Set of player IDs that are reasoning models (have game caps)
         """
         self.players = players
         self.rating_store = rating_store
@@ -70,12 +77,64 @@ class MatchScheduler:
         self.max_concurrent = max_concurrent
         self.max_moves = max_moves
         self.verbose = verbose
+        self.reasoning_ids = reasoning_ids or set()
 
         # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(max_concurrent)
 
         # Lock for rating updates
         self._rating_lock = asyncio.Lock()
+
+        # Track games played per player during benchmark (for reasoning caps)
+        self._games_played: Dict[str, int] = {}
+        self._games_played_lock = asyncio.Lock()
+
+    def _get_game_cap(self, player_id: str) -> Optional[int]:
+        """
+        Get the game cap for a player.
+
+        Returns:
+            Game cap for reasoning models, None for non-reasoning models (no cap)
+        """
+        if player_id not in self.reasoning_ids:
+            return None  # No cap for non-reasoning models
+
+        # Check current rating to determine cap
+        rating = self.rating_store.get(player_id).rating
+        if rating > self.REASONING_HIGH_RATING_THRESHOLD:
+            return self.REASONING_HIGH_RATING_CAP
+        return self.REASONING_BASE_CAP
+
+    async def _check_and_reserve_game(self, white_id: str, black_id: str) -> bool:
+        """
+        Check if a game can be played (reasoning models haven't hit caps).
+        If allowed, reserve the game by incrementing counters.
+
+        Returns:
+            True if game is allowed and reserved, False if should be skipped
+        """
+        async with self._games_played_lock:
+            # Check caps for both players
+            for player_id in [white_id, black_id]:
+                cap = self._get_game_cap(player_id)
+                if cap is not None:
+                    current = self._games_played.get(player_id, 0)
+                    if current >= cap:
+                        return False  # Cap reached, skip game
+
+            # Reserve the game by incrementing counters
+            for player_id in [white_id, black_id]:
+                if player_id in self.reasoning_ids:
+                    self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
+
+            return True
+
+    async def _release_game_reservation(self, white_id: str, black_id: str) -> None:
+        """Release a game reservation if the game didn't complete (e.g., API error)."""
+        async with self._games_played_lock:
+            for player_id in [white_id, black_id]:
+                if player_id in self.reasoning_ids:
+                    self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
 
     def generate_pairings(
         self,
@@ -128,12 +187,18 @@ class MatchScheduler:
             task: The game task
 
         Returns:
-            GameResult if game completes normally, None if API error occurs
+            GameResult if game completes normally, None if API error or skipped due to cap
         """
-        async with self._semaphore:
-            white_id = task.white.player_id
-            black_id = task.black.player_id
+        white_id = task.white.player_id
+        black_id = task.black.player_id
 
+        # Check and reserve game slot (for reasoning model caps)
+        if not await self._check_and_reserve_game(white_id, black_id):
+            if self.verbose:
+                print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id} - SKIPPED (cap reached)")
+            return None
+
+        async with self._semaphore:
             if self.verbose:
                 print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id}")
 
@@ -150,6 +215,8 @@ class MatchScheduler:
             if result.termination == "api_error":
                 if self.verbose:
                     print(f"  API error - game not saved")
+                # Release the reservation since game didn't count
+                await self._release_game_reservation(white_id, black_id)
                 return None
 
             # Save PGN and result
@@ -237,6 +304,9 @@ class MatchScheduler:
         Returns:
             Benchmark results summary
         """
+        # Reset games played tracker for this benchmark run
+        self._games_played = {}
+
         # Generate pairings
         pairings = self.generate_pairings(
             llm_ids=llm_ids,
@@ -246,10 +316,14 @@ class MatchScheduler:
         )
 
         total_games = len(pairings)
-        print(f"Starting benchmark: {total_games} games")
+        print(f"Starting benchmark: {total_games} games scheduled")
         print(f"LLMs: {llm_ids}")
         print(f"Anchors: {anchor_ids}")
         print(f"Max concurrent: {self.max_concurrent}")
+        if self.reasoning_ids:
+            reasoning_in_benchmark = [lid for lid in llm_ids if lid in self.reasoning_ids]
+            print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
+            print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print()
 
         # Create game tasks
@@ -274,25 +348,35 @@ class MatchScheduler:
             return_exceptions=True,
         )
 
-        # Filter out exceptions and None results (API errors)
+        # Filter out exceptions and None results (API errors or skipped due to cap)
         good_results = []
         errors = 0
-        api_errors = 0
+        skipped_or_api_errors = 0
         for r in results:
             if isinstance(r, Exception):
                 print(f"Game error: {r}")
                 errors += 1
             elif r is None:
-                api_errors += 1
+                skipped_or_api_errors += 1
             else:
                 good_results.append(r)
 
-        print(f"\nBenchmark complete: {len(good_results)} games, {errors} errors, {api_errors} API errors (not saved)")
+        print(f"\nBenchmark complete: {len(good_results)} games completed, {errors} errors, {skipped_or_api_errors} skipped/API errors")
+
+        # Show reasoning model game counts
+        if self.reasoning_ids and self._games_played:
+            print("\nReasoning model games played:")
+            for player_id in sorted(self._games_played.keys()):
+                games = self._games_played[player_id]
+                cap = self._get_game_cap(player_id)
+                rating = self.rating_store.get(player_id).rating
+                print(f"  {player_id}: {games}/{cap} games (rating: {rating:.0f})")
 
         return {
             "total_games": total_games,
             "completed_games": len(good_results),
             "errors": errors,
+            "skipped": skipped_or_api_errors,
             "results": good_results,
         }
 

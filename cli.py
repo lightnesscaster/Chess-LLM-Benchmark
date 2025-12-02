@@ -115,14 +115,20 @@ def create_engines(config: dict) -> dict:
     return engines
 
 
-def create_llm_players(config: dict, api_key: str = None) -> dict:
-    """Create LLM players from config."""
+def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
+    """Create LLM players from config.
+
+    Returns:
+        Tuple of (players dict, set of reasoning model player IDs)
+    """
     players = {}
+    reasoning_ids = set()
 
     for llm_cfg in config.get("llms", []):
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
         reasoning_effort = llm_cfg.get("reasoning_effort")
+        reasoning = llm_cfg.get("reasoning", False)
 
         # Append reasoning effort to player_id if set and not already included
         if reasoning_effort and f"({reasoning_effort})" not in player_id:
@@ -134,11 +140,15 @@ def create_llm_players(config: dict, api_key: str = None) -> dict:
             api_key=api_key,
             temperature=llm_cfg.get("temperature", 0.0),
             max_tokens=llm_cfg.get("max_tokens", 0),
-            reasoning=llm_cfg.get("reasoning", False),
+            reasoning=reasoning,
             reasoning_effort=reasoning_effort,
         )
 
-    return players
+        # Track reasoning models (have reasoning=true OR reasoning_effort set)
+        if reasoning or reasoning_effort:
+            reasoning_ids.add(player_id)
+
+    return players, reasoning_ids
 
 
 async def run_benchmark(args):
@@ -154,7 +164,7 @@ async def run_benchmark(args):
 
     # Create players
     engines = create_engines(config)
-    llm_players = create_llm_players(config, api_key)
+    llm_players, reasoning_ids = create_llm_players(config, api_key)
     all_players = {**engines, **llm_players}
 
     # Set up rating store with anchors
@@ -180,6 +190,7 @@ async def run_benchmark(args):
         max_concurrent=config.get("benchmark", {}).get("max_concurrent", 4),
         max_moves=config.get("benchmark", {}).get("max_moves", 200),
         verbose=args.verbose,
+        reasoning_ids=reasoning_ids,
     )
 
     try:

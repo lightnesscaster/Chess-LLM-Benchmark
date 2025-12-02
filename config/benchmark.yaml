@@ -123,14 +123,17 @@ llms:
   - player_id: "deepseek-r1-distill-qwen-32b"
     model_name: "deepseek/deepseek-r1-distill-qwen-32b"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "grok-3-mini"
     model_name: "x-ai/grok-3-mini"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "deepseek-r1"
     model_name: "deepseek/deepseek-r1"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "gemini-2.5-flash (thinking)"
     model_name: "google/gemini-2.5-flash"
@@ -140,10 +143,12 @@ llms:
   - player_id: "claude-3.7-sonnet (thinking)"
     model_name: "anthropic/claude-3.7-sonnet:thinking"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "deepseek-r1-0528"
     model_name: "deepseek/deepseek-r1-0528"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "deepseek-r1-0528 (high)"
     model_name: "deepseek/deepseek-r1-0528"
@@ -178,6 +183,7 @@ llms:
   - player_id: "qwen3-235b-a22b-thinking-2507"
     model_name: "qwen/qwen3-235b-a22b-thinking-2507"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "deepseek-v3.1-terminus (thinking)"
     model_name: "deepseek/deepseek-chat-v3.1-terminus"
@@ -187,6 +193,7 @@ llms:
   - player_id: "o4-mini-high"
     model_name: "openai/o4-mini-high"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "gpt-oss-120b (high)"
     model_name: "openai/gpt-oss-120b"
@@ -206,7 +213,9 @@ llms:
   - player_id: "o3"
     model_name: "openai/o3"
     temperature: 0.0
+    reasoning: true
 
   - player_id: "kimi-k2-thinking"
     model_name: "moonshotai/kimi-k2-thinking"
     temperature: 0.0
+    reasoning: true
