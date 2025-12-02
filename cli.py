@@ -343,7 +343,7 @@ async def recalculate_ratings(args):
         return 1
 
     # Multi-pass convergence
-    max_passes = 5
+    max_passes = 1
     convergence_threshold = 10.0  # Stop when no rating changes by more than this
     random.seed(42)  # Fixed seed for reproducible results
 
@@ -376,12 +376,12 @@ async def recalculate_ratings(args):
 
     print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
 
+    # Shuffle once before all passes (same order each pass for convergence)
+    random.shuffle(valid_games)
+
     for pass_num in range(1, max_passes + 1):
         # Store ratings at start of pass to check convergence
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
-
-        # Shuffle games to eliminate order bias
-        random.shuffle(valid_games)
 
         if args.verbose:
             print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (shuffled)")
