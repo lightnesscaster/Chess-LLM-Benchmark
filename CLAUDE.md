@@ -79,5 +79,5 @@ Edit `config/benchmark.yaml` to configure:
 - `benchmark.games_vs_anchor_per_color`: Games per LLM vs each anchor
 - `benchmark.games_vs_llm_per_color`: Games per LLM pair
 - `benchmark.max_concurrent`: Parallel game limit
-- `engines`: Anchors with fixed ratings (types: `stockfish`, `maia`, `random`)
+- `engines`: Anchors with fixed ratings (types: `stockfish`, `maia`, `random`, `uci`)
 - `llms`: Models to benchmark with optional `reasoning` and `reasoning_effort` settings
