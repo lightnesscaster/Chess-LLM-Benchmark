@@ -47,11 +47,16 @@ python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --en
 # With reasoning models (use max-tokens 0 for extended thinking)
 python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high --max-tokens 0
 
+# Enable reasoning mode for hybrid models
+python cli.py test --white-model deepseek/deepseek-chat --black-engine --reasoning
+
 # Don't save the game
 python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --no-save
 ```
 
-**Engine types:** `stockfish`, `maia-1100`, `maia-1900`, `random`, `eubos`
+**Test command engine presets:** `stockfish`, `maia-1100`, `maia-1900`, `random`, `eubos`
+
+> Note: `eubos` is a hardcoded preset. For custom UCI engines in benchmarks, use `type: uci` in config.
 
 ### Run Full Benchmark
 
