@@ -318,7 +318,7 @@ body {
 
 .game-layout {
     display: grid;
-    grid-template-columns: minmax(480px, 560px) 1fr;
+    grid-template-columns: minmax(480px, 560px) minmax(0, 1fr);
     gap: 2rem;
     align-items: start;
 }
@@ -448,6 +448,7 @@ body {
     background: var(--bg-secondary);
     border-radius: 8px;
     padding: 1rem;
+    min-width: 0;
 }
 
 .meta-grid {
@@ -508,6 +509,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 200px;
+    min-width: 0;
 }
 
 .panel-header {
@@ -602,6 +604,7 @@ body {
     border-top: 1px solid var(--border);
     padding: 1rem;
     position: relative;
+    overflow: hidden;
 }
 
 .pgn-text {
@@ -609,14 +612,14 @@ body {
     font-size: 0.8rem;
     white-space: pre-wrap;
     word-wrap: break-word;
-    word-break: break-all;
+    overflow-wrap: break-word;
     background-color: var(--bg-card);
     padding: 1rem;
     border-radius: 4px;
-    overflow-x: auto;
+    overflow: auto;
     margin: 0 0 0.75rem 0;
     max-height: 200px;
-    overflow-y: auto;
+    max-width: 100%;
 }
 
 .copy-btn {
