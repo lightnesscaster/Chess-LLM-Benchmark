@@ -32,34 +32,34 @@
 
             <div class="board-toolbar">
                 <div class="nav-controls">
-                    <button id="btn-start" class="nav-btn" title="Go to start">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6 1.41-1.41M6 6h2v12H6V6z"/></svg>
+                    <button id="btn-start" class="nav-btn" title="Go to start" aria-label="Go to start">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6 1.41-1.41M6 6h2v12H6V6z"/></svg>
                     </button>
-                    <button id="btn-prev" class="nav-btn" title="Previous move">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                    <button id="btn-prev" class="nav-btn" title="Previous move" aria-label="Previous move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
                     </button>
-                    <span class="move-counter">
+                    <span class="move-counter" aria-live="polite">
                         <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
                     </span>
-                    <button id="btn-next" class="nav-btn" title="Next move">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    <button id="btn-next" class="nav-btn" title="Next move" aria-label="Next move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                     </button>
-                    <button id="btn-end" class="nav-btn" title="Go to end">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6-1.41 1.41M16 6h2v12h-2V6z"/></svg>
+                    <button id="btn-end" class="nav-btn" title="Go to end" aria-label="Go to end">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6-1.41 1.41M16 6h2v12h-2V6z"/></svg>
                     </button>
                 </div>
-                <button id="btn-flip" class="flip-btn" title="Flip board">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2v-2zm0-2h2V7h-2v7z"/></svg>
+                <button id="btn-flip" class="flip-btn" title="Flip board" aria-label="Flip board">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2v-2zm0-2h2V7h-2v7z"/></svg>
                     Flip
                 </button>
             </div>
 
-            <button id="btn-analysis" class="analysis-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
+            <button id="btn-analysis" class="analysis-btn" aria-expanded="false" aria-controls="analysis-panel">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
                 <span>Stockfish Analysis</span>
             </button>
 
-            <div id="analysis-panel" class="analysis-panel" style="display: none;">
+            <div id="analysis-panel" class="analysis-panel" style="display: none;" aria-live="polite">
                 <div class="analysis-header">
                     <span class="analysis-title">Stockfish 16</span>
                     <span id="analysis-depth" class="analysis-depth"></span>
@@ -115,14 +115,14 @@
             </div>
 
             <div class="pgn-panel">
-                <button class="pgn-toggle" id="pgn-toggle">
+                <button class="pgn-toggle" id="pgn-toggle" aria-expanded="false" aria-controls="pgn-content">
                     <span>PGN</span>
-                    <svg class="pgn-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    <svg class="pgn-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                 </button>
                 <div class="pgn-content" id="pgn-content" style="display: none;">
                     <pre class="pgn-text">{{ game.pgn }}</pre>
-                    <button class="copy-btn" id="copy-pgn" title="Copy PGN">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    <button class="copy-btn" id="copy-pgn" title="Copy PGN" aria-label="Copy PGN to clipboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                         Copy
                     </button>
                 </div>
@@ -172,17 +172,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const isExpanded = pgnContent.style.display !== 'none';
         pgnContent.style.display = isExpanded ? 'none' : 'block';
         pgnToggle.classList.toggle('expanded', !isExpanded);
+        pgnToggle.setAttribute('aria-expanded', !isExpanded);
     });
 
     // Copy PGN functionality
     document.getElementById('copy-pgn').addEventListener('click', () => {
+        const btn = document.getElementById('copy-pgn');
+        const originalHTML = btn.innerHTML;
+
         navigator.clipboard.writeText(pgn).then(() => {
-            const btn = document.getElementById('copy-pgn');
-            const originalHTML = btn.innerHTML;
             btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        }).catch((err) => {
+            console.error('Clipboard error:', err);
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Failed';
             setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
         });
     });
+
+    // Check if chess.js loaded
+    if (typeof Chess === 'undefined') {
+        movesContainer.innerHTML = '<p style="color: var(--accent);">Error: Chess library failed to load. Please refresh the page.</p>';
+        return;
+    }
 
     try {
         // Parse PGN to extract moves
@@ -535,6 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Enable analysis
             panel.style.display = 'block';
             btn.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
 
             try {
                 await initStockfish();
@@ -544,12 +557,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Failed to initialize Stockfish:', error);
                 panel.style.display = 'none';
                 btn.classList.remove('active');
+                btn.setAttribute('aria-expanded', 'false');
             }
         } else {
             // Disable analysis
             analysisEnabled = false;
             panel.style.display = 'none';
             btn.classList.remove('active');
+            btn.setAttribute('aria-expanded', 'false');
             currentAnalysisFen = null;
             analysisLines = [{}, {}, {}];
             if (stockfish) {
