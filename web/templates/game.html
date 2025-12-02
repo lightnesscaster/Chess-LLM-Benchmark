@@ -225,14 +225,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) throw new Error('Failed to fetch Stockfish');
             let scriptText = await response.text();
 
-            // The script uses location to construct WASM path. Since we're running
-            // from a blob URL, patch it to use the CDN URL directly.
-            const WASM_URL = STOCKFISH_BASE + 'stockfish-nnue-16-single.wasm';
+            // Replace relative WASM/NNUE paths with absolute CDN URLs
             scriptText = scriptText.replace(
-                /wasmBinaryFile\s*=\s*["'][^"']+["']/g,
-                `wasmBinaryFile = "${WASM_URL}"`
+                /(["'`])([a-zA-Z0-9_-]+\.(wasm|nnue))\1/g,
+                (match, quote, filename) => `${quote}${STOCKFISH_BASE}${filename}${quote}`
             );
-            console.log('Patched WASM path to use CDN');
+            console.log('Patched WASM/NNUE paths to use CDN');
 
             scriptBlob = new Blob([scriptText], { type: 'application/javascript' });
         } catch (error) {
