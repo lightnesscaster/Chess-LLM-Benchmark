@@ -68,6 +68,7 @@ body {
 
 .subtitle {
     color: var(--text-secondary);
+    text-align: center;
 }
 
 /* Page navigation tabs */
