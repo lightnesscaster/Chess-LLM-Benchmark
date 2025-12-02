@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Cache when we reach target depth
-        if (depth >= 18 && multipv === 1) {
+        if (depth >= 22 && multipv === 1) {
             analysisCache[fen] = {
                 depth,
                 lines: analysisLines.filter(l => l.pv && l.pv.length > 0).map(l => ({...l}))
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Start new analysis
         stockfish.postMessage('position fen ' + fen);
-        stockfish.postMessage('go depth 20');
+        stockfish.postMessage('go depth 25');
     }
 
     async function toggleAnalysis() {
