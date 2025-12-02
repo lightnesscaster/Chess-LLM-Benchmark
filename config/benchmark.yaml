@@ -93,6 +93,12 @@ llms:
     temperature: 0.0
     max_tokens: 20
 
+  # glm-4.6 (no thinking) (-62)
+  - player_id: "glm-4.6 (no thinking)"
+    model_name: "z-ai/glm-4.6"
+    temperature: 0.0
+    max_tokens: 20
+
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
