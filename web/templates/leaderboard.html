@@ -30,17 +30,14 @@
         <tbody>
             {% set ns = namespace(top_llm_found=false) %}
             {% for entry in leaderboard %}
-            <tr class="{% if entry.is_anchor %}anchor{% endif %} clickable-row" data-player-id="{{ entry.player_id|e }}">
-                <td class="rank">
-                    {{ entry.rank }}
-                    {% if not entry.is_anchor and not ns.top_llm_found %}
-                        👑
-                        {% set ns.top_llm_found = true %}
-                    {% endif %}
-                </td>
+            {% set is_top_llm = not entry.is_anchor and not ns.top_llm_found %}
+            {% if is_top_llm %}{% set ns.top_llm_found = true %}{% endif %}
+            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %} clickable-row" data-player-id="{{ entry.player_id|e }}">
+                <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
+                    {% if is_top_llm %}<span class="crown-badge" title="Top-rated LLM">👑</span>{% endif %}
                 </td>
                 <td class="rating">{{ entry.rating }}</td>
                 <td class="fide">{% if entry.fide_estimate is not none %}~{{ entry.fide_estimate }}{% else %}N/A{% endif %}</td>

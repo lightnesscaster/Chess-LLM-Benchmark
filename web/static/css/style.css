@@ -17,6 +17,8 @@
     --border: #2a3a5a;
     --white-player: #f0f0f0;
     --black-player: #333;
+    --gold: #d4a855;
+    --gold-bg: rgba(212, 168, 85, 0.2);
 }
 
 body {
@@ -165,6 +167,14 @@ body {
     background-color: rgba(233, 69, 96, 0.1);
 }
 
+.leaderboard-table tr.top-llm {
+    background-color: var(--gold-bg);
+}
+
+.leaderboard-table tr.top-llm:hover {
+    background-color: rgba(212, 168, 85, 0.3);
+}
+
 /* Leaderboard specific */
 .rank {
     font-weight: bold;
@@ -177,6 +187,10 @@ body {
 
 .anchor-badge {
     color: var(--accent);
+    margin-left: 0.5rem;
+}
+
+.crown-badge {
     margin-left: 0.5rem;
 }
 
