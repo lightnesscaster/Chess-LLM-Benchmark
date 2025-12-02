@@ -3,102 +3,132 @@
 {% block title %}{{ game.white }} vs {{ game.black }} - LLM Chess Benchmark{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <a href="/games" class="back-link">&larr; Back to Games</a>
-    <h1>{{ game.white }} vs {{ game.black }}</h1>
-    <p class="subtitle">
-        {% if game.winner == 'white' %}
-        <span class="result-badge white-win">1-0</span> White wins
-        {% elif game.winner == 'black' %}
-        <span class="result-badge black-win">0-1</span> Black wins
-        {% else %}
-        <span class="result-badge draw">½-½</span> Draw
-        {% endif %}
-        by {{ game.termination }}
-    </p>
-</div>
-
-<div class="game-viewer">
-    <div class="board-section">
-        <div id="board" style="width: 400px"></div>
-        <div class="board-controls">
-            <button id="btn-start" title="Go to start">&lt;&lt;</button>
-            <button id="btn-prev" title="Previous move">&lt;</button>
-            <button id="btn-next" title="Next move">&gt;</button>
-            <button id="btn-end" title="Go to end">&gt;&gt;</button>
-            <button id="btn-flip" title="Flip board">Flip</button>
-            <button id="btn-analysis" title="Toggle Stockfish analysis">Analysis</button>
-        </div>
-        <div class="move-indicator">
-            Move: <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
-        </div>
-
-        <div id="analysis-panel" class="analysis-panel" style="display: none;">
-            <div class="analysis-header">
-                <span class="analysis-title">Stockfish 16 Analysis</span>
-                <span id="analysis-depth" class="analysis-depth"></span>
+<div class="game-page">
+    <div class="game-header">
+        <a href="/games" class="back-link">&larr; Back to Games</a>
+        <div class="game-title-row">
+            <h1>{{ game.white }} <span class="vs">vs</span> {{ game.black }}</h1>
+            <div class="game-result">
+                {% if game.winner == 'white' %}
+                <span class="result-badge white-win">1-0</span>
+                <span class="result-text">White wins by {{ game.termination }}</span>
+                {% elif game.winner == 'black' %}
+                <span class="result-badge black-win">0-1</span>
+                <span class="result-text">Black wins by {{ game.termination }}</span>
+                {% else %}
+                <span class="result-badge draw">½-½</span>
+                <span class="result-text">Draw by {{ game.termination }}</span>
+                {% endif %}
             </div>
-            <div id="eval-bar-container" class="eval-bar-container">
-                <div id="eval-bar" class="eval-bar">
-                    <div id="eval-bar-fill" class="eval-bar-fill"></div>
+        </div>
+    </div>
+
+    <div class="game-layout">
+        <!-- Left: Board and Analysis -->
+        <div class="board-column">
+            <div class="board-wrapper">
+                <div id="board"></div>
+            </div>
+
+            <div class="board-toolbar">
+                <div class="nav-controls">
+                    <button id="btn-start" class="nav-btn" title="Go to start">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6 1.41-1.41M6 6h2v12H6V6z"/></svg>
+                    </button>
+                    <button id="btn-prev" class="nav-btn" title="Previous move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                    </button>
+                    <span class="move-counter">
+                        <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+                    </span>
+                    <button id="btn-next" class="nav-btn" title="Next move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    </button>
+                    <button id="btn-end" class="nav-btn" title="Go to end">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6-1.41 1.41M16 6h2v12h-2V6z"/></svg>
+                    </button>
                 </div>
-                <span id="eval-score" class="eval-score">0.00</span>
+                <button id="btn-flip" class="flip-btn" title="Flip board">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2v-2zm0-2h2V7h-2v7z"/></svg>
+                    Flip
+                </button>
             </div>
-            <div id="analysis-lines" class="analysis-lines">
-                <div class="analysis-loading">Click Analysis to enable</div>
+
+            <button id="btn-analysis" class="analysis-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
+                <span>Stockfish Analysis</span>
+            </button>
+
+            <div id="analysis-panel" class="analysis-panel" style="display: none;">
+                <div class="analysis-header">
+                    <span class="analysis-title">Stockfish 16</span>
+                    <span id="analysis-depth" class="analysis-depth"></span>
+                </div>
+                <div class="analysis-content">
+                    <div id="eval-bar-container" class="eval-bar-container">
+                        <div id="eval-bar" class="eval-bar">
+                            <div id="eval-bar-fill" class="eval-bar-fill"></div>
+                        </div>
+                        <span id="eval-score" class="eval-score">0.00</span>
+                    </div>
+                    <div id="analysis-lines" class="analysis-lines">
+                        <div class="analysis-loading">Click to enable analysis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Game Info and Moves -->
+        <div class="info-column">
+            <div class="game-meta">
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">White</span>
+                        <span class="meta-value player-white">{{ game.white }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Black</span>
+                        <span class="meta-value player-black">{{ game.black }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Date</span>
+                        <span class="meta-value">{{ game.created_at[:10] if game.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Moves</span>
+                        <span class="meta-value">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+                    </div>
+                    {% if game.illegal_moves_white|default(0) > 0 or game.illegal_moves_black|default(0) > 0 %}
+                    <div class="meta-item illegal">
+                        <span class="meta-label">Illegal Moves</span>
+                        <span class="meta-value">W: {{ game.illegal_moves_white|default(0) }} / B: {{ game.illegal_moves_black|default(0) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="moves-panel">
+                <div class="panel-header">
+                    <h3>Moves</h3>
+                </div>
+                <div id="moves-container" class="moves-container"></div>
+            </div>
+
+            <div class="pgn-panel">
+                <button class="pgn-toggle" id="pgn-toggle">
+                    <span>PGN</span>
+                    <svg class="pgn-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                </button>
+                <div class="pgn-content" id="pgn-content" style="display: none;">
+                    <pre class="pgn-text">{{ game.pgn }}</pre>
+                    <button class="copy-btn" id="copy-pgn" title="Copy PGN">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        Copy
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="info-section">
-        <div class="game-info">
-            <h3>Game Info</h3>
-            <table class="info-table">
-                <tr>
-                    <td>White:</td>
-                    <td>{{ game.white }}</td>
-                </tr>
-                <tr>
-                    <td>Black:</td>
-                    <td>{{ game.black }}</td>
-                </tr>
-                <tr>
-                    <td>Date:</td>
-                    <td>{{ game.created_at[:10] if game.created_at else 'N/A' }}</td>
-                </tr>
-                <tr>
-                    <td>Result:</td>
-                    <td>{% if game.winner == 'white' %}1-0{% elif game.winner == 'black' %}0-1{% else %}½-½{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>Termination:</td>
-                    <td>{{ game.termination }}</td>
-                </tr>
-                <tr>
-                    <td>Moves:</td>
-                    <td>{{ ((game.moves|default(0)) + 1) // 2 }}</td>
-                </tr>
-                <tr>
-                    <td>Illegal (White):</td>
-                    <td>{{ game.illegal_moves_white|default(0) }}</td>
-                </tr>
-                <tr>
-                    <td>Illegal (Black):</td>
-                    <td>{{ game.illegal_moves_black|default(0) }}</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="moves-list">
-            <h3>Moves</h3>
-            <div id="moves-container" class="moves-container"></div>
-        </div>
-    </div>
-</div>
-
-<div class="pgn-section">
-    <h3>PGN</h3>
-    <pre class="pgn-text">{{ game.pgn }}</pre>
 </div>
 {% endblock %}
 
@@ -133,6 +163,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const board = Chessboard('board', {
         position: 'start',
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+    });
+
+    // PGN toggle functionality
+    const pgnToggle = document.getElementById('pgn-toggle');
+    const pgnContent = document.getElementById('pgn-content');
+    pgnToggle.addEventListener('click', () => {
+        const isExpanded = pgnContent.style.display !== 'none';
+        pgnContent.style.display = isExpanded ? 'none' : 'block';
+        pgnToggle.classList.toggle('expanded', !isExpanded);
+    });
+
+    // Copy PGN functionality
+    document.getElementById('copy-pgn').addEventListener('click', () => {
+        navigator.clipboard.writeText(pgn).then(() => {
+            const btn = document.getElementById('copy-pgn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        });
     });
 
     try {
