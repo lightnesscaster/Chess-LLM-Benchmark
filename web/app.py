@@ -5,6 +5,7 @@ Displays leaderboard and game library with PGN viewer.
 """
 
 import logging
+import math
 import os
 import re
 import sys
@@ -97,7 +98,7 @@ def get_all_games() -> list:
                 "black": result.black_id,
                 "winner": result.winner,
                 "termination": result.termination,
-                "moves": result.moves or 0,
+                "moves": math.ceil((result.moves or 0) / 2),
                 "illegal_moves_white": result.illegal_moves_white or 0,
                 "illegal_moves_black": result.illegal_moves_black or 0,
                 "created_at": result.created_at,
@@ -128,7 +129,7 @@ def get_game(game_id: str) -> dict | None:
             "black": result.black_id,
             "winner": result.winner,
             "termination": result.termination,
-            "moves": result.moves or 0,
+            "moves": math.ceil((result.moves or 0) / 2),
             "illegal_moves_white": result.illegal_moves_white or 0,
             "illegal_moves_black": result.illegal_moves_black or 0,
             "created_at": result.created_at,
