@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 class PlayerRating:
     """Represents a player's Glicko-2 rating."""
     player_id: str
-    rating: float = 400.0           # μ (mu) - rating (start low, earn higher rating)
+    rating: float = 800.0           # μ (mu) - rating (start low, earn higher rating)
     rating_deviation: float = 350.0  # φ (phi) - rating deviation
     volatility: float = 0.06        # σ (sigma) - volatility
     games_played: int = 0
