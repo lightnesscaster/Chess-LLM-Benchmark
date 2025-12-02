@@ -8,8 +8,32 @@ benchmark:
   max_moves: 200                   # Maximum half-moves per game
   max_concurrent: 30               # Maximum concurrent games
 
-# Engine anchors (not used for this benchmark)
-engines: []
+# Engine anchors (fixed ratings)
+engines:
+  - player_id: "random-bot"
+    type: random
+    rating: 400
+
+  - player_id: "maia-1100"
+    type: maia
+    lc0_path: "/opt/homebrew/bin/lc0"
+    weights_path: "/Volumes/MainStorage/Programming/create_chess_puzzles/maia-1100.pb"
+    rating: 1628
+    nodes: 1
+
+  - player_id: "maia-1900"
+    type: maia
+    lc0_path: "/opt/homebrew/bin/lc0"
+    weights_path: "/Volumes/MainStorage/Programming/chess_llm_benchmark/maia-1900.pb.gz"
+    rating: 1816
+    nodes: 1
+
+  - player_id: "eubos"
+    type: uci
+    path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
+    rating: 2211
+    initial_time: 900
+    increment: 10
 
 # LLM players - all models below 400 rating + gpt-5.1-chat
 llms:
