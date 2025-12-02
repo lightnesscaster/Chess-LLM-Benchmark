@@ -88,20 +88,17 @@ class RatingStore:
         cache_age = time.time() - _firestore_cache_time
         if _firestore_cache and cache_age < _FIRESTORE_CACHE_TTL:
             logger.info(f"Using cached Firestore data ({cache_age:.0f}s old)")
-            for player_id, player_rating in _firestore_cache.items():
-                # Make a copy to avoid shared state issues
-                rating_copy = PlayerRating(
-                    player_id=player_rating.player_id,
-                    rating=player_rating.rating,
-                    rating_deviation=player_rating.rating_deviation,
-                    volatility=player_rating.volatility,
-                    games_played=player_rating.games_played,
+            # Copy the entire cache dict efficiently
+            self._ratings = {
+                pid: PlayerRating(
+                    player_id=pr.player_id,
+                    rating=max(pr.rating, Glicko2System.RATING_FLOOR) if pid not in self.anchor_ids else pr.rating,
+                    rating_deviation=pr.rating_deviation,
+                    volatility=pr.volatility,
+                    games_played=pr.games_played,
                 )
-                # Enforce rating floor on loaded ratings (anchors exempt)
-                if player_id not in self.anchor_ids:
-                    if rating_copy.rating < Glicko2System.RATING_FLOOR:
-                        rating_copy.rating = Glicko2System.RATING_FLOOR
-                self._ratings[player_id] = rating_copy
+                for pid, pr in _firestore_cache.items()
+            }
             return
 
         try:
@@ -132,18 +129,16 @@ class RatingStore:
             # Fall back to cache if available (even if expired)
             if _firestore_cache:
                 logger.info(f"Falling back to cached data ({len(_firestore_cache)} ratings)")
-                for player_id, player_rating in _firestore_cache.items():
-                    rating_copy = PlayerRating(
-                        player_id=player_rating.player_id,
-                        rating=player_rating.rating,
-                        rating_deviation=player_rating.rating_deviation,
-                        volatility=player_rating.volatility,
-                        games_played=player_rating.games_played,
+                self._ratings = {
+                    pid: PlayerRating(
+                        player_id=pr.player_id,
+                        rating=max(pr.rating, Glicko2System.RATING_FLOOR) if pid not in self.anchor_ids else pr.rating,
+                        rating_deviation=pr.rating_deviation,
+                        volatility=pr.volatility,
+                        games_played=pr.games_played,
                     )
-                    if player_id not in self.anchor_ids:
-                        if rating_copy.rating < Glicko2System.RATING_FLOOR:
-                            rating_copy.rating = Glicko2System.RATING_FLOOR
-                    self._ratings[player_id] = rating_copy
+                    for pid, pr in _firestore_cache.items()
+                }
             else:
                 # No cache available - try loading from local file as last resort
                 logger.warning("No cache available, attempting local file fallback")
