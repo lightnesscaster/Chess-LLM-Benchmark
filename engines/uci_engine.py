@@ -117,8 +117,10 @@ class UCIEngine(BaseEngine):
         if self._use_clock:
             if board.turn == chess.WHITE:
                 self._white_clock = max(0, self._white_clock - elapsed + self.increment)
+                print(f"  [Eubos clock: {self._white_clock:.1f}s remaining, thought {elapsed:.1f}s]")
             else:
                 self._black_clock = max(0, self._black_clock - elapsed + self.increment)
+                print(f"  [Eubos clock: {self._black_clock:.1f}s remaining, thought {elapsed:.1f}s]")
 
         return result.move
 
