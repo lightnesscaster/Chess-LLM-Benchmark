@@ -16,6 +16,7 @@
                 <th class="rank">#</th>
                 <th class="player">Player</th>
                 <th class="rating">Rating</th>
+                <th class="fide">FIDE Est.</th>
                 <th class="rd">RD</th>
                 <th class="ci">95% CI</th>
                 <th class="games">Games</th>
@@ -25,13 +26,14 @@
         </thead>
         <tbody>
             {% for entry in leaderboard %}
-            <tr class="{% if entry.is_anchor %}anchor{% endif %} clickable-row" data-player-id="{{ entry.player_id }}">
+            <tr class="{% if entry.is_anchor %}anchor{% endif %} clickable-row" data-player-id="{{ entry.player_id|e }}">
                 <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
                 </td>
                 <td class="rating">{{ entry.rating }}</td>
+                <td class="fide">{% if entry.fide_estimate %}~{{ entry.fide_estimate }}{% else %}N/A{% endif %}</td>
                 <td class="rd">{% if entry.is_anchor %}N/A{% else %}{{ entry.rating_deviation }}{% endif %}</td>
                 <td class="ci">{% if entry.is_anchor %}N/A{% else %}{{ entry.confidence_low }} - {{ entry.confidence_high }}{% endif %}</td>
                 <td class="games">{{ entry.games_played }}</td>
@@ -45,6 +47,7 @@
 
 <div class="legend">
     <p><strong style="color: var(--accent)">*</strong> = Anchor player (fixed rating, used for calibration)</p>
+    <p><strong>FIDE Est.</strong> = Estimated FIDE rating based on <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data</p>
     <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
     <p><strong>95% CI</strong> = 95% Confidence Interval</p>
     <p><strong>Legal%</strong> = Percentage of moves that were legal on first attempt</p>

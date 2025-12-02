@@ -30,7 +30,7 @@
         </thead>
         <tbody id="games-tbody">
             {% for game in filtered_games %}
-            <tr data-white="{{ game.white }}" data-black="{{ game.black }}" data-winner="{{ game.winner }}">
+            <tr data-white="{{ game.white|e }}" data-black="{{ game.black|e }}" data-winner="{{ game.winner|e }}">
                 <td class="date">{{ game.created_at[:10] if game.created_at else 'N/A' }}</td>
                 <td class="player white {% if game.winner == 'white' %}winner{% elif game.winner == 'black' %}loser{% endif %}">{{ game.white }}</td>
                 <td class="player black {% if game.winner == 'black' %}winner{% elif game.winner == 'white' %}loser{% endif %}">{{ game.black }}</td>

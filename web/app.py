@@ -167,7 +167,7 @@ def games():
     all_games = get_all_games()
     model_filter = request.args.get('model', '').strip()
     if len(model_filter) > 200:
-        model_filter = model_filter[:200]
+        abort(400)
 
     # Collect all unique models for the dropdown
     all_models = sorted(set(g['white'] for g in all_games) | set(g['black'] for g in all_games))

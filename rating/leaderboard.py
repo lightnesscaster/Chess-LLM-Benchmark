@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 
 from .glicko2 import PlayerRating, Glicko2System
 from .rating_store import RatingStore
+from .fide_estimate import estimate_fide
 from game.stats_collector import StatsCollector
 
 
@@ -48,6 +49,7 @@ class Leaderboard:
                 "rank": i,
                 "player_id": rating.player_id,
                 "rating": round(rating.rating),
+                "fide_estimate": estimate_fide(rating.rating),
                 "rating_deviation": round(rating.rating_deviation),
                 "confidence_low": round(ci_low),
                 "confidence_high": round(rating.rating + ci),
