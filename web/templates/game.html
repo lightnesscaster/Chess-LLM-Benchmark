@@ -216,7 +216,8 @@ document.addEventListener('DOMContentLoaded', function() {
         linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
 
         // Fetch the Stockfish script and create a Blob URL to work around CORS
-        const STOCKFISH_URL = 'https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16-single.js';
+        // Using older stockfish.js which is fully self-contained (no separate .wasm file)
+        const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 
         let scriptBlob;
         try {
