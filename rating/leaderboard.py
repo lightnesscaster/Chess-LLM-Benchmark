@@ -71,8 +71,8 @@ class Leaderboard:
 
             leaderboard.append(entry)
 
-        # Sort by rating (desc)
-        leaderboard.sort(key=lambda e: -e["rating"])
+        # Sort by rating (desc), then by legal move rate (desc) for ties
+        leaderboard.sort(key=lambda e: (-e["rating"], -e.get("legal_move_rate", 0)))
 
         # Re-number ranks after sorting
         for i, entry in enumerate(leaderboard, 1):

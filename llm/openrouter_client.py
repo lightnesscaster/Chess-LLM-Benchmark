@@ -32,7 +32,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
     """
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-    VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+    VALID_REASONING_EFFORTS = {"minimal", "low", "medium", "high"}
     REASONING_EXTRACTION_MODEL = "deepseek/deepseek-v3.2-exp"
 
     def __init__(
