@@ -71,7 +71,7 @@ def get_leaderboard_data(min_games: int = 1) -> list:
     cache_age = time.time() - _leaderboard_cache_time
     if _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL:
         app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
-        return _leaderboard_cache
+        return list(_leaderboard_cache)  # Return copy to prevent mutation
 
     try:
         anchors = get_anchors_from_config()
@@ -99,7 +99,7 @@ def get_leaderboard_data(min_games: int = 1) -> list:
         # Return cached data if available, even if expired
         if _leaderboard_cache:
             app.logger.info("Returning stale cached leaderboard data due to error")
-            return _leaderboard_cache
+            return list(_leaderboard_cache)  # Return copy to prevent mutation
         return []
 
 

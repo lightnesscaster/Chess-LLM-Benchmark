@@ -153,19 +153,43 @@ class RatingStore:
                     logger.error("No fallback data available, starting with empty ratings")
 
     def _save_to_firestore(self, player_id: str) -> None:
-        """Save a single player's rating to Firestore."""
+        """Save a single player's rating to Firestore and update cache."""
+        global _firestore_cache
         if player_id in self._ratings:
             self._db.collection(self._collection).document(player_id).set(
                 self._ratings[player_id].to_dict()
             )
+            # Update cache to maintain consistency
+            if _firestore_cache:
+                rating = self._ratings[player_id]
+                _firestore_cache[player_id] = PlayerRating(
+                    player_id=rating.player_id,
+                    rating=rating.rating,
+                    rating_deviation=rating.rating_deviation,
+                    volatility=rating.volatility,
+                    games_played=rating.games_played,
+                )
 
     def _save_all_to_firestore(self) -> None:
-        """Save all ratings to Firestore."""
+        """Save all ratings to Firestore and update cache."""
+        global _firestore_cache, _firestore_cache_time
         batch = self._db.batch()
         for player_id, rating in self._ratings.items():
             ref = self._db.collection(self._collection).document(player_id)
             batch.set(ref, rating.to_dict())
         batch.commit()
+        # Update cache with all current ratings
+        _firestore_cache = {
+            player_id: PlayerRating(
+                player_id=rating.player_id,
+                rating=rating.rating,
+                rating_deviation=rating.rating_deviation,
+                volatility=rating.volatility,
+                games_played=rating.games_played,
+            )
+            for player_id, rating in self._ratings.items()
+        }
+        _firestore_cache_time = time.time()
 
     def _load(self) -> None:
         """Load ratings from local file."""
