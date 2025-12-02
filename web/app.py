@@ -15,7 +15,7 @@ import yaml
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from flask import Flask, render_template, jsonify, abort
+from flask import Flask, render_template, jsonify, abort, request
 
 from rating.rating_store import RatingStore
 from rating.leaderboard import Leaderboard
@@ -164,7 +164,20 @@ def leaderboard():
 @app.route("/games")
 def games():
     """Show game library."""
-    return render_template("games.html", games=get_all_games())
+    all_games = get_all_games()
+    model_filter = request.args.get('model', '').strip()
+    if len(model_filter) > 200:
+        model_filter = model_filter[:200]
+
+    # Collect all unique models for the dropdown
+    all_models = sorted(set(g['white'] for g in all_games) | set(g['black'] for g in all_games))
+
+    if model_filter:
+        filtered_games = [g for g in all_games if g['white'] == model_filter or g['black'] == model_filter]
+    else:
+        filtered_games = all_games
+
+    return render_template("games.html", filtered_games=filtered_games, all_models=all_models, model_filter=model_filter)
 
 
 @app.route("/game/<game_id>")

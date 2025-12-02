@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Game Library</h1>
-    <p class="subtitle">{{ games|length }} games played</p>
+    <p class="subtitle">{{ filtered_games|length }} games{% if model_filter %} featuring {{ model_filter|e }}{% endif %}</p>
 </div>
 
 <div class="filters">
@@ -29,7 +29,7 @@
             </tr>
         </thead>
         <tbody id="games-tbody">
-            {% for game in games %}
+            {% for game in filtered_games %}
             <tr data-white="{{ game.white }}" data-black="{{ game.black }}" data-winner="{{ game.winner }}">
                 <td class="date">{{ game.created_at[:10] if game.created_at else 'N/A' }}</td>
                 <td class="player white {% if game.winner == 'white' %}winner{% elif game.winner == 'black' %}loser{% endif %}">{{ game.white }}</td>
@@ -57,9 +57,9 @@
     </table>
 </div>
 
-{% if not games %}
+{% if not filtered_games %}
 <div class="empty-state">
-    <p>No games recorded yet.</p>
+    <p>No games found{% if model_filter %} for {{ model_filter|e }}{% endif %}.</p>
 </div>
 {% endif %}
 {% endblock %}
@@ -68,43 +68,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const modelFilter = document.getElementById('model-filter');
-    const tbody = document.getElementById('games-tbody');
-    const rows = tbody.querySelectorAll('tr');
 
-    // Collect unique models from all games
-    const models = new Set();
-    rows.forEach(row => {
-        models.add(row.dataset.white);
-        models.add(row.dataset.black);
-    });
+    // Populate dropdown with models from server
+    const allModels = {{ all_models|tojson }};
+    const currentFilter = {{ model_filter|tojson }};
 
-    // Populate dropdown with sorted models
-    Array.from(models).sort().forEach(model => {
+    allModels.forEach(model => {
         const option = document.createElement('option');
         option.value = model;
         option.textContent = model;
+        if (model === currentFilter) {
+            option.selected = true;
+        }
         modelFilter.appendChild(option);
     });
-
-    // Check for model parameter in URL and pre-select
-    const urlParams = new URLSearchParams(window.location.search);
-    const modelParam = urlParams.get('model');
-    if (modelParam && models.has(modelParam)) {
-        modelFilter.value = modelParam;
-    }
-
-    function filterGames() {
-        const selectedModel = modelFilter.value;
-
-        rows.forEach(row => {
-            const white = row.dataset.white;
-            const black = row.dataset.black;
-
-            const matchesModel = !selectedModel || white === selectedModel || black === selectedModel;
-
-            row.style.display = matchesModel ? '' : 'none';
-        });
-    }
 
     modelFilter.addEventListener('change', function() {
         const selectedModel = modelFilter.value;
@@ -114,11 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = '/games';
         }
     });
-
-    // Apply filter on page load if model param exists
-    if (modelParam) {
-        filterGames();
-    }
 });
 </script>
 {% endblock %}
