@@ -216,8 +216,8 @@ document.addEventListener('DOMContentLoaded', function() {
         linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
 
         // Load Stockfish from CDN, modifying WASM paths to be absolute
-        const STOCKFISH_BASE = 'https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/';
-        const STOCKFISH_JS_URL = STOCKFISH_BASE + 'stockfish-nnue-16-single.js';
+        const STOCKFISH_BASE = 'https://unpkg.com/stockfish@17.1.0/src/';
+        const STOCKFISH_JS_URL = STOCKFISH_BASE + 'stockfish-17.1-single-a496a04.js';
 
         let scriptBlob;
         try {
