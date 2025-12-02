@@ -742,13 +742,13 @@ def main():
     )
     manual_parser.add_argument(
         "--white-reasoning-effort",
-        choices=["low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for white (low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high"],
+        help="Reasoning effort level for white (minimal, low, medium, high)",
     )
     manual_parser.add_argument(
         "--black-reasoning-effort",
-        choices=["low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for black (low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high"],
+        help="Reasoning effort level for black (minimal, low, medium, high)",
     )
     manual_parser.add_argument(
         "--white-name",
