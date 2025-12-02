@@ -1,6 +1,10 @@
 # Chess LLM Benchmark
 
-This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the Glicko-2 rating system, calibrated to approximate Lichess Classical ratings. Results can be [here](https://chessbenchllm.onrender.com/).
+This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the Glicko-2 rating system, calibrated to approximate Lichess Classical ratings. 
+
+Results can be seen [here](https://chessbenchllm.onrender.com/)
+
+Author can be contacted at dfj2106@columbia.edu
 
 ## How It Works
 
