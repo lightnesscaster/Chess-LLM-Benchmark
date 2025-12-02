@@ -11,8 +11,6 @@ import re
 import sys
 from pathlib import Path
 
-import chess
-import chess.engine
 import yaml
 
 # Add parent directory to path for imports
@@ -34,97 +32,6 @@ logging.basicConfig(level=logging.INFO)
 DATA_DIR = Path(__file__).parent.parent / "data"
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 RATINGS_PATH = DATA_DIR / "ratings.json"
-
-# Stockfish configuration
-STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
-
-
-def analyze_position(fen: str, depth: int = 18, num_lines: int = 3) -> dict | None:
-    """
-    Analyze a chess position with Stockfish.
-
-    Creates a fresh engine per request to allow parallel analyses.
-
-    Args:
-        fen: FEN string of the position
-        depth: Search depth
-        num_lines: Number of principal variations to return
-
-    Returns:
-        Dictionary with evaluation and lines, or None if analysis fails
-    """
-    try:
-        board = chess.Board(fen)
-    except ValueError:
-        return None
-
-    engine = None
-    try:
-        engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
-
-        # Run analysis with time limit
-        info = engine.analyse(
-            board,
-            chess.engine.Limit(depth=depth, time=5.0),
-            multipv=num_lines
-        )
-
-        lines = []
-        for pv_info in info:
-            score = pv_info.get("score")
-            pv = pv_info.get("pv", [])
-
-            if score is None:
-                continue
-
-            # Convert score to centipawns from white's perspective
-            if score.is_mate():
-                mate_in = score.white().mate()
-                score_cp = None
-                # Positive = white wins, negative = black wins
-                score_text = f"M{mate_in}" if mate_in > 0 else f"-M{abs(mate_in)}"
-            else:
-                score_cp = score.white().score()
-                score_text = f"{score_cp / 100:+.2f}"
-
-            # Convert PV moves to SAN
-            pv_san = []
-            temp_board = board.copy()
-            for move in pv[:10]:  # Limit to 10 moves
-                try:
-                    pv_san.append(temp_board.san(move))
-                    temp_board.push(move)
-                except Exception as e:
-                    app.logger.warning(f"Failed to convert PV move {move}: {e}")
-                    break
-
-            lines.append({
-                "score_cp": score_cp,
-                "score_text": score_text,
-                "mate": score.white().mate() if score.is_mate() else None,
-                "pv": pv_san,
-                "pv_uci": [move.uci() for move in pv[:10]],
-            })
-
-        if not lines:
-            return None
-
-        return {
-            "fen": fen,
-            "depth": depth,
-            "lines": lines,
-            "turn": "white" if board.turn else "black",
-        }
-    except Exception as e:
-        app.logger.error(f"Stockfish analysis failed: {e}")
-        return None
-    finally:
-        if engine is not None:
-            try:
-                engine.quit()
-            except Exception:
-                pass
-
 
 def get_anchors_from_config() -> dict:
     """Load anchor IDs and ratings from config file."""
@@ -312,33 +219,6 @@ def api_game(game_id: str):
     if not game_data:
         abort(404)
     return jsonify(game_data)
-
-
-@app.route("/api/analyze", methods=["POST"])
-def api_analyze():
-    """Analyze a chess position with Stockfish."""
-    data = request.get_json()
-    if not data or "fen" not in data:
-        abort(400, description="Missing 'fen' parameter")
-
-    fen = data["fen"]
-    if not isinstance(fen, str) or len(fen) > 200:
-        abort(400, description="Invalid FEN")
-
-    depth = data.get("depth", 18)
-    num_lines = data.get("lines", 3)
-
-    # Validate parameters
-    if not isinstance(depth, int) or depth < 1 or depth > 30:
-        depth = 18
-    if not isinstance(num_lines, int) or num_lines < 1 or num_lines > 5:
-        num_lines = 3
-
-    result = analyze_position(fen, depth=depth, num_lines=num_lines)
-    if result is None:
-        abort(503, description="Analysis unavailable - Stockfish may not be installed")
-
-    return jsonify(result)
 
 
 if __name__ == "__main__":

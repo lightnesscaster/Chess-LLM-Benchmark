@@ -117,7 +117,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Analysis state
     let analysisEnabled = false;
     let analysisCache = {};
-    let currentAnalysisController = null;
+    let stockfish = null;
+    let currentAnalysisFen = null;
+    let analysisLines = [{}, {}, {}]; // Store 3 lines of analysis
 
     const board = Chessboard('board', {
         position: 'start',
@@ -197,34 +199,115 @@ document.addEventListener('DOMContentLoaded', function() {
         movesContainer.innerHTML = '<p style="color: #e94560;">Error: Unable to parse PGN. The game moves may be corrupted.</p>';
     }
 
-    // Analysis functions
-    async function fetchAnalysis(fen, signal) {
-        // Check cache first
-        if (analysisCache[fen]) {
-            return analysisCache[fen];
+    // Stockfish Web Worker initialization
+    function initStockfish() {
+        if (stockfish) return Promise.resolve();
+
+        return new Promise((resolve, reject) => {
+            const linesContainer = document.getElementById('analysis-lines');
+            linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
+
+            // Load Stockfish from CDN
+            stockfish = new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16-single.js');
+
+            stockfish.onmessage = function(event) {
+                const line = event.data;
+
+                // Handle UCI initialization
+                if (line === 'uciok') {
+                    stockfish.postMessage('setoption name MultiPV value 3');
+                    stockfish.postMessage('isready');
+                } else if (line === 'readyok') {
+                    resolve();
+                } else {
+                    handleStockfishOutput(line);
+                }
+            };
+
+            stockfish.onerror = function(error) {
+                console.error('Stockfish error:', error);
+                linesContainer.innerHTML = '<div class="analysis-error">Failed to load engine</div>';
+                reject(error);
+            };
+
+            // Initialize UCI
+            stockfish.postMessage('uci');
+        });
+    }
+
+    // Parse Stockfish UCI output
+    function handleStockfishOutput(line) {
+        if (!line.startsWith('info depth')) return;
+        if (line.includes('currmove')) return; // Skip current move updates
+
+        // Parse the info line
+        const depthMatch = line.match(/depth (\d+)/);
+        const multipvMatch = line.match(/multipv (\d+)/);
+        const scoreMatch = line.match(/score (cp|mate) (-?\d+)/);
+        const pvMatch = line.match(/ pv (.+)/);
+
+        if (!depthMatch || !scoreMatch || !pvMatch) return;
+
+        const depth = parseInt(depthMatch[1]);
+        const multipv = multipvMatch ? parseInt(multipvMatch[1]) : 1;
+        const scoreType = scoreMatch[1];
+        const scoreValue = parseInt(scoreMatch[2]);
+        const pvUci = pvMatch[1].split(' ');
+
+        // Convert UCI moves to SAN using chess.js
+        const fen = currentAnalysisFen;
+        if (!fen) return;
+
+        const tempChess = new Chess(fen);
+        const pvSan = [];
+        for (const uci of pvUci.slice(0, 10)) {
+            try {
+                const move = tempChess.move(uci, { sloppy: true });
+                if (move) {
+                    pvSan.push(move.san);
+                } else {
+                    break;
+                }
+            } catch (e) {
+                break;
+            }
         }
 
-        try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fen: fen, depth: 18, lines: 3 }),
-                signal: signal
-            });
+        // Build line data
+        let score_cp = null;
+        let mate = null;
+        let score_text = '';
 
-            if (!response.ok) {
-                throw new Error('Analysis failed');
-            }
+        if (scoreType === 'mate') {
+            mate = scoreValue;
+            score_text = scoreValue > 0 ? `M${scoreValue}` : `-M${Math.abs(scoreValue)}`;
+        } else {
+            score_cp = scoreValue;
+            score_text = (scoreValue / 100).toFixed(2);
+            if (scoreValue > 0) score_text = '+' + score_text;
+        }
 
-            const data = await response.json();
-            analysisCache[fen] = data;
-            return data;
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                return null; // Request was cancelled, not an error
-            }
-            console.error('Analysis error:', error);
-            return null;
+        // Store in analysis lines (multipv is 1-indexed)
+        analysisLines[multipv - 1] = {
+            score_cp,
+            mate,
+            score_text,
+            pv: pvSan,
+            depth
+        };
+
+        // Update display with current analysis
+        displayAnalysis({
+            depth,
+            lines: analysisLines.filter(l => l.pv && l.pv.length > 0)
+        });
+
+        // Cache when we reach target depth
+        if (depth >= 18 && multipv === 1) {
+            analysisCache[fen] = {
+                depth,
+                lines: analysisLines.filter(l => l.pv && l.pv.length > 0).map(l => ({...l}))
+            };
         }
     }
 
@@ -234,15 +317,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let percentage, displayScore;
 
-        if (mate !== null) {
+        if (mate !== null && mate !== undefined) {
             // Mate score
             percentage = mate > 0 ? 100 : 0;
             displayScore = mate > 0 ? `M${mate}` : `-M${Math.abs(mate)}`;
-        } else if (score_cp !== null) {
-            // Convert centipawns to percentage (sigmoid-like scaling)
-            // Cap at roughly ±10 pawns for display
+        } else if (score_cp !== null && score_cp !== undefined) {
+            // Convert centipawns to percentage
             const capped = Math.max(-1000, Math.min(1000, score_cp));
-            percentage = 50 + (capped / 20); // Each pawn = 5% shift
+            percentage = 50 + (capped / 20);
             percentage = Math.max(0, Math.min(100, percentage));
             displayScore = (score_cp / 100).toFixed(2);
             if (score_cp > 0) displayScore = '+' + displayScore;
@@ -259,22 +341,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const linesContainer = document.getElementById('analysis-lines');
         const depthSpan = document.getElementById('analysis-depth');
 
-        if (!analysis) {
-            linesContainer.innerHTML = '<div class="analysis-error">Analysis unavailable</div>';
-            return;
+        if (!analysis || !analysis.lines || analysis.lines.length === 0) {
+            return; // Keep showing loading or previous state
         }
 
         depthSpan.textContent = `Depth ${analysis.depth}`;
 
         // Update eval bar with best line score
-        if (analysis.lines.length > 0) {
-            const bestLine = analysis.lines[0];
-            updateEvalBar(bestLine.score_cp, bestLine.mate);
-        }
+        const bestLine = analysis.lines[0];
+        updateEvalBar(bestLine.score_cp, bestLine.mate);
 
         // Display lines
         let html = '';
-        analysis.lines.forEach((line, index) => {
+        analysis.lines.forEach((line) => {
             const pvText = line.pv.join(' ');
             html += `
                 <div class="analysis-line">
@@ -288,49 +367,59 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function runAnalysis() {
-        if (!analysisEnabled) return;
+        if (!analysisEnabled || !stockfish) return;
 
         const fen = positions[currentPosition];
-        const linesContainer = document.getElementById('analysis-lines');
 
-        // Cancel any pending request
-        if (currentAnalysisController) {
-            currentAnalysisController.abort();
-        }
-
-        // Check cache first - no need for loading state
+        // Check cache first
         if (analysisCache[fen]) {
             displayAnalysis(analysisCache[fen]);
             return;
         }
 
+        // Stop previous analysis
+        stockfish.postMessage('stop');
+
+        // Reset analysis lines
+        analysisLines = [{}, {}, {}];
+        currentAnalysisFen = fen;
+
         // Show loading state
+        const linesContainer = document.getElementById('analysis-lines');
         linesContainer.innerHTML = '<div class="analysis-loading">Analyzing...</div>';
+        document.getElementById('analysis-depth').textContent = '';
 
-        // Create new abort controller for this request
-        currentAnalysisController = new AbortController();
-        const controller = currentAnalysisController;
-
-        const analysis = await fetchAnalysis(fen, controller.signal);
-
-        // Only update if this controller is still current (not aborted)
-        if (currentAnalysisController === controller && analysis) {
-            displayAnalysis(analysis);
-        }
+        // Start new analysis
+        stockfish.postMessage('position fen ' + fen);
+        stockfish.postMessage('go depth 20');
     }
 
-    function toggleAnalysis() {
-        analysisEnabled = !analysisEnabled;
+    async function toggleAnalysis() {
         const panel = document.getElementById('analysis-panel');
         const btn = document.getElementById('btn-analysis');
 
-        if (analysisEnabled) {
+        if (!analysisEnabled) {
+            // Enable analysis
             panel.style.display = 'block';
             btn.classList.add('active');
-            runAnalysis();
+
+            try {
+                await initStockfish();
+                analysisEnabled = true;
+                runAnalysis();
+            } catch (error) {
+                console.error('Failed to initialize Stockfish:', error);
+                panel.style.display = 'none';
+                btn.classList.remove('active');
+            }
         } else {
+            // Disable analysis
+            analysisEnabled = false;
             panel.style.display = 'none';
             btn.classList.remove('active');
+            if (stockfish) {
+                stockfish.postMessage('stop');
+            }
         }
     }
 
