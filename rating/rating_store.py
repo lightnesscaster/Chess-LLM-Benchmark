@@ -320,6 +320,7 @@ class RatingStore:
             rating_deviation=rating_deviation,
             volatility=0.03,  # Low volatility for anchors
             games_played=0,
+            unclamped_rating=rating,  # Anchors have fixed ratings
         )
         if auto_save:
             if self._use_firestore:
