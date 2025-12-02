@@ -747,24 +747,24 @@ body {
     background: var(--bg-secondary);
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid var(--accent);
+    border: 1px solid var(--border);
 }
 
 .analysis-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
-    background: rgba(233, 69, 96, 0.1);
+    padding: 0.6rem 1rem;
+    background: var(--bg-card);
     border-bottom: 1px solid var(--border);
 }
 
 .analysis-title {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--accent);
+    color: var(--text-secondary);
 }
 
 .analysis-depth {
@@ -774,25 +774,27 @@ body {
 }
 
 .analysis-content {
-    padding: 1rem;
+    padding: 0.75rem;
+    display: flex;
+    gap: 0.75rem;
 }
 
 .eval-bar-container {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 0.25rem;
+    flex-shrink: 0;
 }
 
 .eval-bar {
-    width: 28px;
-    height: 140px;
+    width: 24px;
+    height: 68px;
     background-color: var(--black-player);
-    border-radius: 4px;
+    border-radius: 3px;
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border);
-    flex-shrink: 0;
 }
 
 .eval-bar-fill {
@@ -806,38 +808,43 @@ body {
 }
 
 .eval-score {
-    font-size: 2rem;
+    font-size: 0.85rem;
     font-weight: bold;
     font-family: 'Consolas', 'Monaco', monospace;
-    min-width: 100px;
+    color: var(--text-primary);
+    text-align: center;
 }
 
 .analysis-lines {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
 }
 
 .analysis-line {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem 0.6rem;
     background-color: var(--bg-card);
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border-left: 3px solid transparent;
 }
 
 .analysis-line:first-child {
-    background-color: rgba(74, 222, 128, 0.1);
-    border: 1px solid rgba(74, 222, 128, 0.3);
+    background-color: rgba(74, 222, 128, 0.08);
+    border-left-color: var(--success);
 }
 
 .line-score {
-    font-weight: bold;
+    font-weight: 600;
     font-family: 'Consolas', 'Monaco', monospace;
-    min-width: 55px;
+    min-width: 50px;
     color: var(--success);
+    flex-shrink: 0;
 }
 
 .analysis-line:not(:first-child) .line-score {
@@ -846,16 +853,24 @@ body {
 
 .line-pv {
     color: var(--text-secondary);
-    word-break: break-word;
-    line-height: 1.4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.analysis-line:first-child .line-pv {
+    color: var(--text-primary);
 }
 
 .analysis-loading,
 .analysis-error {
     text-align: center;
-    padding: 1.5rem;
+    padding: 2rem 1rem;
     color: var(--text-secondary);
-    font-style: italic;
+    font-size: 0.85rem;
 }
 
 .analysis-error {
