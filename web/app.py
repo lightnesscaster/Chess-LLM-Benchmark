@@ -4,13 +4,11 @@ Flask web application for LLM Chess Benchmark.
 Displays leaderboard and game library with PGN viewer.
 """
 
-import atexit
 import logging
 import math
 import os
 import re
 import sys
-import threading
 from pathlib import Path
 
 import chess
@@ -38,52 +36,14 @@ CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 RATINGS_PATH = DATA_DIR / "ratings.json"
 
 # Stockfish configuration
-# NOTE: This uses module-level globals and is designed for single-worker
-# deployments (Flask development server). For production with multiple workers
-# (gunicorn, uwsgi), each worker process will create its own Stockfish instance.
 STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
-_stockfish_engine = None
-_stockfish_lock = threading.Lock()
-_stockfish_pid = None  # Track PID to detect Flask reloads/worker restarts
-
-
-def get_stockfish_engine():
-    """Get or create the Stockfish engine instance."""
-    global _stockfish_engine, _stockfish_pid
-    current_pid = os.getpid()
-
-    # Reset engine if we're in a new process (Flask reload or worker restart)
-    if _stockfish_pid is not None and _stockfish_pid != current_pid:
-        _stockfish_engine = None
-
-    _stockfish_pid = current_pid
-
-    if _stockfish_engine is None:
-        try:
-            _stockfish_engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
-        except Exception as e:
-            app.logger.error(f"Failed to initialize Stockfish: {e}")
-            return None
-    return _stockfish_engine
-
-
-def cleanup_stockfish_engine():
-    """Close Stockfish engine on shutdown."""
-    global _stockfish_engine
-    if _stockfish_engine is not None:
-        try:
-            _stockfish_engine.quit()
-        except Exception:
-            pass
-        _stockfish_engine = None
-
-
-atexit.register(cleanup_stockfish_engine)
 
 
 def analyze_position(fen: str, depth: int = 18, num_lines: int = 3) -> dict | None:
     """
     Analyze a chess position with Stockfish.
+
+    Creates a fresh engine per request to allow parallel analyses.
 
     Args:
         fen: FEN string of the position
@@ -93,77 +53,77 @@ def analyze_position(fen: str, depth: int = 18, num_lines: int = 3) -> dict | No
     Returns:
         Dictionary with evaluation and lines, or None if analysis fails
     """
-    engine = get_stockfish_engine()
-    if engine is None:
-        return None
-
     try:
         board = chess.Board(fen)
     except ValueError:
         return None
 
-    # Use lock to prevent race conditions with MultiPV configuration
-    with _stockfish_lock:
-        try:
-            # Configure MultiPV for multiple lines
-            engine.configure({"MultiPV": num_lines})
+    engine = None
+    try:
+        engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
-            # Run analysis with time limit to prevent blocking other requests
-            info = engine.analyse(
-                board,
-                chess.engine.Limit(depth=depth, time=5.0),
-                multipv=num_lines
-            )
+        # Run analysis with time limit
+        info = engine.analyse(
+            board,
+            chess.engine.Limit(depth=depth, time=5.0),
+            multipv=num_lines
+        )
 
-            lines = []
-            for pv_info in info:
-                score = pv_info.get("score")
-                pv = pv_info.get("pv", [])
+        lines = []
+        for pv_info in info:
+            score = pv_info.get("score")
+            pv = pv_info.get("pv", [])
 
-                if score is None:
-                    continue
+            if score is None:
+                continue
 
-                # Convert score to centipawns from white's perspective
-                if score.is_mate():
-                    mate_in = score.white().mate()
-                    score_cp = None
-                    # Positive = white wins, negative = black wins
-                    score_text = f"M{mate_in}" if mate_in > 0 else f"-M{abs(mate_in)}"
-                else:
-                    score_cp = score.white().score()
-                    score_text = f"{score_cp / 100:+.2f}"
+            # Convert score to centipawns from white's perspective
+            if score.is_mate():
+                mate_in = score.white().mate()
+                score_cp = None
+                # Positive = white wins, negative = black wins
+                score_text = f"M{mate_in}" if mate_in > 0 else f"-M{abs(mate_in)}"
+            else:
+                score_cp = score.white().score()
+                score_text = f"{score_cp / 100:+.2f}"
 
-                # Convert PV moves to SAN
-                pv_san = []
-                temp_board = board.copy()
-                for move in pv[:10]:  # Limit to 10 moves
-                    try:
-                        pv_san.append(temp_board.san(move))
-                        temp_board.push(move)
-                    except Exception as e:
-                        app.logger.warning(f"Failed to convert PV move {move}: {e}")
-                        break
+            # Convert PV moves to SAN
+            pv_san = []
+            temp_board = board.copy()
+            for move in pv[:10]:  # Limit to 10 moves
+                try:
+                    pv_san.append(temp_board.san(move))
+                    temp_board.push(move)
+                except Exception as e:
+                    app.logger.warning(f"Failed to convert PV move {move}: {e}")
+                    break
 
-                lines.append({
-                    "score_cp": score_cp,
-                    "score_text": score_text,
-                    "mate": score.white().mate() if score.is_mate() else None,
-                    "pv": pv_san,
-                    "pv_uci": [move.uci() for move in pv[:10]],
-                })
+            lines.append({
+                "score_cp": score_cp,
+                "score_text": score_text,
+                "mate": score.white().mate() if score.is_mate() else None,
+                "pv": pv_san,
+                "pv_uci": [move.uci() for move in pv[:10]],
+            })
 
-            if not lines:
-                return None
-
-            return {
-                "fen": fen,
-                "depth": depth,
-                "lines": lines,
-                "turn": "white" if board.turn else "black",
-            }
-        except Exception as e:
-            app.logger.error(f"Stockfish analysis failed: {e}")
+        if not lines:
             return None
+
+        return {
+            "fen": fen,
+            "depth": depth,
+            "lines": lines,
+            "turn": "white" if board.turn else "black",
+        }
+    except Exception as e:
+        app.logger.error(f"Stockfish analysis failed: {e}")
+        return None
+    finally:
+        if engine is not None:
+            try:
+                engine.quit()
+            except Exception:
+                pass
 
 
 def get_anchors_from_config() -> dict:
