@@ -225,22 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) throw new Error('Failed to fetch Stockfish');
             let scriptText = await response.text();
 
-            // Replace relative WASM/NNUE paths with absolute CDN URLs
-            // Handles single quotes, double quotes, and backticks
-            let patchCount = 0;
-            scriptText = scriptText.replace(
-                /(["'`])([a-zA-Z0-9_-]+\.(wasm|nnue))\1/g,
-                (match, quote, filename) => {
-                    patchCount++;
-                    return `${quote}${STOCKFISH_BASE}${filename}${quote}`;
-                }
-            );
-
-            if (patchCount === 0) {
-                console.warn('No WASM/NNUE paths found to patch - engine may fail to load');
-            } else {
-                console.log(`Patched ${patchCount} WASM/NNUE path(s) to use CDN`);
-            }
+            // The script uses 'Te' variable (from document.currentScript.src) to determine base path.
+            // Since we're running in a Worker from a Blob, Te is undefined.
+            // Prepend a line to set Te to the CDN URL so WASM files load correctly.
+            scriptText = `var Te = "${STOCKFISH_JS_URL}";\n` + scriptText;
+            console.log('Injected Te variable for CDN base path');
 
             scriptBlob = new Blob([scriptText], { type: 'application/javascript' });
         } catch (error) {
