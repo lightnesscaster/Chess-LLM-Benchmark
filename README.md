@@ -123,11 +123,6 @@ engines:
     weights_path: "maia-1100.pb.gz"
     rating: 1628
 
-  - player_id: "sf-skill-5"
-    type: stockfish
-    rating: 1300
-    skill_level: 5
-
   - player_id: "eubos"
     type: uci                    # Generic UCI engine
     path: "/path/to/engine"
