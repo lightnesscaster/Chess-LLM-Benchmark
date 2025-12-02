@@ -238,12 +238,14 @@ def api_invalidate_cache():
     """Invalidate the leaderboard cache for ALL workers by touching signal file."""
     from rating.rating_store import invalidate_cache as touch_signal_file
 
-    # Check for secret token (set via environment variable)
+    # Require secret token (header only, not query param to avoid log leakage)
     expected_token = os.environ.get("CACHE_INVALIDATE_TOKEN")
-    if expected_token:
-        provided_token = request.headers.get("X-Cache-Token") or request.args.get("token")
-        if provided_token != expected_token:
-            abort(403)
+    if not expected_token:
+        app.logger.error("CACHE_INVALIDATE_TOKEN not configured")
+        abort(500)
+    provided_token = request.headers.get("X-Cache-Token")
+    if provided_token != expected_token:
+        abort(403)
 
     # Touch the signal file - all workers share this filesystem and will see it
     touch_signal_file()
