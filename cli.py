@@ -343,7 +343,7 @@ async def recalculate_ratings(args):
         return 1
 
     # Multi-pass convergence
-    max_passes = 100
+    max_passes = 5
     convergence_threshold = 10.0  # Stop when no rating changes by more than this
     random.seed(42)  # Fixed seed for reproducible results
 
@@ -379,15 +379,6 @@ async def recalculate_ratings(args):
     for pass_num in range(1, max_passes + 1):
         # Store ratings at start of pass to check convergence
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
-
-        # Reset RD to default at start of each pass to prevent instability
-        # (Glicko-2 RD shrinks with each game, causing hypersensitivity in multi-pass)
-        for pid in all_players:
-            if not rating_store.is_anchor(pid):
-                player = rating_store.get(pid)
-                player.rating_deviation = 350.0  # Default RD
-                player.volatility = 0.06  # Default volatility
-                rating_store.set(player, auto_save=False)
 
         # Shuffle games to eliminate order bias
         random.shuffle(valid_games)
