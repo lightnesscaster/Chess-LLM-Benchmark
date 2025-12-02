@@ -41,7 +41,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         model_name: str,
         api_key: Optional[str] = None,
         temperature: float = 0.0,
-        max_tokens: int = 10,
+        max_tokens: int = 0,
         reasoning: bool = False,
         reasoning_effort: Optional[str] = None,
     ):
