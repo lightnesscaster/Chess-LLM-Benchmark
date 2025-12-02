@@ -235,8 +235,8 @@ def game(game_id: str):
 # API endpoints for dynamic updates
 @app.route("/api/invalidate-cache", methods=["POST"])
 def api_invalidate_cache():
-    """Invalidate the leaderboard cache. Requires secret token."""
-    global _leaderboard_cache, _leaderboard_cache_time
+    """Invalidate the leaderboard cache for ALL workers by touching signal file."""
+    from rating.rating_store import invalidate_cache as touch_signal_file
 
     # Check for secret token (set via environment variable)
     expected_token = os.environ.get("CACHE_INVALIDATE_TOKEN")
@@ -245,10 +245,10 @@ def api_invalidate_cache():
         if provided_token != expected_token:
             abort(403)
 
-    _leaderboard_cache = []
-    _leaderboard_cache_time = 0
-    app.logger.info("Cache invalidated via API")
-    return jsonify({"status": "ok", "message": "Cache invalidated"})
+    # Touch the signal file - all workers share this filesystem and will see it
+    touch_signal_file()
+    app.logger.info("Cache invalidation signal file touched - all workers will refresh")
+    return jsonify({"status": "ok", "message": "Cache invalidated for all workers"})
 
 
 @app.route("/api/leaderboard")
