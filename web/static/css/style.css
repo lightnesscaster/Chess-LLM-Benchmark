@@ -85,14 +85,14 @@ body {
 .page-nav-link {
     font-size: 2rem;
     font-weight: bold;
-    color: var(--text-secondary);
+    color: var(--accent-light);
     text-decoration: none;
     transition: color 0.2s;
     position: relative;
 }
 
 .page-nav-link:hover {
-    color: var(--accent-light);
+    color: var(--text-primary);
 }
 
 .page-nav-link::after {
@@ -111,7 +111,7 @@ body {
 }
 
 .back-link {
-    color: var(--accent);
+    color: var(--accent-light);
     text-decoration: none;
     display: inline-block;
     margin-bottom: 1rem;
@@ -436,6 +436,15 @@ body {
     color: var(--text-secondary);
     font-size: 0.875rem;
     border-top: 1px solid var(--border);
+}
+
+.footer a {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
 }
 
 /* Empty state */
