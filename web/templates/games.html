@@ -106,7 +106,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    modelFilter.addEventListener('change', filterGames);
+    modelFilter.addEventListener('change', function() {
+        const selectedModel = modelFilter.value;
+        if (selectedModel) {
+            window.location.href = '/games?model=' + encodeURIComponent(selectedModel);
+        } else {
+            window.location.href = '/games';
+        }
+    });
 
     // Apply filter on page load if model param exists
     if (modelParam) {
