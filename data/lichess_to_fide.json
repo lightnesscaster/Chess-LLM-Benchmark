@@ -1,0 +1,33 @@
+{
+  "source": "https://chessgoals.com/rating-comparison/",
+  "description": "Lichess Classical to FIDE rating mapping from ChessGoals.com survey data",
+  "mappings": [
+    {"lichess_classical": 1715, "fide": 1450},
+    {"lichess_classical": 1770, "fide": 1490},
+    {"lichess_classical": 1795, "fide": 1540},
+    {"lichess_classical": 1810, "fide": 1555},
+    {"lichess_classical": 1830, "fide": 1570},
+    {"lichess_classical": 1850, "fide": 1610},
+    {"lichess_classical": 1855, "fide": 1625},
+    {"lichess_classical": 1865, "fide": 1650},
+    {"lichess_classical": 1915, "fide": 1690},
+    {"lichess_classical": 1935, "fide": 1710},
+    {"lichess_classical": 1935, "fide": 1720},
+    {"lichess_classical": 1935, "fide": 1735},
+    {"lichess_classical": 1985, "fide": 1745},
+    {"lichess_classical": 2000, "fide": 1770},
+    {"lichess_classical": 2010, "fide": 1795},
+    {"lichess_classical": 2030, "fide": 1810},
+    {"lichess_classical": 2045, "fide": 1840},
+    {"lichess_classical": 2070, "fide": 1880},
+    {"lichess_classical": 2095, "fide": 1910},
+    {"lichess_classical": 2100, "fide": 1925},
+    {"lichess_classical": 2125, "fide": 1990},
+    {"lichess_classical": 2195, "fide": 2055},
+    {"lichess_classical": 2245, "fide": 2135},
+    {"lichess_classical": 2340, "fide": 2210},
+    {"lichess_classical": 2360, "fide": 2275},
+    {"lichess_classical": 2435, "fide": 2350},
+    {"lichess_classical": 2500, "fide": 2415}
+  ]
+}
