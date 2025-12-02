@@ -14,7 +14,7 @@
 <div class="methodology-content">
     <section class="methodology-section">
         <h2>Overview</h2>
-        <p>This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the <strong>Glicko-2</strong> rating system, calibrated to approximate <strong>Lichess Classical</strong> ratings.</p>
+        <p>This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the <strong>Glicko-2</strong> rating system, calibrated to approximate <strong>Lichess Classical</strong> ratings. Full implementation details can be found on <a href="https://github.com/lightnesscaster/Chess-LLM-Benchmark">Github</a>.</p>
     </section>
 
     <section class="methodology-section">
@@ -32,39 +32,47 @@
         <p>We use the <strong>Glicko-2</strong> rating system, which improves upon traditional Elo by tracking rating deviation (uncertainty) and rating volatility.</p>
         <ul>
             <li><strong>Initial rating:</strong> New players start at 1500 with high uncertainty</li>
-            <li><strong>Rating deviation (RD):</strong> Represents confidence in the rating. Lower RD means more certain</li>
-            <li><strong>95% Confidence Interval:</strong> The range where we're 95% confident the true rating lies</li>
+            <li><strong>Rating deviation (RD):</strong> Represents confidence in the rating. Lower RD means more certainty. Minimum RD is 30.</li>
+            <li><strong>95% Confidence Interval:</strong> There is 95% confidence the true rating lies within this range</li>
         </ul>
     </section>
 
     <section class="methodology-section">
         <h2>Anchor Calibration</h2>
-        <p>To provide meaningful ratings, we use engine anchors with fixed, known ratings:</p>
+        <p>To provide a meaningful estimate of strength, we calibrate LLMs by having them face engine anchors with known Lichess ratings. This allows our entire rating pool to correspond to Lichess Classical ratings. These anchors include:</p>
         <ul>
-            <li><strong>Stockfish</strong> at various skill levels (approximately 1000-2800 Lichess)</li>
-            <li><strong>Maia</strong> neural network engines trained to play at specific human skill levels</li>
-            <li><strong>Random mover</strong> as a baseline (~400 rating)</li>
+            <li><strong><a href="https://www.maiachess.com/">Maia</a></strong> neural network engines trained to play at specific human skill levels.</li>
+            <li><strong>Random mover</strong> as a baseline. We assign it a rating of 400 because 400 is the lowest possible Lichess rating.</li>
+            <li><strong><a href="https://github.com/cjbolt/EubosChess">Eubos</a></strong>, a stronger engine to better estimate the strength of the top LLMs.</li>
         </ul>
-        <p>Anchor ratings are fixed and never updated. LLM ratings are calibrated by their performance against these anchors.</p>
+        <p>Anchor ratings are fixed and never updated, though the Lichess rating of an anchor model may drift slightly over time. LLM ratings are calibrated by their performance against these anchors.</p>
     </section>
 
     <section class="methodology-section">
         <h2>FIDE Estimation</h2>
-        <p>FIDE estimates are derived from Lichess Classical ratings using conversion data from <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data. These are rough approximations and should be interpreted with caution.</p>
+        <p>FIDE estimates are derived from Lichess Classical ratings using conversion data from <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data. These are rough approximations.</p>
+        <p>The ChessGoals survey only maps Lichess ratings to FIDE within the range of 1715 to 2500 Lichess Classical. Consequently, models with a rating outside of that range are given N/A for their FIDE estimate.</p>
     </section>
 
     <section class="methodology-section">
         <h2>Legal Move Rate</h2>
-        <p>The <strong>Legal%</strong> metric shows what percentage of an LLM's moves were legal on the first attempt (before any retry). This helps distinguish between models that understand chess rules well versus those that frequently attempt invalid moves.</p>
+        <p>The <strong>Legal%</strong> metric shows what percentage of an LLM's moves were legal on the first attempt (before any retry).</p>
     </section>
 
     <section class="methodology-section">
         <h2>Limitations</h2>
         <ul>
-            <li>LLMs may have seen chess games in training data, potentially including specific openings or positions</li>
-            <li>Performance may vary based on prompt format and temperature settings</li>
-            <li>The benchmark tests move generation, not strategic explanation or analysis</li>
-            <li>Results may differ from human-style play due to different error patterns</li>
+            <li>Due to cost, our sample size of games is relatively low for most models.</li>
+            <li>Performance may vary based on prompt format, temperature settings, and inference provider.</li>
+            <li>Results may differ from human-style play. I predict that LLMs would perform below these ratings against humans, who are better able to find and exploit systematic weaknesses in play.</li>
+        </ul>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Notes</h2>
+        <ul>
+            <li>Unlike the other engines (which are all neural networks), Eubos uses search. Thus, its strength varies greatly depending on how much time it has, and setting a time limit is important. We give it 15 minutes with 10 second increment for a whole game, a Lichess Classical time control.</li>
+            <li>Some models are difficult to collect a large sample size for at this time due to API errors, such as Grok 4.1 Fast.</li>
         </ul>
     </section>
 </div>
