@@ -25,9 +25,16 @@
             </tr>
         </thead>
         <tbody>
+            {% set ns = namespace(top_llm_found=false) %}
             {% for entry in leaderboard %}
             <tr class="{% if entry.is_anchor %}anchor{% endif %} clickable-row" data-player-id="{{ entry.player_id|e }}">
-                <td class="rank">{{ entry.rank }}</td>
+                <td class="rank">
+                    {{ entry.rank }}
+                    {% if not entry.is_anchor and not ns.top_llm_found %}
+                        👑
+                        {% set ns.top_llm_found = true %}
+                    {% endif %}
+                </td>
                 <td class="player">
                     {{ entry.player_id }}
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
@@ -46,6 +53,7 @@
 </div>
 
 <div class="legend">
+    <p>👑 = Top-rated LLM</p>
     <p><strong style="color: var(--accent)">*</strong> = Anchor player (fixed rating, used for calibration)</p>
     <p><strong>FIDE Est.</strong> = Estimated FIDE rating based on <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data</p>
     <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
