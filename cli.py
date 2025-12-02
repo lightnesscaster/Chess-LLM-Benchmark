@@ -511,10 +511,13 @@ async def run_manual_game(args):
             )
 
     # Helper to create LLM player
-    def create_llm(model_name, reasoning_effort=None):
-        player_id = model_name.split("/")[-1]
-        if reasoning_effort and f"({reasoning_effort})" not in player_id:
-            player_id = f"{player_id} ({reasoning_effort})"
+    def create_llm(model_name, reasoning_effort=None, custom_name=None):
+        if custom_name:
+            player_id = custom_name
+        else:
+            player_id = model_name.split("/")[-1]
+            if reasoning_effort and f"({reasoning_effort})" not in player_id:
+                player_id = f"{player_id} ({reasoning_effort})"
         return OpenRouterPlayer(
             player_id=player_id,
             model_name=model_name,
@@ -542,23 +545,23 @@ async def run_manual_game(args):
                 if args.black_engine:
                     white = create_engine(args.engine_type)
                 else:
-                    white = create_llm(args.black_model, args.black_reasoning_effort)
+                    white = create_llm(args.black_model, args.black_reasoning_effort, args.black_name)
 
                 if args.white_engine:
                     black = create_engine(args.engine_type)
                 else:
-                    black = create_llm(args.white_model, args.white_reasoning_effort)
+                    black = create_llm(args.white_model, args.white_reasoning_effort, args.white_name)
             else:
                 # Normal: original assignments
                 if args.white_engine:
                     white = create_engine(args.engine_type)
                 else:
-                    white = create_llm(args.white_model, args.white_reasoning_effort)
+                    white = create_llm(args.white_model, args.white_reasoning_effort, args.white_name)
 
                 if args.black_engine:
                     black = create_engine(args.engine_type)
                 else:
-                    black = create_llm(args.black_model, args.black_reasoning_effort)
+                    black = create_llm(args.black_model, args.black_reasoning_effort, args.black_name)
 
             if args.games > 1:
                 print(f"\n{'='*50}")
@@ -751,6 +754,14 @@ def main():
         "--black-reasoning-effort",
         choices=["low", "medium", "high", "xhigh"],
         help="Reasoning effort level for black (low, medium, high, xhigh)",
+    )
+    manual_parser.add_argument(
+        "--white-name",
+        help="Custom display name for white LLM player",
+    )
+    manual_parser.add_argument(
+        "--black-name",
+        help="Custom display name for black LLM player",
     )
     manual_parser.add_argument(
         "--max-moves",

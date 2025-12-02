@@ -230,20 +230,13 @@ class Glicko2System:
         # Convert back to Glicko scale
         new_rating, new_rd = self.glicko2_to_glicko(new_mu, new_phi)
 
-        # Store unclamped rating BEFORE numerical stability checks and floor
-        unclamped_rating = new_rating
-
-        # Numerical stability checks - preserve previous unclamped if fallback needed
+        # Numerical stability checks
         if not math.isfinite(new_rating) or abs(new_rating) > 10000:
             new_rating = player.rating
-            unclamped_rating = player.unclamped_rating if player.unclamped_rating is not None else player.rating
         if not math.isfinite(new_rd) or new_rd < 30 or new_rd > 500:
             new_rd = player.rating_deviation
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
-
-        # Apply rating floor (like Lichess)
-        new_rating = max(new_rating, self.RATING_FLOOR)
 
         # Calculate W-L-D from scores (use threshold for float safety)
         new_wins = player.wins
@@ -267,7 +260,6 @@ class Glicko2System:
             losses=new_losses,
             draws=new_draws,
             last_updated=datetime.now(timezone.utc).isoformat(),
-            unclamped_rating=unclamped_rating,
         )
 
     def expected_score(self, player: PlayerRating, opponent: PlayerRating) -> float:
