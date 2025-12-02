@@ -44,26 +44,9 @@ def estimate_fide(lichess_classical: float) -> Optional[int]:
     min_lichess = mappings[0]["lichess_classical"]
     max_lichess = mappings[-1]["lichess_classical"]
 
-    # Handle out-of-range values by extrapolation
-    if lichess_classical < min_lichess:
-        # Extrapolate below range using first two points
-        if len(mappings) < 2:
-            return None
-        x1, y1 = mappings[0]["lichess_classical"], mappings[0]["fide"]
-        x2, y2 = mappings[1]["lichess_classical"], mappings[1]["fide"]
-        slope = (y2 - y1) / (x2 - x1)
-        fide = y1 + slope * (lichess_classical - x1)
-        return round(fide)
-
-    if lichess_classical > max_lichess:
-        # Extrapolate above range using last two points
-        if len(mappings) < 2:
-            return None
-        x1, y1 = mappings[-2]["lichess_classical"], mappings[-2]["fide"]
-        x2, y2 = mappings[-1]["lichess_classical"], mappings[-1]["fide"]
-        slope = (y2 - y1) / (x2 - x1)
-        fide = y2 + slope * (lichess_classical - x2)
-        return round(fide)
+    # Return None for out-of-range values
+    if lichess_classical < min_lichess or lichess_classical > max_lichess:
+        return None
 
     # Find surrounding points for interpolation
     for i in range(len(mappings) - 1):
