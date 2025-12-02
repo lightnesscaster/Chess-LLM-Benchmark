@@ -125,7 +125,7 @@ body {
 /* Tables */
 .leaderboard-table,
 .games-table {
-    width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
     background-color: var(--bg-secondary);
     border-radius: 8px;
