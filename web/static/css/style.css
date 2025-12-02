@@ -482,12 +482,9 @@ body {
     word-break: break-word;
 }
 
-.meta-value.player-white {
-    color: var(--white-player);
-}
-
+.meta-value.player-white,
 .meta-value.player-black {
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 .player-link {
