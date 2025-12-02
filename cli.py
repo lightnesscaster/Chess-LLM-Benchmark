@@ -531,7 +531,7 @@ async def run_manual_game(args):
                 print(f"Game {game_num + 1}/{args.games}: {white.player_id} vs {black.player_id}")
                 print("=" * 50)
             else:
-                print(f"Test game: {white.player_id} vs {black.player_id}")
+                print(f"Manual game: {white.player_id} vs {black.player_id}")
             print()
 
             runner = GameRunner(
