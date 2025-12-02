@@ -346,7 +346,7 @@ Your response (just the UCI move or UNCLEAR):"""
             payload["reasoning"] = reasoning_config
 
         # Retry logic for transient network and HTTP errors
-        max_retries = 5
+        max_retries = 7
         retry_delay = 2.0  # seconds
         retryable_http_codes = {429, 500, 502, 503, 504}
 
@@ -432,7 +432,7 @@ Your response (just the UCI move or UNCLEAR):"""
                     sleep_time = retry_delay + jitter
                     print(f"  [Transient error, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
                     await asyncio.sleep(sleep_time)
-                    retry_delay = min(retry_delay * 2, 60)  # Exponential backoff with cap
+                    retry_delay = min(retry_delay * 2, 300)  # Exponential backoff with 5min cap
                     # Recreate session in case connection is stale
                     await self.close()
                     session = await self._ensure_session()
