@@ -66,7 +66,7 @@ def get_leaderboard_data(min_games: int = 1) -> list:
 
         # Ensure anchors exist in the store (preserves existing game stats if present)
         for anchor_id, rating in anchors.items():
-            if anchor_id not in rating_store._ratings:
+            if not rating_store.has_player(anchor_id):
                 rating_store.set_anchor(anchor_id, rating, auto_save=False)
 
         pgn_logger = PGNLogger()

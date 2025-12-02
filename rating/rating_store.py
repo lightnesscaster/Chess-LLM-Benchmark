@@ -161,6 +161,10 @@ class RatingStore:
         """Check if a player is an anchor with fixed rating."""
         return player_id in self.anchor_ids
 
+    def has_player(self, player_id: str) -> bool:
+        """Check if a player exists in the store."""
+        return player_id in self._ratings
+
     def set_anchor(
         self,
         player_id: str,
