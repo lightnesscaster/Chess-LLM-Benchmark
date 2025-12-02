@@ -233,6 +233,24 @@ def game(game_id: str):
 
 
 # API endpoints for dynamic updates
+@app.route("/api/invalidate-cache", methods=["POST"])
+def api_invalidate_cache():
+    """Invalidate the leaderboard cache. Requires secret token."""
+    global _leaderboard_cache, _leaderboard_cache_time
+
+    # Check for secret token (set via environment variable)
+    expected_token = os.environ.get("CACHE_INVALIDATE_TOKEN")
+    if expected_token:
+        provided_token = request.headers.get("X-Cache-Token") or request.args.get("token")
+        if provided_token != expected_token:
+            abort(403)
+
+    _leaderboard_cache = []
+    _leaderboard_cache_time = 0
+    app.logger.info("Cache invalidated via API")
+    return jsonify({"status": "ok", "message": "Cache invalidated"})
+
+
 @app.route("/api/leaderboard")
 def api_leaderboard():
     """Get leaderboard as JSON."""

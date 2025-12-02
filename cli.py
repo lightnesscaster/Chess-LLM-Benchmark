@@ -15,6 +15,7 @@ import random
 import sys
 from pathlib import Path
 
+import requests
 import yaml
 
 from engines.stockfish_engine import StockfishEngine
@@ -29,6 +30,28 @@ from game.match_scheduler import MatchScheduler
 from rating.glicko2 import Glicko2System
 from rating.rating_store import RatingStore, invalidate_cache
 from rating.leaderboard import Leaderboard
+
+
+def invalidate_remote_cache():
+    """Invalidate cache on remote web server and locally."""
+    # Local file-based invalidation (for local dev)
+    invalidate_cache()
+
+    # Remote API invalidation (for production)
+    web_url = os.environ.get("WEB_APP_URL")
+    if not web_url:
+        return
+
+    token = os.environ.get("CACHE_INVALIDATE_TOKEN")
+    try:
+        headers = {"X-Cache-Token": token} if token else {}
+        resp = requests.post(f"{web_url}/api/invalidate-cache", headers=headers, timeout=10)
+        if resp.status_code == 200:
+            print(f"Remote cache invalidated: {web_url}")
+        else:
+            print(f"Warning: Failed to invalidate remote cache (HTTP {resp.status_code})")
+    except requests.RequestException as e:
+        print(f"Warning: Failed to invalidate remote cache: {e}")
 
 
 def load_config(config_path: str) -> dict:
@@ -183,7 +206,7 @@ async def run_benchmark(args):
             await llm.close()
 
     # Invalidate web cache so leaderboard refreshes
-    invalidate_cache()
+    invalidate_remote_cache()
 
     return 0
 
@@ -420,7 +443,7 @@ async def recalculate_ratings(args):
     print(leaderboard.format_table(min_games=1))
 
     # Invalidate web cache so leaderboard refreshes
-    invalidate_cache()
+    invalidate_remote_cache()
 
     return 0
 
@@ -607,7 +630,7 @@ async def run_manual_game(args):
 
         # Invalidate web cache if games were saved
         if pgn_logger and sum(results_summary.values()) > 0:
-            invalidate_cache()
+            invalidate_remote_cache()
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
