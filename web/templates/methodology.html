@@ -45,7 +45,7 @@
             <li><strong>Random mover</strong> as a baseline. We assign it a rating of 400 because 400 is the lowest possible Lichess rating.</li>
             <li><strong><a href="https://github.com/cjbolt/EubosChess">Eubos</a></strong>, a stronger engine to better estimate the strength of the top LLMs.</li>
         </ul>
-        <p>Anchor ratings are fixed and never updated, though the Lichess rating of an anchor model may drift slightly over time. LLM ratings are calibrated by their performance against these anchors.</p>
+        <p>Anchor ratings are fixed and never updated. Anchor models have played thousands of games at Lichess Classical time controls. Thus, their frozen rating is highly validated, though the real-time Lichess rating of an anchor model may drift slightly over time. LLM ratings are calibrated by their performance against these anchors. We use anchors spanning the bottom, middle, and upper ranges of human Lichess Classical strength to ensure calibration across the whole pool.</p>
     </section>
 
     <section class="methodology-section">
