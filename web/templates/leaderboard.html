@@ -33,7 +33,7 @@
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
                 </td>
                 <td class="rating">{{ entry.rating }}</td>
-                <td class="fide">{% if entry.fide_estimate %}~{{ entry.fide_estimate }}{% else %}N/A{% endif %}</td>
+                <td class="fide">{% if entry.fide_estimate is not none %}~{{ entry.fide_estimate }}{% else %}N/A{% endif %}</td>
                 <td class="rd">{% if entry.is_anchor %}N/A{% else %}{{ entry.rating_deviation }}{% endif %}</td>
                 <td class="ci">{% if entry.is_anchor %}N/A{% else %}{{ entry.confidence_low }} - {{ entry.confidence_high }}{% endif %}</td>
                 <td class="games">{{ entry.games_played }}</td>

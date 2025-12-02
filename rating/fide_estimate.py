@@ -5,6 +5,7 @@ Uses empirical data from ChessGoals.com rating comparison survey.
 """
 
 import json
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -19,9 +20,13 @@ def _load_mappings() -> list:
     """Load and cache the Lichess to FIDE mappings."""
     global _mappings
     if _mappings is None:
-        with open(DATA_PATH) as f:
-            data = json.load(f)
-        _mappings = sorted(data["mappings"], key=lambda x: x["lichess_classical"])
+        try:
+            with open(DATA_PATH) as f:
+                data = json.load(f)
+            _mappings = sorted(data["mappings"], key=lambda x: x["lichess_classical"])
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+            logging.warning(f"Failed to load FIDE mappings from {DATA_PATH}: {e}")
+            _mappings = []
     return _mappings
 
 
