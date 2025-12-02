@@ -5,7 +5,7 @@ CLI for the Chess LLM Benchmark.
 Commands:
 - run: Run the benchmark
 - leaderboard: Show current leaderboard
-- test: Run a test game
+- manual: Run a manual game
 """
 
 import argparse
@@ -419,8 +419,8 @@ async def recalculate_ratings(args):
     return 0
 
 
-async def run_test_game(args):
-    """Run test game(s)."""
+async def run_manual_game(args):
+    """Run manual game(s)."""
     # Validate arguments
     if args.games < 1:
         print("Error: --games must be at least 1")
@@ -654,84 +654,84 @@ def main():
         help="Show each game as it's processed",
     )
 
-    # Test game command
-    test_parser = subparsers.add_parser("test", help="Run a test game")
-    test_parser.add_argument(
+    # Manual game command
+    manual_parser = subparsers.add_parser("manual", help="Run a manual game")
+    manual_parser.add_argument(
         "--white-model",
         default="meta-llama/llama-4-maverick",
         help="White player model (OpenRouter)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-model",
         default="deepseek/deepseek-chat-v3-0324",
         help="Black player model (OpenRouter)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--white-engine",
         action="store_true",
         help="Use engine as white",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-engine",
         action="store_true",
         help="Use engine as black",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--engine-type",
         choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos"],
         default="stockfish",
         help="Engine type to use (stockfish, maia-1100, maia-1900, random, or eubos)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--stockfish-skill",
         type=int,
         default=5,
         help="Stockfish skill level (0-20)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--lc0-path",
         default="/opt/homebrew/bin/lc0",
         help="Path to lc0 executable",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--max-tokens",
         type=int,
         default=0,
         help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--reasoning",
         action="store_true",
         help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--white-reasoning-effort",
         choices=["low", "medium", "high", "xhigh"],
         help="Reasoning effort level for white (low, medium, high, xhigh)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-reasoning-effort",
         choices=["low", "medium", "high", "xhigh"],
         help="Reasoning effort level for black (low, medium, high, xhigh)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--max-moves",
         type=int,
         default=200,
         help="Maximum moves per game",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--api-key",
         help="OpenRouter API key",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--no-save",
         action="store_false",
         dest="save",
         help="Don't save the game (saves by default)",
     )
-    test_parser.set_defaults(save=True)
-    test_parser.add_argument(
+    manual_parser.set_defaults(save=True)
+    manual_parser.add_argument(
         "--games",
         type=int,
         default=1,
@@ -746,8 +746,8 @@ def main():
         return asyncio.run(show_leaderboard(args))
     elif args.command == "recalculate":
         return asyncio.run(recalculate_ratings(args))
-    elif args.command == "test":
-        return asyncio.run(run_test_game(args))
+    elif args.command == "manual":
+        return asyncio.run(run_manual_game(args))
     else:
         parser.print_help()
         return 0

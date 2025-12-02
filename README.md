@@ -1,13 +1,14 @@
 # Chess LLM Benchmark
 
-Benchmark suite for evaluating LLM chess-playing ability using Glicko-2 ratings calibrated against engine anchors.
+This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the Glicko-2 rating system, calibrated to approximate Lichess Classical ratings. Results can be [here](https://chessbenchllm.onrender.com/).
 
 ## How It Works
 
-1. LLMs receive the current position (FEN + ASCII board) and must return a single UCI move
-2. Illegal moves get one retry with a warning; second illegal move = forfeit
-3. Games are played against Stockfish at various skill levels as rating anchors
-4. Glicko-2 ratings are calculated based on game outcomes
+**Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move. Illegal moves get one retry with a warning; second illegal move = forfeit. 
+**Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool.
+**Rating Calculation** Glicko-2 ratings are calculated based on game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
+
+More general methodology notes are [on the website](http://chessbenchllm.onrender.com/methodology).
 
 ## Installation
 
@@ -15,9 +16,7 @@ Benchmark suite for evaluating LLM chess-playing ability using Glicko-2 ratings 
 pip install -r requirements.txt
 ```
 
-Requires:
-- Stockfish in PATH (or specify path in config) for Stockfish anchors
-- lc0 for Maia anchors (optional)
+Using anchor engines requires installing them individually. [Maia](https://maiachess.com) [Eubos](https://github.com/cjbolt/EubosChess)
 
 ## Usage
 
@@ -27,34 +26,34 @@ Requires:
 export OPENROUTER_API_KEY="your-key"
 ```
 
-### Run a Test Game
+### Run Manual Games
 
 ```bash
 # LLM vs Stockfish (default engine)
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
 
 # LLM vs LLM
-python cli.py test --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
 
 # Multiple games (alternates colors each game)
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --games 10
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --games 10
 
 # Against different engine types
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --engine-type maia-1100
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --engine-type random
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --engine-type eubos
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type maia-1100
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type random
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type eubos
 
 # With reasoning models (use max-tokens 0 for extended thinking)
-python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high --max-tokens 0
+python cli.py manual --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high --max-tokens 0
 
 # Enable reasoning mode for hybrid models
-python cli.py test --white-model deepseek/deepseek-chat --black-engine --reasoning
+python cli.py manual --white-model deepseek/deepseek-chat --black-engine --reasoning
 
 # Don't save the game
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --no-save
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --no-save
 ```
 
-**Test command engine presets:** `stockfish`, `maia-1100`, `maia-1900`, `random`, `eubos`
+**Manual command engine presets:** `stockfish`, `maia-1100`, `maia-1900`, `random`, `eubos`
 
 > Note: `eubos` is a hardcoded preset. For custom UCI engines in benchmarks, use `type: uci` in config.
 

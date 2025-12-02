@@ -22,7 +22,7 @@
         <ul>
             <li><strong>Input:</strong> LLMs receive the current board position as FEN notation, an ASCII board representation, the move history in algebraic notation, the opponent's last move, and their previous chain-of-thought (if any)</li>
             <li><strong>Output:</strong> Models must respond with a single move in UCI format (e.g., "e2e4")</li>
-            <li><strong>Illegal moves:</strong> If a model plays an illegal move, it receives one retry with feedback indicating the move was illegal. A second illegal move results in forfeit</li>
+            <li><strong>Illegal moves:</strong> If a model plays an illegal move, it receives one retry with feedback indicating the move was illegal. A second illegal move results in forfeit (as per FIDE rules)</li>
             <li><strong>Time control:</strong> No explicit time limit per move, but API timeouts apply</li>
         </ul>
     </section>

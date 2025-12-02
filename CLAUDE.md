@@ -8,17 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 pip install -r requirements.txt
 
-# Run a test game (LLM vs Stockfish)
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
+# Run a manual game (LLM vs Stockfish)
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
 
-# Run a test game (LLM vs LLM)
-python cli.py test --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
+# Run a manual game (LLM vs LLM)
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
 
 # Run multiple games with color alternation
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --games 10
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --games 10
 
 # Run with reasoning model
-python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high
+python cli.py manual --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high
 
 # Run full benchmark
 python cli.py run -c config/benchmark.yaml -v
@@ -41,7 +41,7 @@ This is an async Python benchmark that evaluates LLM chess-playing ability using
 
 ### Core Flow
 
-1. **CLI (`cli.py`)** - Entry point with four commands: `run`, `test`, `leaderboard`, `recalculate`
+1. **CLI (`cli.py`)** - Entry point with four commands: `run`, `manual`, `leaderboard`, `recalculate`
 2. **MatchScheduler (`game/match_scheduler.py`)** - Orchestrates parallel game execution with semaphore-based concurrency control
 3. **GameRunner (`game/game_runner.py`)** - Runs individual games, enforces illegal move policy (2 strikes = forfeit)
 4. **OpenRouterPlayer (`llm/openrouter_client.py`)** - Async LLM client that parses UCI/SAN moves from responses
