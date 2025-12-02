@@ -28,12 +28,7 @@ engines:
     rating: 1816
     nodes: 1
 
-  - player_id: "eubos"
-    type: uci
-    path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
-    rating: 2211
-    initial_time: 900
-    increment: 10
+
 
 # LLM players - budget models only
 llms:
