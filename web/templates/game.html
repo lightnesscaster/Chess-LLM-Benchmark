@@ -27,9 +27,26 @@
             <button id="btn-next" title="Next move">&gt;</button>
             <button id="btn-end" title="Go to end">&gt;&gt;</button>
             <button id="btn-flip" title="Flip board">Flip</button>
+            <button id="btn-analysis" title="Toggle Stockfish analysis">Analysis</button>
         </div>
         <div class="move-indicator">
             Move: <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+        </div>
+
+        <div id="analysis-panel" class="analysis-panel" style="display: none;">
+            <div class="analysis-header">
+                <span class="analysis-title">Stockfish Analysis</span>
+                <span id="analysis-depth" class="analysis-depth"></span>
+            </div>
+            <div id="eval-bar-container" class="eval-bar-container">
+                <div id="eval-bar" class="eval-bar">
+                    <div id="eval-bar-fill" class="eval-bar-fill"></div>
+                </div>
+                <span id="eval-score" class="eval-score">0.00</span>
+            </div>
+            <div id="analysis-lines" class="analysis-lines">
+                <div class="analysis-loading">Click Analysis to enable</div>
+            </div>
         </div>
     </div>
 
@@ -96,6 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let flipped = false;
     let positions = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']; // Starting position
     let moves = [];
+
+    // Analysis state
+    let analysisEnabled = false;
+    let analysisCache = {};
+    let currentAnalysisRequest = null;
 
     const board = Chessboard('board', {
         position: 'start',
@@ -175,6 +197,128 @@ document.addEventListener('DOMContentLoaded', function() {
         movesContainer.innerHTML = '<p style="color: #e94560;">Error: Unable to parse PGN. The game moves may be corrupted.</p>';
     }
 
+    // Analysis functions
+    async function fetchAnalysis(fen) {
+        // Check cache first
+        if (analysisCache[fen]) {
+            return analysisCache[fen];
+        }
+
+        try {
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fen: fen, depth: 18, lines: 3 })
+            });
+
+            if (!response.ok) {
+                throw new Error('Analysis failed');
+            }
+
+            const data = await response.json();
+            analysisCache[fen] = data;
+            return data;
+        } catch (error) {
+            console.error('Analysis error:', error);
+            return null;
+        }
+    }
+
+    function updateEvalBar(score_cp, mate) {
+        const evalBarFill = document.getElementById('eval-bar-fill');
+        const evalScore = document.getElementById('eval-score');
+
+        let percentage, displayScore;
+
+        if (mate !== null) {
+            // Mate score
+            percentage = mate > 0 ? 100 : 0;
+            displayScore = mate > 0 ? `M${mate}` : `M${mate}`;
+        } else if (score_cp !== null) {
+            // Convert centipawns to percentage (sigmoid-like scaling)
+            // Cap at roughly ±10 pawns for display
+            const capped = Math.max(-1000, Math.min(1000, score_cp));
+            percentage = 50 + (capped / 20); // Each pawn = 5% shift
+            percentage = Math.max(0, Math.min(100, percentage));
+            displayScore = (score_cp / 100).toFixed(2);
+            if (score_cp > 0) displayScore = '+' + displayScore;
+        } else {
+            percentage = 50;
+            displayScore = '0.00';
+        }
+
+        evalBarFill.style.height = percentage + '%';
+        evalScore.textContent = displayScore;
+    }
+
+    function displayAnalysis(analysis) {
+        const linesContainer = document.getElementById('analysis-lines');
+        const depthSpan = document.getElementById('analysis-depth');
+
+        if (!analysis) {
+            linesContainer.innerHTML = '<div class="analysis-error">Analysis unavailable</div>';
+            return;
+        }
+
+        depthSpan.textContent = `Depth ${analysis.depth}`;
+
+        // Update eval bar with best line score
+        if (analysis.lines.length > 0) {
+            const bestLine = analysis.lines[0];
+            updateEvalBar(bestLine.score_cp, bestLine.mate);
+        }
+
+        // Display lines
+        let html = '';
+        analysis.lines.forEach((line, index) => {
+            const pvText = line.pv.join(' ');
+            html += `
+                <div class="analysis-line">
+                    <span class="line-score">${line.score_text}</span>
+                    <span class="line-pv">${pvText}</span>
+                </div>
+            `;
+        });
+
+        linesContainer.innerHTML = html;
+    }
+
+    async function runAnalysis() {
+        if (!analysisEnabled) return;
+
+        const fen = positions[currentPosition];
+        const linesContainer = document.getElementById('analysis-lines');
+
+        // Show loading state
+        linesContainer.innerHTML = '<div class="analysis-loading">Analyzing...</div>';
+
+        // Cancel any pending request tracking
+        const requestId = Date.now();
+        currentAnalysisRequest = requestId;
+
+        const analysis = await fetchAnalysis(fen);
+
+        // Only update if this is still the current request
+        if (currentAnalysisRequest === requestId) {
+            displayAnalysis(analysis);
+        }
+    }
+
+    function toggleAnalysis() {
+        analysisEnabled = !analysisEnabled;
+        const panel = document.getElementById('analysis-panel');
+        const btn = document.getElementById('btn-analysis');
+
+        if (analysisEnabled) {
+            panel.style.display = 'block';
+            btn.classList.add('active');
+            runAnalysis();
+        } else {
+            panel.style.display = 'none';
+            btn.classList.remove('active');
+        }
+    }
+
     // Update display
     function updateDisplay() {
         board.position(positions[currentPosition]);
@@ -189,6 +333,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentEl.classList.add('current');
                 currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
+        }
+
+        // Run analysis if enabled
+        if (analysisEnabled) {
+            runAnalysis();
         }
     }
 
@@ -221,6 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
         flipped = !flipped;
         board.orientation(flipped ? 'black' : 'white');
     });
+
+    document.getElementById('btn-analysis').addEventListener('click', toggleAnalysis);
 
     // Click on moves to navigate
     movesContainer.addEventListener('click', (e) => {

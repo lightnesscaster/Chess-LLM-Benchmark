@@ -506,6 +506,123 @@ body {
     text-decoration: underline;
 }
 
+/* Analysis panel */
+.board-controls button.active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.analysis-panel {
+    margin-top: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 400px;
+}
+
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.analysis-title {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.analysis-depth {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.eval-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.eval-bar {
+    width: 24px;
+    height: 150px;
+    background-color: var(--black-player);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.eval-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background-color: var(--white-player);
+    transition: height 0.3s ease;
+}
+
+.eval-score {
+    font-size: 1.5rem;
+    font-weight: bold;
+    font-family: 'Consolas', 'Monaco', monospace;
+    min-width: 80px;
+}
+
+.analysis-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.analysis-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background-color: var(--bg-card);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.analysis-line:first-child {
+    background-color: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.line-score {
+    font-weight: bold;
+    font-family: 'Consolas', 'Monaco', monospace;
+    min-width: 50px;
+    color: var(--success);
+}
+
+.analysis-line:not(:first-child) .line-score {
+    color: var(--text-secondary);
+}
+
+.line-pv {
+    color: var(--text-secondary);
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.analysis-loading,
+.analysis-error {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.analysis-error {
+    color: var(--accent);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .game-viewer {
@@ -514,6 +631,11 @@ body {
 
     #board {
         width: 100% !important;
+        max-width: 400px;
+    }
+
+    .analysis-panel {
+        width: 100%;
         max-width: 400px;
     }
 
