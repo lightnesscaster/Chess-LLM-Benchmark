@@ -45,10 +45,14 @@ class Leaderboard:
             ci = 1.96 * rating.rating_deviation
             ci_low = max(rating.rating - ci, Glicko2System.RATING_FLOOR)
 
+            # Use unclamped rating for sorting; fall back to clamped if not available
+            unclamped = rating.unclamped_rating if rating.unclamped_rating is not None else rating.rating
+
             entry = {
                 "rank": i,
                 "player_id": rating.player_id,
                 "rating": round(rating.rating),
+                "unclamped_rating": round(unclamped),
                 "fide_estimate": estimate_fide(rating.rating),
                 "rating_deviation": round(rating.rating_deviation),
                 "confidence_low": round(ci_low),
@@ -72,8 +76,8 @@ class Leaderboard:
 
             leaderboard.append(entry)
 
-        # Sort by rating (desc), then by legal move rate (desc) for ties
-        leaderboard.sort(key=lambda e: (-e["rating"], -e.get("legal_move_rate", 1.0)))
+        # Sort by unclamped rating (desc) - this naturally handles ties at the floor
+        leaderboard.sort(key=lambda e: -e["unclamped_rating"])
 
         # Re-number ranks after sorting
         for i, entry in enumerate(leaderboard, 1):

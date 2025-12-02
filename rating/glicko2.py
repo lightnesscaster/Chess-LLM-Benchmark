@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 class PlayerRating:
     """Represents a player's Glicko-2 rating."""
     player_id: str
-    rating: float = 1500.0          # μ (mu) - rating
+    rating: float = 1500.0          # μ (mu) - rating (clamped to floor)
     rating_deviation: float = 350.0  # φ (phi) - rating deviation
     volatility: float = 0.06        # σ (sigma) - volatility
     games_played: int = 0
@@ -23,10 +23,11 @@ class PlayerRating:
     losses: int = 0
     draws: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    unclamped_rating: float = None  # True rating before floor is applied
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
-        return {
+        d = {
             "player_id": self.player_id,
             "rating": self.rating,
             "rating_deviation": self.rating_deviation,
@@ -37,12 +38,15 @@ class PlayerRating:
             "draws": self.draws,
             "last_updated": self.last_updated,
         }
+        if self.unclamped_rating is not None:
+            d["unclamped_rating"] = self.unclamped_rating
+        return d
 
     @classmethod
     def from_dict(cls, data: dict) -> "PlayerRating":
-        """Create from dictionary (handles old data without W-L-D fields)."""
+        """Create from dictionary (handles old data without new fields)."""
         # Ensure backwards compatibility with old ratings.json files
-        defaults = {'wins': 0, 'losses': 0, 'draws': 0}
+        defaults = {'wins': 0, 'losses': 0, 'draws': 0, 'unclamped_rating': None}
         return cls(**{**defaults, **data})
 
 
@@ -192,14 +196,18 @@ class Glicko2System:
         if not opponents or not scores or len(opponents) != len(scores):
             return player
 
+        # Use unclamped rating for calculations if available (allows proper accumulation)
+        player_rating = player.unclamped_rating if player.unclamped_rating is not None else player.rating
+
         # Convert to Glicko-2 scale
-        mu, phi = self.glicko_to_glicko2(player.rating, player.rating_deviation)
+        mu, phi = self.glicko_to_glicko2(player_rating, player.rating_deviation)
         sigma = player.volatility
 
-        # Convert opponent ratings
+        # Convert opponent ratings (also use unclamped for opponents)
         opponent_params = []
         for opp in opponents:
-            opp_mu, opp_phi = self.glicko_to_glicko2(opp.rating, opp.rating_deviation)
+            opp_rating = opp.unclamped_rating if opp.unclamped_rating is not None else opp.rating
+            opp_mu, opp_phi = self.glicko_to_glicko2(opp_rating, opp.rating_deviation)
             opponent_params.append((opp_mu, opp_phi))
 
         # Step 3: Compute variance
@@ -230,6 +238,9 @@ class Glicko2System:
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
 
+        # Store unclamped rating before applying floor
+        unclamped_rating = new_rating
+
         # Apply rating floor (like Lichess)
         new_rating = max(new_rating, self.RATING_FLOOR)
 
@@ -255,6 +266,7 @@ class Glicko2System:
             losses=new_losses,
             draws=new_draws,
             last_updated=datetime.now(timezone.utc).isoformat(),
+            unclamped_rating=unclamped_rating,
         )
 
     def expected_score(self, player: PlayerRating, opponent: PlayerRating) -> float:

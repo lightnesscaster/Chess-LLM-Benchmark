@@ -122,6 +122,10 @@ class RatingStore:
                     rating_deviation=pr.rating_deviation,
                     volatility=pr.volatility,
                     games_played=pr.games_played,
+                    wins=pr.wins,
+                    losses=pr.losses,
+                    draws=pr.draws,
+                    unclamped_rating=pr.unclamped_rating,
                 )
                 for pid, pr in _firestore_cache.items()
             }
@@ -162,6 +166,10 @@ class RatingStore:
                         rating_deviation=pr.rating_deviation,
                         volatility=pr.volatility,
                         games_played=pr.games_played,
+                        wins=pr.wins,
+                        losses=pr.losses,
+                        draws=pr.draws,
+                        unclamped_rating=pr.unclamped_rating,
                     )
                     for pid, pr in _firestore_cache.items()
                 }
@@ -191,6 +199,10 @@ class RatingStore:
                     rating_deviation=rating.rating_deviation,
                     volatility=rating.volatility,
                     games_played=rating.games_played,
+                    wins=rating.wins,
+                    losses=rating.losses,
+                    draws=rating.draws,
+                    unclamped_rating=rating.unclamped_rating,
                 )
 
     def _save_all_to_firestore(self) -> None:
@@ -209,6 +221,10 @@ class RatingStore:
                 rating_deviation=rating.rating_deviation,
                 volatility=rating.volatility,
                 games_played=rating.games_played,
+                wins=rating.wins,
+                losses=rating.losses,
+                draws=rating.draws,
+                unclamped_rating=rating.unclamped_rating,
             )
             for player_id, rating in self._ratings.items()
         }
