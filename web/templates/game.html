@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Analysis state
     let analysisEnabled = false;
     let analysisCache = {};
-    let currentAnalysisRequest = null;
+    let currentAnalysisController = null;
 
     const board = Chessboard('board', {
         position: 'start',
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Analysis functions
-    async function fetchAnalysis(fen) {
+    async function fetchAnalysis(fen, signal) {
         // Check cache first
         if (analysisCache[fen]) {
             return analysisCache[fen];
@@ -208,7 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fen: fen, depth: 18, lines: 3 })
+                body: JSON.stringify({ fen: fen, depth: 18, lines: 3 }),
+                signal: signal
             });
 
             if (!response.ok) {
@@ -219,6 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
             analysisCache[fen] = data;
             return data;
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return null; // Request was cancelled, not an error
+            }
             console.error('Analysis error:', error);
             return null;
         }
@@ -289,17 +293,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const fen = positions[currentPosition];
         const linesContainer = document.getElementById('analysis-lines');
 
+        // Cancel any pending request
+        if (currentAnalysisController) {
+            currentAnalysisController.abort();
+        }
+
+        // Check cache first - no need for loading state
+        if (analysisCache[fen]) {
+            displayAnalysis(analysisCache[fen]);
+            return;
+        }
+
         // Show loading state
         linesContainer.innerHTML = '<div class="analysis-loading">Analyzing...</div>';
 
-        // Cancel any pending request tracking
-        const requestId = Date.now();
-        currentAnalysisRequest = requestId;
+        // Create new abort controller for this request
+        currentAnalysisController = new AbortController();
+        const controller = currentAnalysisController;
 
-        const analysis = await fetchAnalysis(fen);
+        const analysis = await fetchAnalysis(fen, controller.signal);
 
-        // Only update if this is still the current request
-        if (currentAnalysisRequest === requestId) {
+        // Only update if this controller is still current (not aborted)
+        if (currentAnalysisController === controller && analysis) {
             displayAnalysis(analysis);
         }
     }
