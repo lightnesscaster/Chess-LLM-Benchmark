@@ -9,6 +9,7 @@ import math
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import yaml
@@ -24,6 +25,11 @@ from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 
 app = Flask(__name__)
+
+# Leaderboard cache
+_leaderboard_cache: list = []
+_leaderboard_cache_time: float = 0
+_LEADERBOARD_CACHE_TTL = 60  # 1 minute
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +64,15 @@ def is_valid_game_id(game_id: str) -> bool:
 
 
 def get_leaderboard_data(min_games: int = 1) -> list:
-    """Get leaderboard data from rating store."""
+    """Get leaderboard data from rating store with caching."""
+    global _leaderboard_cache, _leaderboard_cache_time
+
+    # Check cache first
+    cache_age = time.time() - _leaderboard_cache_time
+    if _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL:
+        app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
+        return _leaderboard_cache
+
     try:
         anchors = get_anchors_from_config()
         anchor_ids = set(anchors.keys())
@@ -74,9 +88,18 @@ def get_leaderboard_data(min_games: int = 1) -> list:
         stats_collector.add_results(pgn_logger.load_all_results())
 
         leaderboard = Leaderboard(rating_store, stats_collector)
-        return leaderboard.get_leaderboard(min_games=min_games)
+        result = leaderboard.get_leaderboard(min_games=min_games)
+
+        # Update cache on success
+        _leaderboard_cache = result
+        _leaderboard_cache_time = time.time()
+        return result
     except Exception as e:
         app.logger.error(f"Error loading leaderboard: {e}")
+        # Return cached data if available, even if expired
+        if _leaderboard_cache:
+            app.logger.info("Returning stale cached leaderboard data due to error")
+            return _leaderboard_cache
         return []
 
 

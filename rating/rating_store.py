@@ -3,11 +3,20 @@ Rating storage and persistence.
 """
 
 import json
+import logging
 import os
+import time
 from pathlib import Path
 from typing import Dict, Optional, Set
 
 from .glicko2 import PlayerRating, Glicko2System
+
+logger = logging.getLogger(__name__)
+
+# Module-level cache for Firestore data
+_firestore_cache: Dict[str, "PlayerRating"] = {}
+_firestore_cache_time: float = 0
+_FIRESTORE_CACHE_TTL = 300  # 5 minutes
 
 
 class RatingStore:
@@ -72,16 +81,76 @@ class RatingStore:
         self._load_from_firestore()
 
     def _load_from_firestore(self) -> None:
-        """Load ratings from Firestore."""
-        docs = self._db.collection(self._collection).stream()
-        for doc in docs:
-            data = doc.to_dict()
-            player_rating = PlayerRating.from_dict(data)
-            # Enforce rating floor on loaded ratings (anchors exempt)
-            if data["player_id"] not in self.anchor_ids:
-                if player_rating.rating < Glicko2System.RATING_FLOOR:
-                    player_rating.rating = Glicko2System.RATING_FLOOR
-            self._ratings[data["player_id"]] = player_rating
+        """Load ratings from Firestore with caching and error handling."""
+        global _firestore_cache, _firestore_cache_time
+
+        # Check if we have a valid cache
+        cache_age = time.time() - _firestore_cache_time
+        if _firestore_cache and cache_age < _FIRESTORE_CACHE_TTL:
+            logger.info(f"Using cached Firestore data ({cache_age:.0f}s old)")
+            for player_id, player_rating in _firestore_cache.items():
+                # Make a copy to avoid shared state issues
+                rating_copy = PlayerRating(
+                    player_id=player_rating.player_id,
+                    rating=player_rating.rating,
+                    rating_deviation=player_rating.rating_deviation,
+                    volatility=player_rating.volatility,
+                    games_played=player_rating.games_played,
+                )
+                # Enforce rating floor on loaded ratings (anchors exempt)
+                if player_id not in self.anchor_ids:
+                    if rating_copy.rating < Glicko2System.RATING_FLOOR:
+                        rating_copy.rating = Glicko2System.RATING_FLOOR
+                self._ratings[player_id] = rating_copy
+            return
+
+        try:
+            # Fetch fresh data from Firestore with a timeout
+            docs = self._db.collection(self._collection).stream(timeout=10)
+            new_cache: Dict[str, PlayerRating] = {}
+
+            for doc in docs:
+                data = doc.to_dict()
+                player_rating = PlayerRating.from_dict(data)
+                new_cache[data["player_id"]] = player_rating
+
+                # Enforce rating floor on loaded ratings (anchors exempt)
+                if data["player_id"] not in self.anchor_ids:
+                    if player_rating.rating < Glicko2System.RATING_FLOOR:
+                        player_rating.rating = Glicko2System.RATING_FLOOR
+                self._ratings[data["player_id"]] = player_rating
+
+            # Update the cache on success
+            _firestore_cache = new_cache
+            _firestore_cache_time = time.time()
+            logger.info(f"Loaded {len(new_cache)} ratings from Firestore")
+
+        except Exception as e:
+            error_name = type(e).__name__
+            logger.warning(f"Firestore error ({error_name}): {e}")
+
+            # Fall back to cache if available (even if expired)
+            if _firestore_cache:
+                logger.info(f"Falling back to cached data ({len(_firestore_cache)} ratings)")
+                for player_id, player_rating in _firestore_cache.items():
+                    rating_copy = PlayerRating(
+                        player_id=player_rating.player_id,
+                        rating=player_rating.rating,
+                        rating_deviation=player_rating.rating_deviation,
+                        volatility=player_rating.volatility,
+                        games_played=player_rating.games_played,
+                    )
+                    if player_id not in self.anchor_ids:
+                        if rating_copy.rating < Glicko2System.RATING_FLOOR:
+                            rating_copy.rating = Glicko2System.RATING_FLOOR
+                    self._ratings[player_id] = rating_copy
+            else:
+                # No cache available - try loading from local file as last resort
+                logger.warning("No cache available, attempting local file fallback")
+                if self.path.exists():
+                    self._load()
+                else:
+                    logger.error("No fallback data available, starting with empty ratings")
 
     def _save_to_firestore(self, player_id: str) -> None:
         """Save a single player's rating to Firestore."""
