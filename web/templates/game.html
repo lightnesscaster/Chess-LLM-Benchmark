@@ -350,18 +350,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Build line data
+        // Build line data - convert score to White's perspective
+        // Stockfish returns score from side-to-move's perspective
+        const isBlackToMove = fen.split(' ')[1] === 'b';
+        const flipScore = isBlackToMove ? -1 : 1;
+
         let score_cp = null;
         let mate = null;
         let score_text = '';
 
         if (scoreType === 'mate') {
-            mate = scoreValue;
-            score_text = scoreValue > 0 ? `M${scoreValue}` : `-M${Math.abs(scoreValue)}`;
+            mate = scoreValue * flipScore;
+            score_text = mate > 0 ? `M${mate}` : `-M${Math.abs(mate)}`;
         } else {
-            score_cp = scoreValue;
-            score_text = (scoreValue / 100).toFixed(2);
-            if (scoreValue > 0) score_text = '+' + score_text;
+            score_cp = scoreValue * flipScore;
+            score_text = (score_cp / 100).toFixed(2);
+            if (score_cp > 0) score_text = '+' + score_text;
         }
 
         // Store in analysis lines (multipv is 1-indexed)
