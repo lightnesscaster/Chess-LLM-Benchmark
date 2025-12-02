@@ -215,9 +215,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const linesContainer = document.getElementById('analysis-lines');
         linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
 
-        // Load Stockfish lite-single from CDN (single WASM file, no CORS multi-part issues)
-        const STOCKFISH_BASE = 'https://unpkg.com/stockfish@17.1.0/src/';
-        const STOCKFISH_JS_URL = STOCKFISH_BASE + 'stockfish-17.1-lite-single-03e3232.js';
+        // Load Stockfish 16 from CDN (single WASM file, simple structure)
+        const STOCKFISH_BASE = 'https://unpkg.com/stockfish@16.0.0/src/';
+        const STOCKFISH_JS_URL = STOCKFISH_BASE + 'stockfish-nnue-16-single.js';
 
         let scriptBlob;
         try {
@@ -225,12 +225,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) throw new Error('Failed to fetch Stockfish');
             let scriptText = await response.text();
 
-            // The script uses location.origin+location.pathname to construct WASM path.
-            // Since we're running from a blob URL, this fails. Replace the fallback with CDN URL.
-            const WASM_URL = STOCKFISH_BASE + 'stockfish-17.1-lite-single-03e3232.wasm';
+            // The script uses location to construct WASM path. Since we're running
+            // from a blob URL, patch it to use the CDN URL directly.
+            const WASM_URL = STOCKFISH_BASE + 'stockfish-nnue-16-single.wasm';
             scriptText = scriptText.replace(
-                'location.origin+location.pathname.replace(/\\.js$/i,".wasm")',
-                `"${WASM_URL}"`
+                /wasmBinaryFile\s*=\s*["'][^"']+["']/g,
+                `wasmBinaryFile = "${WASM_URL}"`
             );
             console.log('Patched WASM path to use CDN');
 
@@ -258,9 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 15000);
 
             try {
-                // Create worker from Blob URL
+                // Create worker from patched Stockfish script
                 stockfish = new Worker(blobUrl);
-                // Revoke immediately - Worker has loaded the script, URL no longer needed
                 URL.revokeObjectURL(blobUrl);
 
                 stockfish.onmessage = function(event) {
@@ -284,7 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     linesContainer.innerHTML = '<div class="analysis-error">Failed to load engine</div>';
                     currentAnalysisFen = null;
                     analysisLines = [{}, {}, {}];
-                    URL.revokeObjectURL(blobUrl);
                     if (stockfish) {
                         stockfish.terminate();
                         stockfish = null;
