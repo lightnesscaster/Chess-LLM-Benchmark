@@ -180,6 +180,12 @@ def games():
     return render_template("games.html", filtered_games=filtered_games, all_models=all_models, model_filter=model_filter)
 
 
+@app.route("/methodology")
+def methodology():
+    """Show methodology page."""
+    return render_template("methodology.html")
+
+
 @app.route("/game/<game_id>")
 def game(game_id: str):
     """Show individual game viewer."""

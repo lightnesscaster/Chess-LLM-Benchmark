@@ -454,6 +454,53 @@ body {
     color: var(--text-secondary);
 }
 
+/* Methodology page */
+.methodology-content {
+    max-width: 800px;
+}
+
+.methodology-section {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.methodology-section h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+.methodology-section p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.methodology-section p:last-child {
+    margin-bottom: 0;
+}
+
+.methodology-section ul {
+    margin-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.methodology-section li {
+    margin-bottom: 0.5rem;
+}
+
+.methodology-section a {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+.methodology-section a:hover {
+    text-decoration: underline;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .game-viewer {

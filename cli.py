@@ -318,7 +318,7 @@ async def recalculate_ratings(args):
 
     # Multi-pass convergence
     max_passes = 10
-    convergence_threshold = 30.0  # Stop when no rating changes by more than this
+    convergence_threshold = 10.0  # Stop when no rating changes by more than this
     random.seed(42)  # Fixed seed for reproducible results
 
     # Count actual games and W-L-D per player, get all unique player IDs

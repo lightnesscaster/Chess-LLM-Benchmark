@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Methodology - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-nav">
+        <a href="/leaderboard" class="page-nav-link">Leaderboard</a>
+        <a href="/games" class="page-nav-link">Games</a>
+        <h1 class="active">Methodology</h1>
+    </div>
+</div>
+
+<div class="methodology-content">
+    <section class="methodology-section">
+        <h2>Overview</h2>
+        <p>This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the <strong>Glicko-2</strong> rating system, calibrated to approximate <strong>Lichess Classical</strong> ratings.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Game Format</h2>
+        <ul>
+            <li><strong>Input:</strong> LLMs receive the current board position as FEN notation plus an ASCII board representation</li>
+            <li><strong>Output:</strong> Models must respond with a single move in UCI format (e.g., "e2e4")</li>
+            <li><strong>Illegal moves:</strong> If a model plays an illegal move, it receives one retry with feedback indicating the move was illegal. A second illegal move results in forfeit</li>
+            <li><strong>Time control:</strong> No explicit time limit per move, but API timeouts apply</li>
+        </ul>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Rating System</h2>
+        <p>We use the <strong>Glicko-2</strong> rating system, which improves upon traditional Elo by tracking rating deviation (uncertainty) and rating volatility.</p>
+        <ul>
+            <li><strong>Initial rating:</strong> New players start at 1500 with high uncertainty</li>
+            <li><strong>Rating deviation (RD):</strong> Represents confidence in the rating. Lower RD means more certain</li>
+            <li><strong>95% Confidence Interval:</strong> The range where we're 95% confident the true rating lies</li>
+        </ul>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Anchor Calibration</h2>
+        <p>To provide meaningful ratings, we use engine anchors with fixed, known ratings:</p>
+        <ul>
+            <li><strong>Stockfish</strong> at various skill levels (approximately 1000-2800 Lichess)</li>
+            <li><strong>Maia</strong> neural network engines trained to play at specific human skill levels</li>
+            <li><strong>Random mover</strong> as a baseline (~400 rating)</li>
+        </ul>
+        <p>Anchor ratings are fixed and never updated. LLM ratings are calibrated by their performance against these anchors.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>FIDE Estimation</h2>
+        <p>FIDE estimates are derived from Lichess Classical ratings using conversion data from <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data. These are rough approximations and should be interpreted with caution.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Legal Move Rate</h2>
+        <p>The <strong>Legal%</strong> metric shows what percentage of an LLM's moves were legal on the first attempt (before any retry). This helps distinguish between models that understand chess rules well versus those that frequently attempt invalid moves.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Limitations</h2>
+        <ul>
+            <li>LLMs may have seen chess games in training data, potentially including specific openings or positions</li>
+            <li>Performance may vary based on prompt format and temperature settings</li>
+            <li>The benchmark tests move generation, not strategic explanation or analysis</li>
+            <li>Results may differ from human-style play due to different error patterns</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}
