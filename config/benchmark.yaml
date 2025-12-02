@@ -33,7 +33,7 @@ engines:
   - player_id: "eubos"
     type: uci
     path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
-    rating: 2344
+    rating: 2211
     initial_time: 900   # 15 minutes
     increment: 10       # 10 seconds
 
