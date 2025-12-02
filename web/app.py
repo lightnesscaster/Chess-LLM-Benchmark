@@ -38,6 +38,9 @@ CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 RATINGS_PATH = DATA_DIR / "ratings.json"
 
 # Stockfish configuration
+# NOTE: This uses module-level globals and is designed for single-worker
+# deployments (Flask development server). For production with multiple workers
+# (gunicorn, uwsgi), each worker process will create its own Stockfish instance.
 STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
 _stockfish_engine = None
 _stockfish_lock = threading.Lock()
@@ -96,8 +99,12 @@ def analyze_position(fen: str, depth: int = 18, num_lines: int = 3) -> dict | No
             # Configure MultiPV for multiple lines
             engine.configure({"MultiPV": num_lines})
 
-            # Run analysis
-            info = engine.analyse(board, chess.engine.Limit(depth=depth), multipv=num_lines)
+            # Run analysis with time limit to prevent blocking other requests
+            info = engine.analyse(
+                board,
+                chess.engine.Limit(depth=depth, time=5.0),
+                multipv=num_lines
+            )
 
             lines = []
             for pv_info in info:

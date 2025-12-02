@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (mate !== null) {
             // Mate score
             percentage = mate > 0 ? 100 : 0;
-            displayScore = mate > 0 ? `M${mate}` : `M${mate}`;
+            displayScore = mate > 0 ? `M${mate}` : `-M${Math.abs(mate)}`;
         } else if (score_cp !== null) {
             // Convert centipawns to percentage (sigmoid-like scaling)
             // Cap at roughly ±10 pawns for display
