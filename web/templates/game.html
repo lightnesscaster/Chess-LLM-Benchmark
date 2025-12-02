@@ -218,6 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Timeout for initialization (15 seconds)
             let initTimeout = setTimeout(() => {
+                currentAnalysisFen = null;
+                analysisLines = [{}, {}, {}];
                 if (stockfish) {
                     stockfish.terminate();
                     stockfish = null;
@@ -249,6 +251,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearTimeout(initTimeout);
                     console.error('Stockfish error:', error);
                     linesContainer.innerHTML = '<div class="analysis-error">Failed to load engine</div>';
+                    currentAnalysisFen = null;
+                    analysisLines = [{}, {}, {}];
                     if (stockfish) {
                         stockfish.terminate();
                         stockfish = null;
@@ -464,12 +468,13 @@ document.addEventListener('DOMContentLoaded', function() {
             analysisEnabled = false;
             panel.style.display = 'none';
             btn.classList.remove('active');
+            currentAnalysisFen = null;
+            analysisLines = [{}, {}, {}];
             if (stockfish) {
                 stockfish.postMessage('stop');
                 stockfish.terminate();
                 stockfish = null;
             }
-            currentAnalysisFen = null;
         }
     }
 
