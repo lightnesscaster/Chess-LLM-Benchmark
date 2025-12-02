@@ -24,18 +24,24 @@ _CACHE_INVALIDATE_FILE = Path(__file__).parent.parent / "data" / ".cache_invalid
 
 def invalidate_cache() -> None:
     """Touch the cache invalidation file to signal all processes to refresh."""
-    _CACHE_INVALIDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    _CACHE_INVALIDATE_FILE.touch()
-    logger.info(f"Cache invalidation signal sent: {_CACHE_INVALIDATE_FILE}")
+    try:
+        _CACHE_INVALIDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _CACHE_INVALIDATE_FILE.touch()
+        logger.info(f"Cache invalidation signal sent: {_CACHE_INVALIDATE_FILE}")
+    except OSError as e:
+        logger.warning(f"Failed to touch cache invalidation file: {e}")
 
 
 def _should_invalidate_cache() -> bool:
     """Check if cache should be invalidated based on signal file."""
-    global _firestore_cache_time
-    if not _CACHE_INVALIDATE_FILE.exists():
+    try:
+        if not _CACHE_INVALIDATE_FILE.exists():
+            return False
+        file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
+        return file_mtime > _firestore_cache_time
+    except OSError as e:
+        logger.warning(f"Failed to check cache invalidation file: {e}")
         return False
-    file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
-    return file_mtime > _firestore_cache_time
 
 
 class RatingStore:
@@ -159,6 +165,8 @@ class RatingStore:
                     )
                     for pid, pr in _firestore_cache.items()
                 }
+                # Update cache time to prevent repeated fetch attempts
+                _firestore_cache_time = time.time()
             else:
                 # No cache available - try loading from local file as last resort
                 logger.warning("No cache available, attempting local file fallback")

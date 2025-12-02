@@ -34,10 +34,13 @@ _LEADERBOARD_CACHE_TTL = 3600  # 1 hour
 
 def _should_invalidate_leaderboard_cache() -> bool:
     """Check if leaderboard cache should be invalidated based on signal file."""
-    if not _CACHE_INVALIDATE_FILE.exists():
+    try:
+        if not _CACHE_INVALIDATE_FILE.exists():
+            return False
+        file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
+        return file_mtime > _leaderboard_cache_time
+    except OSError:
         return False
-    file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
-    return file_mtime > _leaderboard_cache_time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
