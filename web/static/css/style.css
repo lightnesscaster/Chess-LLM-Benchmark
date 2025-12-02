@@ -34,7 +34,7 @@ body {
     background-color: var(--bg-secondary);
     padding: 1rem 2rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     border-bottom: 1px solid var(--border);
 }
@@ -44,29 +44,6 @@ body {
     text-decoration: none;
     font-size: 1.5rem;
     font-weight: bold;
-}
-
-.nav-links {
-    display: flex;
-    gap: 2rem;
-}
-
-.nav-links a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.nav-links a:hover {
-    color: var(--text-primary);
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-links a.active {
-    color: var(--accent);
-    border-bottom: 2px solid var(--accent);
 }
 
 /* Container */
@@ -84,11 +61,51 @@ body {
 
 .page-header h1 {
     font-size: 2rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
 }
 
 .subtitle {
     color: var(--text-secondary);
+}
+
+/* Page navigation tabs */
+.page-nav {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.page-nav h1.active {
+    color: var(--text-primary);
+}
+
+.page-nav-link {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+    position: relative;
+}
+
+.page-nav-link:hover {
+    color: var(--accent-light);
+}
+
+.page-nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--accent);
+    transition: width 0.2s;
+}
+
+.page-nav-link:hover::after {
+    width: 100%;
 }
 
 .back-link {
