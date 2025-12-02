@@ -71,13 +71,15 @@ python cli.py leaderboard --min-games 5
 
 ### Recalculate Ratings
 
-Recalculate all ratings from stored game results (useful after changing anchor ratings):
+Recalculate all ratings from stored game results (useful after playing manual games or changing anchor ratings):
 
 ```bash
 python cli.py recalculate -c config/benchmark.yaml
 ```
 
 ### Web Interface
+
+Available at [https://chessbenchllm.onrender.com](https://chessbenchllm.onrender.com)
 
 ```bash
 python web/app.py
