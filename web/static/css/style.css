@@ -181,6 +181,15 @@ body {
     margin: 0.25rem 0;
 }
 
+.legend a {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+.legend a:hover {
+    text-decoration: underline;
+}
+
 /* Games list */
 .filters {
     display: flex;
