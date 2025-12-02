@@ -44,11 +44,20 @@ RATINGS_PATH = DATA_DIR / "ratings.json"
 STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
 _stockfish_engine = None
 _stockfish_lock = threading.Lock()
+_stockfish_pid = None  # Track PID to detect Flask reloads/worker restarts
 
 
 def get_stockfish_engine():
     """Get or create the Stockfish engine instance."""
-    global _stockfish_engine
+    global _stockfish_engine, _stockfish_pid
+    current_pid = os.getpid()
+
+    # Reset engine if we're in a new process (Flask reload or worker restart)
+    if _stockfish_pid is not None and _stockfish_pid != current_pid:
+        _stockfish_engine = None
+
+    _stockfish_pid = current_pid
+
     if _stockfish_engine is None:
         try:
             _stockfish_engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
