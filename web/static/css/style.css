@@ -619,7 +619,8 @@ body {
     overflow: auto;
     margin: 0 0 0.75rem 0;
     max-height: 200px;
-    width: 100%;
+    width: 0;
+    min-width: 100%;
     box-sizing: border-box;
     display: block;
 }
