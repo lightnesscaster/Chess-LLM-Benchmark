@@ -198,6 +198,6 @@ Engine anchors have fixed ratings based on their approximate Elo and are never u
 ## Illegal Move Policy
 
 - First illegal move: Warning sent, LLM gets one retry
-- Second illegal move: Immediate forfeit (loss)
+- Second illegal move: Immediate forfeit (loss), following FIDE rules
 
 The retry prompt tells the LLM which move was illegal but does not provide a list of legal moves.
