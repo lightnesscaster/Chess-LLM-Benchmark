@@ -380,6 +380,15 @@ async def recalculate_ratings(args):
         # Store ratings at start of pass to check convergence
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
 
+        # Reset RD to default at start of each pass to prevent instability
+        # (Glicko-2 RD shrinks with each game, causing hypersensitivity in multi-pass)
+        for pid in all_players:
+            if not rating_store.is_anchor(pid):
+                player = rating_store.get(pid)
+                player.rating_deviation = 350.0  # Default RD
+                player.volatility = 0.06  # Default volatility
+                rating_store.set(player, auto_save=False)
+
         # Shuffle games to eliminate order bias
         random.shuffle(valid_games)
 
