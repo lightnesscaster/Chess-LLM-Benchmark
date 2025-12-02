@@ -4,8 +4,10 @@ This benchmark evaluates LLM chess-playing ability by having models play games a
 
 ## How It Works
 
-**Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move. Illegal moves get one retry with a warning; second illegal move = forfeit. 
+**Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move. Illegal moves get one retry with a warning; second illegal move = forfeit.
+
 **Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool.
+
 **Rating Calculation** Glicko-2 ratings are calculated based on game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
 
 More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
