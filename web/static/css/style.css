@@ -318,7 +318,7 @@ body {
 
 .game-layout {
     display: grid;
-    grid-template-columns: minmax(480px, 560px) minmax(0, 1fr);
+    grid-template-columns: 520px minmax(320px, 1fr);
     gap: 2rem;
     align-items: start;
 }
@@ -857,10 +857,10 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
     .game-layout {
         grid-template-columns: 1fr;
-        max-width: 560px;
+        max-width: 520px;
         margin: 0 auto;
     }
 
