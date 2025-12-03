@@ -408,6 +408,5 @@ def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:
             "displaylogo": False,
             "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
             "responsive": True,
-            "modeBarPosition": "top-left",
         },
     )
