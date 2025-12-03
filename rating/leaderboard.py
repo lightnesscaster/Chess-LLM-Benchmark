@@ -3,6 +3,7 @@ Leaderboard display and formatting.
 """
 
 import json
+import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -19,8 +20,10 @@ _publish_dates: Dict[str, Dict[str, Any]] = {}
 try:
     with open(_PUBLISH_DATES_PATH) as f:
         _publish_dates = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    pass
+except FileNotFoundError:
+    logging.warning(f"Model publish dates file not found: {_PUBLISH_DATES_PATH}")
+except json.JSONDecodeError as e:
+    logging.error(f"Invalid JSON in model publish dates file: {e}")
 
 
 class Leaderboard:
@@ -98,10 +101,10 @@ class Leaderboard:
                 date_info = _publish_dates[rating.player_id]
                 # Format as MM/YY from YYYY-MM-DD
                 date_str = date_info.get("created_date", "")
-                if date_str:
+                if date_str and len(date_str) == 10:  # YYYY-MM-DD is always 10 chars
                     parts = date_str.split("-")
-                    if len(parts) == 3:
-                        entry["publish_date"] = f"{parts[1]}/{parts[0][2:]}"  # MM/YY
+                    if len(parts) == 3 and all(p.isdigit() for p in parts):
+                        entry["publish_date"] = f"{parts[1]}/{parts[0][-2:]}"  # MM/YY
                         entry["publish_timestamp"] = date_info.get("created_timestamp", 0)
 
             # Add additional stats if available (legal move rate, forfeit rate, etc.)

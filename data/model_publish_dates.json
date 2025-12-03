@@ -283,5 +283,10 @@
     "model_id": "x-ai/grok-4.1-fast:free",
     "created_timestamp": 1763587502,
     "created_date": "2025-11-19"
+  },
+  "claude-haiku-4.5 (thinking)": {
+    "model_id": "anthropic/claude-haiku-4.5",
+    "created_timestamp": 1760547638,
+    "created_date": "2025-10-15"
   }
 }
