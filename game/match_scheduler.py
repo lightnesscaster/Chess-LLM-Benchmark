@@ -87,8 +87,8 @@ class MatchScheduler:
         self._rating_lock = asyncio.Lock()
 
         # Track games played per player during benchmark (for reasoning caps)
+        # Note: Only used in run_benchmark() flow, protected by scheduler_lock
         self._games_played: Dict[str, int] = {}
-        self._games_played_lock = asyncio.Lock()
 
     def _get_game_cap(self, player_id: str) -> Optional[int]:
         """
@@ -105,37 +105,6 @@ class MatchScheduler:
         if rating > self.REASONING_HIGH_RATING_THRESHOLD:
             return self.REASONING_HIGH_RATING_CAP
         return self.REASONING_BASE_CAP
-
-    async def _check_and_reserve_game(self, white_id: str, black_id: str) -> bool:
-        """
-        Check if a game can be played (reasoning models haven't hit caps).
-        If allowed, reserve the game by incrementing counters.
-
-        Returns:
-            True if game is allowed and reserved, False if should be skipped
-        """
-        async with self._games_played_lock:
-            # Check caps for both players
-            for player_id in [white_id, black_id]:
-                cap = self._get_game_cap(player_id)
-                if cap is not None:
-                    current = self._games_played.get(player_id, 0)
-                    if current >= cap:
-                        return False  # Cap reached, skip game
-
-            # Reserve the game by incrementing counters
-            for player_id in [white_id, black_id]:
-                if player_id in self.reasoning_ids:
-                    self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
-
-            return True
-
-    async def _release_game_reservation(self, white_id: str, black_id: str) -> None:
-        """Release a game reservation if the game didn't complete (e.g., API error)."""
-        async with self._games_played_lock:
-            for player_id in [white_id, black_id]:
-                if player_id in self.reasoning_ids:
-                    self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
 
     def generate_pairings(
         self,
@@ -190,31 +159,22 @@ class MatchScheduler:
 
         return pairings
 
-    async def run_single_game(self, task: GameTask, skip_cap_check: bool = False) -> Optional[GameResult]:
+    async def run_single_game(self, task: GameTask) -> Optional[GameResult]:
         """
         Run a single game with concurrency control.
 
+        Note: Reasoning model cap checking is handled by _game_worker() in run_benchmark().
+        This method just runs the game - caller is responsible for any cap management.
+
         Args:
             task: The game task
-            skip_cap_check: If True, skip reasoning cap check (caller already handled it)
 
         Returns:
-            GameResult if game completes normally, None if API error or skipped due to cap
+            GameResult if game completes normally, None if API error
         """
-        white_id = task.white.player_id
-        black_id = task.black.player_id
-
-        # Check and reserve game slot (for reasoning model caps)
-        # Skip if caller already reserved under scheduler_lock (dynamic matchmaking)
-        if not skip_cap_check:
-            if not await self._check_and_reserve_game(white_id, black_id):
-                if self.verbose:
-                    print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id} - SKIPPED (cap reached)")
-                return None
-
         async with self._semaphore:
             if self.verbose:
-                print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id}")
+                print(f"[{task.game_num}/{task.total_games}] {task.white.player_id} vs {task.black.player_id}")
 
             runner = GameRunner(
                 white=task.white,
@@ -229,10 +189,6 @@ class MatchScheduler:
             if result.termination == "api_error":
                 if self.verbose:
                     print(f"  API error - game not saved")
-                # Release the reservation since game didn't count
-                # (only if we did the reservation here, not if caller handled it)
-                if not skip_cap_check:
-                    await self._release_game_reservation(white_id, black_id)
                 return None
 
             # Save PGN and result
@@ -490,7 +446,7 @@ class MatchScheduler:
             task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
 
             try:
-                result = await self.run_single_game(task, skip_cap_check=True)
+                result = await self.run_single_game(task)
 
                 if result is None:
                     # API error - release the slots
