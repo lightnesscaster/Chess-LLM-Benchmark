@@ -215,6 +215,11 @@ class Glicko2System:
 
         # Step 5: Compute new volatility
         new_sigma = self.calculate_new_volatility(sigma, phi, v, delta)
+        # Cap volatility to prevent explosion from extreme results (e.g., new player
+        # losing many games to much weaker opponent). Glickman's paper suggests
+        # sigma typically stays in 0.03-0.10 range; 0.15 allows adjustment while
+        # preventing cascading numerical issues in phi_star and subsequent steps.
+        new_sigma = min(new_sigma, 0.15)
 
         # Step 6: Update rating deviation
         phi_star = math.sqrt(phi * phi + new_sigma * new_sigma)
@@ -226,11 +231,18 @@ class Glicko2System:
         # Convert back to Glicko scale
         new_rating, new_rd = self.glicko2_to_glicko(new_mu, new_phi)
 
-        # Numerical stability checks
-        if not math.isfinite(new_rating) or abs(new_rating) > 10000:
+        # Numerical stability: clamp to reasonable bounds instead of reverting
+        # This ensures extreme results still produce rating changes (just bounded)
+        if not math.isfinite(new_rating):
             new_rating = player.rating
-        if not math.isfinite(new_rd) or new_rd < 30 or new_rd > 500:
+        else:
+            new_rating = max(-500, min(4000, new_rating))
+
+        if not math.isfinite(new_rd):
             new_rd = player.rating_deviation
+        else:
+            new_rd = max(30, min(350, new_rd))
+
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
 
