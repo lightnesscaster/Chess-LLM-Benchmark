@@ -193,7 +193,6 @@ llms:
   - player_id: "o4-mini-high"
     model_name: "openai/o4-mini-high"
     temperature: 0.0
-    reasoning: true
 
   - player_id: "gpt-oss-120b (high)"
     model_name: "openai/gpt-oss-120b"
@@ -213,9 +212,7 @@ llms:
   - player_id: "o3"
     model_name: "openai/o3"
     temperature: 0.0
-    reasoning: true
 
   - player_id: "kimi-k2-thinking"
     model_name: "moonshotai/kimi-k2-thinking"
     temperature: 0.0
-    reasoning: true

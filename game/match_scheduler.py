@@ -8,6 +8,7 @@ Handles:
 """
 
 import asyncio
+import random
 from typing import List, Dict, Any, Union, Tuple, Optional
 from dataclasses import dataclass
 
@@ -314,6 +315,9 @@ class MatchScheduler:
             games_vs_anchor_per_color=games_vs_anchor_per_color,
             games_vs_llm_per_color=games_vs_llm_per_color,
         )
+
+        # Shuffle pairings for random game order
+        random.shuffle(pairings)
 
         total_games = len(pairings)
         print(f"Starting benchmark: {total_games} games scheduled")
