@@ -281,41 +281,14 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         autosize=True,
     )
 
-    # Add annotation for best value model (highest rating on Pareto frontier)
-    if pareto_players:
-        # Find the model with highest rating on the Pareto frontier
-        best_idx = pareto_ratings.index(max(pareto_ratings))
-        best_cost = pareto_costs[best_idx]
-        best_rating_val = pareto_ratings[best_idx]
-        best_player = pareto_players[best_idx]
-
-        # Position annotation to the left if model is on the right side of the chart
-        # Use log scale midpoint for comparison
-        log_midpoint = math.sqrt(min_cost * max_cost)
-        if best_cost > log_midpoint:
-            ax, ay = -80, -25  # Point left and up
-        else:
-            ax, ay = 80, -25   # Point right and up
-
-        fig.add_annotation(
-            x=best_cost,
-            y=best_rating_val,
-            text=f"<b>{best_player}</b>",
-            showarrow=True,
-            arrowhead=0,
-            arrowsize=1,
-            arrowwidth=2,
-            arrowcolor="#e94560",
-            ax=ax,
-            ay=ay,
-            font=dict(size=12, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.9)",
-            bordercolor="#e94560",
-            borderwidth=1,
-            borderpad=5,
-            xref="x",
-            yref="y",
-        )
+    # Add invisible annotation (required for chart to render properly)
+    fig.add_annotation(
+        text="",
+        xref="paper", yref="paper",
+        x=0, y=0,
+        showarrow=False,
+        opacity=0,
+    )
 
     return fig
 
