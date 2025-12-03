@@ -73,6 +73,8 @@ python cli.py run -c config/benchmark.yaml -v
 
 ```bash
 python cli.py leaderboard --min-games 5
+python cli.py leaderboard --sort legal   # Sort by legal move %
+python cli.py leaderboard --sort cost    # Sort by $/game
 ```
 
 ### Recalculate Ratings
@@ -93,10 +95,12 @@ python web/app.py
 ```
 
 Features:
-- **Leaderboard** with Glicko-2 ratings, FIDE estimates, confidence intervals, and legal move rates
-- **Game library** with filtering by player
+- **Leaderboard** with Glicko-2 ratings, FIDE estimates, confidence intervals, legal move rates, $/game, and release dates
+- **Game library** with filtering by player and pagination
 - **Interactive game viewer** with move-by-move navigation
 - **Client-side Stockfish analysis** (toggle-able eval bar + top engine lines)
+- **Timeline chart** showing rating progression over time
+- **Cost vs Rating chart** with efficiency frontier
 - **Methodology page** explaining the rating system
 - **JSON API** at `/api/leaderboard`, `/api/games`, `/api/game/<id>`
 
@@ -115,6 +119,7 @@ benchmark:
   games_vs_llm_per_color: 5
   max_concurrent: 4
   max_moves: 200
+  rating_threshold: 600  # Only pair players within this rating difference
 
 engines:
   - player_id: "random-bot"
@@ -173,15 +178,20 @@ llms:
 │   ├── glicko2.py         # Glicko-2 implementation
 │   ├── rating_store.py    # Local JSON storage
 │   ├── leaderboard.py     # Leaderboard formatting
-│   └── fide_estimate.py   # FIDE rating estimation
+│   ├── fide_estimate.py   # FIDE rating estimation
+│   └── cost_calculator.py # API cost calculation
 ├── web/                   # Web interface
 │   ├── app.py             # Flask application
+│   ├── timeline_chart.py  # Rating timeline visualization
+│   ├── cost_chart.py      # Cost vs rating visualization
 │   ├── templates/         # HTML templates
 │   └── static/            # CSS/JS assets
 └── data/                  # Output (gitignored)
     ├── games/             # PGN files
     ├── results/           # JSON game results
-    └── ratings.json       # Current ratings
+    ├── ratings.json       # Current ratings
+    ├── lichess_to_fide.json      # FIDE conversion data
+    └── model_publish_dates.json  # Model release dates
 ```
 
 ## Rating System
