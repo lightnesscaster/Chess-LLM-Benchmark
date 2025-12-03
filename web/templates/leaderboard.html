@@ -105,6 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let aVal = parseFloat(a.dataset[sortKey]);
             let bVal = parseFloat(b.dataset[sortKey]);
 
+            // Handle NaN values (malformed data)
+            if (isNaN(aVal) && isNaN(bVal)) return 0;
+            if (isNaN(aVal)) return 1;
+            if (isNaN(bVal)) return -1;
+
             // Handle missing cost values (-1 means no cost data)
             if (sortKey === 'cost') {
                 if (aVal === -1 && bVal === -1) return 0;
@@ -140,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     headers.forEach(header => {
-        header.style.cursor = 'pointer';
         header.addEventListener('click', function() {
             const sortKey = this.dataset.sort;
             let newDir = 'desc';  // Default to descending

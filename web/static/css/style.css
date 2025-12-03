@@ -204,18 +204,22 @@ body {
 }
 
 /* Sortable headers */
-.sortable a {
-    color: var(--text-secondary);
-    text-decoration: none;
+.sortable {
+    cursor: pointer;
+    user-select: none;
     transition: color 0.2s;
 }
 
-.sortable a:hover {
+.sortable:hover {
     color: var(--accent-light);
 }
 
-.sortable.sorted a {
+.sortable.sorted {
     color: var(--accent);
+}
+
+.sort-arrow {
+    margin-left: 0.25rem;
 }
 
 .legend {
