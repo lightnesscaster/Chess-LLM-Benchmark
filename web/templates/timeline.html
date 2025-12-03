@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Timeline - LLM Chess Benchmark{% endblock %}
+
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+    .timeline-container {
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #timeline-chart {
+        width: 100%;
+        min-height: 500px;
+    }
+
+    .timeline-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+
+    .export-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+
+    .timeline-legend {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .timeline-legend p {
+        margin: 0.25rem 0;
+    }
+
+    .legend-colors {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.75rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-nav">
+        <a href="/" class="page-nav-link">Leaderboard</a>
+        <a href="/games" class="page-nav-link">Games</a>
+        <h1 class="active">Timeline</h1>
+        <a href="/methodology" class="page-nav-link">Methodology</a>
+    </div>
+    <p class="subtitle">Progression of top chess-playing LLMs over time, showing the "world record" frontier</p>
+</div>
+
+<div class="timeline-actions">
+    <a href="/api/timeline/export" class="export-btn" title="Download as PNG">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download PNG
+    </a>
+</div>
+
+<div class="timeline-container">
+    {{ chart_html|safe }}
+</div>
+
+<div class="timeline-legend">
+    <p><strong>The red "Champion Line"</strong> traces the highest-rated LLM at each point in time — the frontier of chess-playing ability.</p>
+    <p><strong>Marker shapes:</strong> ● = Standard model | ◆ = Reasoning model (extended thinking)</p>
+    <div class="legend-colors">
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #D97706;"></span>
+            <span>Anthropic</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #10B981;"></span>
+            <span>OpenAI</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #3B82F6;"></span>
+            <span>Google</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #8B5CF6;"></span>
+            <span>DeepSeek</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #EC4899;"></span>
+            <span>Meta</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #6B7280;"></span>
+            <span>xAI</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

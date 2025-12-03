@@ -6,3 +6,5 @@ aiohttp>=3.9.0
 flask>=3.0.0
 gunicorn>=21.0.0
 firebase-admin>=6.0.0
+plotly>=5.18.0
+kaleido>=0.2.1

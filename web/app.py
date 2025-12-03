@@ -23,6 +23,7 @@ from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
+from web.timeline_chart import get_timeline_html, create_timeline_chart, export_timeline_png
 
 app = Flask(__name__)
 
@@ -222,6 +223,14 @@ def methodology():
     return render_template("methodology.html")
 
 
+@app.route("/timeline")
+def timeline():
+    """Show timeline visualization."""
+    leaderboard_data = get_leaderboard_data()
+    chart_html = get_timeline_html(leaderboard_data)
+    return render_template("timeline.html", chart_html=chart_html)
+
+
 @app.route("/game/<game_id>")
 def game(game_id: str):
     """Show individual game viewer."""
@@ -275,6 +284,26 @@ def api_game(game_id: str):
     if not game_data:
         abort(404)
     return jsonify(game_data)
+
+
+@app.route("/api/timeline/export")
+def api_timeline_export():
+    """Export timeline chart as PNG."""
+    from flask import send_file
+    import tempfile
+
+    leaderboard_data = get_leaderboard_data()
+    fig = create_timeline_chart(leaderboard_data)
+
+    # Create temporary file for the PNG
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+        export_timeline_png(fig, tmp.name)
+        return send_file(
+            tmp.name,
+            mimetype="image/png",
+            as_attachment=True,
+            download_name="llm-chess-timeline.png",
+        )
 
 
 if __name__ == "__main__":
