@@ -40,6 +40,9 @@ engines:
 
 # LLM players - budget models only
 llms:
+  - player_id: "gpt-5.1-chat"
+    model_name: "openai/gpt-5.1-chat"
+    temperature: 0.0
   # gpt-5-chat (228)
   - player_id: "gpt-5-chat"
     model_name: "openai/gpt-5-chat"

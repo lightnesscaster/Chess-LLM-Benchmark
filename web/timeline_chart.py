@@ -248,47 +248,30 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             showlegend=False,
         ))
 
-    # Update layout
+    # Update layout - clean, minimal design
     fig.update_layout(
-        title=dict(
-            text="LLM Chess Rating Progression Over Time",
-            font=dict(size=20, color="#eaeaea"),
-            x=0.5,
-            xanchor="center",
-        ),
         xaxis=dict(
-            title="Release Date",
+            title=dict(text="Release Date", font=dict(size=13, color="#a0a0a0")),
             gridcolor="#2a3a5a",
             showgrid=True,
             tickformat="%b %Y",
+            tickfont=dict(size=11),
         ),
         yaxis=dict(
-            title="Lichess Classical Rating",
+            title=dict(text="Lichess Classical Rating", font=dict(size=13, color="#a0a0a0")),
             gridcolor="#2a3a5a",
             showgrid=True,
+            tickfont=dict(size=11),
+            zeroline=True,
+            zerolinecolor="#4a5a7a",
+            zerolinewidth=1,
         ),
         template="plotly_dark",
-        paper_bgcolor="#1a1a2e",
+        paper_bgcolor="#16213e",
         plot_bgcolor="#16213e",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5,
-            bgcolor="rgba(22, 33, 62, 0.8)",
-        ),
+        showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
-        margin=dict(t=80, b=60, l=60, r=40),
-    )
-
-    # Add annotation explaining symbols
-    fig.add_annotation(
-        text="● = Standard model | ◆ = Reasoning model",
-        xref="paper", yref="paper",
-        x=0.5, y=-0.12,
-        showarrow=False,
-        font=dict(size=11, color="#a0a0a0"),
+        margin=dict(t=20, b=50, l=70, r=20),
     )
 
     return fig
