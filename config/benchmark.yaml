@@ -179,14 +179,17 @@ llms:
   - player_id: "o1"
     model_name: "openai/o1"
     temperature: 0.0
+    reasoning: true
 
   # deepseek-v3.2 (thinking)
   - player_id: "deepseek-v3.2 (thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
+    reasoning: true
     reasoning_effort: high
 
   # kimi-k2-thinking
   - player_id: "kimi-k2-thinking"
     model_name: "moonshotai/kimi-k2-thinking"
     temperature: 0.0
+    reasoning: true
