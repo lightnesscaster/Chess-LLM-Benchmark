@@ -2,6 +2,8 @@
 Leaderboard display and formatting.
 """
 
+import json
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from .glicko2 import PlayerRating
@@ -10,6 +12,15 @@ from .fide_estimate import estimate_fide
 from .cost_calculator import CostCalculator
 from game.stats_collector import StatsCollector
 from game.models import GameResult
+
+# Load model publish dates
+_PUBLISH_DATES_PATH = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
+_publish_dates: Dict[str, Dict[str, Any]] = {}
+try:
+    with open(_PUBLISH_DATES_PATH) as f:
+        _publish_dates = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    pass
 
 
 class Leaderboard:
@@ -81,6 +92,16 @@ class Leaderboard:
                 "losses": rating.losses,
                 "draws": rating.draws,
             }
+
+            # Add publish date if available
+            if rating.player_id in _publish_dates:
+                date_info = _publish_dates[rating.player_id]
+                # Format as MM-YY from YYYY-MM-DD
+                date_str = date_info.get("created_date", "")
+                if date_str:
+                    parts = date_str.split("-")
+                    if len(parts) == 3:
+                        entry["publish_date"] = f"{parts[1]}-{parts[0][2:]}"  # MM-YY
 
             # Add additional stats if available (legal move rate, forfeit rate, etc.)
             if rating.player_id in player_stats:
