@@ -19,7 +19,6 @@
             <tr>
                 <th class="rank">#</th>
                 <th class="player">Player</th>
-                <th class="published">Published</th>
                 <th class="rating sortable sorted" data-sort="rating" data-dir="desc">Rating <span class="sort-arrow">▼</span></th>
                 <th class="fide">FIDE Est.</th>
                 <th class="rd">RD</th>
@@ -27,6 +26,7 @@
                 <th class="games">Games</th>
                 <th class="record">W-L-D</th>
                 <th class="legal sortable" data-sort="legal" data-dir="desc">Legal% <span class="sort-arrow"></span></th>
+                <th class="released">Released</th>
                 <th class="cost sortable" data-sort="cost" data-dir="desc">$/Game <span class="sort-arrow"></span></th>
             </tr>
         </thead>
@@ -46,7 +46,6 @@
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
                     {% if is_top_llm %}<span class="crown-badge" title="Top-rated LLM">👑</span>{% endif %}
                 </td>
-                <td class="published">{{ entry.publish_date|default('-', true) }}</td>
                 <td class="rating">{{ entry.rating }}</td>
                 <td class="fide">{% if entry.fide_estimate is not none %}~{{ entry.fide_estimate }}{% else %}N/A{% endif %}</td>
                 <td class="rd">{% if entry.is_anchor %}N/A{% else %}{{ entry.rating_deviation }}{% endif %}</td>
@@ -54,6 +53,7 @@
                 <td class="games">{{ entry.games_played }}</td>
                 <td class="record">{{ entry.wins|default(0) }}-{{ entry.losses|default(0) }}-{{ entry.draws|default(0) }}</td>
                 <td class="legal">{{ "%.1f"|format((entry.legal_move_rate|default(1.0)) * 100) }}%</td>
+                <td class="released">{{ entry.publish_date|default('-', true) }}</td>
                 <td class="cost">{% if entry.get('avg_cost_per_game') is not none %}${{ "%.4f"|format(entry.avg_cost_per_game) }}{% else %}-{% endif %}</td>
             </tr>
             {% endfor %}
@@ -65,7 +65,6 @@
     <p>👑 = Top-rated LLM</p>
     <p><strong style="color: var(--accent)">*</strong> = Anchor player (fixed rating, used for calibration)</p>
     <p><span class="unreliable-indicator">Greyed rows</span> = Rating unreliable (RD > 80, needs more games)</p>
-    <p><strong>Published</strong> = Model release date (MM-YY)</p>
     <p><strong>FIDE Est.</strong> = Estimated FIDE rating based on <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data</p>
     <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
     <p><strong>95% CI</strong> = 95% Confidence Interval</p>
