@@ -63,6 +63,11 @@
     </section>
 
     <section class="methodology-section">
+        <h2>Cost Per Game</h2>
+        <p>The <strong>$/Game</strong> metric shows the average API cost per game based on OpenRouter pricing. This includes both input and output tokens for all moves in a game. Costs vary significantly based on model pricing and how many tokens the model uses per move (especially for reasoning models that produce extensive chain-of-thought).</p>
+    </section>
+
+    <section class="methodology-section">
         <h2>Limitations</h2>
         <ul>
             <li>Due to cost, our sample size of games is relatively low for most models.</li>
@@ -76,6 +81,7 @@
         <ul>
             <li>Unlike the other engines (which are all neural networks), Eubos uses search. Thus, its strength varies greatly depending on how much time it has, and setting a time limit is important. We give it 15 minutes with 10 second increment for a whole game, a Lichess Classical time control.</li>
             <li>Some models are difficult to collect a large sample size for at this time due to API errors, such as Grok 4.1 Fast. Other models take a very long time to run due to slow token throughput and/or utilizing an unusually high number of thinking tokens. This explains the low game count of most Grok, DeepSeek Thinking, and Kimi Thinking models.</li>
+            <li>The <strong>Released</strong> column shows when each model was publicly released, based on official announcements. This helps contextualize performance relative to model age.</li>
         </ul>
     </section>
 </div>
