@@ -7,7 +7,7 @@ benchmark:
   games_vs_llm_per_color: 3       # Skip LLM vs LLM games
   max_moves: 200                   # Maximum half-moves per game
   max_concurrent: 30               # Maximum concurrent games
-  rating_threshold: 600            # Only pair LLMs with anchors within this rating difference
+  rating_threshold: 600            # Only pair players within this rating difference
 
 # Engine anchors (fixed ratings)
 engines:
@@ -138,23 +138,14 @@ llms:
     temperature: 0.0
     reasoning: true
 
-  - player_id: "claude-3.7-sonnet (thinking)"
-    model_name: "anthropic/claude-3.7-sonnet:thinking"
-    temperature: 0.0
-    reasoning: true
 
   - player_id: "claude-haiku-4.5 (thinking)"
-    model_name: "anthropic/claude-4.5-haiku"
+    model_name: "anthropic/claude-haiku-4.5"
     temperature: 0.0
     reasoning: true
 
   - player_id: "glm-4.6 (thinking)"
     model_name: "z-ai/glm-4.6"
-    temperature: 0.0
-    reasoning: true
-
-  - player_id: "claude-sonnet-4 (thinking)"
-    model_name: "anthropic/claude-sonnet-4"
     temperature: 0.0
     reasoning: true
 
@@ -168,10 +159,6 @@ llms:
     model_name: "deepseek/deepseek-v3.1-terminus"
     temperature: 0.0
     reasoning: true
-
-  - player_id: "o4-mini-high"
-    model_name: "openai/o4-mini-high"
-    temperature: 0.0
 
   - player_id: "gpt-oss-120b (high)"
     model_name: "openai/gpt-oss-120b"
@@ -187,11 +174,6 @@ llms:
     model_name: "openai/gpt-5"
     temperature: 0.0
     reasoning_effort: medium
-
-  - player_id: "claude-sonnet-4.5 (thinking)"
-    model_name: "anthropic/claude-sonnet-4.5"
-    temperature: 0.0
-    reasoning: true
 
   - player_id: "o3"
     model_name: "openai/o3"
