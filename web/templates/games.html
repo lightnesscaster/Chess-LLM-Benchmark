@@ -11,7 +11,7 @@
         <a href="/cost" class="page-nav-link">Cost</a>
         <a href="/methodology" class="page-nav-link">Methodology</a>
     </div>
-    <p class="subtitle">{{ filtered_games|length }} games{% if model_filter %} featuring {{ model_filter|e }}{% endif %}</p>
+    <p class="subtitle">{{ total_games }} games{% if model_filter %} featuring {{ model_filter|e }}{% endif %}</p>
 </div>
 
 <div class="filters">
@@ -62,6 +62,24 @@
 {% if not filtered_games %}
 <div class="empty-state">
     <p>No games found{% if model_filter %} for {{ model_filter|e }}{% endif %}.</p>
+</div>
+{% endif %}
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="{{ url_for('games', page=page-1, model=model_filter) if model_filter else url_for('games', page=page-1) }}" class="pagination-btn">&laquo; Prev</a>
+    {% else %}
+    <span class="pagination-btn disabled">&laquo; Prev</span>
+    {% endif %}
+
+    <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
+
+    {% if page < total_pages %}
+    <a href="{{ url_for('games', page=page+1, model=model_filter) if model_filter else url_for('games', page=page+1) }}" class="pagination-btn">Next &raquo;</a>
+    {% else %}
+    <span class="pagination-btn disabled">Next &raquo;</span>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

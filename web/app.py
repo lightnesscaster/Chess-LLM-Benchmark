@@ -202,10 +202,20 @@ def leaderboard():
 @app.route("/games")
 def games():
     """Show game library."""
+    GAMES_PER_PAGE = 10
+
     all_games = get_all_games()
     model_filter = request.args.get('model', '').strip()
     if len(model_filter) > 200:
         abort(400)
+
+    # Validate page parameter
+    try:
+        page = int(request.args.get('page', 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
 
     # Collect all unique models for the dropdown
     all_models = sorted(set(g['white'] for g in all_games) | set(g['black'] for g in all_games))
@@ -215,7 +225,28 @@ def games():
     else:
         filtered_games = all_games
 
-    return render_template("games.html", filtered_games=filtered_games, all_models=all_models, model_filter=model_filter)
+    # Calculate pagination
+    total_games = len(filtered_games)
+    total_pages = max(1, math.ceil(total_games / GAMES_PER_PAGE))
+
+    # Clamp page to valid range
+    if page > total_pages:
+        page = total_pages
+
+    # Slice games for current page
+    start_idx = (page - 1) * GAMES_PER_PAGE
+    end_idx = start_idx + GAMES_PER_PAGE
+    paginated_games = filtered_games[start_idx:end_idx]
+
+    return render_template(
+        "games.html",
+        filtered_games=paginated_games,
+        all_models=all_models,
+        model_filter=model_filter,
+        page=page,
+        total_pages=total_pages,
+        total_games=total_games,
+    )
 
 
 @app.route("/methodology")
