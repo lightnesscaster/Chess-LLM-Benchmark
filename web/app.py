@@ -292,6 +292,7 @@ def api_timeline_export():
     from flask import send_file
     import tempfile
 
+    tmp_path = None
     try:
         leaderboard_data = get_leaderboard_data()
         fig = create_timeline_chart(leaderboard_data)
@@ -321,6 +322,13 @@ def api_timeline_export():
         return response
 
     except Exception as e:
+        # Clean up temp file if it was created
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError as cleanup_error:
+                app.logger.error(f"Failed to cleanup temp file {tmp_path}: {cleanup_error}")
+
         app.logger.error(f"Error exporting timeline: {e}")
         abort(500)
 
