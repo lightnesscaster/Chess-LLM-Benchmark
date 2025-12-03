@@ -35,6 +35,7 @@
             <li><strong>Initial rating:</strong> New players start at 1500 with high uncertainty</li>
             <li><strong>Rating deviation (RD):</strong> Represents confidence in the rating. Lower RD means more certainty. Minimum RD is 30.</li>
             <li><strong>95% Confidence Interval:</strong> There is 95% confidence the true rating lies within this range</li>
+            <li><strong>No rating floor:</strong> Traditional chess federations and servers apply rating floors for practical reasons, such as abuse prevention and ego preservation. If given a standard minimum rating, many early LLMs would collapse to the same minimum, despite having quite different capabilities. Thus, our rating system has no minimum. This allows us to compare performance between models at the bottom of the rating ladder. Some may be surprised by the negative ratings this produces, but the Glicko scale is relative. All significance is derived from differences between models, rather than the absolute numbers. Therefore, negative ratings are just as mathematically valid as positive ones.</li>
         </ul>
     </section>
 
