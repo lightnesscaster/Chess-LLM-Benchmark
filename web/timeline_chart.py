@@ -342,7 +342,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         plot_bgcolor="#16213e",
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
-        dragmode=False,  # Disable box zoom with mouse
+        dragmode="pan",  # Enable pan by default
         margin=dict(t=20, b=55, l=70, r=15),
         autosize=True,
     )
@@ -412,7 +412,7 @@ def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:
         config={
             "displayModeBar": "hover",  # Only show on hover
             "displaylogo": False,
-            "modeBarButtons": [["pan2d", "zoomIn2d", "zoomOut2d", "resetScale2d"]],
+            "modeBarButtons": [["zoomIn2d", "zoomOut2d", "resetScale2d"]],
             "scrollZoom": False,
             "responsive": True,
         },
