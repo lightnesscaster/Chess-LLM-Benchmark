@@ -34,14 +34,14 @@ _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
 _leaderboard_lock = threading.Lock()
 _leaderboard_refreshing = False
-_LEADERBOARD_CACHE_TTL = 3600  # 1 hour
+_LEADERBOARD_CACHE_TTL = 86400  # 24 hours
 
 # Games cache
 _games_cache: list = []
 _games_cache_time: float = 0
 _games_lock = threading.Lock()
 _games_refreshing = False
-_GAMES_CACHE_TTL = 3600  # 1 hour
+_GAMES_CACHE_TTL = 86400  # 24 hours
 
 
 def _should_invalidate_cache(cache_time: float) -> bool:
