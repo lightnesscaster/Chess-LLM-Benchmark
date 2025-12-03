@@ -190,12 +190,13 @@ class MatchScheduler:
 
         return pairings
 
-    async def run_single_game(self, task: GameTask) -> Optional[GameResult]:
+    async def run_single_game(self, task: GameTask, skip_cap_check: bool = False) -> Optional[GameResult]:
         """
         Run a single game with concurrency control.
 
         Args:
             task: The game task
+            skip_cap_check: If True, skip reasoning cap check (caller already handled it)
 
         Returns:
             GameResult if game completes normally, None if API error or skipped due to cap
@@ -204,10 +205,12 @@ class MatchScheduler:
         black_id = task.black.player_id
 
         # Check and reserve game slot (for reasoning model caps)
-        if not await self._check_and_reserve_game(white_id, black_id):
-            if self.verbose:
-                print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id} - SKIPPED (cap reached)")
-            return None
+        # Skip if caller already reserved under scheduler_lock (dynamic matchmaking)
+        if not skip_cap_check:
+            if not await self._check_and_reserve_game(white_id, black_id):
+                if self.verbose:
+                    print(f"[{task.game_num}/{task.total_games}] {white_id} vs {black_id} - SKIPPED (cap reached)")
+                return None
 
         async with self._semaphore:
             if self.verbose:
@@ -227,7 +230,9 @@ class MatchScheduler:
                 if self.verbose:
                     print(f"  API error - game not saved")
                 # Release the reservation since game didn't count
-                await self._release_game_reservation(white_id, black_id)
+                # (only if we did the reservation here, not if caller handled it)
+                if not skip_cap_check:
+                    await self._release_game_reservation(white_id, black_id)
                 return None
 
             # Save PGN and result
@@ -451,8 +456,11 @@ class MatchScheduler:
 
                 white_id, black_id = pairing
 
-                # Reserve the pairing slot and increment game counter atomically
+                # Reserve everything atomically: pairing slot, reasoning caps, counter
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
+                for player_id in [white_id, black_id]:
+                    if player_id in self.reasoning_ids:
+                        self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
                 counters["game_num"] += 1
                 game_num = counters["game_num"]
 
@@ -466,6 +474,9 @@ class MatchScheduler:
                 async with scheduler_lock:
                     counters["errors"] += 1
                     games_per_pairing[(white_id, black_id)] -= 1
+                    for player_id in [white_id, black_id]:
+                        if player_id in self.reasoning_ids:
+                            self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                 continue
 
             # Show current ratings
@@ -479,12 +490,15 @@ class MatchScheduler:
             task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
 
             try:
-                result = await self.run_single_game(task)
+                result = await self.run_single_game(task, skip_cap_check=True)
 
                 if result is None:
-                    # API error or cap reached - release the slot
+                    # API error - release the slots
                     async with scheduler_lock:
                         games_per_pairing[(white_id, black_id)] -= 1
+                        for player_id in [white_id, black_id]:
+                            if player_id in self.reasoning_ids:
+                                self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                         counters["api_errors"] += 1
                 else:
                     results.append(result)
@@ -494,6 +508,9 @@ class MatchScheduler:
                     print(f"  Game error: {e}")
                 async with scheduler_lock:
                     games_per_pairing[(white_id, black_id)] -= 1
+                    for player_id in [white_id, black_id]:
+                        if player_id in self.reasoning_ids:
+                            self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                     counters["errors"] += 1
 
     async def run_benchmark(
