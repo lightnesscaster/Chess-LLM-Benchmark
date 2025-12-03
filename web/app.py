@@ -33,14 +33,19 @@ _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
 _LEADERBOARD_CACHE_TTL = 3600  # 1 hour
 
+# Games cache
+_games_cache: list = []
+_games_cache_time: float = 0
+_GAMES_CACHE_TTL = 3600  # 1 hour
 
-def _should_invalidate_leaderboard_cache() -> bool:
-    """Check if leaderboard cache should be invalidated based on signal file."""
+
+def _should_invalidate_cache(cache_time: float) -> bool:
+    """Check if cache should be invalidated based on signal file."""
     try:
         if not _CACHE_INVALIDATE_FILE.exists():
             return False
         file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
-        return file_mtime > _leaderboard_cache_time
+        return file_mtime > cache_time
     except OSError:
         return False
 
@@ -84,7 +89,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
     # Only use cache for default sort order
     cache_age = time.time() - _leaderboard_cache_time
     cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
-    if cache_valid and sort_by == "rating" and not _should_invalidate_leaderboard_cache():
+    if cache_valid and sort_by == "rating" and not _should_invalidate_cache(_leaderboard_cache_time):
         app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
         return list(_leaderboard_cache)  # Return copy to prevent mutation
 
@@ -120,7 +125,16 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
 
 
 def get_all_games() -> list:
-    """Get all games with metadata."""
+    """Get all games with metadata, with caching."""
+    global _games_cache, _games_cache_time
+
+    # Check cache first (not expired and not invalidated)
+    cache_age = time.time() - _games_cache_time
+    cache_valid = _games_cache and cache_age < _GAMES_CACHE_TTL
+    if cache_valid and not _should_invalidate_cache(_games_cache_time):
+        app.logger.debug(f"Using cached games data ({cache_age:.0f}s old)")
+        return list(_games_cache)  # Return copy to prevent mutation
+
     try:
         pgn_logger = PGNLogger()
         results = pgn_logger.load_all_results()
@@ -142,9 +156,17 @@ def get_all_games() -> list:
                 "created_at": result.created_at,
             })
 
+        # Update cache
+        _games_cache = games
+        _games_cache_time = time.time()
+
         return games
     except Exception as e:
         app.logger.error(f"Error loading games: {e}")
+        # Return cached data if available, even if expired
+        if _games_cache:
+            app.logger.info("Returning stale cached games data due to error")
+            return list(_games_cache)
         return []
 
 
