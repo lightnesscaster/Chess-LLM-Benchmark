@@ -9,6 +9,7 @@ import math
 import os
 import re
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -31,11 +32,15 @@ app = Flask(__name__)
 # Leaderboard cache
 _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
+_leaderboard_lock = threading.Lock()
+_leaderboard_refreshing = False
 _LEADERBOARD_CACHE_TTL = 3600  # 1 hour
 
 # Games cache
 _games_cache: list = []
 _games_cache_time: float = 0
+_games_lock = threading.Lock()
+_games_refreshing = False
 _GAMES_CACHE_TTL = 3600  # 1 hour
 
 
@@ -82,17 +87,28 @@ def is_valid_game_id(game_id: str) -> bool:
 
 
 def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
-    """Get leaderboard data from rating store with caching."""
-    global _leaderboard_cache, _leaderboard_cache_time
+    """Get leaderboard data from rating store with thread-safe caching."""
+    global _leaderboard_cache, _leaderboard_cache_time, _leaderboard_refreshing
 
-    # Check cache first (not expired and not invalidated)
-    # Only use cache for default sort order
-    cache_age = time.time() - _leaderboard_cache_time
-    cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
-    if cache_valid and sort_by == "rating" and not _should_invalidate_cache(_leaderboard_cache_time):
-        app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
-        return list(_leaderboard_cache)  # Return copy to prevent mutation
+    # Check cache under lock
+    with _leaderboard_lock:
+        cache_age = time.time() - _leaderboard_cache_time
+        cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
+        should_invalidate = _should_invalidate_cache(_leaderboard_cache_time)
 
+        if cache_valid and sort_by == "rating" and not should_invalidate:
+            app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
+            return list(_leaderboard_cache)
+
+        # Thundering herd prevention: if another thread is refreshing, return stale cache
+        if _leaderboard_refreshing and _leaderboard_cache:
+            app.logger.debug("Another thread is refreshing leaderboard, returning stale cache")
+            return list(_leaderboard_cache)
+
+        # Mark that we're refreshing
+        _leaderboard_refreshing = True
+
+    # Fetch data outside lock to avoid blocking other threads
     try:
         anchors = get_anchors_from_config()
         anchor_ids = set(anchors.keys())
@@ -110,31 +126,48 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
         leaderboard = Leaderboard(rating_store, stats_collector)
         result = leaderboard.get_leaderboard(min_games=min_games, sort_by=sort_by)
 
-        # Update cache on success (only for default sort)
-        if sort_by == "rating":
-            _leaderboard_cache = result
-            _leaderboard_cache_time = time.time()
+        # Update cache under lock
+        with _leaderboard_lock:
+            if sort_by == "rating":
+                _leaderboard_cache = result
+                _leaderboard_cache_time = time.time()
+            _leaderboard_refreshing = False
+
         return result
     except Exception as e:
         app.logger.error(f"Error loading leaderboard: {e}")
-        # Return cached data if available, even if expired
-        if _leaderboard_cache:
-            app.logger.info("Returning stale cached leaderboard data due to error")
-            return list(_leaderboard_cache)  # Return copy to prevent mutation
+        with _leaderboard_lock:
+            _leaderboard_refreshing = False
+            # Return cached data if available, even if expired
+            if _leaderboard_cache:
+                app.logger.info("Returning stale cached leaderboard data due to error")
+                return list(_leaderboard_cache)
         return []
 
 
 def get_all_games() -> list:
-    """Get all games with metadata, with caching."""
-    global _games_cache, _games_cache_time
+    """Get all games with metadata, with thread-safe caching."""
+    global _games_cache, _games_cache_time, _games_refreshing
 
-    # Check cache first (not expired and not invalidated)
-    cache_age = time.time() - _games_cache_time
-    cache_valid = _games_cache and cache_age < _GAMES_CACHE_TTL
-    if cache_valid and not _should_invalidate_cache(_games_cache_time):
-        app.logger.debug(f"Using cached games data ({cache_age:.0f}s old)")
-        return list(_games_cache)  # Return copy to prevent mutation
+    # Check cache under lock
+    with _games_lock:
+        cache_age = time.time() - _games_cache_time
+        cache_valid = _games_cache and cache_age < _GAMES_CACHE_TTL
+        should_invalidate = _should_invalidate_cache(_games_cache_time)
 
+        if cache_valid and not should_invalidate:
+            app.logger.debug(f"Using cached games data ({cache_age:.0f}s old)")
+            return list(_games_cache)
+
+        # Thundering herd prevention: if another thread is refreshing, return stale cache
+        if _games_refreshing and _games_cache:
+            app.logger.debug("Another thread is refreshing games, returning stale cache")
+            return list(_games_cache)
+
+        # Mark that we're refreshing
+        _games_refreshing = True
+
+    # Fetch data outside lock to avoid blocking other threads
     try:
         pgn_logger = PGNLogger()
         results = pgn_logger.load_all_results()
@@ -156,17 +189,21 @@ def get_all_games() -> list:
                 "created_at": result.created_at,
             })
 
-        # Update cache
-        _games_cache = games
-        _games_cache_time = time.time()
+        # Update cache under lock
+        with _games_lock:
+            _games_cache = games
+            _games_cache_time = time.time()
+            _games_refreshing = False
 
         return games
     except Exception as e:
         app.logger.error(f"Error loading games: {e}")
-        # Return cached data if available, even if expired
-        if _games_cache:
-            app.logger.info("Returning stale cached games data due to error")
-            return list(_games_cache)
+        with _games_lock:
+            _games_refreshing = False
+            # Return cached data if available, even if expired
+            if _games_cache:
+                app.logger.info("Returning stale cached games data due to error")
+                return list(_games_cache)
         return []
 
 
