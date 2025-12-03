@@ -52,11 +52,22 @@
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     #timeline-chart {
-        width: 100%;
+        width: 100% !important;
         height: 620px;
+    }
+
+    /* Ensure Plotly chart fills container */
+    #timeline-chart .plotly-graph-div {
+        width: 100% !important;
+    }
+
+    #timeline-chart .main-svg {
+        width: 100% !important;
     }
 
     .timeline-legend {
@@ -205,4 +216,23 @@
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Resize Plotly chart to fill container after load
+window.addEventListener('load', function() {
+    var chartDiv = document.getElementById('timeline-chart');
+    if (chartDiv && window.Plotly) {
+        Plotly.Plots.resize(chartDiv);
+    }
+});
+window.addEventListener('resize', function() {
+    var chartDiv = document.getElementById('timeline-chart');
+    if (chartDiv && window.Plotly) {
+        Plotly.Plots.resize(chartDiv);
+    }
+});
+</script>
 {% endblock %}

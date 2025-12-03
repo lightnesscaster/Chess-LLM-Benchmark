@@ -256,7 +256,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
 
     # Calculate x-axis range
     x_start = datetime(2023, 2, 1)  # Start from Feb 2023 (first model is March)
-    x_end = datetime(2026, 1, 15)   # End mid-Jan 2026
+    x_end = datetime(2025, 12, 31)  # End Dec 2025
 
     # Update layout - clean, minimal design
     fig.update_layout(
@@ -285,6 +285,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
         margin=dict(t=20, b=55, l=70, r=15),
+        autosize=True,
     )
 
     # Add annotation for current champion (top-rated model)
