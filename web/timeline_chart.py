@@ -341,69 +341,26 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         autosize=True,
     )
 
-    # Add annotations for all champion models
-    # Build list of unique champions with their dates and ratings
-    champion_models = []
-    seen_champions = set()
-    for i, (date, rating, player_id) in enumerate(zip(frontier_dates, frontier_ratings, frontier_players)):
-        # Only add when this is a new champion (not a horizontal segment point)
-        if player_id and player_id not in seen_champions:
-            # Find the original entry to get the timestamp
-            for entry in models_with_dates:
-                if entry["player_id"] == player_id:
-                    champion_models.append({
-                        "player_id": player_id,
-                        "date": datetime.fromtimestamp(entry["publish_timestamp"]),
-                        "rating": entry["rating"],
-                    })
-                    seen_champions.add(player_id)
-                    break
-
-    # Add labels for each champion with smart positioning
-    # Position labels to avoid overlap - generally pointing outward from center
-    for i, champ in enumerate(champion_models):
-        rating = champ["rating"]
-        is_top = (i == len(champion_models) - 1)
-        is_first = (i == 0)
-
-        # Default: point right and up
-        ax, ay = 60, -25
-
-        # First model (gpt-4): point right
-        if is_first:
-            ax, ay = 70, 20
-        # Top model: point left-up
-        elif is_top:
-            ax, ay = -100, -30
-        # High rating models (>1000): point left to avoid edge
-        elif rating > 1000:
-            ax, ay = -80, -25 - (i % 2) * 40  # Alternate vertical offset
-        # Mid rating models (300-1000): alternate left/right
-        elif rating > 300:
-            if i % 2 == 0:
-                ax, ay = -90, 25
-            else:
-                ax, ay = 70, -25
-        # Lower rating models: point right
-        else:
-            ax, ay = 80, -20 + (i % 2) * 50
-
+    # Add annotation for current champion (top-rated model)
+    if models_with_dates:
+        top_model = max(models_with_dates, key=lambda x: x["rating"])
+        top_date = datetime.fromtimestamp(top_model["publish_timestamp"])
         fig.add_annotation(
-            x=champ["date"],
-            y=champ["rating"],
-            text=f"<b>{champ['player_id']}</b>",
+            x=top_date,
+            y=top_model["rating"],
+            text=f"<b>{top_model['player_id']}</b>",
             showarrow=True,
             arrowhead=0,
             arrowsize=1,
-            arrowwidth=1.5,
+            arrowwidth=2,
             arrowcolor="#e94560",
-            ax=ax,
-            ay=ay,
-            font=dict(size=11, color="#eaeaea"),
+            ax=-50,
+            ay=-35,
+            font=dict(size=13, color="#eaeaea"),
             bgcolor="rgba(22, 33, 62, 0.9)",
             bordercolor="#e94560",
             borderwidth=1,
-            borderpad=4,
+            borderpad=6,
         )
 
     return fig
