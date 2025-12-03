@@ -359,21 +359,34 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
                     seen_champions.add(player_id)
                     break
 
-    # Add labels for each champion with alternating positions
+    # Add labels for each champion with smart positioning
+    # Position labels to avoid overlap - generally pointing outward from center
     for i, champ in enumerate(champion_models):
-        # Alternate label positions: right-up, right-down, left-up, left-down
-        positions = [
-            (40, -30),   # right-up
-            (40, 30),    # right-down
-            (-40, -30),  # left-up
-            (-40, 30),   # left-down
-        ]
-        ax, ay = positions[i % len(positions)]
-
-        # For the top model, always position to the left
+        rating = champ["rating"]
         is_top = (i == len(champion_models) - 1)
-        if is_top:
-            ax, ay = -50, -35
+        is_first = (i == 0)
+
+        # Default: point right and up
+        ax, ay = 60, -25
+
+        # First model (gpt-4): point right
+        if is_first:
+            ax, ay = 70, 20
+        # Top model: point left-up
+        elif is_top:
+            ax, ay = -100, -30
+        # High rating models (>1000): point left to avoid edge
+        elif rating > 1000:
+            ax, ay = -80, -25 - (i % 2) * 40  # Alternate vertical offset
+        # Mid rating models (300-1000): alternate left/right
+        elif rating > 300:
+            if i % 2 == 0:
+                ax, ay = -90, 25
+            else:
+                ax, ay = 70, -25
+        # Lower rating models: point right
+        else:
+            ax, ay = 80, -20 + (i % 2) * 50
 
         fig.add_annotation(
             x=champ["date"],
@@ -387,7 +400,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             ax=ax,
             ay=ay,
             font=dict(size=11, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.85)",
+            bgcolor="rgba(22, 33, 62, 0.9)",
             bordercolor="#e94560",
             borderwidth=1,
             borderpad=4,
