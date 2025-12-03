@@ -151,8 +151,8 @@
   },
   "grok-3-mini": {
     "model_id": "x-ai/grok-3-mini",
-    "created_timestamp": 1749583245,
-    "created_date": "2025-06-10"
+    "created_timestamp": 1739836800,
+    "created_date": "2025-02-18"
   },
   "claude-sonnet-4.5 (thinking)": {
     "model_id": "anthropic/claude-sonnet-4.5",
@@ -176,8 +176,8 @@
   },
   "grok-3": {
     "model_id": "x-ai/grok-3",
-    "created_timestamp": 1749582908,
-    "created_date": "2025-06-10"
+    "created_timestamp": 1739836800,
+    "created_date": "2025-02-18"
   },
   "deepseek-r1-distill-qwen-32b": {
     "model_id": "deepseek/deepseek-r1-distill-qwen-32b",
