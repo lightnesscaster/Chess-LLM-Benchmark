@@ -19,14 +19,14 @@
             <tr>
                 <th class="rank">#</th>
                 <th class="player">Player</th>
-                <th class="rating sortable{% if current_sort == 'rating' %} sorted{% endif %}"><a href="?sort=rating">Rating{% if current_sort == 'rating' %} ▼{% endif %}</a></th>
+                <th class="rating sortable sorted" data-sort="rating" data-dir="desc">Rating <span class="sort-arrow">▼</span></th>
                 <th class="fide">FIDE Est.</th>
                 <th class="rd">RD</th>
                 <th class="ci">95% CI</th>
                 <th class="games">Games</th>
                 <th class="record">W-L-D</th>
-                <th class="legal sortable{% if current_sort == 'legal' %} sorted{% endif %}"><a href="?sort=legal">Legal%{% if current_sort == 'legal' %} ▼{% endif %}</a></th>
-                <th class="cost sortable{% if current_sort == 'cost' %} sorted{% endif %}"><a href="?sort=cost">$/Game{% if current_sort == 'cost' %} ▲{% endif %}</a></th>
+                <th class="legal sortable" data-sort="legal" data-dir="desc">Legal% <span class="sort-arrow"></span></th>
+                <th class="cost sortable" data-sort="cost" data-dir="desc">$/Game <span class="sort-arrow"></span></th>
             </tr>
         </thead>
         <tbody>
@@ -34,7 +34,11 @@
             {% for entry in leaderboard %}
             {% set is_top_llm = not entry.is_anchor and not ns.top_llm_found %}
             {% if is_top_llm %}{% set ns.top_llm_found = true %}{% endif %}
-            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %} clickable-row" data-player-id="{{ entry.player_id|e }}">
+            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %} clickable-row"
+                data-player-id="{{ entry.player_id|e }}"
+                data-rating="{{ entry.rating }}"
+                data-legal="{{ entry.legal_move_rate|default(1.0) }}"
+                data-cost="{{ entry.get('avg_cost_per_game') if entry.get('avg_cost_per_game') is not none else -1 }}">
                 <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
@@ -74,11 +78,79 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Row click to view player games
     const rows = document.querySelectorAll('.clickable-row');
     rows.forEach(row => {
-        row.addEventListener('click', function() {
+        row.addEventListener('click', function(e) {
+            // Don't navigate if clicking on a link
+            if (e.target.tagName === 'A') return;
             const playerId = this.dataset.playerId;
             window.location.href = '/games?model=' + encodeURIComponent(playerId);
+        });
+    });
+
+    // Sortable columns
+    const table = document.querySelector('.leaderboard-table');
+    if (!table) return;
+
+    const tbody = table.querySelector('tbody');
+    const headers = table.querySelectorAll('th.sortable');
+    let currentSort = 'rating';
+    let currentDir = 'desc';
+
+    function sortTable(sortKey, direction) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        rows.sort((a, b) => {
+            let aVal = parseFloat(a.dataset[sortKey]);
+            let bVal = parseFloat(b.dataset[sortKey]);
+
+            // Handle missing cost values (-1 means no cost data)
+            if (sortKey === 'cost') {
+                if (aVal === -1 && bVal === -1) return 0;
+                if (aVal === -1) return 1;  // No cost goes last
+                if (bVal === -1) return -1;
+            }
+
+            if (direction === 'desc') {
+                return bVal - aVal;
+            } else {
+                return aVal - bVal;
+            }
+        });
+
+        // Re-append rows in sorted order
+        rows.forEach((row, index) => {
+            row.querySelector('.rank').textContent = index + 1;
+            tbody.appendChild(row);
+        });
+
+        // Update header indicators
+        headers.forEach(h => {
+            h.classList.remove('sorted');
+            h.querySelector('.sort-arrow').textContent = '';
+        });
+
+        const activeHeader = table.querySelector(`th[data-sort="${sortKey}"]`);
+        activeHeader.classList.add('sorted');
+        activeHeader.querySelector('.sort-arrow').textContent = direction === 'desc' ? '▼' : '▲';
+
+        currentSort = sortKey;
+        currentDir = direction;
+    }
+
+    headers.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const sortKey = this.dataset.sort;
+            let newDir = 'desc';  // Default to descending
+
+            // If clicking same column, toggle direction
+            if (sortKey === currentSort) {
+                newDir = currentDir === 'desc' ? 'asc' : 'desc';
+            }
+
+            sortTable(sortKey, newDir);
         });
     });
 });

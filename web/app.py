@@ -188,20 +188,13 @@ def set_security_headers(response):
 @app.route("/")
 def index():
     """Redirect to leaderboard."""
-    sort_by = request.args.get('sort', 'rating')
-    if sort_by not in ('rating', 'legal', 'cost'):
-        sort_by = 'rating'
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(sort_by=sort_by), current_sort=sort_by)
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data())
 
 
 @app.route("/leaderboard")
 def leaderboard():
     """Show leaderboard page."""
-    min_games = 1
-    sort_by = request.args.get('sort', 'rating')
-    if sort_by not in ('rating', 'legal', 'cost'):
-        sort_by = 'rating'
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games, sort_by=sort_by), current_sort=sort_by)
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data())
 
 
 @app.route("/games")

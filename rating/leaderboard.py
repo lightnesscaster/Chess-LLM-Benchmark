@@ -108,11 +108,12 @@ class Leaderboard:
             # Default to 1.0 (100%) for engines/anchors that don't have stats
             leaderboard.sort(key=lambda e: (-e.get("legal_move_rate", 1.0), -e["rating"]))
         elif sort_by == "cost":
-            # Sort by cost (asc), None values last, then rating (desc) for ties
+            # Sort by cost (desc), None values last, then rating (desc) for ties
             def cost_sort_key(e):
                 cost = e.get("avg_cost_per_game")
                 # None values go last (True > False in tuple comparison)
-                return (cost is None, cost if cost is not None else 0, -e["rating"])
+                # Negate cost for descending order (most expensive first)
+                return (cost is None, -(cost if cost is not None else 0), -e["rating"])
             leaderboard.sort(key=cost_sort_key)
         else:
             # Default: sort by rating (desc), then by legal move rate (desc) for ties
