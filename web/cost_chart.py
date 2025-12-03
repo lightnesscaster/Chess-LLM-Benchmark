@@ -141,7 +141,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     # Create figure
     fig = go.Figure()
 
-    # Add scatter points grouped by provider for legend
+    # Add scatter points grouped by provider (no legend - using HTML legend)
     providers_seen = set()
     for provider in PROVIDER_COLORS.keys():
         mask = [p == provider for p in providers]
@@ -168,6 +168,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=provider_hovers,
+            showlegend=False,
         ))
 
     # Add any remaining providers not in PROVIDER_COLORS
@@ -191,6 +192,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=other_hovers,
+            showlegend=False,
         ))
 
     # Find the Pareto frontier (best rating for each cost level)
@@ -217,6 +219,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             name="Efficiency Frontier",
             line=dict(color="#e94560", width=3, dash="dot"),
             hoverinfo="skip",
+            showlegend=False,
         ))
 
     # Highlight Pareto-optimal models
@@ -247,9 +250,11 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             gridcolor="rgba(74, 90, 122, 0.3)",
             griddash="dot",
             showgrid=True,
-            tickfont=dict(size=14),
+            tickfont=dict(size=12),
             type="log",  # Log scale for cost
-            tickformat="$.4f",
+            tickvals=[0.0001, 0.001, 0.01, 0.1, 1, 10, 100],
+            ticktext=["$0.0001", "$0.001", "$0.01", "$0.10", "$1", "$10", "$100"],
+            minor=dict(showgrid=True, gridcolor="rgba(74, 90, 122, 0.15)"),
         ),
         yaxis=dict(
             title=dict(text="Lichess Classical Rating", font=dict(size=16, color="#a0a0a0"), standoff=10),
@@ -267,37 +272,9 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
         dragmode=False,
-        margin=dict(t=20, b=55, l=70, r=15),
+        margin=dict(t=20, b=55, l=70, r=30),
         autosize=True,
     )
-
-    # Add annotation for best value model (highest rating on Pareto frontier)
-    if pareto_players:
-        # Find the model with highest rating on the Pareto frontier
-        best_idx = pareto_ratings.index(max(pareto_ratings))
-        best_cost = pareto_costs[best_idx]
-        best_rating = pareto_ratings[best_idx]
-        best_player = pareto_players[best_idx]
-
-        fig.add_annotation(
-            x=best_cost,
-            y=best_rating,
-            text=f"<b>{best_player}</b>",
-            showarrow=True,
-            arrowhead=0,
-            arrowsize=1,
-            arrowwidth=2,
-            arrowcolor="#e94560",
-            ax=50,
-            ay=-35,
-            font=dict(size=13, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.9)",
-            bordercolor="#e94560",
-            borderwidth=1,
-            borderpad=6,
-            xref="x",
-            yref="y",
-        )
 
     return fig
 
