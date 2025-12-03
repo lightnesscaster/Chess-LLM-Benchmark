@@ -297,25 +297,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         else:
             ax, ay = 80, -25   # Point right and up
 
-        fig.add_annotation(
-            x=best_cost,
-            y=best_rating_val,
-            text=f"<b>{best_player}</b>",
-            showarrow=True,
-            arrowhead=0,
-            arrowsize=1,
-            arrowwidth=2,
-            arrowcolor="#e94560",
-            ax=ax,
-            ay=ay,
-            font=dict(size=12, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.9)",
-            bordercolor="#e94560",
-            borderwidth=1,
-            borderpad=5,
-            xref="x",
-            yref="y",
-        )
+        pass  # Annotation removed per user request
 
     return fig
 
