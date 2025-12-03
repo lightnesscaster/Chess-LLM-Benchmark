@@ -64,7 +64,12 @@ llms:
     temperature: 0.0
 
   # deepseek-v3.2-exp (no thinking) (-107)
-  - player_id: "deepseek-v3.2-exp (no thinking)"
+  - player_id: "deepseek-v3.2 (no thinking)"
+    model_name: "deepseek/deepseek-v3.2"
+    temperature: 0.0
+
+  # deepseek-v3.2-exp (no thinking) (-107)
+  - player_id: "deepseek-v3.2 (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
 
