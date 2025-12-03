@@ -143,6 +143,7 @@ class MatchScheduler:
         anchor_ids: List[str],
         games_vs_anchor_per_color: int = 10,
         games_vs_llm_per_color: int = 5,
+        rating_threshold: Optional[int] = None,
     ) -> List[Tuple[str, str]]:
         """
         Generate game pairings.
@@ -152,6 +153,7 @@ class MatchScheduler:
             anchor_ids: List of anchor engine IDs
             games_vs_anchor_per_color: Games per LLM vs each anchor (each color)
             games_vs_llm_per_color: Games per LLM pair (each color)
+            rating_threshold: If set, only pair LLMs with anchors within this rating difference
 
         Returns:
             List of (white_id, black_id) tuples
@@ -160,7 +162,15 @@ class MatchScheduler:
 
         # LLM vs anchors
         for llm_id in llm_ids:
+            llm_rating = self.rating_store.get(llm_id).rating if rating_threshold else None
+
             for anchor_id in anchor_ids:
+                # Check rating threshold if enabled
+                if rating_threshold is not None:
+                    anchor_rating = self.rating_store.get(anchor_id).rating
+                    if abs(llm_rating - anchor_rating) > rating_threshold:
+                        continue  # Skip this anchor - too far from LLM's rating
+
                 # LLM as white
                 for _ in range(games_vs_anchor_per_color):
                     pairings.append((llm_id, anchor_id))
@@ -292,6 +302,7 @@ class MatchScheduler:
         anchor_ids: List[str],
         games_vs_anchor_per_color: int = 10,
         games_vs_llm_per_color: int = 5,
+        rating_threshold: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Run the full benchmark.
@@ -301,6 +312,7 @@ class MatchScheduler:
             anchor_ids: List of anchor engine IDs
             games_vs_anchor_per_color: Games per LLM vs each anchor (per color)
             games_vs_llm_per_color: Games per LLM pair (per color)
+            rating_threshold: If set, only pair LLMs with anchors within this rating difference
 
         Returns:
             Benchmark results summary
@@ -314,6 +326,7 @@ class MatchScheduler:
             anchor_ids=anchor_ids,
             games_vs_anchor_per_color=games_vs_anchor_per_color,
             games_vs_llm_per_color=games_vs_llm_per_color,
+            rating_threshold=rating_threshold,
         )
 
         # Shuffle pairings for random game order
@@ -324,6 +337,8 @@ class MatchScheduler:
         print(f"LLMs: {llm_ids}")
         print(f"Anchors: {anchor_ids}")
         print(f"Max concurrent: {self.max_concurrent}")
+        if rating_threshold is not None:
+            print(f"Rating threshold: ±{rating_threshold} (LLMs only play anchors within this range)")
         if self.reasoning_ids:
             reasoning_in_benchmark = [lid for lid in llm_ids if lid in self.reasoning_ids]
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")

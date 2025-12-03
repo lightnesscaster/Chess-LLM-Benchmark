@@ -3,10 +3,11 @@
 
 # Benchmark settings
 benchmark:
-  games_vs_anchor_per_color: 3    # ~5-6 games per LLM vs anchor (3 as each color)
+  games_vs_anchor_per_color: 2    # ~5-6 games per LLM vs anchor (3 as each color)
   games_vs_llm_per_color: 3       # Skip LLM vs LLM games
   max_moves: 200                   # Maximum half-moves per game
   max_concurrent: 30               # Maximum concurrent games
+  rating_threshold: 600            # Only pair LLMs with anchors within this rating difference
 
 # Engine anchors (fixed ratings)
 engines:

@@ -200,6 +200,7 @@ async def run_benchmark(args):
             anchor_ids=list(engines.keys()),
             games_vs_anchor_per_color=config.get("benchmark", {}).get("games_vs_anchor_per_color", 10),
             games_vs_llm_per_color=config.get("benchmark", {}).get("games_vs_llm_per_color", 5),
+            rating_threshold=config.get("benchmark", {}).get("rating_threshold"),
         )
 
         # Show leaderboard
