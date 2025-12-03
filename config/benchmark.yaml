@@ -170,3 +170,7 @@ llms:
   - player_id: "o3"
     model_name: "openai/o3"
     temperature: 0.0
+
+  - player_id: "o1"
+    model_name: "openai/o"
+    temperature: 0.0
