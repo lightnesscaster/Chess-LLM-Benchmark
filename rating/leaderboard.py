@@ -102,6 +102,7 @@ class Leaderboard:
                     parts = date_str.split("-")
                     if len(parts) == 3:
                         entry["publish_date"] = f"{parts[1]}/{parts[0][2:]}"  # MM/YY
+                        entry["publish_timestamp"] = date_info.get("created_timestamp", 0)
 
             # Add additional stats if available (legal move rate, forfeit rate, etc.)
             if rating.player_id in player_stats:
