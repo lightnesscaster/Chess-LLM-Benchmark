@@ -155,7 +155,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             current_best = rating
 
     # Extend frontier to end of current month (not far into future)
-    if frontier_dates:
+    if frontier_dates and frontier_players:
         today = datetime.now()
         # End at the 1st of next month for clean cutoff
         if today.month == 12:

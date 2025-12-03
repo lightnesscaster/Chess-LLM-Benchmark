@@ -290,11 +290,15 @@ def api_game(game_id: str):
 def api_timeline_export():
     """Export timeline chart as PNG."""
     from flask import send_file
+    from io import BytesIO
     import tempfile
 
     tmp_path = None
     try:
         leaderboard_data = get_leaderboard_data()
+        if not leaderboard_data:
+            abort(404, description="No leaderboard data available")
+
         fig = create_timeline_chart(leaderboard_data)
 
         # Create temporary file for the PNG
@@ -303,26 +307,24 @@ def api_timeline_export():
 
         export_timeline_png(fig, tmp_path)
 
-        # Use send_file with proper cleanup
-        response = send_file(
-            tmp_path,
+        # Read file into memory to avoid race condition with cleanup
+        with open(tmp_path, "rb") as f:
+            png_data = BytesIO(f.read())
+
+        # Delete temp file immediately now that data is in memory
+        os.unlink(tmp_path)
+        tmp_path = None  # Mark as cleaned
+
+        png_data.seek(0)
+        return send_file(
+            png_data,
             mimetype="image/png",
             as_attachment=True,
             download_name="llm-chess-timeline.png",
         )
 
-        # Register cleanup callback to delete file after response is sent
-        @response.call_on_close
-        def cleanup():
-            try:
-                os.unlink(tmp_path)
-            except OSError as e:
-                app.logger.error(f"Failed to cleanup temp file {tmp_path}: {e}")
-
-        return response
-
     except Exception as e:
-        # Clean up temp file if it was created
+        # Clean up temp file if it was created and not yet deleted
         if tmp_path and os.path.exists(tmp_path):
             try:
                 os.unlink(tmp_path)
