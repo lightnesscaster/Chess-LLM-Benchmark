@@ -71,12 +71,14 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     except (FileNotFoundError, json.JSONDecodeError):
         pass
 
-    # Filter to models with publish dates (exclude anchors) and sufficient confidence (RD <= 80)
+    # Filter to models with publish dates (exclude anchors), sufficient confidence (RD <= 80),
+    # and rating >= -500
     models_with_dates = [
         entry for entry in leaderboard_data
         if entry.get("publish_timestamp")
         and not entry.get("is_anchor")
         and entry.get("rating_deviation", 350) <= 80
+        and entry.get("rating", 0) >= -500
     ]
 
     if not models_with_dates:
@@ -209,15 +211,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             frontier_players.append(player_id)
             current_best = rating
 
-    # Extend frontier to end of current month (not far into future)
+    # Extend frontier to present day
     if frontier_dates and frontier_players:
         today = datetime.now()
-        # End at the 1st of next month for clean cutoff
-        if today.month == 12:
-            end_date = datetime(today.year + 1, 1, 1)
-        else:
-            end_date = datetime(today.year, today.month + 1, 1)
-        frontier_dates.append(end_date)
+        frontier_dates.append(today)
         frontier_ratings.append(current_best)
         frontier_players.append(frontier_players[-1])
 
@@ -309,8 +306,8 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             showlegend=False,
         ))
 
-    # Calculate x-axis range
-    x_start = datetime(2023, 2, 1)  # Start from Feb 2023 (first model is March)
+    # Calculate x-axis range (start from GPT-4 release in May 2023)
+    x_start = datetime(2023, 5, 1)  # Start from May 2023 (GPT-4 release)
     x_end = datetime(2025, 12, 31)  # End Dec 2025
 
     # Update layout - clean, minimal design
@@ -333,6 +330,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             zeroline=True,
             zerolinecolor="rgba(74, 90, 122, 0.6)",
             zerolinewidth=1,
+            range=[-500, None],  # Start y-axis at -500
         ),
         template="plotly_dark",
         paper_bgcolor="#16213e",
@@ -382,8 +380,8 @@ def export_timeline_png(fig: go.Figure, output_path: str | Path) -> None:
     try:
         fig.write_image(
             str(output_path),
-            width=1200,
-            height=700,
+            width=1400,
+            height=900,
             scale=2,  # 2x resolution for crisp images
         )
     except Exception as e:
