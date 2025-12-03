@@ -424,20 +424,19 @@ class MatchScheduler:
         llm_ids: List[str],
         anchor_ids: List[str],
         games_per_pairing: Dict[Tuple[str, str], int],
-        games_per_pairing_lock: asyncio.Lock,
+        scheduler_lock: asyncio.Lock,
         games_vs_anchor_per_color: int,
         games_vs_llm_per_color: int,
         rating_threshold: Optional[int],
         results: List,
         counters: Dict[str, int],
-        counters_lock: asyncio.Lock,
     ) -> None:
         """
         Worker that continuously picks and plays games until none remain.
         """
         while True:
-            # Pick next game under lock (to avoid duplicate pairings)
-            async with games_per_pairing_lock:
+            # Pick next game under lock (covers pairing selection, game counts, and counters)
+            async with scheduler_lock:
                 pairing = self._pick_next_game(
                     llm_ids=llm_ids,
                     anchor_ids=anchor_ids,
@@ -452,31 +451,27 @@ class MatchScheduler:
 
                 white_id, black_id = pairing
 
-                # Reserve the pairing slot
+                # Reserve the pairing slot and increment game counter atomically
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
+                counters["game_num"] += 1
+                game_num = counters["game_num"]
 
-                # Increment game counter
-                async with counters_lock:
-                    counters["game_num"] += 1
-                    game_num = counters["game_num"]
-
-            # Get player objects
+            # Get player objects (outside lock - just dict lookup)
             try:
                 white = self.players[white_id]
                 black = self.players[black_id]
             except KeyError as e:
                 if self.verbose:
                     print(f"Warning: Player {e} not found, skipping")
-                async with counters_lock:
+                async with scheduler_lock:
                     counters["errors"] += 1
-                async with games_per_pairing_lock:
                     games_per_pairing[(white_id, black_id)] -= 1
                 continue
 
             # Show current ratings
-            white_rating = self.rating_store.get(white_id)
-            black_rating = self.rating_store.get(black_id)
             if self.verbose:
+                white_rating = self.rating_store.get(white_id)
+                black_rating = self.rating_store.get(black_id)
                 print(f"[{game_num}] {white_id} ({white_rating.rating:.0f}) vs "
                       f"{black_id} ({black_rating.rating:.0f})")
 
@@ -488,9 +483,8 @@ class MatchScheduler:
 
                 if result is None:
                     # API error or cap reached - release the slot
-                    async with games_per_pairing_lock:
+                    async with scheduler_lock:
                         games_per_pairing[(white_id, black_id)] -= 1
-                    async with counters_lock:
                         counters["api_errors"] += 1
                 else:
                     results.append(result)
@@ -498,9 +492,8 @@ class MatchScheduler:
             except Exception as e:
                 if self.verbose:
                     print(f"  Game error: {e}")
-                async with games_per_pairing_lock:
+                async with scheduler_lock:
                     games_per_pairing[(white_id, black_id)] -= 1
-                async with counters_lock:
                     counters["errors"] += 1
 
     async def run_benchmark(
@@ -531,7 +524,7 @@ class MatchScheduler:
         # Reset trackers
         self._games_played = {}
         games_per_pairing: Dict[Tuple[str, str], int] = {}
-        games_per_pairing_lock = asyncio.Lock()
+        scheduler_lock = asyncio.Lock()  # Single lock for all scheduling state
 
         print(f"Starting benchmark (dynamic matchmaking)")
         print(f"LLMs: {llm_ids}")
@@ -550,7 +543,6 @@ class MatchScheduler:
         # Shared state for workers
         results: List[GameResult] = []
         counters = {"game_num": 0, "errors": 0, "api_errors": 0}
-        counters_lock = asyncio.Lock()
 
         # Launch worker tasks
         workers = [
@@ -559,13 +551,12 @@ class MatchScheduler:
                 llm_ids=llm_ids,
                 anchor_ids=anchor_ids,
                 games_per_pairing=games_per_pairing,
-                games_per_pairing_lock=games_per_pairing_lock,
+                scheduler_lock=scheduler_lock,
                 games_vs_anchor_per_color=games_vs_anchor_per_color,
                 games_vs_llm_per_color=games_vs_llm_per_color,
                 rating_threshold=rating_threshold,
                 results=results,
                 counters=counters,
-                counters_lock=counters_lock,
             )
             for i in range(self.max_concurrent)
         ]

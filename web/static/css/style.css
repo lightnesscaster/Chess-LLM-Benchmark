@@ -201,6 +201,7 @@ body {
 
 .player {
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .anchor-badge {
