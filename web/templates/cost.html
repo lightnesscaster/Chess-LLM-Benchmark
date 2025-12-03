@@ -130,6 +130,34 @@
         height: 24px;
         background-color: var(--border);
     }
+
+    .cost-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .export-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -208,6 +236,17 @@
     </div>
 </div>
 
+<div class="cost-actions">
+    <button id="download-png" class="export-btn" title="Download as PNG">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download PNG
+    </button>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -234,6 +273,22 @@
 
     // Debounced resize on window resize
     window.addEventListener('resize', debouncedResize);
+
+    // Download PNG button handler
+    var downloadBtn = document.getElementById('download-png');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            if (chartDiv && window.Plotly) {
+                Plotly.downloadImage(chartDiv, {
+                    format: 'png',
+                    width: 1200,
+                    height: 800,
+                    scale: 2,
+                    filename: 'llm-chess-cost'
+                });
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}
