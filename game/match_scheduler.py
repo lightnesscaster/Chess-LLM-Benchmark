@@ -296,6 +296,120 @@ class MatchScheduler:
             rating.draws += 1
         self.rating_store.set(rating)
 
+    def _get_valid_opponents(
+        self,
+        llm_id: str,
+        anchor_ids: List[str],
+        llm_ids: List[str],
+        rating_threshold: Optional[int],
+    ) -> List[str]:
+        """
+        Get valid opponents for an LLM based on current ratings.
+
+        Args:
+            llm_id: The LLM to find opponents for
+            anchor_ids: List of anchor IDs
+            llm_ids: List of all LLM IDs
+            rating_threshold: Max rating difference (None = no limit)
+
+        Returns:
+            List of valid opponent IDs
+        """
+        if rating_threshold is None:
+            # No threshold - all anchors and other LLMs are valid
+            return anchor_ids + [lid for lid in llm_ids if lid != llm_id]
+
+        llm_rating = self.rating_store.get(llm_id).rating
+        valid = []
+
+        # Check anchors
+        for anchor_id in anchor_ids:
+            anchor_rating = self.rating_store.get(anchor_id).rating
+            if abs(llm_rating - anchor_rating) <= rating_threshold:
+                valid.append(anchor_id)
+
+        # Check other LLMs
+        for other_id in llm_ids:
+            if other_id == llm_id:
+                continue
+            other_rating = self.rating_store.get(other_id).rating
+            if abs(llm_rating - other_rating) <= rating_threshold:
+                valid.append(other_id)
+
+        return valid
+
+    def _pick_next_game(
+        self,
+        llm_ids: List[str],
+        anchor_ids: List[str],
+        games_per_pairing: Dict[Tuple[str, str], int],
+        games_vs_anchor_per_color: int,
+        games_vs_llm_per_color: int,
+        rating_threshold: Optional[int],
+    ) -> Optional[Tuple[str, str]]:
+        """
+        Pick the next game to play based on current ratings.
+
+        Prioritizes LLMs with highest rating deviation (most uncertain).
+
+        Args:
+            llm_ids: List of LLM IDs
+            anchor_ids: List of anchor IDs
+            games_per_pairing: Dict of (white_id, black_id) -> games played
+            games_vs_anchor_per_color: Target games per LLM vs each anchor (per color)
+            games_vs_llm_per_color: Target games per LLM pair (per color)
+            rating_threshold: Max rating difference for valid opponents
+
+        Returns:
+            (white_id, black_id) tuple or None if no valid games remain
+        """
+        anchor_set = set(anchor_ids)
+
+        # Sort LLMs by rating deviation (highest first)
+        llms_by_rd = sorted(
+            llm_ids,
+            key=lambda lid: self.rating_store.get(lid).rating_deviation,
+            reverse=True,
+        )
+
+        for llm_id in llms_by_rd:
+            # Check if this LLM has hit its reasoning cap
+            cap = self._get_game_cap(llm_id)
+            if cap is not None:
+                current_games = self._games_played.get(llm_id, 0)
+                if current_games >= cap:
+                    continue
+
+            # Get valid opponents based on current ratings
+            valid_opponents = self._get_valid_opponents(
+                llm_id, anchor_ids, llm_ids, rating_threshold
+            )
+
+            if not valid_opponents:
+                continue
+
+            # Find opponents with games remaining
+            candidates = []
+            for opp_id in valid_opponents:
+                is_anchor = opp_id in anchor_set
+                target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
+
+                # Check both color combinations
+                for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
+                    played = games_per_pairing.get((white_id, black_id), 0)
+                    if played < target:
+                        # Weight by how many games remaining (more remaining = higher priority)
+                        remaining = target - played
+                        candidates.append((white_id, black_id, remaining))
+
+            if candidates:
+                # Pick randomly among candidates, weighted by games remaining
+                weights = [c[2] for c in candidates]
+                chosen = random.choices(candidates, weights=weights, k=1)[0]
+                return (chosen[0], chosen[1])
+
+        return None
+
     async def run_benchmark(
         self,
         llm_ids: List[str],
@@ -305,97 +419,116 @@ class MatchScheduler:
         rating_threshold: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Run the full benchmark.
+        Run the full benchmark with dynamic matchmaking.
+
+        Games are scheduled one at a time based on current ratings.
+        Prioritizes LLMs with highest rating deviation.
 
         Args:
             llm_ids: List of LLM player IDs to benchmark
             anchor_ids: List of anchor engine IDs
             games_vs_anchor_per_color: Games per LLM vs each anchor (per color)
             games_vs_llm_per_color: Games per LLM pair (per color)
-            rating_threshold: If set, only pair LLMs with anchors within this rating difference
+            rating_threshold: Only pair players within this rating difference
 
         Returns:
             Benchmark results summary
         """
-        # Reset games played tracker for this benchmark run
+        # Reset trackers
         self._games_played = {}
+        games_per_pairing: Dict[Tuple[str, str], int] = {}
 
-        # Generate pairings
-        pairings = self.generate_pairings(
-            llm_ids=llm_ids,
-            anchor_ids=anchor_ids,
-            games_vs_anchor_per_color=games_vs_anchor_per_color,
-            games_vs_llm_per_color=games_vs_llm_per_color,
-            rating_threshold=rating_threshold,
-        )
-
-        # Shuffle pairings for random game order
-        random.shuffle(pairings)
-
-        total_games = len(pairings)
-        print(f"Starting benchmark: {total_games} games scheduled")
+        print(f"Starting benchmark (dynamic matchmaking)")
         print(f"LLMs: {llm_ids}")
         print(f"Anchors: {anchor_ids}")
-        print(f"Max concurrent: {self.max_concurrent}")
         if rating_threshold is not None:
-            print(f"Rating threshold: ±{rating_threshold} (LLMs only play anchors within this range)")
+            print(f"Rating threshold: ±{rating_threshold}")
+        print(f"Target games per anchor (per color): {games_vs_anchor_per_color}")
+        print(f"Target games per LLM pair (per color): {games_vs_llm_per_color}")
         if self.reasoning_ids:
             reasoning_in_benchmark = [lid for lid in llm_ids if lid in self.reasoning_ids]
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print()
 
-        # Create game tasks
-        tasks = []
-        for i, (white_id, black_id) in enumerate(pairings, 1):
+        good_results = []
+        errors = 0
+        api_errors = 0
+        game_num = 0
+
+        while True:
+            # Pick next game based on current ratings
+            pairing = self._pick_next_game(
+                llm_ids=llm_ids,
+                anchor_ids=anchor_ids,
+                games_per_pairing=games_per_pairing,
+                games_vs_anchor_per_color=games_vs_anchor_per_color,
+                games_vs_llm_per_color=games_vs_llm_per_color,
+                rating_threshold=rating_threshold,
+            )
+
+            if pairing is None:
+                print("\nNo more valid pairings")
+                break
+
+            white_id, black_id = pairing
+            game_num += 1
+
+            # Reserve the pairing slot
+            games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
+
+            # Get player objects
             try:
                 white = self.players[white_id]
                 black = self.players[black_id]
             except KeyError as e:
-                print(f"Warning: Player {e} not found, skipping game {i}")
-                continue
-            tasks.append(GameTask(
-                white=white,
-                black=black,
-                game_num=i,
-                total_games=total_games,
-            ))
-
-        # Run games concurrently
-        results = await asyncio.gather(
-            *[self.run_single_game(task) for task in tasks],
-            return_exceptions=True,
-        )
-
-        # Filter out exceptions and None results (API errors or skipped due to cap)
-        good_results = []
-        errors = 0
-        skipped_or_api_errors = 0
-        for r in results:
-            if isinstance(r, Exception):
-                print(f"Game error: {r}")
+                print(f"Warning: Player {e} not found, skipping")
                 errors += 1
-            elif r is None:
-                skipped_or_api_errors += 1
-            else:
-                good_results.append(r)
+                continue
 
-        print(f"\nBenchmark complete: {len(good_results)} games completed, {errors} errors, {skipped_or_api_errors} skipped/API errors")
+            # Show current ratings
+            white_rating = self.rating_store.get(white_id)
+            black_rating = self.rating_store.get(black_id)
+            print(f"[{game_num}] {white_id} ({white_rating.rating:.0f} ±{white_rating.rating_deviation:.0f}) vs "
+                  f"{black_id} ({black_rating.rating:.0f} ±{black_rating.rating_deviation:.0f})")
 
-        # Show reasoning model game counts
-        if self.reasoning_ids and self._games_played:
-            print("\nReasoning model games played:")
-            for player_id in sorted(self._games_played.keys()):
-                games = self._games_played[player_id]
-                cap = self._get_game_cap(player_id)
-                rating = self.rating_store.get(player_id).rating
-                print(f"  {player_id}: {games}/{cap} games (rating: {rating:.0f})")
+            # Create and run game task
+            task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
+
+            try:
+                result = await self.run_single_game(task)
+
+                if result is None:
+                    # API error or cap reached - release the slot
+                    games_per_pairing[(white_id, black_id)] -= 1
+                    api_errors += 1
+                else:
+                    good_results.append(result)
+                    # Show updated rating for the LLM(s)
+                    for pid in [white_id, black_id]:
+                        if pid in llm_ids:
+                            new_rating = self.rating_store.get(pid)
+                            print(f"  {pid}: {new_rating.rating:.0f} ±{new_rating.rating_deviation:.0f}")
+
+            except Exception as e:
+                print(f"  Game error: {e}")
+                games_per_pairing[(white_id, black_id)] -= 1
+                errors += 1
+
+        print(f"\nBenchmark complete: {len(good_results)} games, {errors} errors, {api_errors} API errors")
+
+        # Show final ratings for all LLMs
+        print("\nFinal ratings:")
+        for llm_id in sorted(llm_ids, key=lambda x: self.rating_store.get(x).rating, reverse=True):
+            r = self.rating_store.get(llm_id)
+            games = self._games_played.get(llm_id, 0)
+            print(f"  {llm_id}: {r.rating:.0f} ±{r.rating_deviation:.0f} ({games} games)")
 
         return {
-            "total_games": total_games,
+            "total_games": game_num,
             "completed_games": len(good_results),
             "errors": errors,
-            "skipped": skipped_or_api_errors,
+            "api_errors": api_errors,
             "results": good_results,
         }
 
