@@ -276,8 +276,8 @@
   },
   "gpt-3.5-turbo": {
     "model_id": "openai/gpt-3.5-turbo",
-    "created_timestamp": 1677628800,
-    "created_date": "2023-03-01"
+    "created_timestamp": 1669784400,
+    "created_date": "2022-11-30"
   },
   "grok-4.1-fast": {
     "model_id": "x-ai/grok-4.1-fast:free",
