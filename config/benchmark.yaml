@@ -155,11 +155,6 @@ llms:
     temperature: 0.0
     reasoning: true
 
-  - player_id: "deepseek-v3.1-terminus (thinking)"
-    model_name: "deepseek/deepseek-v3.1-terminus"
-    temperature: 0.0
-    reasoning: true
-
   - player_id: "gpt-oss-120b (high)"
     model_name: "openai/gpt-oss-120b"
     temperature: 0.0
@@ -177,8 +172,4 @@ llms:
 
   - player_id: "o3"
     model_name: "openai/o3"
-    temperature: 0.0
-
-  - player_id: "kimi-k2-thinking"
-    model_name: "moonshotai/kimi-k2-thinking"
     temperature: 0.0
