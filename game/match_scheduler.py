@@ -418,6 +418,91 @@ class MatchScheduler:
 
         return None
 
+    async def _game_worker(
+        self,
+        worker_id: int,
+        llm_ids: List[str],
+        anchor_ids: List[str],
+        games_per_pairing: Dict[Tuple[str, str], int],
+        games_per_pairing_lock: asyncio.Lock,
+        games_vs_anchor_per_color: int,
+        games_vs_llm_per_color: int,
+        rating_threshold: Optional[int],
+        results: List,
+        counters: Dict[str, int],
+        counters_lock: asyncio.Lock,
+    ) -> None:
+        """
+        Worker that continuously picks and plays games until none remain.
+        """
+        while True:
+            # Pick next game under lock (to avoid duplicate pairings)
+            async with games_per_pairing_lock:
+                pairing = self._pick_next_game(
+                    llm_ids=llm_ids,
+                    anchor_ids=anchor_ids,
+                    games_per_pairing=games_per_pairing,
+                    games_vs_anchor_per_color=games_vs_anchor_per_color,
+                    games_vs_llm_per_color=games_vs_llm_per_color,
+                    rating_threshold=rating_threshold,
+                )
+
+                if pairing is None:
+                    return  # No more games
+
+                white_id, black_id = pairing
+
+                # Reserve the pairing slot
+                games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
+
+                # Increment game counter
+                async with counters_lock:
+                    counters["game_num"] += 1
+                    game_num = counters["game_num"]
+
+            # Get player objects
+            try:
+                white = self.players[white_id]
+                black = self.players[black_id]
+            except KeyError as e:
+                if self.verbose:
+                    print(f"Warning: Player {e} not found, skipping")
+                async with counters_lock:
+                    counters["errors"] += 1
+                async with games_per_pairing_lock:
+                    games_per_pairing[(white_id, black_id)] -= 1
+                continue
+
+            # Show current ratings
+            white_rating = self.rating_store.get(white_id)
+            black_rating = self.rating_store.get(black_id)
+            if self.verbose:
+                print(f"[{game_num}] {white_id} ({white_rating.rating:.0f}) vs "
+                      f"{black_id} ({black_rating.rating:.0f})")
+
+            # Create and run game task
+            task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
+
+            try:
+                result = await self.run_single_game(task)
+
+                if result is None:
+                    # API error or cap reached - release the slot
+                    async with games_per_pairing_lock:
+                        games_per_pairing[(white_id, black_id)] -= 1
+                    async with counters_lock:
+                        counters["api_errors"] += 1
+                else:
+                    results.append(result)
+
+            except Exception as e:
+                if self.verbose:
+                    print(f"  Game error: {e}")
+                async with games_per_pairing_lock:
+                    games_per_pairing[(white_id, black_id)] -= 1
+                async with counters_lock:
+                    counters["errors"] += 1
+
     async def run_benchmark(
         self,
         llm_ids: List[str],
@@ -429,7 +514,8 @@ class MatchScheduler:
         """
         Run the full benchmark with dynamic matchmaking.
 
-        Games are scheduled one at a time based on current ratings.
+        Games are scheduled dynamically based on current ratings.
+        Runs up to max_concurrent games in parallel.
         Prioritizes LLMs with highest rating deviation.
 
         Args:
@@ -445,10 +531,12 @@ class MatchScheduler:
         # Reset trackers
         self._games_played = {}
         games_per_pairing: Dict[Tuple[str, str], int] = {}
+        games_per_pairing_lock = asyncio.Lock()
 
         print(f"Starting benchmark (dynamic matchmaking)")
         print(f"LLMs: {llm_ids}")
         print(f"Anchors: {anchor_ids}")
+        print(f"Max concurrent: {self.max_concurrent}")
         if rating_threshold is not None:
             print(f"Rating threshold: ±{rating_threshold}")
         print(f"Target games per anchor (per color): {games_vs_anchor_per_color}")
@@ -459,71 +547,32 @@ class MatchScheduler:
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print()
 
-        good_results = []
-        errors = 0
-        api_errors = 0
-        game_num = 0
+        # Shared state for workers
+        results: List[GameResult] = []
+        counters = {"game_num": 0, "errors": 0, "api_errors": 0}
+        counters_lock = asyncio.Lock()
 
-        while True:
-            # Pick next game based on current ratings
-            pairing = self._pick_next_game(
+        # Launch worker tasks
+        workers = [
+            self._game_worker(
+                worker_id=i,
                 llm_ids=llm_ids,
                 anchor_ids=anchor_ids,
                 games_per_pairing=games_per_pairing,
+                games_per_pairing_lock=games_per_pairing_lock,
                 games_vs_anchor_per_color=games_vs_anchor_per_color,
                 games_vs_llm_per_color=games_vs_llm_per_color,
                 rating_threshold=rating_threshold,
+                results=results,
+                counters=counters,
+                counters_lock=counters_lock,
             )
+            for i in range(self.max_concurrent)
+        ]
 
-            if pairing is None:
-                print("\nNo more valid pairings")
-                break
+        await asyncio.gather(*workers)
 
-            white_id, black_id = pairing
-            game_num += 1
-
-            # Reserve the pairing slot
-            games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
-
-            # Get player objects
-            try:
-                white = self.players[white_id]
-                black = self.players[black_id]
-            except KeyError as e:
-                print(f"Warning: Player {e} not found, skipping")
-                errors += 1
-                continue
-
-            # Show current ratings
-            white_rating = self.rating_store.get(white_id)
-            black_rating = self.rating_store.get(black_id)
-            print(f"[{game_num}] {white_id} ({white_rating.rating:.0f} ±{white_rating.rating_deviation:.0f}) vs "
-                  f"{black_id} ({black_rating.rating:.0f} ±{black_rating.rating_deviation:.0f})")
-
-            # Create and run game task
-            task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
-
-            try:
-                result = await self.run_single_game(task)
-
-                if result is None:
-                    # API error or cap reached - release the slot
-                    games_per_pairing[(white_id, black_id)] -= 1
-                    api_errors += 1
-                else:
-                    good_results.append(result)
-                    # Show updated rating for the LLM(s)
-                    for pid in [white_id, black_id]:
-                        if pid in llm_ids:
-                            new_rating = self.rating_store.get(pid)
-                            print(f"  {pid}: {new_rating.rating:.0f} ±{new_rating.rating_deviation:.0f}")
-
-            except Exception as e:
-                print(f"  Game error: {e}")
-                games_per_pairing[(white_id, black_id)] -= 1
-                errors += 1
-
-        print(f"\nBenchmark complete: {len(good_results)} games, {errors} errors, {api_errors} API errors")
+        print(f"\nBenchmark complete: {len(results)} games, {counters['errors']} errors, {counters['api_errors']} API errors")
 
         # Show final ratings for all LLMs
         print("\nFinal ratings:")
@@ -533,11 +582,11 @@ class MatchScheduler:
             print(f"  {llm_id}: {r.rating:.0f} ±{r.rating_deviation:.0f} ({games} games)")
 
         return {
-            "total_games": game_num,
-            "completed_games": len(good_results),
-            "errors": errors,
-            "api_errors": api_errors,
-            "results": good_results,
+            "total_games": counters["game_num"],
+            "completed_games": len(results),
+            "errors": counters["errors"],
+            "api_errors": counters["api_errors"],
+            "results": results,
         }
 
     async def run_single_matchup(
