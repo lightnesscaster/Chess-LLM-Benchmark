@@ -17,18 +17,25 @@ class CostCalculator:
     Calculates costs based on token usage and model pricing.
     """
 
+    # Project root directory (parent of rating/)
+    _PROJECT_ROOT = Path(__file__).parent.parent
+
     def __init__(
         self,
-        pricing_path: str = "config/pricing.json",
-        config_path: str = "config/benchmark.yaml",
+        pricing_path: str = None,
+        config_path: str = None,
     ):
         """
         Initialize cost calculator.
 
         Args:
-            pricing_path: Path to pricing.json
+            pricing_path: Path to pricing.json (default: config/pricing.json)
             config_path: Path to benchmark.yaml for player_id -> model_name mapping
         """
+        if pricing_path is None:
+            pricing_path = self._PROJECT_ROOT / "config" / "pricing.json"
+        if config_path is None:
+            config_path = self._PROJECT_ROOT / "config" / "benchmark.yaml"
         self.pricing = self._load_pricing(pricing_path)
         self.player_to_model = self._build_player_model_map(config_path)
 
