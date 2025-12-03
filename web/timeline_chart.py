@@ -82,8 +82,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         )
         return fig
 
-    # Sort by release date
-    models_with_dates.sort(key=lambda x: x["publish_timestamp"])
+    # Sort by release date, then by rating (ascending) for same-day releases
+    # This ensures lower-rated models are processed first, so higher-rated ones
+    # become the "champion" at that date point
+    models_with_dates.sort(key=lambda x: (x["publish_timestamp"], x["rating"]))
 
     # Load publish dates for model_id lookup
     publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
@@ -299,13 +301,19 @@ def export_timeline_png(fig: go.Figure, output_path: str | Path) -> None:
     Args:
         fig: Plotly Figure object
         output_path: Path to save the PNG file
+
+    Raises:
+        RuntimeError: If PNG export fails (e.g., kaleido not installed)
     """
-    fig.write_image(
-        str(output_path),
-        width=1200,
-        height=700,
-        scale=2,  # 2x resolution for crisp images
-    )
+    try:
+        fig.write_image(
+            str(output_path),
+            width=1200,
+            height=700,
+            scale=2,  # 2x resolution for crisp images
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to export PNG: {e}. Ensure kaleido is installed.") from e
 
 
 def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:

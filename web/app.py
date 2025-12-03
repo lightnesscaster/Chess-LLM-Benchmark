@@ -292,18 +292,37 @@ def api_timeline_export():
     from flask import send_file
     import tempfile
 
-    leaderboard_data = get_leaderboard_data()
-    fig = create_timeline_chart(leaderboard_data)
+    try:
+        leaderboard_data = get_leaderboard_data()
+        fig = create_timeline_chart(leaderboard_data)
 
-    # Create temporary file for the PNG
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        export_timeline_png(fig, tmp.name)
-        return send_file(
-            tmp.name,
+        # Create temporary file for the PNG
+        fd, tmp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)  # Close the file descriptor immediately
+
+        export_timeline_png(fig, tmp_path)
+
+        # Use send_file with proper cleanup
+        response = send_file(
+            tmp_path,
             mimetype="image/png",
             as_attachment=True,
             download_name="llm-chess-timeline.png",
         )
+
+        # Register cleanup callback to delete file after response is sent
+        @response.call_on_close
+        def cleanup():
+            try:
+                os.unlink(tmp_path)
+            except OSError as e:
+                app.logger.error(f"Failed to cleanup temp file {tmp_path}: {e}")
+
+        return response
+
+    except Exception as e:
+        app.logger.error(f"Error exporting timeline: {e}")
+        abort(500)
 
 
 if __name__ == "__main__":
