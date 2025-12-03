@@ -301,8 +301,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
                 symbol="circle",
                 line=dict(width=3, color="#e94560"),
             ),
-            hovertemplate="%{customdata}<extra></extra>",
-            customdata=champion_hovers,
+            hoverinfo="skip",  # Don't show hover for highlight markers
             showlegend=False,
         ))
 
