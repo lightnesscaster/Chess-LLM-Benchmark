@@ -96,12 +96,12 @@ class Leaderboard:
             # Add publish date if available
             if rating.player_id in _publish_dates:
                 date_info = _publish_dates[rating.player_id]
-                # Format as MM-YY from YYYY-MM-DD
+                # Format as MM/YY from YYYY-MM-DD
                 date_str = date_info.get("created_date", "")
                 if date_str:
                     parts = date_str.split("-")
                     if len(parts) == 3:
-                        entry["publish_date"] = f"{parts[1]}-{parts[0][2:]}"  # MM-YY
+                        entry["publish_date"] = f"{parts[1]}/{parts[0][2:]}"  # MM/YY
 
             # Add additional stats if available (legal move rate, forfeit rate, etc.)
             if rating.player_id in player_stats:
