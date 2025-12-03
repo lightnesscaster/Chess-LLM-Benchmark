@@ -68,7 +68,7 @@ llms:
     model_name: "deepseek/deepseek-v3.2"
     temperature: 0.0
 
-  # deepseek-v3.2-exp (no thinking) (-107)
+  # deepseek-v3.2 (no thinking) (-107)
   - player_id: "deepseek-v3.2 (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
@@ -178,4 +178,9 @@ llms:
 
   - player_id: "o1"
     model_name: "openai/o1"
+    temperature: 0.0
+
+  # deepseek-v3.2
+  - player_id: "deepseek-v3.2 (thinking)"
+    model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
