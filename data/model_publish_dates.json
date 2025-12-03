@@ -186,8 +186,8 @@
   },
   "gpt-4": {
     "model_id": "openai/gpt-4",
-    "created_timestamp": 1685232000,
-    "created_date": "2023-05-27"
+    "created_timestamp": 1678766400,
+    "created_date": "2023-03-14"
   },
   "gpt-4o-2024-11-20": {
     "model_id": "openai/gpt-4o-2024-11-20",

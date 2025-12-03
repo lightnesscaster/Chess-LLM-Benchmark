@@ -311,8 +311,8 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             showlegend=False,
         ))
 
-    # Calculate x-axis range (start from GPT-4 release in May 2023)
-    x_start = datetime(2023, 5, 1)  # Start from May 2023 (GPT-4 release)
+    # Calculate x-axis range (start from GPT-4 release in March 2023)
+    x_start = datetime(2023, 3, 1)  # Start from March 2023 (GPT-4 release)
     x_end = datetime(2025, 12, 31)  # End Dec 2025
 
     # Update layout - clean, minimal design
