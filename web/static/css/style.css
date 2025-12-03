@@ -203,6 +203,21 @@ body {
     color: var(--success);
 }
 
+/* Sortable headers */
+.sortable a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.sortable a:hover {
+    color: var(--accent-light);
+}
+
+.sortable.sorted a {
+    color: var(--accent);
+}
+
 .legend {
     margin-top: 1.5rem;
     padding: 1rem;

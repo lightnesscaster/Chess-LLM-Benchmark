@@ -47,12 +47,13 @@ class Leaderboard:
                 self._cost_data = {}
         return self._cost_data
 
-    def get_leaderboard(self, min_games: int = 1) -> List[Dict[str, Any]]:
+    def get_leaderboard(self, min_games: int = 1, sort_by: str = "rating") -> List[Dict[str, Any]]:
         """
         Get leaderboard data.
 
         Args:
             min_games: Minimum games to include
+            sort_by: Sort field - "rating", "legal", or "cost"
 
         Returns:
             List of leaderboard entries
@@ -101,8 +102,20 @@ class Leaderboard:
 
             leaderboard.append(entry)
 
-        # Sort by rating (desc), then by legal move rate (desc) for ties
-        leaderboard.sort(key=lambda e: (-e["rating"], -e.get("legal_move_rate", 0)))
+        # Sort based on sort_by parameter
+        if sort_by == "legal":
+            # Sort by legal move rate (desc), then rating (desc) for ties
+            leaderboard.sort(key=lambda e: (-e.get("legal_move_rate", 0), -e["rating"]))
+        elif sort_by == "cost":
+            # Sort by cost (asc), None values last, then rating (desc) for ties
+            def cost_sort_key(e):
+                cost = e.get("avg_cost_per_game")
+                # None values go last (use infinity), then sort by cost ascending
+                return (cost is None, cost if cost is not None else 0, -e["rating"])
+            leaderboard.sort(key=cost_sort_key)
+        else:
+            # Default: sort by rating (desc), then by legal move rate (desc) for ties
+            leaderboard.sort(key=lambda e: (-e["rating"], -e.get("legal_move_rate", 0)))
 
         # Re-number ranks after sorting
         for i, entry in enumerate(leaderboard, 1):
@@ -110,17 +123,18 @@ class Leaderboard:
 
         return leaderboard
 
-    def format_table(self, min_games: int = 1) -> str:
+    def format_table(self, min_games: int = 1, sort_by: str = "rating") -> str:
         """
         Format leaderboard as ASCII table.
 
         Args:
             min_games: Minimum games to include
+            sort_by: Sort field - "rating", "legal", or "cost"
 
         Returns:
             Formatted table string
         """
-        lb = self.get_leaderboard(min_games=min_games)
+        lb = self.get_leaderboard(min_games=min_games, sort_by=sort_by)
         if not lb:
             return "No players with enough games."
 

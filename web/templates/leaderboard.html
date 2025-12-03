@@ -19,14 +19,14 @@
             <tr>
                 <th class="rank">#</th>
                 <th class="player">Player</th>
-                <th class="rating">Rating</th>
+                <th class="rating sortable{% if current_sort == 'rating' %} sorted{% endif %}"><a href="?sort=rating">Rating{% if current_sort == 'rating' %} ▼{% endif %}</a></th>
                 <th class="fide">FIDE Est.</th>
                 <th class="rd">RD</th>
                 <th class="ci">95% CI</th>
                 <th class="games">Games</th>
                 <th class="record">W-L-D</th>
-                <th class="legal">Legal%</th>
-                <th class="cost">$/Game</th>
+                <th class="legal sortable{% if current_sort == 'legal' %} sorted{% endif %}"><a href="?sort=legal">Legal%{% if current_sort == 'legal' %} ▼{% endif %}</a></th>
+                <th class="cost sortable{% if current_sort == 'cost' %} sorted{% endif %}"><a href="?sort=cost">$/Game{% if current_sort == 'cost' %} ▲{% endif %}</a></th>
             </tr>
         </thead>
         <tbody>

@@ -74,14 +74,15 @@ def is_valid_game_id(game_id: str) -> bool:
     return bool(VALID_GAME_ID_PATTERN.match(game_id))
 
 
-def get_leaderboard_data(min_games: int = 1) -> list:
+def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
     """Get leaderboard data from rating store with caching."""
     global _leaderboard_cache, _leaderboard_cache_time
 
     # Check cache first (not expired and not invalidated)
+    # Only use cache for default sort order
     cache_age = time.time() - _leaderboard_cache_time
     cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
-    if cache_valid and not _should_invalidate_leaderboard_cache():
+    if cache_valid and sort_by == "rating" and not _should_invalidate_leaderboard_cache():
         app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
         return list(_leaderboard_cache)  # Return copy to prevent mutation
 
@@ -100,11 +101,12 @@ def get_leaderboard_data(min_games: int = 1) -> list:
         stats_collector.add_results(pgn_logger.load_all_results())
 
         leaderboard = Leaderboard(rating_store, stats_collector)
-        result = leaderboard.get_leaderboard(min_games=min_games)
+        result = leaderboard.get_leaderboard(min_games=min_games, sort_by=sort_by)
 
-        # Update cache on success
-        _leaderboard_cache = result
-        _leaderboard_cache_time = time.time()
+        # Update cache on success (only for default sort)
+        if sort_by == "rating":
+            _leaderboard_cache = result
+            _leaderboard_cache_time = time.time()
         return result
     except Exception as e:
         app.logger.error(f"Error loading leaderboard: {e}")
@@ -186,14 +188,20 @@ def set_security_headers(response):
 @app.route("/")
 def index():
     """Redirect to leaderboard."""
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data())
+    sort_by = request.args.get('sort', 'rating')
+    if sort_by not in ('rating', 'legal', 'cost'):
+        sort_by = 'rating'
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(sort_by=sort_by), current_sort=sort_by)
 
 
 @app.route("/leaderboard")
 def leaderboard():
     """Show leaderboard page."""
     min_games = 1
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games))
+    sort_by = request.args.get('sort', 'rating')
+    if sort_by not in ('rating', 'legal', 'cost'):
+        sort_by = 'rating'
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games, sort_by=sort_by), current_sort=sort_by)
 
 
 @app.route("/games")

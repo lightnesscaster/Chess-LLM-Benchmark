@@ -232,7 +232,7 @@ async def show_leaderboard(args):
     stats_collector.add_results(pgn_logger.load_all_results())
 
     leaderboard = Leaderboard(rating_store, stats_collector)
-    print(leaderboard.format_table(min_games=args.min_games))
+    print(leaderboard.format_table(min_games=args.min_games, sort_by=args.sort))
 
     return 0
 
@@ -686,6 +686,12 @@ def main():
         type=int,
         default=1,
         help="Minimum games to include",
+    )
+    lb_parser.add_argument(
+        "--sort",
+        choices=["rating", "legal", "cost"],
+        default="rating",
+        help="Sort by: rating (default), legal (legal move %%), cost ($/game)",
     )
 
     # Recalculate command
