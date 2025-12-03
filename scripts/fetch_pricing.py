@@ -42,12 +42,11 @@ def fetch_pricing():
         except (ValueError, TypeError):
             continue
 
-        # Only include models with actual pricing
-        if prompt_cost > 0 or completion_cost > 0:
-            pricing[model_id] = {
-                "prompt": prompt_cost,
-                "completion": completion_cost,
-            }
+        # Include all models (even free ones with zero cost)
+        pricing[model_id] = {
+            "prompt": prompt_cost,
+            "completion": completion_cost,
+        }
 
     return pricing
 

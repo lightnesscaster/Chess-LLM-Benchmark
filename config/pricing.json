@@ -27,9 +27,17 @@
     "completion": 4e-07,
     "prompt": 9e-08
   },
+  "alibaba/tongyi-deepresearch-30b-a3b:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "allenai/olmo-2-0325-32b-instruct": {
     "completion": 2e-07,
     "prompt": 5e-08
+  },
+  "allenai/olmo-3-32b-think:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "allenai/olmo-3-7b-instruct": {
     "completion": 2e-07,
@@ -46,6 +54,10 @@
   "amazon/nova-2-lite-v1": {
     "completion": 2.5e-06,
     "prompt": 3e-07
+  },
+  "amazon/nova-2-lite-v1:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "amazon/nova-lite-v1": {
     "completion": 2.4e-07,
@@ -135,6 +147,10 @@
     "completion": 1.5e-07,
     "prompt": 4.5e-08
   },
+  "arcee-ai/trinity-mini:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "arcee-ai/virtuoso-large": {
     "completion": 1.2e-06,
     "prompt": 7.5e-07
@@ -166,6 +182,10 @@
   "bytedance/ui-tars-1.5-7b": {
     "completion": 2e-07,
     "prompt": 1e-07
+  },
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "cohere/command-a": {
     "completion": 1e-05,
@@ -267,6 +287,10 @@
     "completion": 4e-07,
     "prompt": 1e-07
   },
+  "google/gemini-2.0-flash-exp:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "google/gemini-2.0-flash-lite-001": {
     "completion": 3e-07,
     "prompt": 7.5e-08
@@ -327,17 +351,37 @@
     "completion": 1e-07,
     "prompt": 3e-08
   },
+  "google/gemma-3-12b-it:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "google/gemma-3-27b-it": {
     "completion": 5e-07,
     "prompt": 7e-08
+  },
+  "google/gemma-3-27b-it:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "google/gemma-3-4b-it": {
     "completion": 6.81536e-08,
     "prompt": 1.703012e-08
   },
+  "google/gemma-3-4b-it:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
+  "google/gemma-3n-e2b-it:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "google/gemma-3n-e4b-it": {
     "completion": 4e-08,
     "prompt": 2e-08
+  },
+  "google/gemma-3n-e4b-it:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "gryphe/mythomax-l2-13b": {
     "completion": 6e-08,
@@ -363,6 +407,10 @@
     "completion": 1e-05,
     "prompt": 2.5e-06
   },
+  "kwaipilot/kat-coder-pro:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "liquid/lfm-2.2-6b": {
     "completion": 1e-07,
     "prompt": 5e-08
@@ -378,6 +426,10 @@
   "meituan/longcat-flash-chat": {
     "completion": 7.5e-07,
     "prompt": 1.5e-07
+  },
+  "meituan/longcat-flash-chat:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "meta-llama/llama-3-70b-instruct": {
     "completion": 4e-07,
@@ -415,6 +467,10 @@
     "completion": 2e-08,
     "prompt": 2e-08
   },
+  "meta-llama/llama-3.2-3b-instruct:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "meta-llama/llama-3.2-90b-vision-instruct": {
     "completion": 4e-07,
     "prompt": 3.5e-07
@@ -422,6 +478,10 @@
   "meta-llama/llama-3.3-70b-instruct": {
     "completion": 3.12e-07,
     "prompt": 1.04e-07
+  },
+  "meta-llama/llama-3.3-70b-instruct:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "meta-llama/llama-4-maverick": {
     "completion": 6.8e-07,
@@ -543,6 +603,10 @@
     "completion": 2e-07,
     "prompt": 2e-07
   },
+  "mistralai/mistral-7b-instruct:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "mistralai/mistral-large": {
     "completion": 6e-06,
     "prompt": 2e-06
@@ -586,6 +650,10 @@
   "mistralai/mistral-small-3.1-24b-instruct": {
     "completion": 1.1e-07,
     "prompt": 3e-08
+  },
+  "mistralai/mistral-small-3.1-24b-instruct:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "mistralai/mistral-small-3.2-24b-instruct": {
     "completion": 1.8e-07,
@@ -635,6 +703,10 @@
     "completion": 2.35e-06,
     "prompt": 4.5e-07
   },
+  "moonshotai/kimi-k2:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "moonshotai/kimi-linear-48b-a3b-instruct": {
     "completion": 6e-07,
     "prompt": 5e-07
@@ -667,6 +739,10 @@
     "completion": 1e-06,
     "prompt": 1e-06
   },
+  "nousresearch/hermes-3-llama-3.1-405b:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "nousresearch/hermes-3-llama-3.1-70b": {
     "completion": 3e-07,
     "prompt": 3e-07
@@ -695,9 +771,17 @@
     "completion": 6e-07,
     "prompt": 2e-07
   },
+  "nvidia/nemotron-nano-12b-v2-vl:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "nvidia/nemotron-nano-9b-v2": {
     "completion": 1.6e-07,
     "prompt": 4e-08
+  },
+  "nvidia/nemotron-nano-9b-v2:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "openai/chatgpt-4o-latest": {
     "completion": 1.5e-05,
@@ -855,6 +939,10 @@
     "completion": 1.4e-07,
     "prompt": 3e-08
   },
+  "openai/gpt-oss-20b:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "openai/gpt-oss-safeguard-20b": {
     "completion": 3e-07,
     "prompt": 7.5e-08
@@ -902,6 +990,10 @@
   "opengvlab/internvl3-78b": {
     "completion": 2.6e-07,
     "prompt": 7e-08
+  },
+  "openrouter/auto": {
+    "completion": -1.0,
+    "prompt": -1.0
   },
   "perplexity/sonar": {
     "completion": 1e-06,
@@ -1003,6 +1095,10 @@
     "completion": 6e-07,
     "prompt": 1.1e-07
   },
+  "qwen/qwen3-235b-a22b:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "qwen/qwen3-30b-a3b": {
     "completion": 2.2e-07,
     "prompt": 6e-08
@@ -1018,6 +1114,10 @@
   "qwen/qwen3-32b": {
     "completion": 2.4e-07,
     "prompt": 8e-08
+  },
+  "qwen/qwen3-4b:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "qwen/qwen3-8b": {
     "completion": 1.104e-07,
@@ -1042,6 +1142,10 @@
   "qwen/qwen3-coder:exacto": {
     "completion": 1.53e-06,
     "prompt": 3.8e-07
+  },
+  "qwen/qwen3-coder:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "qwen/qwen3-max": {
     "completion": 6e-06,
@@ -1151,13 +1255,25 @@
     "completion": 1.2e-06,
     "prompt": 3e-07
   },
+  "tngtech/deepseek-r1t-chimera:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "tngtech/deepseek-r1t2-chimera": {
     "completion": 1.2e-06,
     "prompt": 3e-07
   },
+  "tngtech/deepseek-r1t2-chimera:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "tngtech/tng-r1t-chimera": {
     "completion": 1.2e-06,
     "prompt": 3e-07
+  },
+  "tngtech/tng-r1t-chimera:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "undi95/remm-slerp-l2-13b": {
     "completion": 6.5e-07,
@@ -1187,6 +1303,10 @@
     "completion": 5e-07,
     "prompt": 2e-07
   },
+  "x-ai/grok-4.1-fast:free": {
+    "completion": 0.0,
+    "prompt": 0.0
+  },
   "x-ai/grok-code-fast-1": {
     "completion": 1.5e-06,
     "prompt": 2e-07
@@ -1202,6 +1322,10 @@
   "z-ai/glm-4.5-air": {
     "completion": 6.8e-07,
     "prompt": 1.04e-07
+  },
+  "z-ai/glm-4.5-air:free": {
+    "completion": 0.0,
+    "prompt": 0.0
   },
   "z-ai/glm-4.5v": {
     "completion": 1.44e-06,

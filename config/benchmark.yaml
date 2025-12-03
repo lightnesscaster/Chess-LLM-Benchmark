@@ -71,7 +71,7 @@ llms:
 
   # deepseek-v3.1-terminus (no thinking) (-350)
   - player_id: "deepseek-v3.1-terminus (no thinking)"
-    model_name: "deepseek/deepseek-chat-v3.1-terminus"
+    model_name: "deepseek/deepseek-v3.1-terminus"
     temperature: 0.0
 
   # kimi-k2 (-388)
@@ -193,7 +193,7 @@ llms:
     reasoning: true
 
   - player_id: "deepseek-v3.1-terminus (thinking)"
-    model_name: "deepseek/deepseek-chat-v3.1-terminus"
+    model_name: "deepseek/deepseek-v3.1-terminus"
     temperature: 0.0
     reasoning: true
 

@@ -82,6 +82,11 @@ class CostCalculator:
         if base_id != player_id:
             return self.get_model_for_player(base_id)
 
+        # Try with :free suffix (some models are free variants)
+        for model_id in self.pricing:
+            if model_id.endswith(f"/{player_id}:free"):
+                return model_id
+
         return None
 
     def get_pricing(self, model_name: str) -> Optional[Dict[str, float]]:
