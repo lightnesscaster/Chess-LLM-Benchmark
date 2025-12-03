@@ -5,7 +5,7 @@ Cost calculation for LLM players based on token usage and OpenRouter pricing.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 
 import yaml
 
@@ -22,8 +22,8 @@ class CostCalculator:
 
     def __init__(
         self,
-        pricing_path: str = None,
-        config_path: str = None,
+        pricing_path: Optional[Union[str, Path]] = None,
+        config_path: Optional[Union[str, Path]] = None,
     ):
         """
         Initialize cost calculator.
