@@ -44,6 +44,10 @@ class MatchScheduler:
     REASONING_HIGH_RATING_CAP = 25  # Cap for reasoning models rated > 1000
     REASONING_HIGH_RATING_THRESHOLD = 1000  # Rating threshold for higher cap
 
+    # Cap for models with low rating deviation (rating is stable)
+    LOW_RD_THRESHOLD = 70  # RD below this triggers cap
+    LOW_RD_CAP = 10  # Max games for models with RD < threshold
+
     def __init__(
         self,
         players: Dict[str, Player],
@@ -86,7 +90,7 @@ class MatchScheduler:
         # Lock for rating updates
         self._rating_lock = asyncio.Lock()
 
-        # Track games played per player during benchmark (for reasoning caps)
+        # Track games played per LLM during benchmark (for reasoning caps and low RD caps)
         # Note: Only used in run_benchmark() flow, protected by scheduler_lock
         self._games_played: Dict[str, int] = {}
 
@@ -334,12 +338,17 @@ class MatchScheduler:
         )
 
         for llm_id in llms_by_rd:
+            current_games = self._games_played.get(llm_id, 0)
+            current_rd = self.rating_store.get(llm_id).rating_deviation
+
+            # Check if this LLM has hit its low RD cap (rating is stable enough)
+            if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
+                continue
+
             # Check if this LLM has hit its reasoning cap
             cap = self._get_game_cap(llm_id)
-            if cap is not None:
-                current_games = self._games_played.get(llm_id, 0)
-                if current_games >= cap:
-                    continue
+            if cap is not None and current_games >= cap:
+                continue
 
             # Get valid opponents based on current ratings
             valid_opponents = self._get_valid_opponents(
@@ -352,15 +361,22 @@ class MatchScheduler:
             # Find opponents with games remaining
             candidates = []
             for opp_id in valid_opponents:
-                # Check if opponent (if LLM) has hit their reasoning cap
-                if opp_id in self.reasoning_ids:
-                    opp_cap = self._get_game_cap(opp_id)
-                    if opp_cap is not None:
-                        opp_current = self._games_played.get(opp_id, 0)
-                        if opp_current >= opp_cap:
-                            continue  # Skip capped opponent
-
                 is_anchor = opp_id in anchor_set
+
+                # Check if LLM opponent has hit their caps
+                if not is_anchor:
+                    opp_current = self._games_played.get(opp_id, 0)
+                    opp_rd = self.rating_store.get(opp_id).rating_deviation
+
+                    # Check low RD cap
+                    if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
+                        continue  # Skip - rating is stable enough
+
+                    # Check reasoning cap
+                    if opp_id in self.reasoning_ids:
+                        opp_cap = self._get_game_cap(opp_id)
+                        if opp_cap is not None and opp_current >= opp_cap:
+                            continue  # Skip capped reasoning model
                 target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
 
                 # Check both color combinations
@@ -412,10 +428,11 @@ class MatchScheduler:
 
                 white_id, black_id = pairing
 
-                # Reserve everything atomically: pairing slot, reasoning caps, counter
+                # Reserve everything atomically: pairing slot, game counts, counter
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
+                llm_set = set(llm_ids)
                 for player_id in [white_id, black_id]:
-                    if player_id in self.reasoning_ids:
+                    if player_id in llm_set:  # Track games for all LLMs
                         self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
                 counters["game_num"] += 1
                 game_num = counters["game_num"]
@@ -431,7 +448,7 @@ class MatchScheduler:
                     counters["errors"] += 1
                     games_per_pairing[(white_id, black_id)] -= 1
                     for player_id in [white_id, black_id]:
-                        if player_id in self.reasoning_ids:
+                        if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                 continue
 
@@ -453,7 +470,7 @@ class MatchScheduler:
                     async with scheduler_lock:
                         games_per_pairing[(white_id, black_id)] -= 1
                         for player_id in [white_id, black_id]:
-                            if player_id in self.reasoning_ids:
+                            if player_id in llm_set:  # Track games for all LLMs
                                 self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                         counters["api_errors"] += 1
                 else:
@@ -465,7 +482,7 @@ class MatchScheduler:
                 async with scheduler_lock:
                     games_per_pairing[(white_id, black_id)] -= 1
                     for player_id in [white_id, black_id]:
-                        if player_id in self.reasoning_ids:
+                        if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                     counters["errors"] += 1
 
