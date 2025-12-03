@@ -13,6 +13,7 @@ import asyncio
 import os
 import random
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import requests
@@ -388,34 +389,41 @@ async def recalculate_ratings(args):
 
     print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
 
-    # Shuffle once before all passes (same order each pass for convergence)
-    random.shuffle(valid_games)
-
     for pass_num in range(1, max_passes + 1):
         # Store ratings at start of pass to check convergence
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
 
         if args.verbose:
-            print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (shuffled)")
+            print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (batched)")
 
-        # Process each game with symmetric updates (batch save at end of pass)
+        # Step 1: Snapshot ALL ratings at pass start
+        # This ensures all players see the same opponent ratings, eliminating order bias
+        all_ratings = {pid: rating_store.get(pid) for pid in all_players}
+
+        # Step 2: Collect all games per player using snapshot ratings
+        # Batching games per player means update_rating() is called ONCE per player per pass.
+        # This prevents volatility accumulation (phi_star added once, not once per game)
+        # and matches standard Glicko-2 rating period behavior.
+        player_games = defaultdict(lambda: {'opponents': [], 'scores': []})
+
         for game in valid_games:
-            # Get BOTH ratings BEFORE any updates (symmetric)
-            # Even though we call set() for white before black, we use the
-            # pre-stored white_rating object for black's update, ensuring symmetry
-            white_rating = rating_store.get(game['white_id'])
-            black_rating = rating_store.get(game['black_id'])
+            white_id, black_id = game['white_id'], game['black_id']
 
-            # Update non-anchor ratings using same pre-update opponent ratings
-            if not rating_store.is_anchor(game['white_id']):
-                new_white = glicko.update_rating(white_rating, [black_rating], [game['white_score']])
-                rating_store.set(new_white, auto_save=False)
+            if not rating_store.is_anchor(white_id):
+                player_games[white_id]['opponents'].append(all_ratings[black_id])
+                player_games[white_id]['scores'].append(game['white_score'])
 
-            if not rating_store.is_anchor(game['black_id']):
-                new_black = glicko.update_rating(black_rating, [white_rating], [game['black_score']])
-                rating_store.set(new_black, auto_save=False)
+            if not rating_store.is_anchor(black_id):
+                player_games[black_id]['opponents'].append(all_ratings[white_id])
+                player_games[black_id]['scores'].append(game['black_score'])
 
-        # Save once per pass (not per game)
+        # Step 3: Update each player ONCE with all their games batched
+        for player_id, games in player_games.items():
+            player = all_ratings[player_id]
+            new_player = glicko.update_rating(player, games['opponents'], games['scores'])
+            rating_store.set(new_player, auto_save=False)
+
+        # Save once per pass
         rating_store.save()
 
         # Check convergence
