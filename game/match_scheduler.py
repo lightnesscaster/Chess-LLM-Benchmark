@@ -411,6 +411,8 @@ class MatchScheduler:
         """
         Worker that continuously picks and plays games until none remain.
         """
+        llm_set = set(llm_ids)  # Constant for tracking which players are LLMs
+
         while True:
             # Pick next game under lock (covers pairing selection, game counts, and counters)
             async with scheduler_lock:
@@ -430,7 +432,6 @@ class MatchScheduler:
 
                 # Reserve everything atomically: pairing slot, game counts, counter
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
-                llm_set = set(llm_ids)
                 for player_id in [white_id, black_id]:
                     if player_id in llm_set:  # Track games for all LLMs
                         self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
@@ -528,6 +529,7 @@ class MatchScheduler:
             reasoning_in_benchmark = [lid for lid in llm_ids if lid in self.reasoning_ids]
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
+        print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
         print()
 
         # Shared state for workers
