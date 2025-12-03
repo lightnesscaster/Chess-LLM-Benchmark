@@ -41,7 +41,7 @@ class MatchScheduler:
 
     # Game caps for reasoning models
     REASONING_BASE_CAP = 10  # Default cap for reasoning models
-    REASONING_HIGH_RATING_CAP = 25  # Cap for reasoning models rated > 1000
+    REASONING_HIGH_RATING_CAP = 15  # Cap for reasoning models rated > 1000
     REASONING_HIGH_RATING_THRESHOLD = 1000  # Rating threshold for higher cap
 
     # Cap for models with low rating deviation (rating is stable)
