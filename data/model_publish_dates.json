@@ -146,8 +146,8 @@
   },
   "claude-3.5-sonnet": {
     "model_id": "anthropic/claude-3.5-sonnet",
-    "created_timestamp": 1729555200,
-    "created_date": "2024-10-21"
+    "created_timestamp": 1718841600,
+    "created_date": "2024-06-20"
   },
   "grok-3-mini": {
     "model_id": "x-ai/grok-3-mini",
@@ -236,8 +236,8 @@
   },
   "gpt-3.5-turbo-0613": {
     "model_id": "openai/gpt-3.5-turbo-0613",
-    "created_timestamp": 1706140800,
-    "created_date": "2024-01-24"
+    "created_timestamp": 1686614400,
+    "created_date": "2023-06-13"
   },
   "deepseek-v3.1-terminus (no thinking)": {
     "model_id": "deepseek/deepseek-v3.1-terminus",
@@ -276,8 +276,8 @@
   },
   "gpt-3.5-turbo": {
     "model_id": "openai/gpt-3.5-turbo",
-    "created_timestamp": 1685232000,
-    "created_date": "2023-05-27"
+    "created_timestamp": 1677628800,
+    "created_date": "2023-03-01"
   },
   "grok-4.1-fast": {
     "model_id": "x-ai/grok-4.1-fast:free",
