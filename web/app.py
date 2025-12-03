@@ -24,7 +24,7 @@ from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
-from web.timeline_chart import get_timeline_html, create_timeline_chart, export_timeline_png
+from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
 
 app = Flask(__name__)
@@ -383,55 +383,6 @@ def api_game(game_id: str):
     if not game_data:
         abort(404)
     return jsonify(game_data)
-
-
-@app.route("/api/timeline/export")
-def api_timeline_export():
-    """Export timeline chart as PNG."""
-    from flask import send_file
-    from io import BytesIO
-    import tempfile
-
-    tmp_path = None
-    try:
-        leaderboard_data = get_leaderboard_data()
-        if not leaderboard_data:
-            abort(404, description="No leaderboard data available")
-
-        fig = create_timeline_chart(leaderboard_data)
-
-        # Create temporary file for the PNG
-        fd, tmp_path = tempfile.mkstemp(suffix=".png")
-        os.close(fd)  # Close the file descriptor immediately
-
-        export_timeline_png(fig, tmp_path)
-
-        # Read file into memory to avoid race condition with cleanup
-        with open(tmp_path, "rb") as f:
-            png_data = BytesIO(f.read())
-
-        # Delete temp file immediately now that data is in memory
-        os.unlink(tmp_path)
-        tmp_path = None  # Mark as cleaned
-
-        png_data.seek(0)
-        return send_file(
-            png_data,
-            mimetype="image/png",
-            as_attachment=True,
-            download_name="llm-chess-timeline.png",
-        )
-
-    except Exception as e:
-        # Clean up temp file if it was created and not yet deleted
-        if tmp_path:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass  # File already deleted or doesn't exist
-
-        app.logger.exception(f"Error exporting timeline: {e}")
-        abort(500)
 
 
 if __name__ == "__main__":
