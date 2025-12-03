@@ -170,7 +170,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         y=frontier_ratings,
         mode="lines",
         name="Champion Line",
-        line=dict(color="#e94560", width=3, shape="hv"),  # step line
+        line=dict(color="#e94560", width=4, shape="hv"),  # step line
         hoverinfo="skip",
     ))
 
@@ -193,10 +193,11 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             mode="markers",
             name=provider.replace("-", " ").title(),
             marker=dict(
-                size=12,
+                size=16,
                 color=PROVIDER_COLORS[provider],
+                opacity=0.85,
                 symbol=provider_symbols,
-                line=dict(width=1, color="white"),
+                line=dict(width=1.5, color="rgba(255,255,255,0.8)"),
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=provider_hovers,
@@ -216,10 +217,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             mode="markers",
             name="Other",
             marker=dict(
-                size=12,
+                size=16,
                 color=DEFAULT_COLOR,
                 symbol=other_symbols,
-                line=dict(width=1, color="white"),
+                line=dict(width=1.5, color="white"),
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=other_hovers,
@@ -238,10 +239,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             mode="markers",
             name="Champions",
             marker=dict(
-                size=18,
-                color="rgba(233, 69, 96, 0.3)",
+                size=26,
+                color="rgba(233, 69, 96, 0.25)",
                 symbol="circle",
-                line=dict(width=2, color="#e94560"),
+                line=dict(width=3, color="#e94560"),
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=champion_hovers,
@@ -251,19 +252,21 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     # Update layout - clean, minimal design
     fig.update_layout(
         xaxis=dict(
-            title=dict(text="Release Date", font=dict(size=13, color="#a0a0a0")),
-            gridcolor="#2a3a5a",
+            title=dict(text="Release Date", font=dict(size=16, color="#a0a0a0"), standoff=15),
+            gridcolor="rgba(74, 90, 122, 0.3)",
+            griddash="dot",
             showgrid=True,
             tickformat="%b %Y",
-            tickfont=dict(size=11),
+            tickfont=dict(size=14),
         ),
         yaxis=dict(
-            title=dict(text="Lichess Classical Rating", font=dict(size=13, color="#a0a0a0")),
-            gridcolor="#2a3a5a",
+            title=dict(text="Lichess Classical Rating", font=dict(size=16, color="#a0a0a0"), standoff=10),
+            gridcolor="rgba(74, 90, 122, 0.3)",
+            griddash="dot",
             showgrid=True,
-            tickfont=dict(size=11),
+            tickfont=dict(size=14),
             zeroline=True,
-            zerolinecolor="#4a5a7a",
+            zerolinecolor="rgba(74, 90, 122, 0.6)",
             zerolinewidth=1,
         ),
         template="plotly_dark",
@@ -271,8 +274,30 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         plot_bgcolor="#16213e",
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
-        margin=dict(t=20, b=50, l=70, r=20),
+        margin=dict(t=30, b=60, l=80, r=30),
     )
+
+    # Add annotation for current champion (top-rated model)
+    if models_with_dates:
+        top_model = max(models_with_dates, key=lambda x: x["rating"])
+        top_date = datetime.fromtimestamp(top_model["publish_timestamp"])
+        fig.add_annotation(
+            x=top_date,
+            y=top_model["rating"],
+            text=f"<b>{top_model['player_id']}</b>",
+            showarrow=True,
+            arrowhead=0,
+            arrowsize=1,
+            arrowwidth=2,
+            arrowcolor="#e94560",
+            ax=40,
+            ay=-40,
+            font=dict(size=13, color="#eaeaea"),
+            bgcolor="rgba(22, 33, 62, 0.8)",
+            bordercolor="#e94560",
+            borderwidth=1,
+            borderpad=6,
+        )
 
     return fig
 
@@ -315,8 +340,8 @@ def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:
         include_plotlyjs=False,  # We'll include it via CDN
         div_id="timeline-chart",
         config={
-            "displayModeBar": True,
+            "displayModeBar": "hover",  # Only show on hover
             "displaylogo": False,
-            "modeBarButtonsToRemove": ["lasso2d", "select2d"],
+            "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
         },
     )
