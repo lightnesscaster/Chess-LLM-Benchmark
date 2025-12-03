@@ -23,8 +23,10 @@ python cli.py manual --white-model deepseek/deepseek-r1 --black-engine --white-r
 # Run full benchmark
 python cli.py run -c config/benchmark.yaml -v
 
-# View leaderboard
+# View leaderboard (sort by rating, legal move %, or cost)
 python cli.py leaderboard --min-games 5
+python cli.py leaderboard --sort legal
+python cli.py leaderboard --sort cost
 
 # Recalculate ratings from stored results
 python cli.py recalculate -c config/benchmark.yaml
@@ -46,7 +48,7 @@ This is an async Python benchmark that evaluates LLM chess-playing ability using
 3. **GameRunner (`game/game_runner.py`)** - Runs individual games, enforces illegal move policy (2 strikes = forfeit)
 4. **OpenRouterPlayer (`llm/openrouter_client.py`)** - Async LLM client that parses UCI/SAN moves from responses
 5. **Glicko2System (`rating/glicko2.py`)** - Updates ratings after each game; anchors have fixed ratings
-6. **Web App (`web/app.py`)** - Flask app for viewing leaderboard and game library with PGN viewer
+6. **Web App (`web/app.py`)** - Flask app with leaderboard, game library, methodology, timeline chart, and cost visualization
 
 ### Player Abstraction
 
@@ -79,5 +81,6 @@ Edit `config/benchmark.yaml` to configure:
 - `benchmark.games_vs_anchor_per_color`: Games per LLM vs each anchor
 - `benchmark.games_vs_llm_per_color`: Games per LLM pair
 - `benchmark.max_concurrent`: Parallel game limit
+- `benchmark.rating_threshold`: Only pair players within this rating difference
 - `engines`: Anchors with fixed ratings (types: `stockfish`, `maia`, `random`, `uci`)
 - `llms`: Models to benchmark with optional `reasoning` and `reasoning_effort` settings
