@@ -1,0 +1,191 @@
+"""
+Cost calculation for LLM players based on token usage and OpenRouter pricing.
+"""
+
+import json
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+from game.models import GameResult
+
+
+class CostCalculator:
+    """
+    Calculates costs based on token usage and model pricing.
+    """
+
+    def __init__(
+        self,
+        pricing_path: str = "config/pricing.json",
+        config_path: str = "config/benchmark.yaml",
+    ):
+        """
+        Initialize cost calculator.
+
+        Args:
+            pricing_path: Path to pricing.json
+            config_path: Path to benchmark.yaml for player_id -> model_name mapping
+        """
+        self.pricing = self._load_pricing(pricing_path)
+        self.player_to_model = self._build_player_model_map(config_path)
+
+    def _load_pricing(self, path: str) -> Dict[str, Dict[str, float]]:
+        """Load pricing data from JSON file."""
+        pricing_file = Path(path)
+        if not pricing_file.exists():
+            return {}
+
+        with open(pricing_file) as f:
+            return json.load(f)
+
+    def _build_player_model_map(self, config_path: str) -> Dict[str, str]:
+        """Build mapping from player_id to model_name from config."""
+        import yaml
+
+        config_file = Path(config_path)
+        if not config_file.exists():
+            return {}
+
+        with open(config_file) as f:
+            config = yaml.safe_load(f)
+
+        mapping = {}
+        for llm in config.get("llms", []):
+            player_id = llm.get("player_id")
+            model_name = llm.get("model_name")
+            if player_id and model_name:
+                mapping[player_id] = model_name
+
+                # Also handle reasoning effort suffix
+                reasoning_effort = llm.get("reasoning_effort")
+                if reasoning_effort and f"({reasoning_effort})" not in player_id:
+                    full_id = f"{player_id} ({reasoning_effort})"
+                    mapping[full_id] = model_name
+
+        return mapping
+
+    def get_model_for_player(self, player_id: str) -> Optional[str]:
+        """Get the OpenRouter model name for a player_id."""
+        # Direct lookup
+        if player_id in self.player_to_model:
+            return self.player_to_model[player_id]
+
+        # Try to find in pricing by partial match (e.g., "gpt-4" in "openai/gpt-4")
+        for model_id in self.pricing:
+            if player_id in model_id or model_id.endswith(f"/{player_id}"):
+                return model_id
+
+        return None
+
+    def get_pricing(self, model_name: str) -> Optional[Dict[str, float]]:
+        """Get pricing for a model."""
+        return self.pricing.get(model_name)
+
+    def calculate_game_cost(
+        self,
+        tokens: Optional[Dict[str, int]],
+        model_name: str,
+    ) -> Optional[float]:
+        """
+        Calculate cost for a game's token usage.
+
+        Args:
+            tokens: Token usage dict with prompt_tokens, completion_tokens
+            model_name: OpenRouter model name
+
+        Returns:
+            Cost in dollars, or None if pricing not available
+        """
+        if not tokens:
+            return None
+
+        pricing = self.get_pricing(model_name)
+        if not pricing:
+            return None
+
+        prompt_tokens = tokens.get("prompt_tokens", 0)
+        completion_tokens = tokens.get("completion_tokens", 0)
+
+        prompt_cost = prompt_tokens * pricing.get("prompt", 0)
+        completion_cost = completion_tokens * pricing.get("completion", 0)
+
+        return prompt_cost + completion_cost
+
+    def calculate_player_costs(
+        self,
+        results: List[GameResult],
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Calculate total costs per player from game results.
+
+        Args:
+            results: List of game results
+
+        Returns:
+            Dict mapping player_id to cost stats:
+            {
+                "total_cost": float,
+                "games_with_cost": int,
+                "avg_cost_per_game": float,
+                "total_tokens": int,
+            }
+        """
+        player_costs: Dict[str, Dict[str, Any]] = {}
+
+        for result in results:
+            # Process white player
+            if result.tokens_white:
+                self._add_player_cost(
+                    player_costs,
+                    result.white_id,
+                    result.tokens_white,
+                )
+
+            # Process black player
+            if result.tokens_black:
+                self._add_player_cost(
+                    player_costs,
+                    result.black_id,
+                    result.tokens_black,
+                )
+
+        # Calculate averages
+        for player_id, stats in player_costs.items():
+            if stats["games_with_cost"] > 0:
+                stats["avg_cost_per_game"] = (
+                    stats["total_cost"] / stats["games_with_cost"]
+                )
+            else:
+                stats["avg_cost_per_game"] = 0.0
+
+        return player_costs
+
+    def _add_player_cost(
+        self,
+        player_costs: Dict[str, Dict[str, Any]],
+        player_id: str,
+        tokens: Dict[str, int],
+    ) -> None:
+        """Add cost for a single game to player totals."""
+        if player_id not in player_costs:
+            player_costs[player_id] = {
+                "total_cost": 0.0,
+                "games_with_cost": 0,
+                "avg_cost_per_game": 0.0,
+                "total_tokens": 0,
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+            }
+
+        model_name = self.get_model_for_player(player_id)
+        if not model_name:
+            return
+
+        cost = self.calculate_game_cost(tokens, model_name)
+        if cost is not None:
+            player_costs[player_id]["total_cost"] += cost
+            player_costs[player_id]["games_with_cost"] += 1
+
+        player_costs[player_id]["total_tokens"] += tokens.get("total_tokens", 0)
+        player_costs[player_id]["prompt_tokens"] += tokens.get("prompt_tokens", 0)
+        player_costs[player_id]["completion_tokens"] += tokens.get("completion_tokens", 0)

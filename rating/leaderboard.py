@@ -7,7 +7,9 @@ from typing import Dict, Any, List, Optional
 from .glicko2 import PlayerRating
 from .rating_store import RatingStore
 from .fide_estimate import estimate_fide
+from .cost_calculator import CostCalculator
 from game.stats_collector import StatsCollector
+from game.models import GameResult
 
 
 class Leaderboard:
@@ -15,16 +17,35 @@ class Leaderboard:
     Generates and formats leaderboard data.
     """
 
-    def __init__(self, rating_store: RatingStore, stats: Optional[StatsCollector] = None):
+    def __init__(
+        self,
+        rating_store: RatingStore,
+        stats: Optional[StatsCollector] = None,
+        results: Optional[List[GameResult]] = None,
+    ):
         """
         Initialize leaderboard.
 
         Args:
             rating_store: The rating store
             stats: Optional stats collector for additional metrics
+            results: Optional list of game results for cost calculation
         """
         self.rating_store = rating_store
         self.stats = stats
+        self.results = results or (stats.results if stats else [])
+        self._cost_data: Optional[Dict[str, Dict[str, Any]]] = None
+
+    @property
+    def cost_data(self) -> Dict[str, Dict[str, Any]]:
+        """Lazily calculate cost data."""
+        if self._cost_data is None:
+            if self.results:
+                calculator = CostCalculator()
+                self._cost_data = calculator.calculate_player_costs(self.results)
+            else:
+                self._cost_data = {}
+        return self._cost_data
 
     def get_leaderboard(self, min_games: int = 1) -> List[Dict[str, Any]]:
         """
@@ -69,6 +90,15 @@ class Leaderboard:
                     "forfeit_rate": pstats.get("forfeit_rate", 0),
                 })
 
+            # Add cost data if available
+            if rating.player_id in self.cost_data:
+                cost_stats = self.cost_data[rating.player_id]
+                entry.update({
+                    "total_cost": cost_stats.get("total_cost", 0.0),
+                    "avg_cost_per_game": cost_stats.get("avg_cost_per_game", 0.0),
+                    "games_with_cost": cost_stats.get("games_with_cost", 0),
+                })
+
             leaderboard.append(entry)
 
         # Sort by rating (desc), then by legal move rate (desc) for ties
@@ -96,9 +126,9 @@ class Leaderboard:
 
         # Header
         lines = [
-            "=" * 85,
-            f"{'Rank':<5} {'Player':<25} {'Rating':<8} {'RD':<5} {'Games':<6} {'W-L-D':<12} {'Legal%':<8}",
-            "=" * 85,
+            "=" * 97,
+            f"{'Rank':<5} {'Player':<25} {'Rating':<8} {'RD':<5} {'Games':<6} {'W-L-D':<12} {'Legal%':<8} {'$/Game':<10}",
+            "=" * 97,
         ]
 
         for entry in lb:
@@ -112,13 +142,20 @@ class Leaderboard:
             # Show N/A for RD on anchor models (fixed ratings)
             rd_str = "N/A" if entry.get("is_anchor") else str(entry['rating_deviation'])
 
+            # Format cost per game
+            avg_cost = entry.get("avg_cost_per_game")
+            if avg_cost is not None and avg_cost > 0:
+                cost_str = f"${avg_cost:.4f}"
+            else:
+                cost_str = "-"
+
             lines.append(
                 f"{entry['rank']:<5} {player:<25} {entry['rating']:<8} "
                 f"{rd_str:<5} {entry['games_played']:<6} "
-                f"{wld:<12} {legal_pct:>6.1f}%"
+                f"{wld:<12} {legal_pct:>6.1f}% {cost_str:>10}"
             )
 
-        lines.append("=" * 85)
+        lines.append("=" * 97)
         lines.append("* = Anchor (fixed rating)")
 
         return "\n".join(lines)
