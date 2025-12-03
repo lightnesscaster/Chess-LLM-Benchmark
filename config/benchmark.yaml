@@ -178,6 +178,11 @@ llms:
     temperature: 0.0
     reasoning_effort: high
 
+  - player_id: "gpt-oss-120b (medium)"
+    model_name: "openai/gpt-oss-120b"
+    temperature: 0.0
+    reasoning_effort: medium
+
   - player_id: "gpt-5 (medium)"
     model_name: "openai/gpt-5"
     temperature: 0.0

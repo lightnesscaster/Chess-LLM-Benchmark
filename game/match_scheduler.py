@@ -391,6 +391,14 @@ class MatchScheduler:
             # Find opponents with games remaining
             candidates = []
             for opp_id in valid_opponents:
+                # Check if opponent (if LLM) has hit their reasoning cap
+                if opp_id in self.reasoning_ids:
+                    opp_cap = self._get_game_cap(opp_id)
+                    if opp_cap is not None:
+                        opp_current = self._games_played.get(opp_id, 0)
+                        if opp_current >= opp_cap:
+                            continue  # Skip capped opponent
+
                 is_anchor = opp_id in anchor_set
                 target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
 
