@@ -337,7 +337,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         plot_bgcolor="#16213e",
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
-        margin=dict(t=20, b=55, l=70, r=15),
+        margin=dict(t=50, b=55, l=70, r=15),
         autosize=True,
     )
 
