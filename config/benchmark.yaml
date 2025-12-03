@@ -137,11 +137,6 @@ llms:
     temperature: 0.0
     reasoning: true
 
-  - player_id: "gemini-2.5-flash (thinking)"
-    model_name: "google/gemini-2.5-flash"
-    temperature: 0.0
-    reasoning: true
-
   - player_id: "claude-3.7-sonnet (thinking)"
     model_name: "anthropic/claude-3.7-sonnet:thinking"
     temperature: 0.0
