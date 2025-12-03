@@ -410,7 +410,7 @@ def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:
         config={
             "displayModeBar": "hover",  # Only show on hover
             "displaylogo": False,
-            "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d", "toImage", "zoom2d"],
+            "modeBarButtons": [["pan2d", "zoomIn2d", "zoomOut2d", "resetScale2d"]],
             "scrollZoom": False,
             "responsive": True,
         },
