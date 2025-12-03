@@ -56,13 +56,12 @@ def is_reasoning_model(player_id: str) -> bool:
     return any(indicator in player_lower for indicator in reasoning_indicators)
 
 
-def create_cost_chart(leaderboard_data: list[dict[str, Any]], show_annotation: bool = False) -> go.Figure:
+def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     """
     Create an interactive scatter chart showing LLM rating vs cost per game.
 
     Args:
         leaderboard_data: List of leaderboard entries with rating and cost info
-        show_annotation: Whether to show the top model annotation
 
     Returns:
         Plotly Figure object
@@ -283,7 +282,7 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]], show_annotation: b
     )
 
     # Add annotation for best value model (highest rating on Pareto frontier)
-    if show_annotation and pareto_players:
+    if pareto_players:
         # Find the model with highest rating on the Pareto frontier
         best_idx = pareto_ratings.index(max(pareto_ratings))
         best_cost = pareto_costs[best_idx]
@@ -331,7 +330,7 @@ def get_cost_chart_html(leaderboard_data: list[dict[str, Any]]) -> str:
     Returns:
         HTML string containing the chart
     """
-    fig = create_cost_chart(leaderboard_data, show_annotation=False)
+    fig = create_cost_chart(leaderboard_data)
     return fig.to_html(
         full_html=False,
         include_plotlyjs=False,
