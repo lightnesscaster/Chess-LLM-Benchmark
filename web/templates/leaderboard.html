@@ -48,7 +48,7 @@
                 <td class="games">{{ entry.games_played }}</td>
                 <td class="record">{{ entry.wins|default(0) }}-{{ entry.losses|default(0) }}-{{ entry.draws|default(0) }}</td>
                 <td class="legal">{{ "%.1f"|format((entry.legal_move_rate|default(1.0)) * 100) }}%</td>
-                <td class="cost">{% if entry.avg_cost_per_game %}${{ "%.4f"|format(entry.avg_cost_per_game) }}{% else %}-{% endif %}</td>
+                <td class="cost">{% if entry.avg_cost_per_game is not none %}${{ "%.4f"|format(entry.avg_cost_per_game) }}{% else %}-{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -144,7 +144,7 @@ class Leaderboard:
 
             # Format cost per game
             avg_cost = entry.get("avg_cost_per_game")
-            if avg_cost is not None and avg_cost > 0:
+            if avg_cost is not None:
                 cost_str = f"${avg_cost:.4f}"
             else:
                 cost_str = "-"

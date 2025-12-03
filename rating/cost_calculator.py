@@ -3,8 +3,11 @@ Cost calculation for LLM players based on token usage and OpenRouter pricing.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+
+import yaml
 
 from game.models import GameResult
 
@@ -40,8 +43,6 @@ class CostCalculator:
 
     def _build_player_model_map(self, config_path: str) -> Dict[str, str]:
         """Build mapping from player_id to model_name from config."""
-        import yaml
-
         config_file = Path(config_path)
         if not config_file.exists():
             return {}
@@ -64,8 +65,12 @@ class CostCalculator:
 
         return mapping
 
-    def get_model_for_player(self, player_id: str) -> Optional[str]:
+    def get_model_for_player(self, player_id: str, _depth: int = 0) -> Optional[str]:
         """Get the OpenRouter model name for a player_id."""
+        # Prevent infinite recursion
+        if _depth > 3:
+            return None
+
         # Direct lookup
         if player_id in self.player_to_model:
             return self.player_to_model[player_id]
@@ -77,10 +82,9 @@ class CostCalculator:
 
         # Strip common suffixes and try again
         # e.g., "gpt-5.1 (high)" -> "gpt-5.1", "claude-opus-4 (no thinking)" -> "claude-opus-4"
-        import re
         base_id = re.sub(r'\s*\((high|medium|low|minimal|thinking|no thinking)\)\s*$', '', player_id)
         if base_id != player_id:
-            return self.get_model_for_player(base_id)
+            return self.get_model_for_player(base_id, _depth + 1)
 
         # Try with :free suffix (some models are free variants)
         for model_id in self.pricing:
