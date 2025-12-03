@@ -24,6 +24,7 @@ from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html, create_timeline_chart, export_timeline_png
+from web.cost_chart import get_cost_chart_html
 
 app = Flask(__name__)
 
@@ -229,6 +230,14 @@ def timeline():
     leaderboard_data = get_leaderboard_data()
     chart_html = get_timeline_html(leaderboard_data)
     return render_template("timeline.html", chart_html=chart_html)
+
+
+@app.route("/cost")
+def cost():
+    """Show cost vs rating visualization."""
+    leaderboard_data = get_leaderboard_data()
+    chart_html = get_cost_chart_html(leaderboard_data)
+    return render_template("cost.html", chart_html=chart_html)
 
 
 @app.route("/game/<game_id>")

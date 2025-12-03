@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Timeline - LLM Chess Benchmark{% endblock %}
+{% block title %}Cost vs Rating - LLM Chess Benchmark{% endblock %}
 
 {% block head %}
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
-    /* Override container max-width for timeline page */
+    /* Override container max-width for cost page */
     main.container {
-        max-width: 1600px !important;
+        max-width: 1400px !important;
     }
 
-    .timeline-header {
+    .cost-header {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -18,45 +18,23 @@
         gap: 0.5rem;
     }
 
-    .timeline-title {
+    .cost-title {
         text-align: center;
     }
 
-    .timeline-title h2 {
+    .cost-title h2 {
         font-size: 1.75rem;
         margin: 0 0 0.35rem 0;
         color: var(--text-primary);
     }
 
-    .timeline-title p {
+    .cost-title p {
         color: var(--text-secondary);
         font-size: 1rem;
         margin: 0;
     }
 
-    .export-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border: 1px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text-secondary);
-        cursor: pointer;
-        border-radius: 4px;
-        font-size: 0.875rem;
-        text-decoration: none;
-        transition: all 0.15s;
-        white-space: nowrap;
-    }
-
-    .export-btn:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: white;
-    }
-
-    .timeline-container {
+    .cost-container {
         background-color: var(--bg-secondary);
         border-radius: 8px;
         padding: 1rem;
@@ -65,38 +43,31 @@
         box-sizing: border-box;
     }
 
-    #timeline-chart {
+    #cost-chart {
         width: 100% !important;
-        height: 1600px;
+        height: 700px;
     }
 
     /* Ensure Plotly chart fills container */
-    #timeline-chart .plotly-graph-div {
+    #cost-chart .plotly-graph-div {
         width: 100% !important;
     }
 
-    #timeline-chart .main-svg {
+    #cost-chart .main-svg {
         width: 100% !important;
     }
 
     /* Move modebar to top-left */
-    #timeline-chart .modebar {
+    #cost-chart .modebar {
         left: 10px !important;
         right: auto !important;
     }
 
-    #timeline-chart .modebar-group {
+    #cost-chart .modebar-group {
         background: rgba(22, 33, 62, 0.9) !important;
     }
 
-    .timeline-actions {
-        display: flex;
-        justify-content: center;
-        margin-top: 3rem;
-        margin-bottom: 2rem;
-    }
-
-    .timeline-legend {
+    .cost-legend {
         display: flex;
         flex-wrap: wrap;
         gap: 1.5rem;
@@ -150,6 +121,7 @@
         height: 3px;
         background-color: #e94560;
         border-radius: 2px;
+        border-style: dotted;
         flex-shrink: 0;
     }
 
@@ -166,26 +138,27 @@
     <div class="page-nav">
         <a href="/" class="page-nav-link">Leaderboard</a>
         <a href="/games" class="page-nav-link">Games</a>
-        <h1 class="active">Timeline</h1>
-        <a href="/cost" class="page-nav-link">Cost</a>
+        <a href="/timeline" class="page-nav-link">Timeline</a>
+        <h1 class="active">Cost</h1>
         <a href="/methodology" class="page-nav-link">Methodology</a>
     </div>
 </div>
 
-<div class="timeline-header">
-    <div class="timeline-title">
-        <h2>LLM Chess Ratings Over Time</h2>
+<div class="cost-header">
+    <div class="cost-title">
+        <h2>Rating vs Cost per Game</h2>
+        <p>Higher and further left is better (high rating, low cost)</p>
     </div>
 </div>
 
-<div class="timeline-container">
+<div class="cost-container">
     {{ chart_html|safe }}
 </div>
 
-<div class="timeline-legend">
+<div class="cost-legend">
     <div class="legend-section">
         <span class="legend-line"></span>
-        <span>Champion</span>
+        <span>Efficiency Frontier</span>
     </div>
 
     <div class="legend-divider"></div>
@@ -235,23 +208,12 @@
     </div>
 </div>
 
-<div class="timeline-actions">
-    <a href="/api/timeline/export" class="export-btn" title="Download as PNG">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Download PNG
-    </a>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function() {
-    var chartDiv = document.getElementById('timeline-chart');
+    var chartDiv = document.getElementById('cost-chart');
     var resizeTimeout = null;
 
     function resizeChart() {
