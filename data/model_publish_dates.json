@@ -288,5 +288,30 @@
     "model_id": "anthropic/claude-haiku-4.5",
     "created_timestamp": 1760547638,
     "created_date": "2025-10-15"
+  },
+  "o1": {
+    "model_id": "openai/o1",
+    "created_timestamp": 1734459999,
+    "created_date": "2024-12-17"
+  },
+  "kimi-k2-thinking": {
+    "model_id": "moonshotai/kimi-k2-thinking",
+    "created_timestamp": 1762440622,
+    "created_date": "2025-11-06"
+  },
+  "deepseek-v3.2 (thinking)": {
+    "model_id": "deepseek/deepseek-v3.2",
+    "created_timestamp": 1764594642,
+    "created_date": "2025-12-01"
+  },
+  "deepseek-v3.2 (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.2",
+    "created_timestamp": 1764594642,
+    "created_date": "2025-12-01"
+  },
+  "qwen3-235b-a22b-thinking-2507": {
+    "model_id": "qwen/qwen3-235b-a22b-thinking-2507",
+    "created_timestamp": 1753449557,
+    "created_date": "2025-07-25"
   }
 }
