@@ -88,6 +88,11 @@ llms:
     model_name: "moonshotai/kimi-k2"
     temperature: 0.0
 
+  # qwen3-235b-a22b-2507 (-453)
+  - player_id: "qwen3-235b-a22b-2507"
+    model_name: "qwen/qwen3-235b-a22b-2507"
+    temperature: 0.0
+
   # deepseek-chat-v3-0324 (-453)
   - player_id: "deepseek-chat-v3-0324"
     model_name: "deepseek/deepseek-chat-v3-0324"
@@ -143,12 +148,6 @@ llms:
 
   - player_id: "glm-4.6 (thinking)"
     model_name: "z-ai/glm-4.6"
-    temperature: 0.0
-    reasoning: true
-
-
-  - player_id: "qwen3-235b-a22b-thinking-2507"
-    model_name: "qwen/qwen3-235b-a22b-thinking-2507"
     temperature: 0.0
     reasoning: true
 

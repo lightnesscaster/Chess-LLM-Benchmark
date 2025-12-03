@@ -6,6 +6,7 @@ between LLM chess rating and cost per game.
 """
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -242,6 +243,12 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             hoverinfo="skip",
             showlegend=False,
         ))
+
+    # Calculate axis ranges for positioning
+    min_cost = min(costs)
+    max_cost = max(costs)
+    min_rating = min(ratings)
+    max_rating = max(ratings)
 
     # Update layout
     fig.update_layout(
