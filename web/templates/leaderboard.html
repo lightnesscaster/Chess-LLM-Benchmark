@@ -37,7 +37,7 @@
             {% set is_top_llm = not entry.is_anchor and not ns.top_llm_found %}
             {% if is_top_llm %}{% set ns.top_llm_found = true %}{% endif %}
             {% set player_lower = entry.player_id|lower %}
-            {% set is_reasoning = '(thinking)' in player_lower or '(high)' in player_lower or '(medium)' in player_lower or '-r1' in player_lower or 'o3' in player_lower or 'o4-mini' in player_lower %}
+            {% set is_reasoning = '(thinking)' in player_lower or '(high)' in player_lower or '(medium)' in player_lower or '(minimal)' in player_lower or '-r1' in player_lower or 'o3' in player_lower or 'o4-mini' in player_lower or 'gemini-3' in player_lower or 'gemini-2.5-pro' in player_lower or 'grok-4' in player_lower %}
             {% set is_top_standard = not entry.is_anchor and not is_reasoning and not ns.top_standard_found %}
             {% if is_top_standard %}{% set ns.top_standard_found = true %}{% endif %}
             <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %}{% if not entry.is_anchor and entry.rating_deviation > 80 %} unreliable{% endif %} clickable-row"
@@ -69,7 +69,8 @@
 </div>
 
 <div class="legend">
-    <p>👑 = Top-rated LLM &nbsp; 🥇 = Top-rated standard (non-thinking) LLM</p>
+    <p>👑 = Top-rated LLM</p>
+    <p>🥇 = Top-rated non-reasoning LLM</p>
     <p><strong style="color: var(--accent)">*</strong> = Anchor player (fixed rating, used for calibration)</p>
     <p><span class="unreliable-indicator">Greyed rows</span> = Rating unreliable (RD > 80, needs more games)</p>
     <p><strong>FIDE Est.</strong> = Estimated FIDE rating based on <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data</p>

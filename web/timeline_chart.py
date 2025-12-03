@@ -42,9 +42,13 @@ def is_reasoning_model(player_id: str) -> bool:
         "(thinking)",
         "(high)",
         "(medium)",
+        "(minimal)",
         "-r1",
         "o3",
         "o4-mini",
+        "gemini-3",
+        "gemini-2.5-pro",
+        "grok-4",
     ]
     player_lower = player_id.lower()
     return any(indicator in player_lower for indicator in reasoning_indicators)
