@@ -180,6 +180,19 @@ body {
     background-color: rgba(212, 168, 85, 0.3);
 }
 
+.leaderboard-table tr.unreliable {
+    opacity: 0.5;
+}
+
+.leaderboard-table tr.unreliable:hover {
+    opacity: 0.7;
+}
+
+.unreliable-indicator {
+    opacity: 0.5;
+    font-weight: bold;
+}
+
 /* Leaderboard specific */
 .rank {
     font-weight: bold;
