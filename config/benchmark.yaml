@@ -172,5 +172,5 @@ llms:
     temperature: 0.0
 
   - player_id: "o1"
-    model_name: "openai/o"
+    model_name: "openai/o1"
     temperature: 0.0

@@ -45,8 +45,11 @@ class MatchScheduler:
     REASONING_HIGH_RATING_THRESHOLD = 1000  # Rating threshold for higher cap
 
     # Cap for models with low rating deviation (rating is stable)
-    LOW_RD_THRESHOLD = 70  # RD below this triggers cap
+    LOW_RD_THRESHOLD = 70  # RD below this triggers reduced cap
     LOW_RD_CAP = 10  # Max games for models with RD < threshold
+
+    # Frozen threshold - models below this RD don't initiate games (but can be challenged)
+    FROZEN_RD_THRESHOLD = 60
 
     def __init__(
         self,
@@ -341,6 +344,10 @@ class MatchScheduler:
             current_games = self._games_played.get(llm_id, 0)
             current_rd = self.rating_store.get(llm_id).rating_deviation
 
+            # Check if this LLM is frozen (RD too low to initiate games)
+            if current_rd < self.FROZEN_RD_THRESHOLD:
+                continue  # Frozen models don't initiate games (but can be challenged)
+
             # Check if this LLM has hit its low RD cap (rating is stable enough)
             if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
                 continue
@@ -368,15 +375,17 @@ class MatchScheduler:
                     opp_current = self._games_played.get(opp_id, 0)
                     opp_rd = self.rating_store.get(opp_id).rating_deviation
 
-                    # Check low RD cap
-                    if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
-                        continue  # Skip - rating is stable enough
+                    # Frozen models (RD < 60) can always be challenged - no cap
+                    if opp_rd >= self.FROZEN_RD_THRESHOLD:
+                        # Check low RD cap (60 <= RD < 70)
+                        if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
+                            continue  # Skip - rating is stable enough
 
-                    # Check reasoning cap
-                    if opp_id in self.reasoning_ids:
-                        opp_cap = self._get_game_cap(opp_id)
-                        if opp_cap is not None and opp_current >= opp_cap:
-                            continue  # Skip capped reasoning model
+                        # Check reasoning cap
+                        if opp_id in self.reasoning_ids:
+                            opp_cap = self._get_game_cap(opp_id)
+                            if opp_cap is not None and opp_current >= opp_cap:
+                                continue  # Skip capped reasoning model
                 target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
 
                 # Check both color combinations
@@ -530,6 +539,7 @@ class MatchScheduler:
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
+        print(f"Frozen threshold: RD < {self.FROZEN_RD_THRESHOLD} (no games unless challenged)")
         print()
 
         # Shared state for workers
