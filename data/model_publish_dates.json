@@ -1,1342 +1,287 @@
 {
-  "amazon/nova-2-lite-v1:free": {
-    "created_timestamp": 1764696672,
-    "created_date": "2025-12-02"
-  },
-  "amazon/nova-2-lite-v1": {
-    "created_timestamp": 1764696672,
-    "created_date": "2025-12-02"
-  },
-  "mistralai/mistral-large-2512": {
-    "created_timestamp": 1764624472,
-    "created_date": "2025-12-01"
-  },
-  "arcee-ai/trinity-mini:free": {
-    "created_timestamp": 1764601720,
-    "created_date": "2025-12-01"
-  },
-  "arcee-ai/trinity-mini": {
-    "created_timestamp": 1764601720,
-    "created_date": "2025-12-01"
-  },
-  "deepseek/deepseek-v3.2-speciale": {
-    "created_timestamp": 1764594837,
-    "created_date": "2025-12-01"
-  },
-  "deepseek/deepseek-v3.2": {
-    "created_timestamp": 1764594642,
-    "created_date": "2025-12-01"
-  },
-  "prime-intellect/intellect-3": {
-    "created_timestamp": 1764212534,
-    "created_date": "2025-11-26"
-  },
-  "tngtech/tng-r1t-chimera:free": {
-    "created_timestamp": 1764184161,
-    "created_date": "2025-11-26"
-  },
-  "tngtech/tng-r1t-chimera": {
-    "created_timestamp": 1764184161,
-    "created_date": "2025-11-26"
-  },
-  "anthropic/claude-opus-4.5": {
-    "created_timestamp": 1764010580,
-    "created_date": "2025-11-24"
-  },
-  "allenai/olmo-3-32b-think:free": {
-    "created_timestamp": 1763758276,
-    "created_date": "2025-11-21"
-  },
-  "allenai/olmo-3-7b-instruct": {
-    "created_timestamp": 1763758273,
-    "created_date": "2025-11-21"
-  },
-  "allenai/olmo-3-7b-think": {
-    "created_timestamp": 1763758270,
-    "created_date": "2025-11-21"
-  },
-  "google/gemini-3-pro-image-preview": {
-    "created_timestamp": 1763653797,
-    "created_date": "2025-11-20"
-  },
-  "x-ai/grok-4.1-fast:free": {
-    "created_timestamp": 1763587502,
-    "created_date": "2025-11-19"
-  },
-  "google/gemini-3-pro-preview": {
+  "gemini-3-pro-preview": {
+    "model_id": "google/gemini-3-pro-preview",
     "created_timestamp": 1763474668,
     "created_date": "2025-11-18"
   },
-  "deepcogito/cogito-v2.1-671b": {
-    "created_timestamp": 1763071233,
-    "created_date": "2025-11-13"
-  },
-  "openai/gpt-5.1": {
-    "created_timestamp": 1763060305,
-    "created_date": "2025-11-13"
-  },
-  "openai/gpt-5.1-chat": {
-    "created_timestamp": 1763060302,
-    "created_date": "2025-11-13"
-  },
-  "openai/gpt-5.1-codex": {
-    "created_timestamp": 1763060298,
-    "created_date": "2025-11-13"
-  },
-  "openai/gpt-5.1-codex-mini": {
-    "created_timestamp": 1763057820,
-    "created_date": "2025-11-13"
-  },
-  "kwaipilot/kat-coder-pro:free": {
-    "created_timestamp": 1762745912,
-    "created_date": "2025-11-09"
-  },
-  "moonshotai/kimi-linear-48b-a3b-instruct": {
-    "created_timestamp": 1762565833,
-    "created_date": "2025-11-07"
-  },
-  "moonshotai/kimi-k2-thinking": {
-    "created_timestamp": 1762440622,
-    "created_date": "2025-11-06"
-  },
-  "amazon/nova-premier-v1": {
-    "created_timestamp": 1761950332,
-    "created_date": "2025-10-31"
-  },
-  "perplexity/sonar-pro-search": {
-    "created_timestamp": 1761854366,
-    "created_date": "2025-10-30"
-  },
-  "mistralai/voxtral-small-24b-2507": {
-    "created_timestamp": 1761835144,
-    "created_date": "2025-10-30"
-  },
-  "openai/gpt-oss-safeguard-20b": {
-    "created_timestamp": 1761752836,
-    "created_date": "2025-10-29"
-  },
-  "nvidia/nemotron-nano-12b-v2-vl:free": {
-    "created_timestamp": 1761675565,
-    "created_date": "2025-10-28"
-  },
-  "nvidia/nemotron-nano-12b-v2-vl": {
-    "created_timestamp": 1761675565,
-    "created_date": "2025-10-28"
-  },
-  "minimax/minimax-m2": {
-    "created_timestamp": 1761252093,
-    "created_date": "2025-10-23"
-  },
-  "liquid/lfm2-8b-a1b": {
-    "created_timestamp": 1760970984,
-    "created_date": "2025-10-20"
-  },
-  "liquid/lfm-2.2-6b": {
-    "created_timestamp": 1760970889,
-    "created_date": "2025-10-20"
-  },
-  "ibm-granite/granite-4.0-h-micro": {
-    "created_timestamp": 1760927695,
-    "created_date": "2025-10-19"
-  },
-  "deepcogito/cogito-v2-preview-llama-405b": {
-    "created_timestamp": 1760709933,
-    "created_date": "2025-10-17"
-  },
-  "openai/gpt-5-image-mini": {
-    "created_timestamp": 1760624583,
-    "created_date": "2025-10-16"
-  },
-  "anthropic/claude-haiku-4.5": {
-    "created_timestamp": 1760547638,
-    "created_date": "2025-10-15"
-  },
-  "qwen/qwen3-vl-8b-thinking": {
-    "created_timestamp": 1760463746,
-    "created_date": "2025-10-14"
-  },
-  "qwen/qwen3-vl-8b-instruct": {
-    "created_timestamp": 1760463308,
-    "created_date": "2025-10-14"
-  },
-  "openai/gpt-5-image": {
-    "created_timestamp": 1760447986,
-    "created_date": "2025-10-14"
-  },
-  "openai/o3-deep-research": {
-    "created_timestamp": 1760129661,
-    "created_date": "2025-10-10"
-  },
-  "openai/o4-mini-deep-research": {
-    "created_timestamp": 1760129642,
-    "created_date": "2025-10-10"
-  },
-  "nvidia/llama-3.3-nemotron-super-49b-v1.5": {
-    "created_timestamp": 1760101395,
-    "created_date": "2025-10-10"
-  },
-  "baidu/ernie-4.5-21b-a3b-thinking": {
-    "created_timestamp": 1760048887,
-    "created_date": "2025-10-09"
-  },
-  "google/gemini-2.5-flash-image": {
-    "created_timestamp": 1759870431,
-    "created_date": "2025-10-07"
-  },
-  "qwen/qwen3-vl-30b-a3b-thinking": {
-    "created_timestamp": 1759794479,
-    "created_date": "2025-10-06"
-  },
-  "qwen/qwen3-vl-30b-a3b-instruct": {
-    "created_timestamp": 1759794476,
-    "created_date": "2025-10-06"
-  },
-  "openai/gpt-5-pro": {
-    "created_timestamp": 1759776663,
-    "created_date": "2025-10-06"
-  },
-  "z-ai/glm-4.6": {
-    "created_timestamp": 1759235576,
-    "created_date": "2025-09-30"
-  },
-  "z-ai/glm-4.6:exacto": {
-    "created_timestamp": 1759235576,
-    "created_date": "2025-09-30"
-  },
-  "anthropic/claude-sonnet-4.5": {
-    "created_timestamp": 1759161676,
-    "created_date": "2025-09-29"
-  },
-  "deepseek/deepseek-v3.2-exp": {
-    "created_timestamp": 1759150481,
-    "created_date": "2025-09-29"
-  },
-  "thedrummer/cydonia-24b-v4.1": {
-    "created_timestamp": 1758931878,
-    "created_date": "2025-09-26"
-  },
-  "relace/relace-apply-3": {
-    "created_timestamp": 1758891572,
-    "created_date": "2025-09-26"
-  },
-  "google/gemini-2.5-flash-preview-09-2025": {
-    "created_timestamp": 1758820178,
-    "created_date": "2025-09-25"
-  },
-  "google/gemini-2.5-flash-lite-preview-09-2025": {
-    "created_timestamp": 1758819686,
-    "created_date": "2025-09-25"
-  },
-  "qwen/qwen3-vl-235b-a22b-thinking": {
-    "created_timestamp": 1758668690,
-    "created_date": "2025-09-23"
-  },
-  "qwen/qwen3-vl-235b-a22b-instruct": {
-    "created_timestamp": 1758668687,
-    "created_date": "2025-09-23"
-  },
-  "qwen/qwen3-max": {
-    "created_timestamp": 1758662808,
-    "created_date": "2025-09-23"
-  },
-  "qwen/qwen3-coder-plus": {
-    "created_timestamp": 1758662707,
-    "created_date": "2025-09-23"
-  },
-  "openai/gpt-5-codex": {
-    "created_timestamp": 1758643403,
-    "created_date": "2025-09-23"
-  },
-  "deepseek/deepseek-v3.1-terminus:exacto": {
-    "created_timestamp": 1758548275,
-    "created_date": "2025-09-22"
-  },
-  "deepseek/deepseek-v3.1-terminus": {
-    "created_timestamp": 1758548275,
-    "created_date": "2025-09-22"
-  },
-  "x-ai/grok-4-fast": {
-    "created_timestamp": 1758240090,
-    "created_date": "2025-09-18"
-  },
-  "alibaba/tongyi-deepresearch-30b-a3b:free": {
-    "created_timestamp": 1758210804,
-    "created_date": "2025-09-18"
-  },
-  "alibaba/tongyi-deepresearch-30b-a3b": {
-    "created_timestamp": 1758210804,
-    "created_date": "2025-09-18"
-  },
-  "qwen/qwen3-coder-flash": {
-    "created_timestamp": 1758115536,
-    "created_date": "2025-09-17"
-  },
-  "opengvlab/internvl3-78b": {
-    "created_timestamp": 1757962555,
-    "created_date": "2025-09-15"
-  },
-  "qwen/qwen3-next-80b-a3b-thinking": {
-    "created_timestamp": 1757612284,
-    "created_date": "2025-09-11"
-  },
-  "qwen/qwen3-next-80b-a3b-instruct": {
-    "created_timestamp": 1757612213,
-    "created_date": "2025-09-11"
-  },
-  "meituan/longcat-flash-chat:free": {
-    "created_timestamp": 1757427658,
-    "created_date": "2025-09-09"
-  },
-  "meituan/longcat-flash-chat": {
-    "created_timestamp": 1757427658,
-    "created_date": "2025-09-09"
-  },
-  "qwen/qwen-plus-2025-07-28": {
-    "created_timestamp": 1757347599,
-    "created_date": "2025-09-08"
-  },
-  "qwen/qwen-plus-2025-07-28:thinking": {
-    "created_timestamp": 1757347599,
-    "created_date": "2025-09-08"
-  },
-  "nvidia/nemotron-nano-9b-v2:free": {
-    "created_timestamp": 1757106807,
-    "created_date": "2025-09-05"
-  },
-  "nvidia/nemotron-nano-9b-v2": {
-    "created_timestamp": 1757106807,
-    "created_date": "2025-09-05"
-  },
-  "moonshotai/kimi-k2-0905": {
-    "created_timestamp": 1757021147,
-    "created_date": "2025-09-04"
-  },
-  "moonshotai/kimi-k2-0905:exacto": {
-    "created_timestamp": 1757021147,
-    "created_date": "2025-09-04"
-  },
-  "deepcogito/cogito-v2-preview-llama-70b": {
-    "created_timestamp": 1756831784,
-    "created_date": "2025-09-02"
-  },
-  "deepcogito/cogito-v2-preview-llama-109b-moe": {
-    "created_timestamp": 1756831568,
-    "created_date": "2025-09-02"
-  },
-  "deepcogito/cogito-v2-preview-deepseek-671b": {
-    "created_timestamp": 1756830949,
-    "created_date": "2025-09-02"
-  },
-  "stepfun-ai/step3": {
-    "created_timestamp": 1756415375,
-    "created_date": "2025-08-28"
-  },
-  "qwen/qwen3-30b-a3b-thinking-2507": {
-    "created_timestamp": 1756399192,
-    "created_date": "2025-08-28"
-  },
-  "x-ai/grok-code-fast-1": {
-    "created_timestamp": 1756238927,
-    "created_date": "2025-08-26"
-  },
-  "nousresearch/hermes-4-70b": {
-    "created_timestamp": 1756236182,
-    "created_date": "2025-08-26"
-  },
-  "nousresearch/hermes-4-405b": {
-    "created_timestamp": 1756235463,
-    "created_date": "2025-08-26"
-  },
-  "google/gemini-2.5-flash-image-preview": {
-    "created_timestamp": 1756218977,
-    "created_date": "2025-08-26"
-  },
-  "deepseek/deepseek-chat-v3.1": {
-    "created_timestamp": 1755779628,
-    "created_date": "2025-08-21"
-  },
-  "openai/gpt-4o-audio-preview": {
-    "created_timestamp": 1755233061,
-    "created_date": "2025-08-15"
-  },
-  "mistralai/mistral-medium-3.1": {
-    "created_timestamp": 1755095639,
-    "created_date": "2025-08-13"
-  },
-  "baidu/ernie-4.5-21b-a3b": {
-    "created_timestamp": 1755034167,
-    "created_date": "2025-08-12"
-  },
-  "baidu/ernie-4.5-vl-28b-a3b": {
-    "created_timestamp": 1755032836,
-    "created_date": "2025-08-12"
-  },
-  "z-ai/glm-4.5v": {
-    "created_timestamp": 1754922288,
-    "created_date": "2025-08-11"
-  },
-  "ai21/jamba-mini-1.7": {
-    "created_timestamp": 1754670601,
-    "created_date": "2025-08-08"
-  },
-  "ai21/jamba-large-1.7": {
-    "created_timestamp": 1754669020,
-    "created_date": "2025-08-08"
-  },
-  "openai/gpt-5-chat": {
-    "created_timestamp": 1754587837,
-    "created_date": "2025-08-07"
-  },
-  "openai/gpt-5": {
-    "created_timestamp": 1754587413,
-    "created_date": "2025-08-07"
-  },
-  "openai/gpt-5-mini": {
-    "created_timestamp": 1754587407,
-    "created_date": "2025-08-07"
-  },
-  "openai/gpt-5-nano": {
-    "created_timestamp": 1754587402,
-    "created_date": "2025-08-07"
-  },
-  "openai/gpt-oss-120b:exacto": {
-    "created_timestamp": 1754414231,
-    "created_date": "2025-08-05"
-  },
-  "openai/gpt-oss-120b": {
-    "created_timestamp": 1754414231,
-    "created_date": "2025-08-05"
-  },
-  "openai/gpt-oss-20b:free": {
-    "created_timestamp": 1754414229,
-    "created_date": "2025-08-05"
-  },
-  "openai/gpt-oss-20b": {
-    "created_timestamp": 1754414229,
-    "created_date": "2025-08-05"
-  },
-  "anthropic/claude-opus-4.1": {
-    "created_timestamp": 1754411591,
-    "created_date": "2025-08-05"
-  },
-  "mistralai/codestral-2508": {
-    "created_timestamp": 1754079630,
-    "created_date": "2025-08-01"
-  },
-  "qwen/qwen3-coder-30b-a3b-instruct": {
-    "created_timestamp": 1753972379,
-    "created_date": "2025-07-31"
-  },
-  "qwen/qwen3-30b-a3b-instruct-2507": {
-    "created_timestamp": 1753806965,
-    "created_date": "2025-07-29"
-  },
-  "z-ai/glm-4.5": {
-    "created_timestamp": 1753471347,
-    "created_date": "2025-07-25"
-  },
-  "z-ai/glm-4.5-air:free": {
-    "created_timestamp": 1753471258,
-    "created_date": "2025-07-25"
-  },
-  "z-ai/glm-4.5-air": {
-    "created_timestamp": 1753471258,
-    "created_date": "2025-07-25"
-  },
-  "qwen/qwen3-235b-a22b-thinking-2507": {
-    "created_timestamp": 1753449557,
-    "created_date": "2025-07-25"
-  },
-  "z-ai/glm-4-32b": {
-    "created_timestamp": 1753376617,
-    "created_date": "2025-07-24"
-  },
-  "qwen/qwen3-coder:free": {
-    "created_timestamp": 1753230546,
-    "created_date": "2025-07-22"
-  },
-  "qwen/qwen3-coder": {
-    "created_timestamp": 1753230546,
-    "created_date": "2025-07-22"
-  },
-  "qwen/qwen3-coder:exacto": {
-    "created_timestamp": 1753230546,
-    "created_date": "2025-07-22"
-  },
-  "bytedance/ui-tars-1.5-7b": {
-    "created_timestamp": 1753205056,
-    "created_date": "2025-07-22"
-  },
-  "google/gemini-2.5-flash-lite": {
-    "created_timestamp": 1753200276,
-    "created_date": "2025-07-22"
-  },
-  "qwen/qwen3-235b-a22b-2507": {
-    "created_timestamp": 1753119555,
-    "created_date": "2025-07-21"
-  },
-  "switchpoint/router": {
-    "created_timestamp": 1752272899,
-    "created_date": "2025-07-11"
-  },
-  "moonshotai/kimi-k2:free": {
-    "created_timestamp": 1752263252,
-    "created_date": "2025-07-11"
-  },
-  "moonshotai/kimi-k2": {
-    "created_timestamp": 1752263252,
-    "created_date": "2025-07-11"
-  },
-  "thudm/glm-4.1v-9b-thinking": {
-    "created_timestamp": 1752244385,
-    "created_date": "2025-07-11"
-  },
-  "mistralai/devstral-medium": {
-    "created_timestamp": 1752161321,
-    "created_date": "2025-07-10"
-  },
-  "mistralai/devstral-small": {
-    "created_timestamp": 1752160751,
-    "created_date": "2025-07-10"
-  },
-  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
-    "created_timestamp": 1752094966,
-    "created_date": "2025-07-09"
-  },
-  "x-ai/grok-4": {
-    "created_timestamp": 1752087689,
-    "created_date": "2025-07-09"
-  },
-  "google/gemma-3n-e2b-it:free": {
-    "created_timestamp": 1752074904,
-    "created_date": "2025-07-09"
-  },
-  "tencent/hunyuan-a13b-instruct": {
-    "created_timestamp": 1751987664,
-    "created_date": "2025-07-08"
-  },
-  "tngtech/deepseek-r1t2-chimera:free": {
-    "created_timestamp": 1751986985,
-    "created_date": "2025-07-08"
-  },
-  "tngtech/deepseek-r1t2-chimera": {
-    "created_timestamp": 1751986985,
-    "created_date": "2025-07-08"
-  },
-  "morph/morph-v3-large": {
-    "created_timestamp": 1751910858,
-    "created_date": "2025-07-07"
-  },
-  "morph/morph-v3-fast": {
-    "created_timestamp": 1751910002,
-    "created_date": "2025-07-07"
-  },
-  "baidu/ernie-4.5-vl-424b-a47b": {
-    "created_timestamp": 1751300903,
-    "created_date": "2025-06-30"
-  },
-  "baidu/ernie-4.5-300b-a47b": {
-    "created_timestamp": 1751300139,
-    "created_date": "2025-06-30"
-  },
-  "thedrummer/anubis-70b-v1.1": {
-    "created_timestamp": 1751208347,
-    "created_date": "2025-06-29"
-  },
-  "inception/mercury": {
-    "created_timestamp": 1750973026,
-    "created_date": "2025-06-26"
-  },
-  "mistralai/mistral-small-3.2-24b-instruct": {
-    "created_timestamp": 1750443016,
-    "created_date": "2025-06-20"
-  },
-  "minimax/minimax-m1": {
-    "created_timestamp": 1750200414,
-    "created_date": "2025-06-17"
-  },
-  "google/gemini-2.5-flash": {
-    "created_timestamp": 1750172488,
-    "created_date": "2025-06-17"
-  },
-  "google/gemini-2.5-pro": {
-    "created_timestamp": 1750169544,
-    "created_date": "2025-06-17"
-  },
-  "moonshotai/kimi-dev-72b": {
-    "created_timestamp": 1750115909,
-    "created_date": "2025-06-16"
-  },
-  "openai/o3-pro": {
-    "created_timestamp": 1749598352,
-    "created_date": "2025-06-10"
-  },
-  "x-ai/grok-3-mini": {
-    "created_timestamp": 1749583245,
-    "created_date": "2025-06-10"
-  },
-  "x-ai/grok-3": {
-    "created_timestamp": 1749582908,
-    "created_date": "2025-06-10"
-  },
-  "mistralai/magistral-small-2506": {
-    "created_timestamp": 1749569561,
-    "created_date": "2025-06-10"
-  },
-  "mistralai/magistral-medium-2506:thinking": {
-    "created_timestamp": 1749354054,
-    "created_date": "2025-06-07"
-  },
-  "mistralai/magistral-medium-2506": {
-    "created_timestamp": 1749354054,
-    "created_date": "2025-06-07"
-  },
-  "google/gemini-2.5-pro-preview": {
-    "created_timestamp": 1749137257,
-    "created_date": "2025-06-05"
-  },
-  "deepseek/deepseek-r1-0528-qwen3-8b": {
-    "created_timestamp": 1748538543,
-    "created_date": "2025-05-29"
-  },
-  "deepseek/deepseek-r1-0528": {
-    "created_timestamp": 1748455170,
-    "created_date": "2025-05-28"
-  },
-  "anthropic/claude-opus-4": {
-    "created_timestamp": 1747931245,
-    "created_date": "2025-05-22"
-  },
-  "anthropic/claude-sonnet-4": {
-    "created_timestamp": 1747930371,
-    "created_date": "2025-05-22"
-  },
-  "mistralai/devstral-small-2505": {
-    "created_timestamp": 1747837379,
-    "created_date": "2025-05-21"
-  },
-  "google/gemma-3n-e4b-it:free": {
-    "created_timestamp": 1747776824,
-    "created_date": "2025-05-20"
-  },
-  "google/gemma-3n-e4b-it": {
-    "created_timestamp": 1747776824,
-    "created_date": "2025-05-20"
-  },
-  "openai/codex-mini": {
-    "created_timestamp": 1747409761,
-    "created_date": "2025-05-16"
-  },
-  "nousresearch/deephermes-3-mistral-24b-preview": {
-    "created_timestamp": 1746830904,
-    "created_date": "2025-05-09"
-  },
-  "mistralai/mistral-medium-3": {
-    "created_timestamp": 1746627341,
-    "created_date": "2025-05-07"
-  },
-  "google/gemini-2.5-pro-preview-05-06": {
-    "created_timestamp": 1746578513,
-    "created_date": "2025-05-06"
-  },
-  "arcee-ai/spotlight": {
-    "created_timestamp": 1746481552,
-    "created_date": "2025-05-05"
-  },
-  "arcee-ai/maestro-reasoning": {
-    "created_timestamp": 1746481269,
-    "created_date": "2025-05-05"
-  },
-  "arcee-ai/virtuoso-large": {
-    "created_timestamp": 1746478885,
-    "created_date": "2025-05-05"
-  },
-  "arcee-ai/coder-large": {
-    "created_timestamp": 1746478663,
-    "created_date": "2025-05-05"
-  },
-  "microsoft/phi-4-reasoning-plus": {
-    "created_timestamp": 1746130961,
-    "created_date": "2025-05-01"
-  },
-  "inception/mercury-coder": {
-    "created_timestamp": 1746033880,
-    "created_date": "2025-04-30"
-  },
-  "qwen/qwen3-4b:free": {
-    "created_timestamp": 1746031104,
-    "created_date": "2025-04-30"
-  },
-  "deepseek/deepseek-prover-v2": {
-    "created_timestamp": 1746013094,
-    "created_date": "2025-04-30"
-  },
-  "meta-llama/llama-guard-4-12b": {
-    "created_timestamp": 1745975193,
-    "created_date": "2025-04-29"
-  },
-  "qwen/qwen3-30b-a3b": {
-    "created_timestamp": 1745878604,
-    "created_date": "2025-04-28"
-  },
-  "qwen/qwen3-8b": {
-    "created_timestamp": 1745876632,
-    "created_date": "2025-04-28"
-  },
-  "qwen/qwen3-14b": {
-    "created_timestamp": 1745876478,
-    "created_date": "2025-04-28"
-  },
-  "qwen/qwen3-32b": {
-    "created_timestamp": 1745875945,
-    "created_date": "2025-04-28"
-  },
-  "qwen/qwen3-235b-a22b:free": {
-    "created_timestamp": 1745875757,
-    "created_date": "2025-04-28"
-  },
-  "qwen/qwen3-235b-a22b": {
-    "created_timestamp": 1745875757,
-    "created_date": "2025-04-28"
-  },
-  "tngtech/deepseek-r1t-chimera:free": {
-    "created_timestamp": 1745760875,
-    "created_date": "2025-04-27"
-  },
-  "tngtech/deepseek-r1t-chimera": {
-    "created_timestamp": 1745760875,
-    "created_date": "2025-04-27"
-  },
-  "microsoft/mai-ds-r1": {
-    "created_timestamp": 1745194100,
-    "created_date": "2025-04-20"
-  },
-  "openai/o4-mini-high": {
-    "created_timestamp": 1744824212,
-    "created_date": "2025-04-16"
-  },
-  "openai/o3": {
+  "o3": {
+    "model_id": "openai/o3",
     "created_timestamp": 1744823457,
     "created_date": "2025-04-16"
   },
-  "openai/o4-mini": {
-    "created_timestamp": 1744820942,
+  "gpt-5.1 (high)": {
+    "model_id": "openai/gpt-5.1",
+    "created_timestamp": 1763060305,
+    "created_date": "2025-11-13"
+  },
+  "grok-4-fast": {
+    "model_id": "x-ai/grok-4-fast",
+    "created_timestamp": 1758240090,
+    "created_date": "2025-09-18"
+  },
+  "gemini-2.5-pro": {
+    "model_id": "google/gemini-2.5-pro",
+    "created_timestamp": 1750169544,
+    "created_date": "2025-06-17"
+  },
+  "claude-opus-4.5 (high)": {
+    "model_id": "anthropic/claude-opus-4.5",
+    "created_timestamp": 1764010580,
+    "created_date": "2025-11-24"
+  },
+  "gpt-oss-120b (medium)": {
+    "model_id": "openai/gpt-oss-120b",
+    "created_timestamp": 1754414231,
+    "created_date": "2025-08-05"
+  },
+  "gpt-5 (medium)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
+  },
+  "deepseek-r1-0528 (high)": {
+    "model_id": "deepseek/deepseek-r1-0528",
+    "created_timestamp": 1748455170,
+    "created_date": "2025-05-28"
+  },
+  "deepseek-chat-v3.1 (thinking)": {
+    "model_id": "deepseek/deepseek-chat-v3.1",
+    "created_timestamp": 1755779628,
+    "created_date": "2025-08-21"
+  },
+  "gemini-2.5-flash (thinking)": {
+    "model_id": "google/gemini-2.5-flash",
+    "created_timestamp": 1750172488,
+    "created_date": "2025-06-17"
+  },
+  "gpt-oss-120b (high)": {
+    "model_id": "openai/gpt-oss-120b",
+    "created_timestamp": 1754414231,
+    "created_date": "2025-08-05"
+  },
+  "gpt-5.1-chat": {
+    "model_id": "openai/gpt-5.1-chat",
+    "created_timestamp": 1763060302,
+    "created_date": "2025-11-13"
+  },
+  "o4-mini-high": {
+    "model_id": "openai/o4-mini-high",
+    "created_timestamp": 1744824212,
     "created_date": "2025-04-16"
   },
-  "qwen/qwen2.5-coder-7b-instruct": {
-    "created_timestamp": 1744734887,
-    "created_date": "2025-04-15"
+  "gemini-2.5-flash (no thinking)": {
+    "model_id": "google/gemini-2.5-flash",
+    "created_timestamp": 1750172488,
+    "created_date": "2025-06-17"
   },
-  "openai/gpt-4.1": {
-    "created_timestamp": 1744651385,
-    "created_date": "2025-04-14"
-  },
-  "openai/gpt-4.1-mini": {
-    "created_timestamp": 1744651381,
-    "created_date": "2025-04-14"
-  },
-  "openai/gpt-4.1-nano": {
-    "created_timestamp": 1744651369,
-    "created_date": "2025-04-14"
-  },
-  "eleutherai/llemma_7b": {
-    "created_timestamp": 1744643225,
-    "created_date": "2025-04-14"
-  },
-  "alfredpros/codellama-7b-instruct-solidity": {
-    "created_timestamp": 1744641874,
-    "created_date": "2025-04-14"
-  },
-  "arliai/qwq-32b-arliai-rpr-v1": {
-    "created_timestamp": 1744555982,
-    "created_date": "2025-04-13"
-  },
-  "x-ai/grok-3-mini-beta": {
-    "created_timestamp": 1744240195,
-    "created_date": "2025-04-09"
-  },
-  "x-ai/grok-3-beta": {
-    "created_timestamp": 1744240068,
-    "created_date": "2025-04-09"
-  },
-  "nvidia/llama-3.1-nemotron-ultra-253b-v1": {
-    "created_timestamp": 1744115059,
-    "created_date": "2025-04-08"
-  },
-  "meta-llama/llama-4-maverick": {
-    "created_timestamp": 1743881822,
-    "created_date": "2025-04-05"
-  },
-  "meta-llama/llama-4-scout": {
-    "created_timestamp": 1743881519,
-    "created_date": "2025-04-05"
-  },
-  "qwen/qwen2.5-vl-32b-instruct": {
-    "created_timestamp": 1742839838,
-    "created_date": "2025-03-24"
-  },
-  "deepseek/deepseek-chat-v3-0324": {
-    "created_timestamp": 1742824755,
-    "created_date": "2025-03-24"
-  },
-  "openai/o1-pro": {
-    "created_timestamp": 1742423211,
-    "created_date": "2025-03-19"
-  },
-  "mistralai/mistral-small-3.1-24b-instruct:free": {
-    "created_timestamp": 1742238937,
-    "created_date": "2025-03-17"
-  },
-  "mistralai/mistral-small-3.1-24b-instruct": {
-    "created_timestamp": 1742238937,
-    "created_date": "2025-03-17"
-  },
-  "allenai/olmo-2-0325-32b-instruct": {
-    "created_timestamp": 1741988556,
-    "created_date": "2025-03-14"
-  },
-  "google/gemma-3-4b-it:free": {
-    "created_timestamp": 1741905510,
-    "created_date": "2025-03-13"
-  },
-  "google/gemma-3-4b-it": {
-    "created_timestamp": 1741905510,
-    "created_date": "2025-03-13"
-  },
-  "google/gemma-3-12b-it:free": {
-    "created_timestamp": 1741902625,
-    "created_date": "2025-03-13"
-  },
-  "google/gemma-3-12b-it": {
-    "created_timestamp": 1741902625,
-    "created_date": "2025-03-13"
-  },
-  "cohere/command-a": {
-    "created_timestamp": 1741894342,
-    "created_date": "2025-03-13"
-  },
-  "openai/gpt-4o-mini-search-preview": {
-    "created_timestamp": 1741818122,
-    "created_date": "2025-03-12"
-  },
-  "openai/gpt-4o-search-preview": {
-    "created_timestamp": 1741817949,
-    "created_date": "2025-03-12"
-  },
-  "google/gemma-3-27b-it:free": {
-    "created_timestamp": 1741756359,
-    "created_date": "2025-03-12"
-  },
-  "google/gemma-3-27b-it": {
-    "created_timestamp": 1741756359,
-    "created_date": "2025-03-12"
-  },
-  "thedrummer/skyfall-36b-v2": {
-    "created_timestamp": 1741636566,
-    "created_date": "2025-03-10"
-  },
-  "microsoft/phi-4-multimodal-instruct": {
-    "created_timestamp": 1741396284,
-    "created_date": "2025-03-07"
-  },
-  "perplexity/sonar-reasoning-pro": {
-    "created_timestamp": 1741313308,
-    "created_date": "2025-03-06"
-  },
-  "perplexity/sonar-pro": {
-    "created_timestamp": 1741312423,
-    "created_date": "2025-03-06"
-  },
-  "perplexity/sonar-deep-research": {
-    "created_timestamp": 1741311246,
-    "created_date": "2025-03-06"
-  },
-  "qwen/qwq-32b": {
-    "created_timestamp": 1741208814,
-    "created_date": "2025-03-05"
-  },
-  "google/gemini-2.0-flash-lite-001": {
-    "created_timestamp": 1740506212,
-    "created_date": "2025-02-25"
-  },
-  "anthropic/claude-3.7-sonnet:thinking": {
-    "created_timestamp": 1740422110,
-    "created_date": "2025-02-24"
-  },
-  "anthropic/claude-3.7-sonnet": {
-    "created_timestamp": 1740422110,
-    "created_date": "2025-02-24"
-  },
-  "mistralai/mistral-saba": {
-    "created_timestamp": 1739803239,
-    "created_date": "2025-02-17"
-  },
-  "meta-llama/llama-guard-3-8b": {
-    "created_timestamp": 1739401318,
-    "created_date": "2025-02-12"
-  },
-  "openai/o3-mini-high": {
-    "created_timestamp": 1739372611,
-    "created_date": "2025-02-12"
-  },
-  "google/gemini-2.0-flash-001": {
+  "gemini-2.0-flash-001": {
+    "model_id": "google/gemini-2.0-flash-001",
     "created_timestamp": 1738769413,
     "created_date": "2025-02-05"
   },
-  "qwen/qwen-vl-plus": {
-    "created_timestamp": 1738731255,
-    "created_date": "2025-02-04"
+  "claude-opus-4 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4",
+    "created_timestamp": 1747931245,
+    "created_date": "2025-05-22"
   },
-  "aion-labs/aion-1.0": {
-    "created_timestamp": 1738697557,
-    "created_date": "2025-02-04"
+  "gpt-5-chat": {
+    "model_id": "openai/gpt-5-chat",
+    "created_timestamp": 1754587837,
+    "created_date": "2025-08-07"
   },
-  "aion-labs/aion-1.0-mini": {
-    "created_timestamp": 1738697107,
-    "created_date": "2025-02-04"
+  "claude-opus-4.1 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.1",
+    "created_timestamp": 1754411591,
+    "created_date": "2025-08-05"
   },
-  "aion-labs/aion-rp-llama-3.1-8b": {
-    "created_timestamp": 1738696718,
-    "created_date": "2025-02-04"
+  "claude-opus-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.5",
+    "created_timestamp": 1764010580,
+    "created_date": "2025-11-24"
   },
-  "qwen/qwen-vl-max": {
-    "created_timestamp": 1738434304,
-    "created_date": "2025-02-01"
+  "gpt-5 (minimal)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
   },
-  "qwen/qwen-turbo": {
-    "created_timestamp": 1738410974,
-    "created_date": "2025-02-01"
+  "claude-sonnet-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-sonnet-4.5",
+    "created_timestamp": 1759161676,
+    "created_date": "2025-09-29"
   },
-  "qwen/qwen2.5-vl-72b-instruct": {
-    "created_timestamp": 1738410311,
-    "created_date": "2025-02-01"
+  "gpt-4.1 (minimal)": {
+    "model_id": "openai/gpt-4.1",
+    "created_timestamp": 1744651385,
+    "created_date": "2025-04-14"
   },
-  "qwen/qwen-plus": {
-    "created_timestamp": 1738409840,
-    "created_date": "2025-02-01"
+  "claude-sonnet-4 (no thinking)": {
+    "model_id": "anthropic/claude-sonnet-4",
+    "created_timestamp": 1747930371,
+    "created_date": "2025-05-22"
   },
-  "qwen/qwen-max": {
-    "created_timestamp": 1738402289,
-    "created_date": "2025-02-01"
+  "deepseek-v3.2-exp (thinking)": {
+    "model_id": "deepseek/deepseek-v3.2-exp",
+    "created_timestamp": 1759150481,
+    "created_date": "2025-09-29"
   },
-  "openai/o3-mini": {
-    "created_timestamp": 1738351721,
-    "created_date": "2025-01-31"
-  },
-  "mistralai/mistral-small-24b-instruct-2501": {
-    "created_timestamp": 1738255409,
-    "created_date": "2025-01-30"
-  },
-  "deepseek/deepseek-r1-distill-qwen-32b": {
-    "created_timestamp": 1738194830,
-    "created_date": "2025-01-29"
-  },
-  "perplexity/sonar-reasoning": {
-    "created_timestamp": 1738131107,
-    "created_date": "2025-01-29"
-  },
-  "perplexity/sonar": {
-    "created_timestamp": 1738013808,
-    "created_date": "2025-01-27"
-  },
-  "deepseek/deepseek-r1-distill-llama-70b": {
-    "created_timestamp": 1737663169,
-    "created_date": "2025-01-23"
-  },
-  "deepseek/deepseek-r1": {
+  "deepseek-r1": {
+    "model_id": "deepseek/deepseek-r1",
     "created_timestamp": 1737381095,
     "created_date": "2025-01-20"
   },
-  "minimax/minimax-01": {
-    "created_timestamp": 1736915462,
-    "created_date": "2025-01-14"
+  "deepseek-r1-0528": {
+    "model_id": "deepseek/deepseek-r1-0528",
+    "created_timestamp": 1748455170,
+    "created_date": "2025-05-28"
   },
-  "mistralai/codestral-2501": {
-    "created_timestamp": 1736895522,
-    "created_date": "2025-01-14"
+  "qwen3-max": {
+    "model_id": "qwen/qwen3-max",
+    "created_timestamp": 1758662808,
+    "created_date": "2025-09-23"
   },
-  "microsoft/phi-4": {
-    "created_timestamp": 1736489872,
-    "created_date": "2025-01-10"
+  "claude-3.7-sonnet (no thinking)": {
+    "model_id": "anthropic/claude-3.7-sonnet",
+    "created_timestamp": 1740422110,
+    "created_date": "2025-02-24"
   },
-  "sao10k/l3.1-70b-hanami-x1": {
-    "created_timestamp": 1736302854,
-    "created_date": "2025-01-07"
+  "claude-3.5-sonnet": {
+    "model_id": "anthropic/claude-3.5-sonnet",
+    "created_timestamp": 1729555200,
+    "created_date": "2024-10-21"
   },
-  "deepseek/deepseek-chat": {
-    "created_timestamp": 1735241320,
-    "created_date": "2024-12-26"
+  "grok-3-mini": {
+    "model_id": "x-ai/grok-3-mini",
+    "created_timestamp": 1749583245,
+    "created_date": "2025-06-10"
   },
-  "sao10k/l3.3-euryale-70b": {
-    "created_timestamp": 1734535928,
-    "created_date": "2024-12-18"
+  "claude-sonnet-4.5 (thinking)": {
+    "model_id": "anthropic/claude-sonnet-4.5",
+    "created_timestamp": 1759161676,
+    "created_date": "2025-09-29"
   },
-  "openai/o1": {
-    "created_timestamp": 1734459999,
-    "created_date": "2024-12-17"
+  "claude-3.7-sonnet (thinking)": {
+    "model_id": "anthropic/claude-3.7-sonnet",
+    "created_timestamp": 1740422110,
+    "created_date": "2025-02-24"
   },
-  "cohere/command-r7b-12-2024": {
-    "created_timestamp": 1734158152,
-    "created_date": "2024-12-14"
+  "glm-4.6 (thinking)": {
+    "model_id": "z-ai/glm-4.6",
+    "created_timestamp": 1759235576,
+    "created_date": "2025-09-30"
   },
-  "google/gemini-2.0-flash-exp:free": {
-    "created_timestamp": 1733937523,
-    "created_date": "2024-12-11"
+  "claude-sonnet-4 (thinking)": {
+    "model_id": "anthropic/claude-sonnet-4",
+    "created_timestamp": 1747930371,
+    "created_date": "2025-05-22"
   },
-  "meta-llama/llama-3.3-70b-instruct:free": {
-    "created_timestamp": 1733506137,
-    "created_date": "2024-12-06"
+  "grok-3": {
+    "model_id": "x-ai/grok-3",
+    "created_timestamp": 1749582908,
+    "created_date": "2025-06-10"
   },
-  "meta-llama/llama-3.3-70b-instruct": {
-    "created_timestamp": 1733506137,
-    "created_date": "2024-12-06"
+  "deepseek-r1-distill-qwen-32b": {
+    "model_id": "deepseek/deepseek-r1-distill-qwen-32b",
+    "created_timestamp": 1738194830,
+    "created_date": "2025-01-29"
   },
-  "amazon/nova-lite-v1": {
-    "created_timestamp": 1733437363,
-    "created_date": "2024-12-05"
+  "gpt-4": {
+    "model_id": "openai/gpt-4",
+    "created_timestamp": 1685232000,
+    "created_date": "2023-05-27"
   },
-  "amazon/nova-micro-v1": {
-    "created_timestamp": 1733437237,
-    "created_date": "2024-12-05"
-  },
-  "amazon/nova-pro-v1": {
-    "created_timestamp": 1733436303,
-    "created_date": "2024-12-05"
-  },
-  "openai/gpt-4o-2024-11-20": {
+  "gpt-4o-2024-11-20": {
+    "model_id": "openai/gpt-4o-2024-11-20",
     "created_timestamp": 1732127594,
     "created_date": "2024-11-20"
   },
-  "mistralai/mistral-large-2411": {
-    "created_timestamp": 1731978685,
-    "created_date": "2024-11-18"
-  },
-  "mistralai/mistral-large-2407": {
-    "created_timestamp": 1731978415,
-    "created_date": "2024-11-18"
-  },
-  "mistralai/pixtral-large-2411": {
-    "created_timestamp": 1731977388,
-    "created_date": "2024-11-18"
-  },
-  "qwen/qwen-2.5-coder-32b-instruct": {
-    "created_timestamp": 1731368400,
-    "created_date": "2024-11-11"
-  },
-  "raifle/sorcererlm-8x22b": {
-    "created_timestamp": 1731105083,
-    "created_date": "2024-11-08"
-  },
-  "thedrummer/unslopnemo-12b": {
-    "created_timestamp": 1731103448,
-    "created_date": "2024-11-08"
-  },
-  "anthropic/claude-3.5-haiku-20241022": {
-    "created_timestamp": 1730678400,
-    "created_date": "2024-11-03"
-  },
-  "anthropic/claude-3.5-haiku": {
-    "created_timestamp": 1730678400,
-    "created_date": "2024-11-03"
-  },
-  "anthropic/claude-3.5-sonnet": {
-    "created_timestamp": 1729555200,
-    "created_date": "2024-10-21"
-  },
-  "anthracite-org/magnum-v4-72b": {
-    "created_timestamp": 1729555200,
-    "created_date": "2024-10-21"
-  },
-  "mistralai/ministral-8b": {
-    "created_timestamp": 1729123200,
-    "created_date": "2024-10-16"
-  },
-  "mistralai/ministral-3b": {
-    "created_timestamp": 1729123200,
-    "created_date": "2024-10-16"
-  },
-  "qwen/qwen-2.5-7b-instruct": {
-    "created_timestamp": 1729036800,
-    "created_date": "2024-10-15"
-  },
-  "nvidia/llama-3.1-nemotron-70b-instruct": {
-    "created_timestamp": 1728950400,
-    "created_date": "2024-10-14"
-  },
-  "inflection/inflection-3-pi": {
-    "created_timestamp": 1728604800,
-    "created_date": "2024-10-10"
-  },
-  "inflection/inflection-3-productivity": {
-    "created_timestamp": 1728604800,
-    "created_date": "2024-10-10"
-  },
-  "thedrummer/rocinante-12b": {
-    "created_timestamp": 1727654400,
-    "created_date": "2024-09-29"
-  },
-  "meta-llama/llama-3.2-3b-instruct:free": {
-    "created_timestamp": 1727222400,
-    "created_date": "2024-09-24"
-  },
-  "meta-llama/llama-3.2-3b-instruct": {
-    "created_timestamp": 1727222400,
-    "created_date": "2024-09-24"
-  },
-  "meta-llama/llama-3.2-1b-instruct": {
-    "created_timestamp": 1727222400,
-    "created_date": "2024-09-24"
-  },
-  "meta-llama/llama-3.2-90b-vision-instruct": {
-    "created_timestamp": 1727222400,
-    "created_date": "2024-09-24"
-  },
-  "meta-llama/llama-3.2-11b-vision-instruct": {
-    "created_timestamp": 1727222400,
-    "created_date": "2024-09-24"
-  },
-  "qwen/qwen-2.5-72b-instruct": {
-    "created_timestamp": 1726704000,
-    "created_date": "2024-09-18"
-  },
-  "neversleep/llama-3.1-lumimaid-8b": {
-    "created_timestamp": 1726358400,
-    "created_date": "2024-09-14"
-  },
-  "mistralai/pixtral-12b": {
-    "created_timestamp": 1725926400,
-    "created_date": "2024-09-09"
-  },
-  "cohere/command-r-08-2024": {
-    "created_timestamp": 1724976000,
-    "created_date": "2024-08-29"
-  },
-  "cohere/command-r-plus-08-2024": {
-    "created_timestamp": 1724976000,
-    "created_date": "2024-08-29"
-  },
-  "sao10k/l3.1-euryale-70b": {
-    "created_timestamp": 1724803200,
-    "created_date": "2024-08-27"
-  },
-  "qwen/qwen-2.5-vl-7b-instruct": {
-    "created_timestamp": 1724803200,
-    "created_date": "2024-08-27"
-  },
-  "microsoft/phi-3.5-mini-128k-instruct": {
-    "created_timestamp": 1724198400,
-    "created_date": "2024-08-20"
-  },
-  "nousresearch/hermes-3-llama-3.1-70b": {
-    "created_timestamp": 1723939200,
-    "created_date": "2024-08-17"
-  },
-  "nousresearch/hermes-3-llama-3.1-405b:free": {
-    "created_timestamp": 1723766400,
-    "created_date": "2024-08-15"
-  },
-  "nousresearch/hermes-3-llama-3.1-405b": {
-    "created_timestamp": 1723766400,
-    "created_date": "2024-08-15"
-  },
-  "openai/chatgpt-4o-latest": {
-    "created_timestamp": 1723593600,
-    "created_date": "2024-08-13"
-  },
-  "sao10k/l3-lunaris-8b": {
-    "created_timestamp": 1723507200,
-    "created_date": "2024-08-12"
-  },
-  "openai/gpt-4o-2024-08-06": {
-    "created_timestamp": 1722902400,
-    "created_date": "2024-08-05"
-  },
-  "meta-llama/llama-3.1-405b": {
-    "created_timestamp": 1722556800,
-    "created_date": "2024-08-01"
-  },
-  "meta-llama/llama-3.1-70b-instruct": {
-    "created_timestamp": 1721692800,
-    "created_date": "2024-07-22"
-  },
-  "meta-llama/llama-3.1-405b-instruct": {
-    "created_timestamp": 1721692800,
-    "created_date": "2024-07-22"
-  },
-  "meta-llama/llama-3.1-8b-instruct": {
-    "created_timestamp": 1721692800,
-    "created_date": "2024-07-22"
-  },
-  "mistralai/mistral-nemo": {
-    "created_timestamp": 1721347200,
-    "created_date": "2024-07-18"
-  },
-  "openai/gpt-4o-mini-2024-07-18": {
-    "created_timestamp": 1721260800,
-    "created_date": "2024-07-17"
-  },
-  "openai/gpt-4o-mini": {
-    "created_timestamp": 1721260800,
-    "created_date": "2024-07-17"
-  },
-  "google/gemma-2-27b-it": {
-    "created_timestamp": 1720828800,
-    "created_date": "2024-07-12"
-  },
-  "google/gemma-2-9b-it": {
-    "created_timestamp": 1719532800,
-    "created_date": "2024-06-27"
-  },
-  "sao10k/l3-euryale-70b": {
-    "created_timestamp": 1718668800,
-    "created_date": "2024-06-17"
-  },
-  "mistralai/mistral-7b-instruct:free": {
-    "created_timestamp": 1716768000,
-    "created_date": "2024-05-26"
-  },
-  "mistralai/mistral-7b-instruct": {
-    "created_timestamp": 1716768000,
-    "created_date": "2024-05-26"
-  },
-  "mistralai/mistral-7b-instruct-v0.3": {
-    "created_timestamp": 1716768000,
-    "created_date": "2024-05-26"
-  },
-  "nousresearch/hermes-2-pro-llama-3-8b": {
-    "created_timestamp": 1716768000,
-    "created_date": "2024-05-26"
-  },
-  "microsoft/phi-3-mini-128k-instruct": {
-    "created_timestamp": 1716681600,
-    "created_date": "2024-05-25"
-  },
-  "microsoft/phi-3-medium-128k-instruct": {
-    "created_timestamp": 1716508800,
-    "created_date": "2024-05-23"
-  },
-  "meta-llama/llama-guard-2-8b": {
-    "created_timestamp": 1715558400,
-    "created_date": "2024-05-12"
-  },
-  "openai/gpt-4o": {
-    "created_timestamp": 1715558400,
-    "created_date": "2024-05-12"
-  },
-  "openai/gpt-4o:extended": {
-    "created_timestamp": 1715558400,
-    "created_date": "2024-05-12"
-  },
-  "openai/gpt-4o-2024-05-13": {
-    "created_timestamp": 1715558400,
-    "created_date": "2024-05-12"
-  },
-  "meta-llama/llama-3-8b-instruct": {
-    "created_timestamp": 1713398400,
-    "created_date": "2024-04-17"
-  },
-  "meta-llama/llama-3-70b-instruct": {
-    "created_timestamp": 1713398400,
-    "created_date": "2024-04-17"
-  },
-  "mistralai/mixtral-8x22b-instruct": {
-    "created_timestamp": 1713312000,
-    "created_date": "2024-04-16"
-  },
-  "microsoft/wizardlm-2-8x22b": {
-    "created_timestamp": 1713225600,
-    "created_date": "2024-04-15"
-  },
-  "openai/gpt-4-turbo": {
-    "created_timestamp": 1712620800,
-    "created_date": "2024-04-08"
-  },
-  "anthropic/claude-3-haiku": {
-    "created_timestamp": 1710288000,
-    "created_date": "2024-03-12"
-  },
-  "anthropic/claude-3-opus": {
+  "claude-3-opus": {
+    "model_id": "anthropic/claude-3-opus",
     "created_timestamp": 1709596800,
     "created_date": "2024-03-04"
   },
-  "mistralai/mistral-large": {
-    "created_timestamp": 1708905600,
-    "created_date": "2024-02-25"
+  "kimi-k2": {
+    "model_id": "moonshotai/kimi-k2",
+    "created_timestamp": 1752263252,
+    "created_date": "2025-07-11"
   },
-  "openai/gpt-4-turbo-preview": {
+  "gpt-4-turbo": {
+    "model_id": "openai/gpt-4-turbo",
+    "created_timestamp": 1712620800,
+    "created_date": "2024-04-08"
+  },
+  "deepseek-chat-v3-0324": {
+    "model_id": "deepseek/deepseek-chat-v3-0324",
+    "created_timestamp": 1742824755,
+    "created_date": "2025-03-24"
+  },
+  "mistral-medium-3": {
+    "model_id": "mistralai/mistral-medium-3",
+    "created_timestamp": 1746627341,
+    "created_date": "2025-05-07"
+  },
+  "llama-4-maverick": {
+    "model_id": "meta-llama/llama-4-maverick",
+    "created_timestamp": 1743881822,
+    "created_date": "2025-04-05"
+  },
+  "deepseek-v3.2-exp (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.2-exp",
+    "created_timestamp": 1759150481,
+    "created_date": "2025-09-29"
+  },
+  "kimi-k2-0905": {
+    "model_id": "moonshotai/kimi-k2-0905",
+    "created_timestamp": 1757021147,
+    "created_date": "2025-09-04"
+  },
+  "gpt-3.5-turbo-0613": {
+    "model_id": "openai/gpt-3.5-turbo-0613",
     "created_timestamp": 1706140800,
     "created_date": "2024-01-24"
   },
-  "openai/gpt-3.5-turbo-0613": {
-    "created_timestamp": 1706140800,
-    "created_date": "2024-01-24"
+  "deepseek-v3.1-terminus (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.1-terminus",
+    "created_timestamp": 1758548275,
+    "created_date": "2025-09-22"
   },
-  "mistralai/mistral-tiny": {
-    "created_timestamp": 1704844800,
-    "created_date": "2024-01-09"
+  "claude-haiku-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-haiku-4.5",
+    "created_timestamp": 1760547638,
+    "created_date": "2025-10-15"
   },
-  "mistralai/mistral-small": {
-    "created_timestamp": 1704844800,
-    "created_date": "2024-01-09"
+  "deepseek-chat-v3.1 (no thinking)": {
+    "model_id": "deepseek/deepseek-chat-v3.1",
+    "created_timestamp": 1755779628,
+    "created_date": "2025-08-21"
   },
-  "mistralai/mistral-7b-instruct-v0.2": {
-    "created_timestamp": 1703721600,
-    "created_date": "2023-12-27"
+  "glm-4.6 (no thinking)": {
+    "model_id": "z-ai/glm-4.6",
+    "created_timestamp": 1759235576,
+    "created_date": "2025-09-30"
   },
-  "mistralai/mixtral-8x7b-instruct": {
-    "created_timestamp": 1702166400,
-    "created_date": "2023-12-09"
+  "gpt-5-mini (minimal)": {
+    "model_id": "openai/gpt-5-mini",
+    "created_timestamp": 1754587407,
+    "created_date": "2025-08-07"
   },
-  "neversleep/noromaid-20b": {
-    "created_timestamp": 1700956800,
-    "created_date": "2023-11-25"
+  "qwen3-235b-a22b-2507": {
+    "model_id": "qwen/qwen3-235b-a22b-2507",
+    "created_timestamp": 1753119555,
+    "created_date": "2025-07-21"
   },
-  "alpindale/goliath-120b": {
-    "created_timestamp": 1699574400,
-    "created_date": "2023-11-09"
+  "llama-3.3-70b-instruct": {
+    "model_id": "meta-llama/llama-3.3-70b-instruct",
+    "created_timestamp": 1733506137,
+    "created_date": "2024-12-06"
   },
-  "openrouter/auto": {
-    "created_timestamp": 1699401600,
-    "created_date": "2023-11-07"
-  },
-  "openai/gpt-4-1106-preview": {
-    "created_timestamp": 1699228800,
-    "created_date": "2023-11-05"
-  },
-  "mistralai/mistral-7b-instruct-v0.1": {
-    "created_timestamp": 1695859200,
-    "created_date": "2023-09-27"
-  },
-  "openai/gpt-3.5-turbo-instruct": {
-    "created_timestamp": 1695859200,
-    "created_date": "2023-09-27"
-  },
-  "openai/gpt-3.5-turbo-16k": {
-    "created_timestamp": 1693180800,
-    "created_date": "2023-08-27"
-  },
-  "mancer/weaver": {
-    "created_timestamp": 1690934400,
-    "created_date": "2023-08-01"
-  },
-  "undi95/remm-slerp-l2-13b": {
-    "created_timestamp": 1689984000,
-    "created_date": "2023-07-21"
-  },
-  "gryphe/mythomax-l2-13b": {
-    "created_timestamp": 1688256000,
-    "created_date": "2023-07-01"
-  },
-  "openai/gpt-3.5-turbo": {
+  "gpt-3.5-turbo": {
+    "model_id": "openai/gpt-3.5-turbo",
     "created_timestamp": 1685232000,
     "created_date": "2023-05-27"
   },
-  "openai/gpt-4": {
-    "created_timestamp": 1685232000,
-    "created_date": "2023-05-27"
-  },
-  "openai/gpt-4-0314": {
-    "created_timestamp": 1685232000,
-    "created_date": "2023-05-27"
+  "grok-4.1-fast": {
+    "model_id": "x-ai/grok-4.1-fast:free",
+    "created_timestamp": 1763587502,
+    "created_date": "2025-11-19"
   }
 }
