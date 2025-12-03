@@ -89,6 +89,12 @@
         background: rgba(22, 33, 62, 0.9) !important;
     }
 
+    .timeline-actions {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
     .timeline-legend {
         display: flex;
         flex-wrap: wrap;
@@ -169,18 +175,21 @@
         <h2>LLM Chess Ratings Over Time</h2>
         <p>The red line traces the LLM World Champion</p>
     </div>
+</div>
+
+<div class="timeline-container">
+    {{ chart_html|safe }}
+</div>
+
+<div class="timeline-actions">
     <a href="/api/timeline/export" class="export-btn" title="Download as PNG">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        PNG
+        Download PNG
     </a>
-</div>
-
-<div class="timeline-container">
-    {{ chart_html|safe }}
 </div>
 
 <div class="timeline-legend">
@@ -193,7 +202,7 @@
 
     <div class="legend-section">
         <span class="legend-dot" style="background-color: #9CA3AF;"></span>
-        <span>Standard</span>
+        <span>Non-Reasoning</span>
         <span class="legend-diamond" style="background-color: #9CA3AF;"></span>
         <span>Reasoning</span>
     </div>
