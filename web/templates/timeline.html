@@ -5,6 +5,11 @@
 {% block head %}
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
+    /* Override container max-width for timeline page */
+    .container {
+        max-width: 1600px;
+    }
+
     .timeline-header {
         display: flex;
         justify-content: space-between;
@@ -58,7 +63,7 @@
 
     #timeline-chart {
         width: 100% !important;
-        height: 800px;
+        height: 1200px;
     }
 
     /* Ensure Plotly chart fills container */

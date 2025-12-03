@@ -380,8 +380,8 @@ def export_timeline_png(fig: go.Figure, output_path: str | Path) -> None:
     try:
         fig.write_image(
             str(output_path),
-            width=1400,
-            height=900,
+            width=1600,
+            height=1300,
             scale=2,  # 2x resolution for crisp images
         )
     except Exception as e:
