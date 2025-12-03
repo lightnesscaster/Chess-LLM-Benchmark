@@ -154,10 +154,15 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             frontier_players.append(player_id)
             current_best = rating
 
-    # Extend frontier to present day
+    # Extend frontier to end of current month (not far into future)
     if frontier_dates:
         today = datetime.now()
-        frontier_dates.append(today)
+        # End at the 1st of next month for clean cutoff
+        if today.month == 12:
+            end_date = datetime(today.year + 1, 1, 1)
+        else:
+            end_date = datetime(today.year, today.month + 1, 1)
+        frontier_dates.append(end_date)
         frontier_ratings.append(current_best)
         frontier_players.append(frontier_players[-1])
 
@@ -249,6 +254,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             showlegend=False,
         ))
 
+    # Calculate x-axis range
+    x_start = datetime(2023, 2, 1)  # Start from Feb 2023 (first model is March)
+    x_end = datetime(2026, 1, 15)   # End mid-Jan 2026
+
     # Update layout - clean, minimal design
     fig.update_layout(
         xaxis=dict(
@@ -258,6 +267,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             showgrid=True,
             tickformat="%b %Y",
             tickfont=dict(size=14),
+            range=[x_start, x_end],
         ),
         yaxis=dict(
             title=dict(text="Lichess Classical Rating", font=dict(size=16, color="#a0a0a0"), standoff=10),
@@ -274,7 +284,7 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         plot_bgcolor="#16213e",
         showlegend=False,  # Hide legend - we use HTML legend below
         hovermode="closest",
-        margin=dict(t=30, b=60, l=80, r=30),
+        margin=dict(t=20, b=55, l=70, r=15),
     )
 
     # Add annotation for current champion (top-rated model)
@@ -290,10 +300,10 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             arrowsize=1,
             arrowwidth=2,
             arrowcolor="#e94560",
-            ax=40,
-            ay=-40,
+            ax=-50,
+            ay=-35,
             font=dict(size=13, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.8)",
+            bgcolor="rgba(22, 33, 62, 0.9)",
             bordercolor="#e94560",
             borderwidth=1,
             borderpad=6,
@@ -343,5 +353,6 @@ def get_timeline_html(leaderboard_data: list[dict[str, Any]]) -> str:
             "displayModeBar": "hover",  # Only show on hover
             "displaylogo": False,
             "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
+            "responsive": True,
         },
     )
