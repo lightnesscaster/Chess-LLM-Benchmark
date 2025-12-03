@@ -137,11 +137,6 @@ llms:
     temperature: 0.0
     reasoning: true
 
-  - player_id: "deepseek-r1"
-    model_name: "deepseek/deepseek-r1"
-    temperature: 0.0
-    reasoning: true
-
   - player_id: "gemini-2.5-flash (thinking)"
     model_name: "google/gemini-2.5-flash"
     temperature: 0.0
@@ -149,21 +144,6 @@ llms:
 
   - player_id: "claude-3.7-sonnet (thinking)"
     model_name: "anthropic/claude-3.7-sonnet:thinking"
-    temperature: 0.0
-    reasoning: true
-
-  - player_id: "deepseek-r1-0528"
-    model_name: "deepseek/deepseek-r1-0528"
-    temperature: 0.0
-    reasoning: true
-
-  - player_id: "deepseek-r1-0528 (high)"
-    model_name: "deepseek/deepseek-r1-0528"
-    temperature: 0.0
-    reasoning_effort: high
-
-  - player_id: "deepseek-chat-v3.1 (thinking)"
-    model_name: "deepseek/deepseek-chat-v3.1"
     temperature: 0.0
     reasoning: true
 
@@ -182,10 +162,6 @@ llms:
     temperature: 0.0
     reasoning: true
 
-  - player_id: "deepseek-v3.2-exp (thinking)"
-    model_name: "deepseek/deepseek-v3.2-exp"
-    temperature: 0.0
-    reasoning: true
 
   - player_id: "qwen3-235b-a22b-thinking-2507"
     model_name: "qwen/qwen3-235b-a22b-thinking-2507"
