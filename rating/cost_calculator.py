@@ -75,6 +75,13 @@ class CostCalculator:
             if player_id in model_id or model_id.endswith(f"/{player_id}"):
                 return model_id
 
+        # Strip common suffixes and try again
+        # e.g., "gpt-5.1 (high)" -> "gpt-5.1", "claude-opus-4 (no thinking)" -> "claude-opus-4"
+        import re
+        base_id = re.sub(r'\s*\((high|medium|low|minimal|thinking|no thinking)\)\s*$', '', player_id)
+        if base_id != player_id:
+            return self.get_model_for_player(base_id)
+
         return None
 
     def get_pricing(self, model_name: str) -> Optional[Dict[str, float]]:
