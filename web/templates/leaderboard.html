@@ -42,7 +42,7 @@
                 <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
-                    {% if entry.is_anchor %}&nbsp;<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
+                    {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
                     {% if is_top_llm %}<span class="crown-badge" title="Top-rated LLM">👑</span>{% endif %}
                 </td>
                 <td class="rating">{{ entry.rating }}</td>
