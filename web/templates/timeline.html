@@ -221,18 +221,28 @@
 
 {% block scripts %}
 <script>
-// Resize Plotly chart to fill container after load
-window.addEventListener('load', function() {
+(function() {
     var chartDiv = document.getElementById('timeline-chart');
-    if (chartDiv && window.Plotly) {
-        Plotly.Plots.resize(chartDiv);
+    var resizeTimeout = null;
+
+    function resizeChart() {
+        if (chartDiv && window.Plotly) {
+            Plotly.Plots.resize(chartDiv);
+        }
     }
-});
-window.addEventListener('resize', function() {
-    var chartDiv = document.getElementById('timeline-chart');
-    if (chartDiv && window.Plotly) {
-        Plotly.Plots.resize(chartDiv);
+
+    function debouncedResize() {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        resizeTimeout = setTimeout(resizeChart, 150);
     }
-});
+
+    // Resize on load
+    window.addEventListener('load', resizeChart);
+
+    // Debounced resize on window resize
+    window.addEventListener('resize', debouncedResize);
+})();
 </script>
 {% endblock %}

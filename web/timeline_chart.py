@@ -60,10 +60,23 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     Returns:
         Plotly Figure object
     """
-    # Filter to models with publish dates (exclude anchors)
+    # Load publish dates for model_id lookup (needed for provider extraction)
+    publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
+    model_id_lookup = {}
+    try:
+        with open(publish_dates_path) as f:
+            publish_data = json.load(f)
+            for player_id, info in publish_data.items():
+                model_id_lookup[player_id] = info.get("model_id", "")
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+
+    # Filter to models with publish dates (exclude anchors) and sufficient confidence (RD >= 80)
     models_with_dates = [
         entry for entry in leaderboard_data
-        if entry.get("publish_timestamp") and not entry.get("is_anchor")
+        if entry.get("publish_timestamp")
+        and not entry.get("is_anchor")
+        and entry.get("rating_deviation", 350) >= 80
     ]
 
     if not models_with_dates:
@@ -82,21 +95,63 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         )
         return fig
 
-    # Sort by release date, then by rating (ascending) for same-day releases
+    # Sort by release date (ascending) for filtering
+    models_with_dates.sort(key=lambda x: x["publish_timestamp"])
+
+    # Filter to only models that were the top-rated from their lab in their category
+    # (reasoning vs non-reasoning) at the time of release
+    def was_top_in_category_at_release(entry: dict, all_models: list) -> bool:
+        """Check if model was the best from its lab in its category when released."""
+        model_id = model_id_lookup.get(entry["player_id"], "")
+        provider = get_provider(model_id)
+        is_reasoning = is_reasoning_model(entry["player_id"])
+        release_time = entry["publish_timestamp"]
+        rating = entry["rating"]
+
+        # Check all earlier models from same provider in same category
+        for other in all_models:
+            if other["player_id"] == entry["player_id"]:
+                continue
+            other_model_id = model_id_lookup.get(other["player_id"], "")
+            other_provider = get_provider(other_model_id)
+            other_is_reasoning = is_reasoning_model(other["player_id"])
+            other_release = other["publish_timestamp"]
+
+            # Same provider, same category, released before this model
+            if (other_provider == provider
+                and other_is_reasoning == is_reasoning
+                and other_release < release_time):
+                # If earlier model has higher rating, this model wasn't top at release
+                if other["rating"] > rating:
+                    return False
+
+        return True
+
+    # Apply the top-in-category filter
+    models_with_dates = [
+        entry for entry in models_with_dates
+        if was_top_in_category_at_release(entry, models_with_dates)
+    ]
+
+    if not models_with_dates:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No qualifying models found",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#9CA3AF")
+        )
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#1a1a2e",
+            plot_bgcolor="#16213e",
+        )
+        return fig
+
+    # Re-sort by release date, then by rating (ascending) for same-day releases
     # This ensures lower-rated models are processed first, so higher-rated ones
     # become the "champion" at that date point
     models_with_dates.sort(key=lambda x: (x["publish_timestamp"], x["rating"]))
-
-    # Load publish dates for model_id lookup
-    publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
-    model_id_lookup = {}
-    try:
-        with open(publish_dates_path) as f:
-            publish_data = json.load(f)
-            for player_id, info in publish_data.items():
-                model_id_lookup[player_id] = info.get("model_id", "")
-    except (FileNotFoundError, json.JSONDecodeError):
-        pass
 
     # Prepare data for scatter plot
     dates = []

@@ -325,13 +325,13 @@ def api_timeline_export():
 
     except Exception as e:
         # Clean up temp file if it was created and not yet deleted
-        if tmp_path and os.path.exists(tmp_path):
+        if tmp_path:
             try:
                 os.unlink(tmp_path)
-            except OSError as cleanup_error:
-                app.logger.error(f"Failed to cleanup temp file {tmp_path}: {cleanup_error}")
+            except OSError:
+                pass  # File already deleted or doesn't exist
 
-        app.logger.error(f"Error exporting timeline: {e}")
+        app.logger.exception(f"Error exporting timeline: {e}")
         abort(500)
 
 

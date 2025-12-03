@@ -3,8 +3,8 @@
 
 # Benchmark settings
 benchmark:
-  games_vs_anchor_per_color: 2    # ~5-6 games per LLM vs anchor (3 as each color)
-  games_vs_llm_per_color: 3       # Skip LLM vs LLM games
+  games_vs_anchor_per_color: 1    # ~5-6 games per LLM vs anchor (3 as each color)
+  games_vs_llm_per_color: 2       # Skip LLM vs LLM games
   max_moves: 200                   # Maximum half-moves per game
   max_concurrent: 30               # Maximum concurrent games
   rating_threshold: 600            # Only pair players within this rating difference
@@ -138,12 +138,6 @@ llms:
 
   - player_id: "grok-3-mini"
     model_name: "x-ai/grok-3-mini"
-    temperature: 0.0
-    reasoning: true
-
-
-  - player_id: "claude-haiku-4.5 (thinking)"
-    model_name: "anthropic/claude-haiku-4.5"
     temperature: 0.0
     reasoning: true
 
