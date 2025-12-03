@@ -341,26 +341,56 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         autosize=True,
     )
 
-    # Add annotation for current champion (top-rated model)
-    if models_with_dates:
-        top_model = max(models_with_dates, key=lambda x: x["rating"])
-        top_date = datetime.fromtimestamp(top_model["publish_timestamp"])
+    # Add annotations for all champion models
+    # Build list of unique champions with their dates and ratings
+    champion_models = []
+    seen_champions = set()
+    for i, (date, rating, player_id) in enumerate(zip(frontier_dates, frontier_ratings, frontier_players)):
+        # Only add when this is a new champion (not a horizontal segment point)
+        if player_id and player_id not in seen_champions:
+            # Find the original entry to get the timestamp
+            for entry in models_with_dates:
+                if entry["player_id"] == player_id:
+                    champion_models.append({
+                        "player_id": player_id,
+                        "date": datetime.fromtimestamp(entry["publish_timestamp"]),
+                        "rating": entry["rating"],
+                    })
+                    seen_champions.add(player_id)
+                    break
+
+    # Add labels for each champion with alternating positions
+    for i, champ in enumerate(champion_models):
+        # Alternate label positions: right-up, right-down, left-up, left-down
+        positions = [
+            (40, -30),   # right-up
+            (40, 30),    # right-down
+            (-40, -30),  # left-up
+            (-40, 30),   # left-down
+        ]
+        ax, ay = positions[i % len(positions)]
+
+        # For the top model, always position to the left
+        is_top = (i == len(champion_models) - 1)
+        if is_top:
+            ax, ay = -50, -35
+
         fig.add_annotation(
-            x=top_date,
-            y=top_model["rating"],
-            text=f"<b>{top_model['player_id']}</b>",
+            x=champ["date"],
+            y=champ["rating"],
+            text=f"<b>{champ['player_id']}</b>",
             showarrow=True,
             arrowhead=0,
             arrowsize=1,
-            arrowwidth=2,
+            arrowwidth=1.5,
             arrowcolor="#e94560",
-            ax=-50,
-            ay=-35,
-            font=dict(size=13, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.9)",
+            ax=ax,
+            ay=ay,
+            font=dict(size=11, color="#eaeaea"),
+            bgcolor="rgba(22, 33, 62, 0.85)",
             bordercolor="#e94560",
             borderwidth=1,
-            borderpad=6,
+            borderpad=4,
         )
 
     return fig
