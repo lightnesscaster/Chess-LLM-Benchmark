@@ -147,7 +147,7 @@ llms:
 
   - player_id: "deepseek-r1"
     model_name: "deepseek/deepseek-r1"
-    reasoning_effort: "medium"  # low, medium, high, xhigh
+    reasoning_effort: "medium"  # minimal, low, medium, high
 ```
 
 **Engine types:** `stockfish`, `maia`, `random`, `uci` (generic UCI engine)
