@@ -183,3 +183,13 @@ llms:
     model_name: "deepseek/deepseek-v3.2"
     temperature: 0.0
     reasoning: true
+
+  # gemini-3-pro-preview
+  - player_id: "gemini-3-pro-preview"
+    model_name: "google/gemini-3-pro-preview"
+    temperature: 0.0
+
+  # grok-4.1-fast
+  - player_id: "grok-4.1-fast"
+    model_name: "x-ai/grok-4.1-fast"
+    temperature: 0.0
