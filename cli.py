@@ -778,6 +778,7 @@ def main():
         const=False,
         help="Explicitly disable reasoning mode (for thinking models run without thinking)",
     )
+    manual_parser.set_defaults(reasoning=None)  # Explicit three-state default
     manual_parser.add_argument(
         "--white-reasoning-effort",
         choices=["minimal", "low", "medium", "high"],
