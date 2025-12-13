@@ -363,6 +363,14 @@ Your response (just the UCI move or UNCLEAR):"""
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
+                        # Try to extract provider from error response (may be JSON)
+                        try:
+                            error_data = json.loads(error_text)
+                            error_provider = error_data.get("provider")
+                            if error_provider and isinstance(error_provider, str):
+                                self.last_provider = error_provider.strip()[:100]
+                        except (json.JSONDecodeError, ValueError, TypeError):
+                            pass  # Error response wasn't valid JSON
                         # Store error for debugging before raising
                         self.last_raw_response = f"[HTTP {response.status}] {error_text[:500]}"
                         # Retry on transient server errors and rate limits
