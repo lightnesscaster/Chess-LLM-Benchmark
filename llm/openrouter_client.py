@@ -248,7 +248,8 @@ Your response (just the UCI move or UNCLEAR):"""
 
                 data = await response.json()
                 first_choice = data.get("choices", [{}])[0] or {}
-                response_text = first_choice.get("message", {}).get("content", "")
+                message = first_choice.get("message") or {}
+                response_text = message.get("content", "")
 
                 if not response_text or "UNCLEAR" in response_text.upper():
                     return None
@@ -438,7 +439,8 @@ Your response (just the UCI move or UNCLEAR):"""
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying
                     first_choice = data.get("choices", [{}])[0] or {}
-                    content = first_choice.get("message", {}).get("content", "")
+                    message = first_choice.get("message") or {}
+                    content = message.get("content", "")
                     reasoning_text = self._get_reasoning_text(data)
                     if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
@@ -482,7 +484,8 @@ Your response (just the UCI move or UNCLEAR):"""
 
         # Extract response text
         first_choice = data.get("choices", [{}])[0] or {}
-        response_text = first_choice.get("message", {}).get("content", "")
+        message = first_choice.get("message") or {}
+        response_text = message.get("content", "")
         self.last_raw_response = response_text or ""  # Store for debugging illegal moves
         # Debug: check for empty or suspiciously short responses
         is_truncated = not response_text or len(response_text.strip()) < 4
