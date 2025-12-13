@@ -370,8 +370,9 @@ Your response (just the UCI move or UNCLEAR):"""
                             error_provider = error_data.get("provider")
                             if error_provider and isinstance(error_provider, str):
                                 self.last_provider = error_provider.strip()[:100]
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            pass  # Error response wasn't valid JSON
+                            print(f"  [DEBUG HTTP {response.status}] provider={error_provider}, keys={list(error_data.keys())[:10]}")
+                        except (json.JSONDecodeError, ValueError, TypeError) as parse_err:
+                            print(f"  [DEBUG HTTP {response.status}] Not JSON: {error_text[:100]}")
                         # Store error for debugging before raising
                         self.last_raw_response = f"[HTTP {response.status}] {error_text[:500]}"
                         # Retry on transient server errors and rate limits
@@ -396,6 +397,7 @@ Your response (just the UCI move or UNCLEAR):"""
                     choices = data.get("choices")
                     if (isinstance(choices, list) and len(choices) > 0 and
                         isinstance(choices[0], dict) and "error" in choices[0]):
+                        print(f"  [DEBUG 200+error] provider={self.last_provider}, error={choices[0].get('error')}")
                         error_info = choices[0]["error"]
                         # Handle error_info being a string or dict
                         if isinstance(error_info, dict):
