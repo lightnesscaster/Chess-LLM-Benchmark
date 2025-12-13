@@ -392,6 +392,8 @@ Your response (just the UCI move or UNCLEAR):"""
                     response_provider = data.get("provider")
                     if response_provider and isinstance(response_provider, str):
                         self.last_provider = response_provider.strip()[:100]
+                    # Debug: show provider status for all 200 responses
+                    print(f"  [DEBUG 200] provider={self.last_provider}")
 
                     # Check for embedded errors (API returns 200 but with error in body)
                     choices = data.get("choices")
