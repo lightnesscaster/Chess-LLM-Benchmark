@@ -51,6 +51,18 @@ llms:
     model_name: "openai/gpt-5.2-chat"
     temperature: 0.0
 
+  - player_id: "gpt-5 (no thinking)"
+    model_name: "openai/gpt-5"
+    temperature: 0.0
+
+  - player_id: "gpt-5.1 (no thinking)"
+    model_name: "openai/gpt-5.1"
+    temperature: 0.0
+
+  - player_id: "gpt-5.2 (no thinking)"
+    model_name: "openai/gpt-5.2"
+    temperature: 0.0
+
   # gemini-2.5-flash (no thinking) (223)
   - player_id: "gemini-2.5-flash (no thinking)"
     model_name: "google/gemini-2.5-flash"
@@ -180,11 +192,11 @@ llms:
     temperature: 0.0
     timeout: 1200
 
-  # kimi-k2-thinking
-  - player_id: "kimi-k2-thinking"
-    model_name: "moonshotai/kimi-k2-thinking"
-    temperature: 0.0
-    timeout: 1200
+  # # kimi-k2-thinking - is too slow/unreliable to run
+  # - player_id: "kimi-k2-thinking"
+  #   model_name: "moonshotai/kimi-k2-thinking"
+  #   temperature: 0.0
+  #   timeout: 1200
 
   # gpt-5.2 (high)
   - player_id: "gpt-5.2 (high)"
