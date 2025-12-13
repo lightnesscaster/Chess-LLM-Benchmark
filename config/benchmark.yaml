@@ -164,7 +164,6 @@ llms:
   - player_id: "deepseek-v3.2-exp (thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
-    reasoning_effort: high
 
   # kimi-k2-thinking
   - player_id: "kimi-k2-thinking"
