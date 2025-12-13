@@ -42,7 +42,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         api_key: Optional[str] = None,
         temperature: float = 0.0,
         max_tokens: int = 0,
-        reasoning: bool = False,
+        reasoning: Optional[bool] = None,
         reasoning_effort: Optional[str] = None,
         provider_order: Optional[list] = None,
         timeout: int = 300,
@@ -56,7 +56,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
             temperature: Sampling temperature (0.0 for deterministic)
             max_tokens: Maximum tokens in response
-            reasoning: Enable reasoning mode for hybrid models
+            reasoning: Reasoning mode (True=enable, False=disable, None=use API default)
             reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
             provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
@@ -350,12 +350,17 @@ Your response (just the UCI move or UNCLEAR):"""
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
 
-        # Enable reasoning mode for hybrid models
-        if self.reasoning or self.reasoning_effort is not None:
-            reasoning_config = {"enabled": True}
-            if self.reasoning_effort is not None:
-                reasoning_config["effort"] = self.reasoning_effort
-            payload["reasoning"] = reasoning_config
+        # Configure reasoning mode for hybrid models
+        # - reasoning_effort set: enable with effort level
+        # - reasoning=True: enable reasoning
+        # - reasoning=False: explicitly disable reasoning (for thinking models run without thinking)
+        # - reasoning=None: omit parameter (use OpenRouter default)
+        if self.reasoning_effort is not None:
+            payload["reasoning"] = {"enabled": True, "effort": self.reasoning_effort}
+        elif self.reasoning is True:
+            payload["reasoning"] = {"enabled": True}
+        elif self.reasoning is False:
+            payload["reasoning"] = {"enabled": False}
 
         # Provider routing preferences
         if self.provider_order:

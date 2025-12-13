@@ -129,7 +129,7 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
         reasoning_effort = llm_cfg.get("reasoning_effort")
-        reasoning = llm_cfg.get("reasoning", False)
+        reasoning = llm_cfg.get("reasoning")  # None = not set, True = enable, False = disable
 
         # Append reasoning effort to player_id if set and not already included
         if reasoning_effort and f"({reasoning_effort})" not in player_id:
