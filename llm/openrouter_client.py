@@ -247,7 +247,8 @@ Your response (just the UCI move or UNCLEAR):"""
                     return None
 
                 data = await response.json()
-                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                first_choice = data.get("choices", [{}])[0] or {}
+                response_text = first_choice.get("message", {}).get("content", "") if first_choice else ""
 
                 if not response_text or "UNCLEAR" in response_text.upper():
                     return None
@@ -277,7 +278,8 @@ Your response (just the UCI move or UNCLEAR):"""
         Handles various formats providers use for reasoning content.
         """
         try:
-            message = data.get("choices", [{}])[0].get("message", {})
+            first_choice = data.get("choices", [{}])[0] or {}
+            message = first_choice.get("message", {}) or {}
 
             # Check reasoning_details (used by some providers)
             reasoning_details = message.get("reasoning_details", [])
@@ -435,7 +437,8 @@ Your response (just the UCI move or UNCLEAR):"""
 
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying
-                    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    first_choice = data.get("choices", [{}])[0] or {}
+                    content = first_choice.get("message", {}).get("content", "") if first_choice else ""
                     reasoning_text = self._get_reasoning_text(data)
                     if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
