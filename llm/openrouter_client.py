@@ -248,7 +248,7 @@ Your response (just the UCI move or UNCLEAR):"""
 
                 data = await response.json()
                 first_choice = data.get("choices", [{}])[0] or {}
-                response_text = first_choice.get("message", {}).get("content", "") if first_choice else ""
+                response_text = first_choice.get("message", {}).get("content", "")
 
                 if not response_text or "UNCLEAR" in response_text.upper():
                     return None
@@ -438,7 +438,7 @@ Your response (just the UCI move or UNCLEAR):"""
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying
                     first_choice = data.get("choices", [{}])[0] or {}
-                    content = first_choice.get("message", {}).get("content", "") if first_choice else ""
+                    content = first_choice.get("message", {}).get("content", "")
                     reasoning_text = self._get_reasoning_text(data)
                     if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
@@ -481,17 +481,13 @@ Your response (just the UCI move or UNCLEAR):"""
             self.total_tokens += usage.get("total_tokens", 0)
 
         # Extract response text
-        is_truncated = False
-        try:
-            response_text = data["choices"][0]["message"]["content"]
-            self.last_raw_response = response_text or ""  # Store for debugging illegal moves
-            # Debug: check for empty or suspiciously short responses
-            is_truncated = not response_text or len(response_text.strip()) < 4
-            if is_truncated:
-                print(f"  [DEBUG] Short/empty response. Full API data: {data}")
-        except (KeyError, IndexError) as e:
-            self.last_raw_response = f"[Failed to extract: {data}]"
-            raise TransientAPIError(f"Unexpected API response format: {data}") from e
+        first_choice = data.get("choices", [{}])[0] or {}
+        response_text = first_choice.get("message", {}).get("content", "")
+        self.last_raw_response = response_text or ""  # Store for debugging illegal moves
+        # Debug: check for empty or suspiciously short responses
+        is_truncated = not response_text or len(response_text.strip()) < 4
+        if is_truncated:
+            print(f"  [DEBUG] Short/empty response. Full API data: {data}")
 
         # Parse and return the move
         move = self._parse_move(response_text, board)
