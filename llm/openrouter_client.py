@@ -378,6 +378,11 @@ Your response (just the UCI move or UNCLEAR):"""
 
                     data = await response.json()
 
+                    # Capture provider immediately (even before error checks, so we know which provider failed)
+                    response_provider = data.get("provider")
+                    if response_provider and isinstance(response_provider, str):
+                        self.last_provider = response_provider.strip()[:100]
+
                     # Check for embedded errors (API returns 200 but with error in body)
                     choices = data.get("choices")
                     if (isinstance(choices, list) and len(choices) > 0 and
@@ -406,11 +411,6 @@ Your response (just the UCI move or UNCLEAR):"""
                             )
                         # Non-retryable embedded error - still an API error, not an illegal move
                         raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
-
-                    # Track inference provider (capture before any early returns)
-                    response_provider = data.get("provider")
-                    if response_provider and isinstance(response_provider, str):
-                        self.last_provider = response_provider.strip()[:100]
 
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying
