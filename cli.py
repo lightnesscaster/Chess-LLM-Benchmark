@@ -144,6 +144,7 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
             reasoning=reasoning,
             reasoning_effort=reasoning_effort,
             provider_order=llm_cfg.get("provider_order"),
+            timeout=llm_cfg.get("timeout", 300),
         )
 
         # Track reasoning models (have reasoning=true OR reasoning_effort set)

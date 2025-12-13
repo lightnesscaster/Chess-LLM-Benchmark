@@ -70,26 +70,31 @@ llms:
   - player_id: "deepseek-v3.2 (no thinking)"
     model_name: "deepseek/deepseek-v3.2"
     temperature: 0.0
+    timeout: 600
 
   # deepseek-v3.2 (no thinking) (-107)
   - player_id: "deepseek-v3.2 (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
+    timeout: 600
 
   # kimi-k2-0905 (-240)
   - player_id: "kimi-k2-0905"
     model_name: "moonshotai/kimi-k2-0905"
     temperature: 0.0
+    timeout: 600
 
   # deepseek-v3.1-terminus (no thinking) (-350)
   - player_id: "deepseek-v3.1-terminus (no thinking)"
     model_name: "deepseek/deepseek-v3.1-terminus"
     temperature: 0.0
+    timeout: 600
 
   # kimi-k2 (-388)
   - player_id: "kimi-k2"
     model_name: "moonshotai/kimi-k2"
     temperature: 0.0
+    timeout: 600
 
   # qwen3-235b-a22b-2507 (-453)
   - player_id: "qwen3-235b-a22b-2507"
@@ -100,6 +105,7 @@ llms:
   - player_id: "deepseek-chat-v3-0324"
     model_name: "deepseek/deepseek-chat-v3-0324"
     temperature: 0.0
+    timeout: 600
 
   # mistral-medium-3 (-453)
   - player_id: "mistral-medium-3"
@@ -115,6 +121,7 @@ llms:
   - player_id: "deepseek-chat-v3.1 (no thinking)"
     model_name: "deepseek/deepseek-chat-v3.1"
     temperature: 0.0
+    timeout: 600
 
   # gpt-5-mini (minimal) (-453)
   - player_id: "gpt-5-mini (minimal)"
@@ -143,6 +150,7 @@ llms:
     model_name: "deepseek/deepseek-r1-distill-qwen-32b"
     temperature: 0.0
     reasoning: true
+    timeout: 600
 
   - player_id: "grok-3-mini"
     model_name: "x-ai/grok-3-mini"
@@ -170,11 +178,13 @@ llms:
   - player_id: "deepseek-v3.2-exp (thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
     temperature: 0.0
+    timeout: 600
 
   # kimi-k2-thinking
   - player_id: "kimi-k2-thinking"
     model_name: "moonshotai/kimi-k2-thinking"
     temperature: 0.0
+    timeout: 600
 
   # gpt-5.2 (high)
   - player_id: "gpt-5.2 (high)"
@@ -187,6 +197,7 @@ llms:
     model_name: "deepseek/deepseek-v3.2"
     temperature: 0.0
     reasoning: true
+    timeout: 600
 
   # gemini-3-pro-preview
   - player_id: "gemini-3-pro-preview"

@@ -45,6 +45,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         reasoning: bool = False,
         reasoning_effort: Optional[str] = None,
         provider_order: Optional[list] = None,
+        timeout: int = 300,
     ):
         """
         Initialize OpenRouter player.
@@ -59,6 +60,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
             provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
+            timeout: Request timeout in seconds (default 300 = 5 minutes)
         """
         super().__init__(player_id, model_name)
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
@@ -74,6 +76,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         self.reasoning = reasoning
         self.reasoning_effort = reasoning_effort
         self.provider_order = provider_order
+        self.timeout = timeout
         self._session: Optional[aiohttp.ClientSession] = None
         # Track the last inference provider used (from OpenRouter response)
         self.last_provider: Optional[str] = None
@@ -362,12 +365,12 @@ Your response (just the UCI move or UNCLEAR):"""
 
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move
+                request_timeout = aiohttp.ClientTimeout(total=self.timeout)
                 async with session.post(
                     self.OPENROUTER_API_URL,
                     headers=headers,
                     json=payload,
-                    timeout=timeout,
+                    timeout=request_timeout,
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
