@@ -319,6 +319,7 @@ Your response (just the UCI move or UNCLEAR):"""
         prompt = build_chess_prompt(board, is_retry, last_move_illegal, self.last_successful_response)
         self.last_prompt = prompt  # Store for debugging illegal moves
         self.last_raw_response = ""  # Clear stale data before API call
+        self.last_provider = None  # Clear stale provider before API call
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
