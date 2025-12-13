@@ -198,6 +198,7 @@ llms:
     temperature: 0.0
     reasoning: true
     timeout: 1200
+    provider_order: ["Novita"]
 
   # gemini-3-pro-preview
   - player_id: "gemini-3-pro-preview"
