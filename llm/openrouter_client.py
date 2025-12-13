@@ -455,7 +455,8 @@ Your response (just the UCI move or UNCLEAR):"""
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * retry_delay)
                     sleep_time = retry_delay + jitter
-                    print(f"  [Transient error, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
+                    provider_info = f" via {self.last_provider}" if self.last_provider else ""
+                    print(f"  [Transient error on {self.model_name}{provider_info}, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
                     await asyncio.sleep(sleep_time)
                     retry_delay = min(retry_delay * 2, 300)  # Exponential backoff with 5min cap
                     # Recreate session in case connection is stale
