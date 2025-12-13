@@ -763,10 +763,20 @@ def main():
         default=0,
         help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
     )
-    manual_parser.add_argument(
+    reasoning_group = manual_parser.add_mutually_exclusive_group()
+    reasoning_group.add_argument(
         "--reasoning",
-        action="store_true",
-        help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
+        dest="reasoning",
+        action="store_const",
+        const=True,
+        help="Enable reasoning mode for hybrid models",
+    )
+    reasoning_group.add_argument(
+        "--no-reasoning",
+        dest="reasoning",
+        action="store_const",
+        const=False,
+        help="Explicitly disable reasoning mode (for thinking models run without thinking)",
     )
     manual_parser.add_argument(
         "--white-reasoning-effort",
