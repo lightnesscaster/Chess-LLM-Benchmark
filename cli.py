@@ -143,6 +143,7 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
             max_tokens=llm_cfg.get("max_tokens", 0),
             reasoning=reasoning,
             reasoning_effort=reasoning_effort,
+            provider_order=llm_cfg.get("provider_order"),
         )
 
         # Track reasoning models (have reasoning=true OR reasoning_effort set)

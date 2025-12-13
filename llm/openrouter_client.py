@@ -44,6 +44,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         max_tokens: int = 0,
         reasoning: bool = False,
         reasoning_effort: Optional[str] = None,
+        provider_order: Optional[list] = None,
     ):
         """
         Initialize OpenRouter player.
@@ -57,6 +58,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             reasoning: Enable reasoning mode for hybrid models
             reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
+            provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
         """
         super().__init__(player_id, model_name)
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
@@ -71,6 +73,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         self.max_tokens = max_tokens
         self.reasoning = reasoning
         self.reasoning_effort = reasoning_effort
+        self.provider_order = provider_order
         self._session: Optional[aiohttp.ClientSession] = None
         # Track the last inference provider used (from OpenRouter response)
         self.last_provider: Optional[str] = None
@@ -348,6 +351,10 @@ Your response (just the UCI move or UNCLEAR):"""
                 reasoning_config["effort"] = self.reasoning_effort
             payload["reasoning"] = reasoning_config
 
+        # Provider routing preferences
+        if self.provider_order:
+            payload["provider"] = {"order": self.provider_order}
+
         # Retry logic for transient network and HTTP errors
         max_retries = 7
         retry_delay = 2.0  # seconds
@@ -392,8 +399,6 @@ Your response (just the UCI move or UNCLEAR):"""
                     response_provider = data.get("provider")
                     if response_provider and isinstance(response_provider, str):
                         self.last_provider = response_provider.strip()[:100]
-                    # Debug: show provider status for all 200 responses
-                    print(f"  [DEBUG 200] provider={self.last_provider}")
 
                     # Check for embedded errors (API returns 200 but with error in body)
                     choices = data.get("choices")
