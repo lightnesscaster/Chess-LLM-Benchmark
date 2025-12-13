@@ -71,6 +71,10 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 f"Invalid reasoning_effort: '{reasoning_effort}'. "
                 f"Must be one of: {', '.join(sorted(self.VALID_REASONING_EFFORTS))}"
             )
+        if reasoning is False and reasoning_effort is not None:
+            raise ValueError(
+                "Cannot set reasoning_effort when reasoning is explicitly disabled"
+            )
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.reasoning = reasoning

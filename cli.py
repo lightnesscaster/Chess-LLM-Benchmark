@@ -131,6 +131,12 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
         reasoning_effort = llm_cfg.get("reasoning_effort")
         reasoning = llm_cfg.get("reasoning")  # None = not set, True = enable, False = disable
 
+        # Validate no conflicting reasoning settings
+        if reasoning is False and reasoning_effort is not None:
+            raise ValueError(
+                f"Model '{player_id}': reasoning=false conflicts with reasoning_effort={reasoning_effort}"
+            )
+
         # Append reasoning effort to player_id if set and not already included
         if reasoning_effort and f"({reasoning_effort})" not in player_id:
             player_id = f"{player_id} ({reasoning_effort})"
@@ -148,7 +154,8 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
         )
 
         # Track reasoning models (have reasoning=true OR reasoning_effort set)
-        if reasoning or reasoning_effort:
+        # But NOT if reasoning is explicitly False
+        if reasoning_effort is not None or reasoning is True:
             reasoning_ids.add(player_id)
 
     return players, reasoning_ids
