@@ -37,6 +37,9 @@ class BaseLLMPlayer(abc.ABC):
         self.last_prompt = ""
         self.last_raw_response = ""
         self.last_successful_response = ""
+        # Reset provider tracking for OpenRouterPlayer subclass
+        if hasattr(self, 'last_provider'):
+            self.last_provider = None
 
     def mark_move_successful(self) -> None:
         """Mark the last response as successful (called after a legal move)."""

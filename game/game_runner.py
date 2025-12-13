@@ -133,7 +133,14 @@ class GameRunner:
                 # Network error after retries - end as draw, not a forfeit
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
-                    print(f"  {side_name} API error (not counted as illegal move): {e}")
+                    model_info = ""
+                    if isinstance(player, BaseLLMPlayer):
+                        model_info = f" [{player.model_name}]"
+                        # Include inference provider if available (OpenRouter specific)
+                        provider = getattr(player, 'last_provider', None)
+                        if provider:
+                            model_info += f" via {provider}"
+                    print(f"  {side_name} ({player.player_id}{model_info}) API error (not counted as illegal move): {e}")
                 winner = "draw"
                 termination = "api_error"
                 break

@@ -72,6 +72,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
         self.reasoning = reasoning
         self.reasoning_effort = reasoning_effort
         self._session: Optional[aiohttp.ClientSession] = None
+        # Track the last inference provider used (from OpenRouter response)
+        self.last_provider: Optional[str] = None
 
     async def _ensure_session(self) -> aiohttp.ClientSession:
         """Lazily create aiohttp session."""
@@ -404,6 +406,11 @@ Your response (just the UCI move or UNCLEAR):"""
                             )
                         # Non-retryable embedded error - still an API error, not an illegal move
                         raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
+
+                    # Track inference provider (capture before any early returns)
+                    response_provider = data.get("provider")
+                    if response_provider and isinstance(response_provider, str):
+                        self.last_provider = response_provider.strip()[:100]
 
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying
