@@ -50,6 +50,9 @@ def is_reasoning_model(player_id: str) -> bool:
         "gemini-2.5-pro",
         "grok-4",
         "-thinking",
+        "gpt-5-chat",
+        "gpt-5.1-chat",
+        "gpt-5.2-chat",
     ]
     player_lower = player_id.lower()
     return any(indicator in player_lower for indicator in reasoning_indicators)

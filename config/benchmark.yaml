@@ -46,23 +46,23 @@ llms:
   - player_id: "gpt-5-chat"
     model_name: "openai/gpt-5-chat"
     temperature: 0.0
-    
+
   - player_id: "gpt-5.2-chat"
     model_name: "openai/gpt-5.2-chat"
     temperature: 0.0
 
   - player_id: "gpt-5 (no thinking)"
-    model_name: "openai/gpt-5"
+    model_name: "openai/gpt-5-chat"
     temperature: 0.0
     reasoning: false
 
   - player_id: "gpt-5.1 (no thinking)"
-    model_name: "openai/gpt-5.1"
+    model_name: "openai/gpt-5.1-chat"
     temperature: 0.0
     reasoning: false
 
   - player_id: "gpt-5.2 (no thinking)"
-    model_name: "openai/gpt-5.2"
+    model_name: "openai/gpt-5.2-chat"
     temperature: 0.0
     reasoning: false
 
@@ -81,11 +81,11 @@ llms:
     model_name: "z-ai/glm-4.6"
     temperature: 0.0
 
-  # deepseek-v3.2-exp (no thinking) (-107)
-  - player_id: "deepseek-v3.2 (no thinking)"
-    model_name: "deepseek/deepseek-v3.2"
-    temperature: 0.0
-    timeout: 1200
+  # # deepseek-v3.2-exp (no thinking) (-107) 
+  # - player_id: "deepseek-v3.2 (no thinking)"
+  #   model_name: "deepseek/deepseek-v3.2"
+  #   temperature: 0.0
+  #   timeout: 1200
 
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
