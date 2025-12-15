@@ -364,9 +364,8 @@ async def recalculate_ratings(args):
         print("No valid games to process")
         return 1
 
-    # Multi-pass convergence
-    max_passes = 1
-    convergence_threshold = 30.0  # Stop when no rating changes by more than this
+    # Rating period configuration
+    BATCH_SIZE = 100  # Games per rating period
     random.seed(42)  # Fixed seed for reproducible results
 
     # Count actual games and W-L-D per player, get all unique player IDs
@@ -396,59 +395,73 @@ async def recalculate_ratings(args):
             actual_wld[game['white_id']]['draws'] += 1
             actual_wld[game['black_id']]['draws'] += 1
 
-    print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
+    # Split games into anchor games (calibration) and LLM-only games
+    anchor_games = []
+    llm_games = []
+    for game in valid_games:
+        if rating_store.is_anchor(game['white_id']) or rating_store.is_anchor(game['black_id']):
+            anchor_games.append(game)
+        else:
+            llm_games.append(game)
 
-    for pass_num in range(1, max_passes + 1):
-        # Store ratings at start of pass to check convergence
-        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
+    # Shuffle games within each category for fairness
+    random.shuffle(anchor_games)
+    random.shuffle(llm_games)
 
-        if args.verbose:
-            print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (batched)")
+    print(f"Processing {len(valid_games)} games in rating periods (batch size: {BATCH_SIZE})")
+    print(f"  Anchor games: {len(anchor_games)} (calibration phase)")
+    print(f"  LLM vs LLM games: {len(llm_games)}")
 
-        # Step 1: Snapshot ALL ratings at pass start
-        # This ensures all players see the same opponent ratings, eliminating order bias
-        all_ratings = {pid: rating_store.get(pid) for pid in all_players}
+    def process_batch(batch_games, period_num, phase_name):
+        """Process a batch of games as a single rating period."""
+        if not batch_games:
+            return
 
-        # Step 2: Collect all games per player using snapshot ratings
-        # Batching games per player means update_rating() is called ONCE per player per pass.
-        # This prevents volatility accumulation (phi_star added once, not once per game)
-        # and matches standard Glicko-2 rating period behavior.
+        # Snapshot current ratings for this period
+        period_ratings = {pid: rating_store.get(pid) for pid in all_players}
+
+        # Collect games per player
         player_games = defaultdict(lambda: {'opponents': [], 'scores': []})
 
-        for game in valid_games:
+        for game in batch_games:
             white_id, black_id = game['white_id'], game['black_id']
 
             if not rating_store.is_anchor(white_id):
-                player_games[white_id]['opponents'].append(all_ratings[black_id])
+                player_games[white_id]['opponents'].append(period_ratings[black_id])
                 player_games[white_id]['scores'].append(game['white_score'])
 
             if not rating_store.is_anchor(black_id):
-                player_games[black_id]['opponents'].append(all_ratings[white_id])
+                player_games[black_id]['opponents'].append(period_ratings[white_id])
                 player_games[black_id]['scores'].append(game['black_score'])
 
-        # Step 3: Update each player ONCE with all their games batched
+        # Update each player with their games from this period
         for player_id, games in player_games.items():
-            player = all_ratings[player_id]
+            player = period_ratings[player_id]
             new_player = glicko.update_rating(player, games['opponents'], games['scores'])
             rating_store.set(new_player, auto_save=False)
 
-        # Save once per pass
-        rating_store.save()
+        if args.verbose:
+            print(f"  {phase_name} period {period_num}: {len(batch_games)} games")
 
-        # Check convergence
-        max_change = 0.0
-        for pid in all_players:
-            if not rating_store.is_anchor(pid):
-                old_rating = pass_start_ratings[pid]
-                new_rating = rating_store.get(pid).rating
-                change = abs(new_rating - old_rating)
-                max_change = max(max_change, change)
+    # Phase 1: Process anchor games in batches (calibration)
+    print("\nPhase 1: Calibrating ratings against anchors...")
+    anchor_period = 0
+    for i in range(0, len(anchor_games), BATCH_SIZE):
+        anchor_period += 1
+        batch = anchor_games[i:i + BATCH_SIZE]
+        process_batch(batch, anchor_period, "Anchor")
+    rating_store.save()
+    print(f"  Completed {anchor_period} anchor periods")
 
-        print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
-
-        if pass_num > 1 and max_change < convergence_threshold:
-            print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
-            break
+    # Phase 2: Process LLM vs LLM games in batches
+    print("\nPhase 2: Processing LLM vs LLM games...")
+    llm_period = 0
+    for i in range(0, len(llm_games), BATCH_SIZE):
+        llm_period += 1
+        batch = llm_games[i:i + BATCH_SIZE]
+        process_batch(batch, llm_period, "LLM")
+    rating_store.save()
+    print(f"  Completed {llm_period} LLM periods")
 
     # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
     for pid in all_players:
