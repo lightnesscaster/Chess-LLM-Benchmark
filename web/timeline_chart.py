@@ -12,6 +12,8 @@ from typing import Any
 
 import plotly.graph_objects as go
 
+from utils import is_reasoning_model
+
 # Provider colors - consistent branding
 PROVIDER_COLORS = {
     "anthropic": "#D97706",  # Orange/amber
@@ -34,29 +36,6 @@ def get_provider(model_id: str) -> str:
     if "/" in model_id:
         return model_id.split("/")[0]
     return "unknown"
-
-
-def is_reasoning_model(player_id: str) -> bool:
-    """Check if a model is a reasoning model based on player_id patterns."""
-    reasoning_indicators = [
-        "(thinking)",
-        "(high)",
-        "(medium)",
-        "(minimal)",
-        "-r1",
-        "o3",
-        "o4-mini",
-        "o1",
-        "gemini-3",
-        "gemini-2.5-pro",
-        "grok-4",
-        "-thinking",
-        "gpt-5-chat",
-        "gpt-5.1-chat",
-        "gpt-5.2-chat",
-    ]
-    player_lower = player_id.lower()
-    return any(indicator in player_lower for indicator in reasoning_indicators)
 
 
 def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:

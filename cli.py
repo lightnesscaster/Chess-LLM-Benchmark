@@ -28,6 +28,7 @@ from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
+from utils import is_reasoning_model
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore, invalidate_cache
 from rating.leaderboard import Leaderboard
@@ -190,9 +191,13 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
             timeout=llm_cfg.get("timeout", 300),
         )
 
-        # Track reasoning models (have reasoning=true OR reasoning_effort set)
-        # But NOT if reasoning is explicitly False
+        # Track reasoning models:
+        # 1. Has reasoning_effort set, OR
+        # 2. Has reasoning=True, OR
+        # 3. Matches naming convention (unless reasoning is explicitly False)
         if reasoning_effort is not None or reasoning is True:
+            reasoning_ids.add(player_id)
+        elif reasoning is not False and is_reasoning_model(player_id):
             reasoning_ids.add(player_id)
 
     return players, reasoning_ids

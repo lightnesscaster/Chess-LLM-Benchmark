@@ -26,8 +26,12 @@ from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
+from utils import is_reasoning_model
 
 app = Flask(__name__)
+
+# Register custom Jinja filter for reasoning model detection
+app.jinja_env.filters['is_reasoning'] = is_reasoning_model
 
 # Leaderboard cache
 _leaderboard_cache: list = []
