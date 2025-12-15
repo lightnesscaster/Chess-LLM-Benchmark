@@ -189,12 +189,12 @@ llms:
     reasoning_effort: medium
     provider_order: ["DeepInfra"]
 
-  # deepseek-v3.2-exp (thinking)
-  - player_id: "deepseek-v3.2-exp (thinking)"
-    model_name: "deepseek/deepseek-v3.2-exp"
-    temperature: 0.0
-    reasoning: true
-    timeout: 1200
+  # # deepseek-v3.2-exp (thinking) - is too slow/unreliable to run
+  # - player_id: "deepseek-v3.2-exp (thinking)"
+  #   model_name: "deepseek/deepseek-v3.2-exp"
+  #   temperature: 0.0
+  #   reasoning: true
+  #   timeout: 1200
 
   # # kimi-k2-thinking - is too slow/unreliable to run
   # - player_id: "kimi-k2-thinking"
