@@ -408,11 +408,16 @@ async def recalculate_ratings(args):
     random.shuffle(anchor_games)
     random.shuffle(llm_games)
 
+    # Multi-pass convergence settings
+    max_passes = 10
+    convergence_threshold = 30.0  # Stop when no rating changes by more than this
+
     print(f"Processing {len(valid_games)} games in rating periods (batch size: {BATCH_SIZE})")
     print(f"  Anchor games: {len(anchor_games)} (calibration phase)")
     print(f"  LLM vs LLM games: {len(llm_games)}")
+    print(f"  Max passes: {max_passes}, convergence threshold: {convergence_threshold}")
 
-    def process_batch(batch_games, period_num, phase_name):
+    def process_batch(batch_games):
         """Process a batch of games as a single rating period."""
         if not batch_games:
             return
@@ -440,28 +445,40 @@ async def recalculate_ratings(args):
             new_player = glicko.update_rating(player, games['opponents'], games['scores'])
             rating_store.set(new_player, auto_save=False)
 
-        if args.verbose:
-            print(f"  {phase_name} period {period_num}: {len(batch_games)} games")
+    def run_rating_periods():
+        """Run one full pass of rating periods (anchor games first, then LLM games)."""
+        # Phase 1: Process ALL anchor games as single rating period (calibration)
+        # This ensures all LLMs are calibrated simultaneously against anchors
+        process_batch(anchor_games)
 
-    # Phase 1: Process anchor games in batches (calibration)
-    print("\nPhase 1: Calibrating ratings against anchors...")
-    anchor_period = 0
-    for i in range(0, len(anchor_games), BATCH_SIZE):
-        anchor_period += 1
-        batch = anchor_games[i:i + BATCH_SIZE]
-        process_batch(batch, anchor_period, "Anchor")
-    rating_store.save()
-    print(f"  Completed {anchor_period} anchor periods")
+        # Phase 2: Process LLM vs LLM games in batches
+        for i in range(0, len(llm_games), BATCH_SIZE):
+            batch = llm_games[i:i + BATCH_SIZE]
+            process_batch(batch)
 
-    # Phase 2: Process LLM vs LLM games in batches
-    print("\nPhase 2: Processing LLM vs LLM games...")
-    llm_period = 0
-    for i in range(0, len(llm_games), BATCH_SIZE):
-        llm_period += 1
-        batch = llm_games[i:i + BATCH_SIZE]
-        process_batch(batch, llm_period, "LLM")
-    rating_store.save()
-    print(f"  Completed {llm_period} LLM periods")
+    # Multi-pass convergence loop
+    for pass_num in range(1, max_passes + 1):
+        # Store ratings at start of pass to check convergence
+        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
+
+        # Run all rating periods for this pass
+        run_rating_periods()
+        rating_store.save()
+
+        # Check convergence
+        max_change = 0.0
+        for pid in all_players:
+            if not rating_store.is_anchor(pid):
+                old_rating = pass_start_ratings[pid]
+                new_rating = rating_store.get(pid).rating
+                change = abs(new_rating - old_rating)
+                max_change = max(max_change, change)
+
+        print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
+
+        if pass_num > 1 and max_change < convergence_threshold:
+            print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
+            break
 
     # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
     for pid in all_players:
