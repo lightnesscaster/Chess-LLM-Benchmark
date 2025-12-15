@@ -323,5 +323,20 @@
     "model_id": "openai/gpt-5.2",
     "created_timestamp": 1765454400,
     "created_date": "2025-12-11"
+  },
+  "gpt-5 (no thinking)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
+  },
+  "gpt-5.1 (no thinking)": {
+    "model_id": "openai/gpt-5.1",
+    "created_timestamp": 1763060305,
+    "created_date": "2025-11-13"
+  },
+  "gpt-5.2 (no thinking)": {
+    "model_id": "openai/gpt-5.2",
+    "created_timestamp": 1765454400,
+    "created_date": "2025-12-11"
   }
 }
