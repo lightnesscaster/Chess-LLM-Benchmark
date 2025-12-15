@@ -51,6 +51,10 @@ class MatchScheduler:
     # Frozen threshold - models below this RD don't initiate games (but can be challenged)
     FROZEN_RD_THRESHOLD = 60
 
+    # Legal move rate threshold - models below this must play random-bot regardless of rating
+    LEGAL_MOVE_RATE_THRESHOLD = 0.999  # 99.9% accuracy
+    RANDOM_BOT_ID = "random-bot"
+
     def __init__(
         self,
         players: Dict[str, Player],
@@ -264,12 +268,37 @@ class MatchScheduler:
             rating.draws += 1
         self.rating_store.set(rating)
 
+    def _needs_random_bot(
+        self,
+        llm_id: str,
+        player_stats: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Check if an LLM needs to play against random-bot.
+
+        Returns True if:
+        - LLM has no stats (new model)
+        - LLM has legal_move_rate below threshold (99.9%)
+
+        Args:
+            llm_id: The LLM to check
+            player_stats: Optional cached player stats dict (to avoid repeated computation)
+        """
+        if player_stats is None:
+            player_stats = self.stats_collector.get_player_stats()
+        if llm_id not in player_stats:
+            return True  # New model with no games
+        stats = player_stats[llm_id]
+        legal_rate = stats.get("legal_move_rate", 1.0)
+        return legal_rate < self.LEGAL_MOVE_RATE_THRESHOLD
+
     def _get_valid_opponents(
         self,
         llm_id: str,
         anchor_ids: List[str],
         llm_ids: List[str],
         rating_threshold: Optional[int],
+        player_stats: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         Get valid opponents for an LLM based on current ratings.
@@ -279,6 +308,7 @@ class MatchScheduler:
             anchor_ids: List of anchor IDs
             llm_ids: List of all LLM IDs
             rating_threshold: Max rating difference (None = no limit)
+            player_stats: Optional cached player stats dict (to avoid repeated computation)
 
         Returns:
             List of valid opponent IDs
@@ -303,6 +333,11 @@ class MatchScheduler:
             other_rating = self.rating_store.get(other_id).rating
             if abs(llm_rating - other_rating) <= rating_threshold:
                 valid.append(other_id)
+
+        # Add random-bot for models with low accuracy or no stats, regardless of rating
+        if self._needs_random_bot(llm_id, player_stats):
+            if self.RANDOM_BOT_ID in anchor_ids and self.RANDOM_BOT_ID not in valid:
+                valid.append(self.RANDOM_BOT_ID)
 
         return valid
 
@@ -333,6 +368,9 @@ class MatchScheduler:
         """
         anchor_set = set(anchor_ids)
 
+        # Cache player stats to avoid repeated computation in _needs_random_bot
+        player_stats = self.stats_collector.get_player_stats()
+
         # Sort LLMs by rating deviation (highest first)
         llms_by_rd = sorted(
             llm_ids,
@@ -359,7 +397,7 @@ class MatchScheduler:
 
             # Get valid opponents based on current ratings
             valid_opponents = self._get_valid_opponents(
-                llm_id, anchor_ids, llm_ids, rating_threshold
+                llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
             )
 
             if not valid_opponents:
