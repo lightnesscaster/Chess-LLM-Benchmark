@@ -28,9 +28,36 @@ from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
-from rating.glicko2 import Glicko2System
+from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore, invalidate_cache
 from rating.leaderboard import Leaderboard
+
+# Starting ratings based on model type
+REASONING_START_RATING = 1200
+NON_REASONING_START_RATING = 400
+
+
+def is_reasoning_model(player_id: str) -> bool:
+    """Check if a model is a reasoning model based on player_id patterns."""
+    reasoning_indicators = [
+        "(thinking)",
+        "(high)",
+        "(medium)",
+        "(minimal)",
+        "-r1",
+        "o3",
+        "o4-mini",
+        "o1",
+        "gemini-3",
+        "gemini-2.5-pro",
+        "grok-4",
+        "-thinking",
+        "gpt-5-chat",
+        "gpt-5.1-chat",
+        "gpt-5.2-chat",
+    ]
+    player_lower = player_id.lower()
+    return any(indicator in player_lower for indicator in reasoning_indicators)
 
 
 def invalidate_remote_cache():
@@ -394,6 +421,28 @@ async def recalculate_ratings(args):
         else:  # draw
             actual_wld[game['white_id']]['draws'] += 1
             actual_wld[game['black_id']]['draws'] += 1
+
+    # Pre-initialize all non-anchor players with appropriate starting ratings
+    reasoning_count = 0
+    non_reasoning_count = 0
+    for player_id in all_players:
+        if not rating_store.is_anchor(player_id):
+            if is_reasoning_model(player_id):
+                start_rating = REASONING_START_RATING
+                reasoning_count += 1
+            else:
+                start_rating = NON_REASONING_START_RATING
+                non_reasoning_count += 1
+            rating_store.set(PlayerRating(
+                player_id=player_id,
+                rating=start_rating,
+                rating_deviation=350.0,
+                volatility=0.06,
+            ), auto_save=False)
+    rating_store.save()
+    if args.verbose:
+        print(f"Initialized {reasoning_count} reasoning models at {REASONING_START_RATING}, "
+              f"{non_reasoning_count} non-reasoning models at {NON_REASONING_START_RATING}")
 
     # Split games into anchor games (calibration) and LLM-only games
     anchor_games = []
