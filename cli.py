@@ -409,7 +409,7 @@ async def recalculate_ratings(args):
     random.shuffle(llm_games)
 
     # Multi-pass convergence settings
-    max_passes = 10
+    max_passes = 100
     convergence_threshold = 30.0  # Stop when no rating changes by more than this
 
     print(f"Processing {len(valid_games)} games in rating periods (batch size: {BATCH_SIZE})")
