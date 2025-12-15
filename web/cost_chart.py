@@ -79,14 +79,14 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     except (FileNotFoundError, json.JSONDecodeError):
         pass
 
-    # Filter to models with cost data, sufficient confidence (RD <= 80),
+    # Filter to models with cost data, sufficient confidence (RD <= 100),
     # exclude anchors, and rating >= -500
     models_with_cost = [
         entry for entry in leaderboard_data
         if entry.get("avg_cost_per_game") is not None
         and entry.get("avg_cost_per_game", 0) > 0
         and not entry.get("is_anchor")
-        and entry.get("rating_deviation", 350) <= 80
+        and entry.get("rating_deviation", 350) <= 100
         and entry.get("rating", 0) >= -500
     ]
 
