@@ -220,7 +220,7 @@ async def run_benchmark(args):
 
     try:
         # Run benchmark
-        results = await scheduler.run_benchmark(
+        await scheduler.run_benchmark(
             llm_ids=list(llm_players.keys()),
             anchor_ids=list(engines.keys()),
             games_vs_anchor_per_color=config.get("benchmark", {}).get("games_vs_anchor_per_color", 10),
