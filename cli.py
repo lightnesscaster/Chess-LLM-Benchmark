@@ -527,8 +527,9 @@ async def recalculate_ratings(args):
 
     # Multi-pass convergence loop
     for pass_num in range(1, max_passes + 1):
-        # Store ratings at start of pass to check convergence
+        # Store ratings and RDs at start of pass to check convergence
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
+        pass_start_rds = {pid: rating_store.get(pid).rating_deviation for pid in all_players}
 
         # Run all rating periods for this pass
         run_rating_periods()
@@ -536,14 +537,30 @@ async def recalculate_ratings(args):
 
         # Check convergence
         max_change = 0.0
+        max_change_player = None
+        max_change_details = {}
         for pid in all_players:
             if not rating_store.is_anchor(pid):
                 old_rating = pass_start_ratings[pid]
-                new_rating = rating_store.get(pid).rating
+                player = rating_store.get(pid)
+                new_rating = player.rating
                 change = abs(new_rating - old_rating)
-                max_change = max(max_change, change)
+                if change > max_change:
+                    max_change = change
+                    max_change_player = pid
+                    max_change_details = {
+                        'old': old_rating,
+                        'new': new_rating,
+                        'rd': player.rating_deviation,
+                    }
 
-        print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
+        if args.verbose and max_change_player:
+            start_rd = pass_start_rds[max_change_player]
+            print(f"Pass {pass_num}: max rating change = {max_change:.1f} "
+                  f"({max_change_player}: {max_change_details['old']:.0f} -> {max_change_details['new']:.0f}, "
+                  f"RD: {start_rd:.0f} -> {max_change_details['rd']:.0f})")
+        else:
+            print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
 
         if pass_num > 1 and max_change < convergence_threshold:
             print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
