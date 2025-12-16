@@ -203,6 +203,7 @@ async def run_benchmark(args):
     glicko = Glicko2System()
     pgn_logger = PGNLogger()
     stats_collector = StatsCollector()
+    stats_collector.add_results(pgn_logger.load_all_results())  # Load historical stats
 
     # Create scheduler
     scheduler = MatchScheduler(
