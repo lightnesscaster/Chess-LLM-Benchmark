@@ -62,6 +62,14 @@ class MatchScheduler:
     FROZEN_AGE_RD_THRESHOLD_1Y = 80
     FROZEN_AGE_MONTHS_1Y = 12
 
+    # Recent weak model freezing (released < 6 months ago)
+    # Reasoning models: freeze at RD < 100 if rating < 1000
+    RECENT_WEAK_REASONING_RD_THRESHOLD = 100
+    RECENT_WEAK_REASONING_RATING_THRESHOLD = 1000
+    # Non-reasoning models: freeze at RD < 100 if rating < 500
+    RECENT_WEAK_NONREASONING_RD_THRESHOLD = 100
+    RECENT_WEAK_NONREASONING_RATING_THRESHOLD = 500
+
     # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
     LOW_ACCURACY_RATING_THRESHOLD = -200  # Only enforce accuracy requirement above this rating
@@ -138,6 +146,8 @@ class MatchScheduler:
         - RD < 60 (always frozen)
         - RD < 70 and released > 6 months ago
         - RD < 80 and released > 1 year ago
+        - Recent (< 6 months) reasoning model with RD < 100 and rating < 1000
+        - Recent (< 6 months) non-reasoning model with RD < 100 and rating < 500
 
         Args:
             player_id: The player to check
@@ -163,6 +173,22 @@ class MatchScheduler:
             # RD < 80 and > 1 year old
             if current_rd < self.FROZEN_AGE_RD_THRESHOLD_1Y and age_months > self.FROZEN_AGE_MONTHS_1Y:
                 return True
+
+            # Recent weak model freezing (< 6 months old)
+            if age_months <= self.FROZEN_AGE_MONTHS_6M:
+                current_rating = self.rating_store.get(player_id).rating
+                is_reasoning = player_id in self.reasoning_ids
+
+                if is_reasoning:
+                    # Reasoning models: freeze at RD < 100 if rating < 1000
+                    if (current_rd < self.RECENT_WEAK_REASONING_RD_THRESHOLD and
+                            current_rating < self.RECENT_WEAK_REASONING_RATING_THRESHOLD):
+                        return True
+                else:
+                    # Non-reasoning models: freeze at RD < 100 if rating < 500
+                    if (current_rd < self.RECENT_WEAK_NONREASONING_RD_THRESHOLD and
+                            current_rating < self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD):
+                        return True
 
         return False
 
@@ -705,6 +731,7 @@ class MatchScheduler:
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
         print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
+        print(f"Recent weak freeze: reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
         print()
 
         # Shared state for workers
