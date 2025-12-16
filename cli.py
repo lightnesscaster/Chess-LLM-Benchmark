@@ -33,9 +33,14 @@ from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore, invalidate_cache
 from rating.leaderboard import Leaderboard
 
-# Starting ratings based on model type
+# Starting ratings based on model type and legal move rate
 REASONING_START_RATING = 1200
 NON_REASONING_START_RATING = 400
+LOW_LEGAL_MOVE_RATING = 0  # For models with legal move rate < 90%
+
+# Legal move rate thresholds for initial rating
+LEGAL_MOVE_THRESHOLD_LOW = 0.90  # Below this: start at 0
+LEGAL_MOVE_THRESHOLD_MED = 0.95  # Below this: start at 400 (even for reasoning models)
 
 
 def invalidate_remote_cache():
@@ -404,17 +409,36 @@ async def recalculate_ratings(args):
             actual_wld[game['white_id']]['draws'] += 1
             actual_wld[game['black_id']]['draws'] += 1
 
+    # Create stats collector early to get legal move rates for initial ratings
+    stats_collector = StatsCollector()
+    stats_collector.add_results(results)
+    player_stats = stats_collector.get_player_stats()
+
     # Pre-initialize all non-anchor players with appropriate starting ratings
+    # Rating is based on legal move rate and whether model is reasoning
+    low_legal_count = 0
+    med_legal_count = 0
     reasoning_count = 0
     non_reasoning_count = 0
     for player_id in all_players:
         if not rating_store.is_anchor(player_id):
-            if is_reasoning_model(player_id):
+            # Get legal move rate for this player
+            legal_move_rate = player_stats.get(player_id, {}).get("legal_move_rate", 1.0)
+
+            # Determine starting rating based on legal move rate
+            if legal_move_rate < LEGAL_MOVE_THRESHOLD_LOW:
+                start_rating = LOW_LEGAL_MOVE_RATING
+                low_legal_count += 1
+            elif legal_move_rate < LEGAL_MOVE_THRESHOLD_MED:
+                start_rating = NON_REASONING_START_RATING
+                med_legal_count += 1
+            elif is_reasoning_model(player_id):
                 start_rating = REASONING_START_RATING
                 reasoning_count += 1
             else:
                 start_rating = NON_REASONING_START_RATING
                 non_reasoning_count += 1
+
             rating_store.set(PlayerRating(
                 player_id=player_id,
                 rating=start_rating,
@@ -423,8 +447,13 @@ async def recalculate_ratings(args):
             ), auto_save=False)
     rating_store.save()
     if args.verbose:
-        print(f"Initialized {reasoning_count} reasoning models at {REASONING_START_RATING}, "
-              f"{non_reasoning_count} non-reasoning models at {NON_REASONING_START_RATING}")
+        print(f"Initialized ratings based on legal move rate and model type:")
+        if low_legal_count:
+            print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
+        if med_legal_count:
+            print(f"  {med_legal_count} models with <{LEGAL_MOVE_THRESHOLD_MED*100:.0f}% legal moves at {NON_REASONING_START_RATING}")
+        print(f"  {reasoning_count} reasoning models at {REASONING_START_RATING}")
+        print(f"  {non_reasoning_count} non-reasoning models at {NON_REASONING_START_RATING}")
 
     # Split games into anchor games (calibration) and LLM-only games
     anchor_games = []
@@ -526,9 +555,7 @@ async def recalculate_ratings(args):
     print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
     print()
 
-    # Show leaderboard
-    stats_collector = StatsCollector()
-    stats_collector.add_results(results)
+    # Show leaderboard (stats_collector already created earlier)
     leaderboard = Leaderboard(rating_store, stats_collector)
     print(leaderboard.format_table(min_games=1))
 
