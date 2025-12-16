@@ -736,6 +736,8 @@ async def run_manual_game(args):
 
                 print()
                 print("-" * 50)
+                print(f"White: {white.player_id}")
+                print(f"Black: {black.player_id}")
                 print(f"Result: {result.winner} ({result.termination})")
                 print(f"Moves: {result.moves}")
                 print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
