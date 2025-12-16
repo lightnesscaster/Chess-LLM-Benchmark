@@ -51,8 +51,9 @@ class MatchScheduler:
     # Frozen threshold - models below this RD don't initiate games (but can be challenged)
     FROZEN_RD_THRESHOLD = 60
 
-    # Legal move rate threshold - models below this must play random-bot regardless of rating
+    # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
+    LOW_ACCURACY_RATING_THRESHOLD = -200  # Only enforce accuracy requirement above this rating
     RANDOM_BOT_ID = "random-bot"
 
     def __init__(
@@ -267,9 +268,6 @@ class MatchScheduler:
         else:  # Draw (0.5)
             rating.draws += 1
         self.rating_store.set(rating)
-
-    # Rating threshold for low accuracy random-bot requirement
-    LOW_ACCURACY_RATING_THRESHOLD = -200
 
     def _needs_random_bot(
         self,
