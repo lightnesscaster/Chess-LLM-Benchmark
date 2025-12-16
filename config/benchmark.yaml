@@ -88,11 +88,11 @@ llms:
     model_name: "z-ai/glm-4.6"
     temperature: 0.0
 
-  # # deepseek-v3.2-exp (no thinking) (-107) 
-  # - player_id: "deepseek-v3.2 (no thinking)"
-  #   model_name: "deepseek/deepseek-v3.2"
-  #   temperature: 0.0
-  #   timeout: 1200
+  # deepseek-v3.2 (no thinking) (-107) 
+  - player_id: "deepseek-v3.2 (no thinking)"
+    model_name: "deepseek/deepseek-v3.2"
+    temperature: 0.0
+    timeout: 1200
 
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
