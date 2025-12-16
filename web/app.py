@@ -67,13 +67,18 @@ CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 RATINGS_PATH = DATA_DIR / "ratings.json"
 
 def get_anchors_from_config() -> dict:
-    """Load anchor IDs and ratings from config file."""
+    """Load anchor IDs and ratings from config file.
+
+    Only includes engines with anchor: true (default).
+    Engines with anchor: false have updatable ratings and are not anchors.
+    """
     try:
         with open(CONFIG_PATH) as f:
             config = yaml.safe_load(f)
         return {
             engine["player_id"]: engine["rating"]
             for engine in config.get("engines", [])
+            if engine.get("anchor", True)  # Default to True for backwards compat
         }
     except Exception as e:
         app.logger.warning(f"Could not load anchors from config: {e}")

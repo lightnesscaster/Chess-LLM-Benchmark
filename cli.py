@@ -72,9 +72,15 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def create_engines(config: dict) -> dict:
-    """Create engine players from config."""
+def create_engines(config: dict) -> tuple[dict, set]:
+    """Create engine players from config.
+
+    Returns:
+        Tuple of (engines dict, anchor_ids set)
+        Engines with anchor: false are not included in anchor_ids.
+    """
     engines = {}
+    anchor_ids = set()
 
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
@@ -85,6 +91,7 @@ def create_engines(config: dict) -> dict:
         engine_type = engine_cfg.get("type", "stockfish")
         player_id = engine_cfg["player_id"]
         rating = engine_cfg["rating"]
+        is_anchor = engine_cfg.get("anchor", True)  # Default to True for backwards compat
 
         if engine_type == "stockfish":
             engines[player_id] = StockfishEngine(
@@ -135,7 +142,11 @@ def create_engines(config: dict) -> dict:
                 seed=engine_cfg.get("seed"),
             )
 
-    return engines
+        # Track anchors (engines with fixed ratings)
+        if is_anchor:
+            anchor_ids.add(player_id)
+
+    return engines, anchor_ids
 
 
 def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
@@ -199,17 +210,28 @@ async def run_benchmark(args):
         return 1
 
     # Create players
-    engines = create_engines(config)
+    engines, anchor_ids = create_engines(config)
     llm_players, reasoning_ids = create_llm_players(config, api_key)
     all_players = {**engines, **llm_players}
 
     # Set up rating store with anchors
-    anchor_ids = set(engines.keys())
     rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchor_ids)
 
-    # Initialize anchor ratings
+    # Initialize anchor ratings (only for engines with anchor: true)
+    for engine_id in anchor_ids:
+        rating_store.set_anchor(engine_id, engines[engine_id].rating)
+
+    # Initialize non-anchor engine ratings (rating can change)
     for engine_id, engine in engines.items():
-        rating_store.set_anchor(engine_id, engine.rating)
+        if engine_id not in anchor_ids and not rating_store.has_player(engine_id):
+            rating_store.set(PlayerRating(
+                player_id=engine_id,
+                rating=engine.rating,  # Start at configured rating
+                rating_deviation=350,  # High RD for new players
+                volatility=0.06,       # Standard starting volatility
+                games_played=0,
+                unclamped_rating=engine.rating,
+            ))
 
     # Create components
     glicko = Glicko2System()
@@ -289,8 +311,9 @@ async def recalculate_ratings(args):
         print(f"Error: Invalid YAML in config file: {e}")
         return 1
 
-    # Build anchor map from config
+    # Build anchor map and non-anchor engine map from config
     anchors = {}
+    non_anchor_engines = {}
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
             print(f"Error: Engine {i+1} missing required 'player_id' field")
@@ -298,7 +321,11 @@ async def recalculate_ratings(args):
         if "rating" not in engine_cfg:
             print(f"Error: Engine '{engine_cfg['player_id']}' missing required 'rating' field")
             return 1
-        anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+        # Separate anchors (fixed ratings) from non-anchors (updatable ratings)
+        if engine_cfg.get("anchor", True):
+            anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+        else:
+            non_anchor_engines[engine_cfg["player_id"]] = engine_cfg["rating"]
 
     if not anchors:
         print("Warning: No anchors (engines) defined in config")
@@ -347,6 +374,18 @@ async def recalculate_ratings(args):
     # Set anchor ratings (batch save)
     for anchor_id, rating in anchors.items():
         rating_store.set_anchor(anchor_id, rating, auto_save=False)
+
+    # Initialize non-anchor engines with their configured starting ratings
+    for engine_id, rating in non_anchor_engines.items():
+        rating_store.set(PlayerRating(
+            player_id=engine_id,
+            rating=rating,  # Start at configured rating
+            rating_deviation=350,  # High RD for new players
+            volatility=0.06,       # Standard starting volatility
+            games_played=0,
+            unclamped_rating=rating,
+        ), auto_save=False)
+
     rating_store.save()
 
     glicko = Glicko2System()
