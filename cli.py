@@ -591,18 +591,21 @@ async def recalculate_ratings(args):
         run_rating_periods()
         rating_store.save()
 
-        # Check convergence (only consider models with >= 10 games)
+        # Check convergence (only consider stable models: >= 10 games and RD <= 80)
         MIN_GAMES_FOR_CONVERGENCE = 10
+        MAX_RD_FOR_CONVERGENCE = 80  # High RD models are still uncertain, don't block convergence
         max_change = 0.0
         max_change_player = None
         max_change_details = {}
         for pid in all_players:
             if not rating_store.is_anchor(pid):
+                player = rating_store.get(pid)
                 games_played = actual_game_counts.get(pid, 0)
                 if games_played < MIN_GAMES_FOR_CONVERGENCE:
                     continue  # Skip low-game models for convergence check
+                if player.rating_deviation > MAX_RD_FOR_CONVERGENCE:
+                    continue  # Skip high-RD models - still uncertain, expected to swing
                 old_rating = pass_start_ratings[pid]
-                player = rating_store.get(pid)
                 new_rating = player.rating
                 change = abs(new_rating - old_rating)
                 if change > max_change:
