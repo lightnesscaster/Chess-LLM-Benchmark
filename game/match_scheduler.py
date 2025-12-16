@@ -154,7 +154,7 @@ class MatchScheduler:
         if player_id in self._publish_dates:
             publish_timestamp = self._publish_dates[player_id]
             now = datetime.now(timezone.utc).timestamp()
-            age_months = (now - publish_timestamp) / (30 * 24 * 60 * 60)  # Approximate months
+            age_months = (now - publish_timestamp) / (30.44 * 24 * 60 * 60)  # Average month length (365.25/12)
 
             # RD < 70 and > 6 months old
             if current_rd < self.FROZEN_AGE_RD_THRESHOLD_6M and age_months > self.FROZEN_AGE_MONTHS_6M:
