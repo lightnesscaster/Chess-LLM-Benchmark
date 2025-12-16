@@ -70,10 +70,8 @@ class SurvivalEngine(BaseEngine):
         self._book: Optional[chess.polyglot.MemoryMappedReader] = None
         self._rng = random.Random(seed)
 
-        # Game state tracking
-        self._move_count = 0
-        self._last_eval_cp: Optional[int] = None  # Eval after opponent's last move
-        self._last_board_fen: Optional[str] = None  # Track position for new game detection
+        # Game state tracking - use board.ply() for consistent phase detection
+        self._last_ply: int = -1  # Track last seen ply to detect new games
 
         # Load opening book if provided
         self._load_opening_book()
@@ -102,28 +100,22 @@ class SurvivalEngine(BaseEngine):
         return self._engine
 
     def _is_new_game(self, board: chess.Board) -> bool:
-        """Detect if this is a new game (to reset move count)."""
-        # New game if at starting position
-        if board.fen() == chess.STARTING_FEN:
-            return True
+        """Detect if this is a new game (to reset state)."""
+        current_ply = board.ply()
 
-        # New game if board has fewer moves than our counter suggests
-        board_ply = len(board.move_stack)
-        if board_ply == 0:
-            return True
-
-        # If our move count is way higher than board ply, it's a new game
-        # (We count our moves only, board ply counts both sides)
-        if self._move_count > 0 and board_ply < self._move_count:
+        # New game if ply regressed (went backwards) or at start
+        if current_ply < self._last_ply or current_ply == 0:
             return True
 
         return False
 
-    def _reset_game_state(self) -> None:
-        """Reset game state for a new game."""
-        self._move_count = 0
-        self._last_eval_cp = None
-        self._last_board_fen = None
+    def _update_ply_tracking(self, board: chess.Board) -> None:
+        """Update ply tracking after move selection."""
+        self._last_ply = board.ply()
+
+    def _get_game_ply(self, board: chess.Board) -> int:
+        """Get current game ply (half-move count). Used for phase detection."""
+        return board.ply()
 
     def _get_eval_cp(self, board: chess.Board) -> int:
         """Get position evaluation in centipawns from side-to-move perspective."""
@@ -139,12 +131,13 @@ class SurvivalEngine(BaseEngine):
             mate_in = pov_score.mate()
             return 10000 if mate_in > 0 else -10000
 
-        return pov_score.score()
+        cp_score = pov_score.score()
+        return cp_score if cp_score is not None else 0
 
-    def _get_phase_window(self) -> tuple[int, int]:
-        """Get the current phase's eval window (min_cp, max_cp)."""
-        for min_move, max_move, window_min, window_max in self.PHASE_WINDOWS:
-            if min_move <= self._move_count <= max_move:
+    def _get_phase_window(self, game_ply: int) -> tuple[int, int]:
+        """Get the current phase's eval window (min_cp, max_cp) based on game ply."""
+        for min_ply, max_ply, window_min, window_max in self.PHASE_WINDOWS:
+            if min_ply <= game_ply <= max_ply:
                 return (window_min, window_max)
         # Default to final phase
         return self.PHASE_WINDOWS[-1][2:4]
@@ -197,6 +190,12 @@ class SurvivalEngine(BaseEngine):
         """
         engine = self._ensure_engine()
 
+        # Get fallback move in case analysis fails
+        legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            raise ValueError("No legal moves available - game should have ended")
+        fallback_move = legal_moves[0]
+
         try:
             analysis = engine.analyse(
                 board,
@@ -205,8 +204,13 @@ class SurvivalEngine(BaseEngine):
             )
         except Exception:
             # Fallback: just get best move
-            result = engine.play(board, chess.engine.Limit(depth=self.base_depth))
-            return [{"move": result.move, "eval_cp": 0}]
+            try:
+                result = engine.play(board, chess.engine.Limit(depth=self.base_depth))
+                if result.move is not None:
+                    return [{"move": result.move, "eval_cp": 0}]
+            except Exception:
+                pass
+            return [{"move": fallback_move, "eval_cp": 0}]
 
         moves = []
         for info in analysis:
@@ -224,13 +228,14 @@ class SurvivalEngine(BaseEngine):
                     mate_in = pov_score.mate()
                     eval_cp = 10000 if mate_in > 0 else -10000
                 else:
-                    eval_cp = pov_score.score()
+                    cp_score = pov_score.score()
+                    eval_cp = cp_score if cp_score is not None else 0
 
             moves.append({"move": move, "eval_cp": eval_cp})
 
-        return moves if moves else [{"move": list(board.legal_moves)[0], "eval_cp": 0}]
+        return moves if moves else [{"move": fallback_move, "eval_cp": 0}]
 
-    def _select_middlegame_move(self, board: chess.Board) -> chess.Move:
+    def _select_middlegame_move(self, board: chess.Board, game_ply: int) -> chess.Move:
         """
         Select a middlegame move using the survival algorithm.
 
@@ -263,8 +268,8 @@ class SurvivalEngine(BaseEngine):
             blunder_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
             return blunder_moves[0]["move"]  # Return move with minimum delta
 
-        # No blunder - filter by phase window
-        window_min, window_max = self._get_phase_window()
+        # No blunder - filter by phase window based on game ply
+        window_min, window_max = self._get_phase_window(game_ply)
 
         # Filter moves within the acceptable window
         acceptable = [c for c in candidates if window_min <= c["delta_cp"] <= window_max]
@@ -298,22 +303,26 @@ class SurvivalEngine(BaseEngine):
         """
         Select a move using the survival strategy.
 
-        Routes to opening book or middlegame algorithm based on phase.
+        Routes to opening book or middlegame algorithm based on game ply.
         """
+        # Get current game ply (half-move count)
+        game_ply = self._get_game_ply(board)
+
         # Detect new game and reset state if needed
         if self._is_new_game(board):
-            self._reset_game_state()
+            self._last_ply = -1  # Reset ply tracking
 
-        self._move_count += 1
+        # Update ply tracking
+        self._update_ply_tracking(board)
 
-        # Opening phase: try book moves first (roughly first 20 half-moves = 10 full moves)
-        if self._move_count <= 20:
+        # Opening phase: try book moves first (first 20 half-moves = ~10 full moves)
+        if game_ply <= 20:
             book_move = self._select_opening_move(board)
             if book_move is not None and book_move in board.legal_moves:
                 return book_move
 
         # Middlegame/endgame: use survival algorithm
-        return self._select_middlegame_move(board)
+        return self._select_middlegame_move(board, game_ply)
 
     def close(self) -> None:
         """Clean up engine and book resources."""
