@@ -609,6 +609,14 @@ async def run_manual_game(args):
         print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
         return 1
 
+    # Validate reasoning settings don't conflict
+    if args.white_reasoning is False and args.white_reasoning_effort is not None:
+        print("Error: --white-no-reasoning conflicts with --white-reasoning-effort")
+        return 1
+    if args.black_reasoning is False and args.black_reasoning_effort is not None:
+        print("Error: --black-no-reasoning conflicts with --black-reasoning-effort")
+        return 1
+
     # Helper to create engine based on type
     def create_engine(engine_type):
         # Maia engine configurations
@@ -891,22 +899,6 @@ def main():
         default=0,
         help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
     )
-    reasoning_group = manual_parser.add_mutually_exclusive_group()
-    reasoning_group.add_argument(
-        "--reasoning",
-        dest="reasoning",
-        action="store_const",
-        const=True,
-        help="Enable reasoning mode for hybrid models",
-    )
-    reasoning_group.add_argument(
-        "--no-reasoning",
-        dest="reasoning",
-        action="store_const",
-        const=False,
-        help="Explicitly disable reasoning mode (for thinking models run without thinking)",
-    )
-    manual_parser.set_defaults(reasoning=None)  # Explicit three-state default
     manual_parser.add_argument(
         "--white-reasoning-effort",
         choices=["minimal", "low", "medium", "high"],
