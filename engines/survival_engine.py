@@ -33,6 +33,11 @@ class SurvivalEngine(BaseEngine):
         (31, 999, -150, 50),   # Middle onwards: slight concession allowed
     ]
 
+    # Advantage cap: if winning by more than this, give back to target range
+    ADVANTAGE_CAP_THRESHOLD = 200  # If eval >= +200cp, activate cap
+    ADVANTAGE_CAP_MIN = 0          # Target range minimum
+    ADVANTAGE_CAP_MAX = 200        # Target range maximum
+
     def __init__(
         self,
         player_id: str,
@@ -280,6 +285,26 @@ class SurvivalEngine(BaseEngine):
                 self._last_eval_cp = selected["eval_cp"]
                 return selected["move"]
 
+        # Advantage cap: if winning by too much, give back to target range
+        # This prevents crushing weaker opponents while maintaining a slight edge
+        if current_eval >= self.ADVANTAGE_CAP_THRESHOLD:
+            # Find moves that result in eval within target range (0 to +200cp)
+            cap_moves = [c for c in candidates
+                        if self.ADVANTAGE_CAP_MIN <= c["eval_cp"] <= self.ADVANTAGE_CAP_MAX]
+            if cap_moves:
+                selected = self._rng.choice(cap_moves)
+                self._last_eval_cp = selected["eval_cp"]
+                return selected["move"]
+            else:
+                # No moves in target range - pick move closest to cap max while still above it
+                # (minimize advantage while staying winning)
+                above_cap = [c for c in candidates if c["eval_cp"] > self.ADVANTAGE_CAP_MAX]
+                if above_cap:
+                    above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
+                    selected = above_cap[0]
+                    self._last_eval_cp = selected["eval_cp"]
+                    return selected["move"]
+
         # No blunder (or no winning moves) - filter by phase window based on game ply
         window_min, window_max = self._get_phase_window(game_ply)
 
@@ -330,6 +355,12 @@ class SurvivalEngine(BaseEngine):
 
         # Update ply tracking
         self._update_ply_tracking(board)
+
+        # Check if we're winning by too much - if so, skip book and use middlegame
+        # algorithm which handles advantage cap (gives back to 0-200cp range)
+        current_eval = self._get_eval_cp(board)
+        if current_eval >= self.ADVANTAGE_CAP_THRESHOLD:
+            return self._select_middlegame_move(board, game_ply)
 
         # Opening phase: try book moves first (first 20 half-moves = ~10 full moves)
         if game_ply <= 20:
