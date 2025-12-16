@@ -228,6 +228,7 @@ llms:
     model_name: "google/gemini-2.5-pro"
     temperature: 0.0
     reasoning: true
+    timeout: 1200
 
   # gemini-3-pro-preview
   - player_id: "gemini-3-pro-preview"

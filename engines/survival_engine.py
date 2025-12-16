@@ -287,7 +287,8 @@ class SurvivalEngine(BaseEngine):
 
         # Advantage cap: if winning by too much, give back to target range
         # This prevents crushing weaker opponents while maintaining a slight edge
-        if current_eval >= self.ADVANTAGE_CAP_THRESHOLD:
+        # Don't cap mate positions (eval >= 10000) - always take the mate
+        if self.ADVANTAGE_CAP_THRESHOLD <= current_eval < 10000:
             # Find moves that result in eval within target range (0 to +200cp)
             cap_moves = [c for c in candidates
                         if self.ADVANTAGE_CAP_MIN <= c["eval_cp"] <= self.ADVANTAGE_CAP_MAX]
@@ -302,6 +303,12 @@ class SurvivalEngine(BaseEngine):
                 if above_cap:
                     above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
                     selected = above_cap[0]
+                    self._last_eval_cp = selected["eval_cp"]
+                    return selected["move"]
+                else:
+                    # All moves result in eval below cap range - pick the best available
+                    candidates.sort(key=lambda c: c["eval_cp"], reverse=True)
+                    selected = candidates[0]
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
 
@@ -358,8 +365,9 @@ class SurvivalEngine(BaseEngine):
 
         # Check if we're winning by too much - if so, skip book and use middlegame
         # algorithm which handles advantage cap (gives back to 0-200cp range)
+        # Don't cap mate positions (eval >= 10000) - always take the mate
         current_eval = self._get_eval_cp(board)
-        if current_eval >= self.ADVANTAGE_CAP_THRESHOLD:
+        if self.ADVANTAGE_CAP_THRESHOLD <= current_eval < 10000:
             return self._select_middlegame_move(board, game_ply)
 
         # Opening phase: try book moves first (first 20 half-moves = ~10 full moves)
