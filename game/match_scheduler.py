@@ -353,7 +353,11 @@ class MatchScheduler:
         """
         Pick the next game to play based on current ratings.
 
-        Prioritizes LLMs with highest rating deviation (most uncertain).
+        Prioritizes:
+        1. All anchor games first (globally) for rating calibration
+        2. Then LLM-vs-LLM games once all anchor games are complete
+
+        Within each phase, prioritizes LLMs with highest rating deviation.
 
         Args:
             llm_ids: List of LLM IDs
@@ -378,67 +382,80 @@ class MatchScheduler:
             reverse=True,
         )
 
-        for llm_id in llms_by_rd:
-            current_games = self._games_played.get(llm_id, 0)
-            current_rd = self.rating_store.get(llm_id).rating_deviation
+        # Try anchor games first, then LLM-vs-LLM games
+        for phase in ["anchor", "llm"]:
+            for llm_id in llms_by_rd:
+                current_games = self._games_played.get(llm_id, 0)
+                current_rd = self.rating_store.get(llm_id).rating_deviation
 
-            # Check if this LLM is frozen (RD too low to initiate games)
-            if current_rd < self.FROZEN_RD_THRESHOLD:
-                continue  # Frozen models don't initiate games (but can be challenged)
+                # Check if this LLM is frozen (RD too low to initiate games)
+                if current_rd < self.FROZEN_RD_THRESHOLD:
+                    continue  # Frozen models don't initiate games (but can be challenged)
 
-            # Check if this LLM has hit its low RD cap (rating is stable enough)
-            if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
-                continue
+                # Check if this LLM has hit its low RD cap (rating is stable enough)
+                if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
+                    continue
 
-            # Check if this LLM has hit its reasoning cap
-            cap = self._get_game_cap(llm_id)
-            if cap is not None and current_games >= cap:
-                continue
+                # Check if this LLM has hit its reasoning cap
+                cap = self._get_game_cap(llm_id)
+                if cap is not None and current_games >= cap:
+                    continue
 
-            # Get valid opponents based on current ratings
-            valid_opponents = self._get_valid_opponents(
-                llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
-            )
+                # Get valid opponents based on current ratings
+                valid_opponents = self._get_valid_opponents(
+                    llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
+                )
 
-            if not valid_opponents:
-                continue
+                if not valid_opponents:
+                    continue
 
-            # Find opponents with games remaining
-            candidates = []
-            for opp_id in valid_opponents:
-                is_anchor = opp_id in anchor_set
+                # Find opponents with games remaining
+                candidates = []
+                for opp_id in valid_opponents:
+                    is_anchor = opp_id in anchor_set
 
-                # Check if LLM opponent has hit their caps
-                if not is_anchor:
-                    opp_current = self._games_played.get(opp_id, 0)
-                    opp_rd = self.rating_store.get(opp_id).rating_deviation
+                    # Filter by phase: anchor phase only considers anchors,
+                    # llm phase only considers non-anchors
+                    if phase == "anchor" and not is_anchor:
+                        continue
+                    if phase == "llm" and is_anchor:
+                        continue
 
-                    # Frozen models (RD < 60) can always be challenged - no cap
-                    if opp_rd >= self.FROZEN_RD_THRESHOLD:
-                        # Check low RD cap (60 <= RD < 70)
-                        if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
-                            continue  # Skip - rating is stable enough
+                    # Check if LLM opponent has hit their caps
+                    if not is_anchor:
+                        opp_current = self._games_played.get(opp_id, 0)
+                        opp_rd = self.rating_store.get(opp_id).rating_deviation
 
-                        # Check reasoning cap
-                        if opp_id in self.reasoning_ids:
-                            opp_cap = self._get_game_cap(opp_id)
-                            if opp_cap is not None and opp_current >= opp_cap:
-                                continue  # Skip capped reasoning model
-                target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
+                        # Frozen models (RD < 60) can always be challenged - no cap
+                        if opp_rd >= self.FROZEN_RD_THRESHOLD:
+                            # Check low RD cap (60 <= RD < 70)
+                            if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
+                                continue  # Skip - rating is stable enough
 
-                # Check both color combinations
-                for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
-                    played = games_per_pairing.get((white_id, black_id), 0)
-                    if played < target:
-                        # Weight by how many games remaining (more remaining = higher priority)
-                        remaining = target - played
-                        candidates.append((white_id, black_id, remaining))
+                            # Check reasoning cap
+                            if opp_id in self.reasoning_ids:
+                                opp_cap = self._get_game_cap(opp_id)
+                                if opp_cap is not None and opp_current >= opp_cap:
+                                    continue  # Skip capped reasoning model
+                    target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
 
-            if candidates:
-                # Pick randomly among candidates, weighted by games remaining
-                weights = [c[2] for c in candidates]
-                chosen = random.choices(candidates, weights=weights, k=1)[0]
-                return (chosen[0], chosen[1])
+                    # Check both color combinations
+                    for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
+                        played = games_per_pairing.get((white_id, black_id), 0)
+                        if played < target:
+                            # Weight by how many games remaining (more remaining = higher priority)
+                            remaining = target - played
+                            candidates.append((white_id, black_id, remaining))
+
+                if candidates:
+                    # Pick randomly among candidates, weighted by games remaining
+                    weights = [c[2] for c in candidates]
+                    chosen = random.choices(candidates, weights=weights, k=1)[0]
+                    return (chosen[0], chosen[1])
+
+            # If we found anchor games, don't proceed to LLM phase yet
+            # (This check is implicit - if we reach here with no candidates in anchor phase,
+            # we continue to llm phase)
 
         return None
 
