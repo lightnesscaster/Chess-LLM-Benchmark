@@ -72,6 +72,7 @@ class SurvivalEngine(BaseEngine):
 
         # Game state tracking - use board.ply() for consistent phase detection
         self._last_ply: int = -1  # Track last seen ply to detect new games
+        self._last_eval_cp: Optional[int] = None  # Eval after our last move (baseline for next)
 
         # Load opening book if provided
         self._load_opening_book()
@@ -240,35 +241,48 @@ class SurvivalEngine(BaseEngine):
         Select a middlegame move using the survival algorithm.
 
         Algorithm:
-        1. Get baseline eval (current position before our move)
+        1. Get baseline eval (from after our LAST move, or current position if first move)
         2. Analyze top moves with multi-PV
         3. For each candidate, calculate delta from baseline
-        4. If opponent blundered (delta >= +3), take minimal winning move
+        4. If opponent blundered (current position >= +3 vs baseline), take minimal winning move
         5. Otherwise, filter by phase window and select randomly
+        6. Store the resulting eval as baseline for next turn
+
+        This means if opponent makes a small mistake, we "give it back" by staying
+        within our phase window relative to our previous position.
         """
-        # Get baseline evaluation (position before we move)
-        baseline_cp = self._get_eval_cp(board)
+        # Get baseline evaluation: use eval after our last move if available,
+        # otherwise use current position (first middlegame move of the game)
+        if self._last_eval_cp is not None:
+            baseline_cp = self._last_eval_cp
+        else:
+            baseline_cp = self._get_eval_cp(board)
+
+        # Check current position vs baseline to detect opponent blunder
+        current_eval = self._get_eval_cp(board)
+        opponent_gift = current_eval - baseline_cp
 
         # Analyze candidate moves (start with 10, expand to 20 if needed)
         candidates = self._analyze_moves(board, multipv=10)
 
-        # Calculate delta for each candidate
-        # Delta = resulting eval - baseline
-        # Positive delta = we improved, negative = we got worse
+        # Calculate delta for each candidate (vs baseline, not vs current position)
+        # Delta = resulting eval - baseline (our last position)
         for c in candidates:
             c["delta_cp"] = c["eval_cp"] - baseline_cp
 
-        # Check for blunder punishment
-        # If any move gives us >= blunder_threshold improvement, opponent blundered
-        blunder_moves = [c for c in candidates if c["delta_cp"] >= self.blunder_threshold_cp]
+        # Check for blunder punishment based on opponent's gift
+        # If opponent gave us >= blunder_threshold, they blundered
+        if opponent_gift >= self.blunder_threshold_cp:
+            # Opponent blundered! Take the WORST move that still captures some advantage
+            # Find moves that are still better than baseline (positive delta)
+            winning_moves = [c for c in candidates if c["delta_cp"] > 0]
+            if winning_moves:
+                winning_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
+                selected = winning_moves[0]  # Return move with minimum positive delta
+                self._last_eval_cp = selected["eval_cp"]
+                return selected["move"]
 
-        if blunder_moves:
-            # Opponent blundered! Take the WORST move that still captures the advantage
-            # This punishes the blunder but doesn't overperform
-            blunder_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
-            return blunder_moves[0]["move"]  # Return move with minimum delta
-
-        # No blunder - filter by phase window based on game ply
+        # No blunder (or no winning moves) - filter by phase window based on game ply
         window_min, window_max = self._get_phase_window(game_ply)
 
         # Filter moves within the acceptable window
@@ -293,10 +307,13 @@ class SurvivalEngine(BaseEngine):
                 return 0
 
             candidates.sort(key=distance_to_window)
-            return candidates[0]["move"]
+            selected = candidates[0]
+            self._last_eval_cp = selected["eval_cp"]
+            return selected["move"]
 
         # Random selection from acceptable moves
         selected = self._rng.choice(acceptable)
+        self._last_eval_cp = selected["eval_cp"]
         return selected["move"]
 
     def select_move(self, board: chess.Board) -> chess.Move:
@@ -311,6 +328,7 @@ class SurvivalEngine(BaseEngine):
         # Detect new game and reset state if needed
         if self._is_new_game(board):
             self._last_ply = -1  # Reset ply tracking
+            self._last_eval_cp = None  # Reset eval baseline
 
         # Update ply tracking
         self._update_ply_tracking(board)
@@ -319,6 +337,10 @@ class SurvivalEngine(BaseEngine):
         if game_ply <= 20:
             book_move = self._select_opening_move(board)
             if book_move is not None and book_move in board.legal_moves:
+                # Store eval after book move for baseline tracking
+                board.push(book_move)
+                self._last_eval_cp = self._get_eval_cp(board)
+                board.pop()
                 return book_move
 
         # Middlegame/endgame: use survival algorithm
