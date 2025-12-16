@@ -26,9 +26,9 @@ class SurvivalEngine(BaseEngine):
     """
 
     # Phase-based evaluation windows (centipawns)
-    # Format: (min_move, max_move, window_min_cp, window_max_cp)
+    # Format: (min_ply, max_ply, window_min_cp, window_max_cp)
     PHASE_WINDOWS = [
-        (1, 20, -50, 50),      # Opening: maintain equality
+        (0, 20, -50, 50),      # Opening: maintain equality
         (21, 30, -50, 50),     # Early middle: maintain equality
         (31, 999, -150, 50),   # Middle onwards: slight concession allowed
     ]
@@ -284,6 +284,7 @@ class SurvivalEngine(BaseEngine):
                 selected = winning_moves[0]  # Return move with minimum positive delta
                 self._last_eval_cp = selected["eval_cp"]
                 return selected["move"]
+            # No winning moves despite blunder - fall through to normal move selection
 
         # Advantage cap: if winning by too much, give back to target range
         # This prevents crushing weaker opponents while maintaining a slight edge
@@ -306,7 +307,7 @@ class SurvivalEngine(BaseEngine):
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
                 else:
-                    # All moves result in eval below cap range - pick the best available
+                    # All moves result in eval below cap minimum (losing) - pick best available
                     candidates.sort(key=lambda c: c["eval_cp"], reverse=True)
                     selected = candidates[0]
                     self._last_eval_cp = selected["eval_cp"]
