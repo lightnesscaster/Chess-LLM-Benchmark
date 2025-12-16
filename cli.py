@@ -716,27 +716,31 @@ async def run_manual_game(args):
             # Alternate colors if playing multiple games
             swap_colors = (game_num % 2 == 1) and args.games > 1
 
+            # Determine engine types (with per-side overrides)
+            white_engine_type = args.white_engine_type or args.engine_type
+            black_engine_type = args.black_engine_type or args.engine_type
+
             # Create players for this game
             if swap_colors:
                 # Swapped: original black config plays white, original white config plays black
                 if args.black_engine:
-                    white = create_engine(args.engine_type)
+                    white = create_engine(black_engine_type)
                 else:
                     white = create_llm(args.black_model, args.black_reasoning, args.black_reasoning_effort, args.black_name)
 
                 if args.white_engine:
-                    black = create_engine(args.engine_type)
+                    black = create_engine(white_engine_type)
                 else:
                     black = create_llm(args.white_model, args.white_reasoning, args.white_reasoning_effort, args.white_name)
             else:
                 # Normal: original assignments
                 if args.white_engine:
-                    white = create_engine(args.engine_type)
+                    white = create_engine(white_engine_type)
                 else:
                     white = create_llm(args.white_model, args.white_reasoning, args.white_reasoning_effort, args.white_name)
 
                 if args.black_engine:
-                    black = create_engine(args.engine_type)
+                    black = create_engine(black_engine_type)
                 else:
                     black = create_llm(args.black_model, args.black_reasoning, args.black_reasoning_effort, args.black_name)
 
@@ -906,7 +910,17 @@ def main():
         "--engine-type",
         choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia-1100, maia-1900, random, eubos, or survival)",
+        help="Default engine type (used if --white-engine-type or --black-engine-type not specified)",
+    )
+    manual_parser.add_argument(
+        "--white-engine-type",
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
+        help="Engine type for white (overrides --engine-type)",
+    )
+    manual_parser.add_argument(
+        "--black-engine-type",
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
+        help="Engine type for black (overrides --engine-type)",
     )
     manual_parser.add_argument(
         "--stockfish-skill",
