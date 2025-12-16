@@ -382,11 +382,10 @@ class MatchScheduler:
             reverse=True,
         )
 
-        # Check if any anchor games remain globally
-        anchor_games_remaining = False
+        # Check if any random-bot games remain globally
+        random_bot_games_remaining = False
+        other_anchor_games_remaining = False
         for llm_id in llm_ids:
-            if anchor_games_remaining:
-                break
             # Get valid opponents for this LLM (respects rating threshold)
             valid_opponents = self._get_valid_opponents(
                 llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
@@ -397,15 +396,19 @@ class MatchScheduler:
                 for white_id, black_id in [(llm_id, anchor_id), (anchor_id, llm_id)]:
                     played = games_per_pairing.get((white_id, black_id), 0)
                     if played < games_vs_anchor_per_color:
-                        anchor_games_remaining = True
-                        break
-                if anchor_games_remaining:
-                    break
+                        if anchor_id == self.RANDOM_BOT_ID:
+                            random_bot_games_remaining = True
+                        else:
+                            other_anchor_games_remaining = True
 
-        # Try anchor phase first if anchor games remain, then LLM phase
-        # Always try both to avoid getting stuck when anchor games exist but can't be scheduled
-        # (e.g., all remaining anchor games involve frozen/capped LLMs)
-        phases = ["anchor", "llm"] if anchor_games_remaining else ["llm"]
+        # Build phase list: random-bot first, then other anchors, then LLM-vs-LLM
+        # Always include llm phase to avoid getting stuck when anchor games exist but can't be scheduled
+        phases = []
+        if random_bot_games_remaining:
+            phases.append("random-bot")
+        if other_anchor_games_remaining:
+            phases.append("anchor")
+        phases.append("llm")
 
         for phase in phases:
             for llm_id in llms_by_rd:
@@ -437,10 +440,15 @@ class MatchScheduler:
                 candidates = []
                 for opp_id in valid_opponents:
                     is_anchor = opp_id in anchor_set
+                    is_random_bot = opp_id == self.RANDOM_BOT_ID
 
-                    # Filter by phase: anchor phase only considers anchors,
-                    # llm phase only considers non-anchors
-                    if phase == "anchor" and not is_anchor:
+                    # Filter by phase:
+                    # - random-bot phase: only random-bot
+                    # - anchor phase: only non-random-bot anchors
+                    # - llm phase: only non-anchors
+                    if phase == "random-bot" and not is_random_bot:
+                        continue
+                    if phase == "anchor" and (not is_anchor or is_random_bot):
                         continue
                     if phase == "llm" and is_anchor:
                         continue
