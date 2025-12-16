@@ -254,9 +254,12 @@ async def run_benchmark(args):
 
     try:
         # Run benchmark
+        # Note: scheduler's anchor_ids = all engine opponents for LLMs to play against
+        # This differs from RatingStore's anchor_ids (fixed-rating players only).
+        # Rating updates use RatingStore.is_anchor() which excludes non-anchor engines.
         await scheduler.run_benchmark(
             llm_ids=list(llm_players.keys()),
-            anchor_ids=list(engines.keys()),
+            anchor_ids=list(engines.keys()),  # All engines, including non-anchor ones
             games_vs_anchor_per_color=config.get("benchmark", {}).get("games_vs_anchor_per_color", 10),
             games_vs_llm_per_color=config.get("benchmark", {}).get("games_vs_llm_per_color", 5),
             rating_threshold=config.get("benchmark", {}).get("rating_threshold"),
