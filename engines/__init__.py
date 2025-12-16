@@ -3,6 +3,14 @@ from .base_engine import BaseEngine
 from .maia_engine import MaiaEngine
 from .random_engine import RandomEngine
 from .stockfish_engine import StockfishEngine
+from .survival_engine import SurvivalEngine
 from .uci_engine import UCIEngine
 
-__all__ = ["BaseEngine", "MaiaEngine", "RandomEngine", "StockfishEngine", "UCIEngine"]
+__all__ = [
+    "BaseEngine",
+    "MaiaEngine",
+    "RandomEngine",
+    "StockfishEngine",
+    "SurvivalEngine",
+    "UCIEngine",
+]

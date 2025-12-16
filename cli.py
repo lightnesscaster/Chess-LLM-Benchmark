@@ -22,6 +22,7 @@ import yaml
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
+from engines.survival_engine import SurvivalEngine
 from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
 from game.game_runner import GameRunner
@@ -121,6 +122,17 @@ def create_engines(config: dict) -> dict:
                 depth=engine_cfg.get("depth"),
                 initial_time=engine_cfg.get("initial_time"),
                 increment=engine_cfg.get("increment"),
+            )
+        elif engine_type == "survival":
+            engines[player_id] = SurvivalEngine(
+                player_id=player_id,
+                rating=rating,
+                stockfish_path=engine_cfg.get("stockfish_path", "stockfish"),
+                opening_book_path=engine_cfg.get("opening_book_path"),
+                book_draw_threshold=engine_cfg.get("book_draw_threshold", 0.10),
+                base_depth=engine_cfg.get("base_depth", 12),
+                blunder_threshold=engine_cfg.get("blunder_threshold", 3.0),
+                seed=engine_cfg.get("seed"),
             )
 
     return engines
@@ -655,10 +667,21 @@ async def run_manual_game(args):
                 initial_time=900,  # 15 minutes
                 increment=10,      # 10 seconds
             )
+        elif engine_type == "survival":
+            book_path = Path(__file__).parent / "data" / "openings" / "gm2001.bin"
+            return SurvivalEngine(
+                player_id="survival-bot",
+                rating=1200,
+                stockfish_path=args.stockfish_path,
+                opening_book_path=str(book_path) if book_path.exists() else None,
+                base_depth=12,
+                blunder_threshold=3.0,
+            )
         else:
             return StockfishEngine(
                 player_id="stockfish-test",
                 rating=1500,
+                engine_path=args.stockfish_path,
                 skill_level=args.stockfish_skill,
             )
 
@@ -881,9 +904,9 @@ def main():
     )
     manual_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos"],
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia-1100, maia-1900, random, or eubos)",
+        help="Engine type to use (stockfish, maia-1100, maia-1900, random, eubos, or survival)",
     )
     manual_parser.add_argument(
         "--stockfish-skill",
@@ -895,6 +918,11 @@ def main():
         "--lc0-path",
         default="/opt/homebrew/bin/lc0",
         help="Path to lc0 executable",
+    )
+    manual_parser.add_argument(
+        "--stockfish-path",
+        default="stockfish",
+        help="Path to stockfish executable (for survival engine)",
     )
     manual_parser.add_argument(
         "--max-tokens",
