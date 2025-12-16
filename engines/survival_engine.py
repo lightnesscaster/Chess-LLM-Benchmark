@@ -338,9 +338,12 @@ class SurvivalEngine(BaseEngine):
             book_move = self._select_opening_move(board)
             if book_move is not None and book_move in board.legal_moves:
                 # Store eval after book move for baseline tracking
-                board.push(book_move)
-                self._last_eval_cp = self._get_eval_cp(board)
-                board.pop()
+                # After push, board.turn is opponent, so we negate to get our perspective
+                try:
+                    board.push(book_move)
+                    self._last_eval_cp = -self._get_eval_cp(board)
+                finally:
+                    board.pop()
                 return book_move
 
         # Middlegame/endgame: use survival algorithm
