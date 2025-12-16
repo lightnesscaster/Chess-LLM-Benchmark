@@ -268,6 +268,9 @@ class MatchScheduler:
             rating.draws += 1
         self.rating_store.set(rating)
 
+    # Rating threshold for low accuracy random-bot requirement
+    LOW_ACCURACY_RATING_THRESHOLD = -200
+
     def _needs_random_bot(
         self,
         llm_id: str,
@@ -278,7 +281,7 @@ class MatchScheduler:
 
         Returns True if:
         - LLM has no stats (new model)
-        - LLM has legal_move_rate below threshold (99.9%)
+        - LLM has legal_move_rate below threshold AND rating > -200
 
         Args:
             llm_id: The LLM to check
@@ -290,7 +293,11 @@ class MatchScheduler:
             return True  # New model with no games
         stats = player_stats[llm_id]
         legal_rate = stats.get("legal_move_rate", 1.0)
-        return legal_rate < self.LEGAL_MOVE_RATE_THRESHOLD
+        # Only enforce low accuracy requirement for models rated above -200
+        if legal_rate < self.LEGAL_MOVE_RATE_THRESHOLD:
+            rating = self.rating_store.get(llm_id).rating
+            return rating > self.LOW_ACCURACY_RATING_THRESHOLD
+        return False
 
     def _get_valid_opponents(
         self,
