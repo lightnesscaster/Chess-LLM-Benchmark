@@ -8,7 +8,10 @@ Handles:
 """
 
 import asyncio
+import json
 import random
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Dict, Any, Union, Tuple, Optional
 from dataclasses import dataclass
 
@@ -50,6 +53,14 @@ class MatchScheduler:
 
     # Frozen threshold - models below this RD don't initiate games (but can be challenged)
     FROZEN_RD_THRESHOLD = 60
+
+    # Age-based freezing thresholds (for older models with stable ratings)
+    # Models with RD < 70 and released > 6 months ago are frozen
+    FROZEN_AGE_RD_THRESHOLD_6M = 70
+    FROZEN_AGE_MONTHS_6M = 6
+    # Models with RD < 80 and released > 1 year ago are frozen
+    FROZEN_AGE_RD_THRESHOLD_1Y = 80
+    FROZEN_AGE_MONTHS_1Y = 12
 
     # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
@@ -102,6 +113,58 @@ class MatchScheduler:
         # Track games played per LLM during benchmark (for reasoning caps and low RD caps)
         # Note: Only used in run_benchmark() flow, protected by scheduler_lock
         self._games_played: Dict[str, int] = {}
+
+        # Load model publish dates for age-based freezing
+        self._publish_dates: Dict[str, int] = {}  # player_id -> timestamp
+        self._load_publish_dates()
+
+    def _load_publish_dates(self) -> None:
+        """Load model publish dates from data file."""
+        publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
+        try:
+            with open(publish_dates_path) as f:
+                data = json.load(f)
+                for player_id, info in data.items():
+                    if "created_timestamp" in info:
+                        self._publish_dates[player_id] = info["created_timestamp"]
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass  # No publish dates available
+
+    def _is_frozen(self, player_id: str, current_rd: float) -> bool:
+        """
+        Check if a model is frozen (shouldn't initiate games).
+
+        A model is frozen if:
+        - RD < 60 (always frozen)
+        - RD < 70 and released > 6 months ago
+        - RD < 80 and released > 1 year ago
+
+        Args:
+            player_id: The player to check
+            current_rd: Current rating deviation
+
+        Returns:
+            True if frozen, False otherwise
+        """
+        # Always frozen below base threshold
+        if current_rd < self.FROZEN_RD_THRESHOLD:
+            return True
+
+        # Check age-based freezing if we have publish date
+        if player_id in self._publish_dates:
+            publish_timestamp = self._publish_dates[player_id]
+            now = datetime.now(timezone.utc).timestamp()
+            age_months = (now - publish_timestamp) / (30 * 24 * 60 * 60)  # Approximate months
+
+            # RD < 70 and > 6 months old
+            if current_rd < self.FROZEN_AGE_RD_THRESHOLD_6M and age_months > self.FROZEN_AGE_MONTHS_6M:
+                return True
+
+            # RD < 80 and > 1 year old
+            if current_rd < self.FROZEN_AGE_RD_THRESHOLD_1Y and age_months > self.FROZEN_AGE_MONTHS_1Y:
+                return True
+
+        return False
 
     def _get_game_cap(self, player_id: str) -> Optional[int]:
         """
@@ -434,8 +497,8 @@ class MatchScheduler:
                 current_games = self._games_played.get(llm_id, 0)
                 current_rd = self.rating_store.get(llm_id).rating_deviation
 
-                # Check if this LLM is frozen (RD too low to initiate games)
-                if current_rd < self.FROZEN_RD_THRESHOLD:
+                # Check if this LLM is frozen (RD too low or old model with stable rating)
+                if self._is_frozen(llm_id, current_rd):
                     continue  # Frozen models don't initiate games (but can be challenged)
 
                 # Check if this LLM has hit its low RD cap (rating is stable enough)
@@ -477,8 +540,8 @@ class MatchScheduler:
                         opp_current = self._games_played.get(opp_id, 0)
                         opp_rd = self.rating_store.get(opp_id).rating_deviation
 
-                        # Frozen models (RD < 60) can always be challenged - no cap
-                        if opp_rd >= self.FROZEN_RD_THRESHOLD:
+                        # Frozen models can always be challenged - no cap
+                        if not self._is_frozen(opp_id, opp_rd):
                             # Check low RD cap (60 <= RD < 70)
                             if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
                                 continue  # Skip - rating is stable enough
@@ -641,7 +704,7 @@ class MatchScheduler:
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
-        print(f"Frozen threshold: RD < {self.FROZEN_RD_THRESHOLD} (no games unless challenged)")
+        print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
         print()
 
         # Shared state for workers
