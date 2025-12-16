@@ -35,13 +35,14 @@ engines:
     initial_time: 900
     increment: 10
 
-  - player_id: "survival-bot"
-    type: survival
-    rating: 1200
-    opening_book_path: "data/openings/gm2001.bin"
-    book_draw_threshold: 0.10
-    base_depth: 12
-    blunder_threshold: 3.0
+# Survival-bot commented out until properly calibrated
+#  - player_id: "survival-bot"
+#    type: survival
+#    rating: 1200
+#    opening_book_path: "data/openings/gm2001.bin"
+#    book_draw_threshold: 0.10
+#    base_depth: 12
+#    blunder_threshold: 3.0
 
 # LLM players - budget models only
 llms:
