@@ -468,7 +468,12 @@ Your response (just the UCI move or UNCLEAR):"""
                         # Try reasoning extraction before retrying API call
                         extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
                         if extracted_move:
-                            # Extraction succeeded - use this move, no need to retry
+                            # Extraction succeeded - track tokens from original response and use move
+                            if "usage" in data:
+                                usage = data["usage"]
+                                self.prompt_tokens += usage.get("prompt_tokens", 0)
+                                self.completion_tokens += usage.get("completion_tokens", 0)
+                                self.total_tokens += usage.get("total_tokens", 0)
                             return extracted_move
                         # Extraction failed - retry API call with fresh session
                         raise TruncatedResponseError(
