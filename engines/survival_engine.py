@@ -30,9 +30,7 @@ class SurvivalEngine(BaseEngine):
     PHASE_WINDOWS = [
         (1, 20, -50, 50),      # Opening: maintain equality
         (21, 30, -50, 50),     # Early middle: maintain equality
-        (31, 40, -100, 50),    # Middle: slight concession allowed
-        (41, 50, -200, 50),    # Late middle: give ground
-        (51, 999, -300, 50),   # Endgame: collapse
+        (31, 999, -150, 50),   # Middle onwards: slight concession allowed
     ]
 
     def __init__(
