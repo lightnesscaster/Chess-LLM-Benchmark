@@ -382,8 +382,30 @@ class MatchScheduler:
             reverse=True,
         )
 
-        # Try anchor games first, then LLM-vs-LLM games
-        for phase in ["anchor", "llm"]:
+        # Check if any anchor games remain globally
+        anchor_games_remaining = False
+        for llm_id in llm_ids:
+            if anchor_games_remaining:
+                break
+            # Get valid anchors for this LLM (respects rating threshold)
+            valid_opponents = self._get_valid_opponents(
+                llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
+            )
+            for anchor_id in valid_opponents:
+                if anchor_id not in anchor_set:
+                    continue
+                for white_id, black_id in [(llm_id, anchor_id), (anchor_id, llm_id)]:
+                    played = games_per_pairing.get((white_id, black_id), 0)
+                    if played < games_vs_anchor_per_color:
+                        anchor_games_remaining = True
+                        break
+                if anchor_games_remaining:
+                    break
+
+        # Only try anchor phase if anchor games remain, otherwise go to LLM phase
+        phases = ["anchor"] if anchor_games_remaining else ["llm"]
+
+        for phase in phases:
             for llm_id in llms_by_rd:
                 current_games = self._games_played.get(llm_id, 0)
                 current_rd = self.rating_store.get(llm_id).rating_deviation
@@ -452,10 +474,6 @@ class MatchScheduler:
                     weights = [c[2] for c in candidates]
                     chosen = random.choices(candidates, weights=weights, k=1)[0]
                     return (chosen[0], chosen[1])
-
-            # If we found anchor games, don't proceed to LLM phase yet
-            # (This check is implicit - if we reach here with no candidates in anchor phase,
-            # we continue to llm phase)
 
         return None
 
