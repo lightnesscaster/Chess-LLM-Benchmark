@@ -387,13 +387,13 @@ class MatchScheduler:
         for llm_id in llm_ids:
             if anchor_games_remaining:
                 break
-            # Get valid anchors for this LLM (respects rating threshold)
+            # Get valid opponents for this LLM (respects rating threshold)
             valid_opponents = self._get_valid_opponents(
                 llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
             )
-            for anchor_id in valid_opponents:
-                if anchor_id not in anchor_set:
-                    continue
+            # Filter to only anchors
+            valid_anchors = [opp_id for opp_id in valid_opponents if opp_id in anchor_set]
+            for anchor_id in valid_anchors:
                 for white_id, black_id in [(llm_id, anchor_id), (anchor_id, llm_id)]:
                     played = games_per_pairing.get((white_id, black_id), 0)
                     if played < games_vs_anchor_per_color:
