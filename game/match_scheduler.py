@@ -54,6 +54,7 @@ class MatchScheduler:
     # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
     LOW_ACCURACY_RATING_THRESHOLD = -200  # Only enforce accuracy requirement above this rating
+    RANDOM_BOT_MIN_GAMES = 5  # Min games vs random-bot to prove competence (must win all)
     RANDOM_BOT_ID = "random-bot"
 
     def __init__(
@@ -279,7 +280,11 @@ class MatchScheduler:
 
         Returns True if:
         - LLM has no stats (new model)
-        - LLM has legal_move_rate below threshold AND rating > -200
+        - LLM has legal_move_rate below threshold AND rating > -200 AND
+          (played < 5 games vs random-bot OR lost at least one to random-bot)
+
+        Models are exempt from random-bot requirement if they've played at least
+        5 games against random-bot and won all of them.
 
         Args:
             llm_id: The LLM to check
@@ -294,7 +299,16 @@ class MatchScheduler:
         # Only enforce low accuracy requirement for models rated above -200
         if legal_rate < self.LEGAL_MOVE_RATE_THRESHOLD:
             rating = self.rating_store.get(llm_id).rating
-            return rating > self.LOW_ACCURACY_RATING_THRESHOLD
+            if rating <= self.LOW_ACCURACY_RATING_THRESHOLD:
+                return False  # Very low rated models exempt
+            # Check head-to-head record vs random-bot
+            h2h = self.stats_collector.get_head_to_head(llm_id, self.RANDOM_BOT_ID)
+            games_vs_random = h2h["games"]
+            losses_to_random = h2h["player_b_wins"]  # random-bot is player_b
+            # Exempt if played >= 5 games and won all of them
+            if games_vs_random >= self.RANDOM_BOT_MIN_GAMES and losses_to_random == 0:
+                return False
+            return True
         return False
 
     def _get_valid_opponents(
