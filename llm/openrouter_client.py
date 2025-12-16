@@ -456,7 +456,12 @@ Your response (just the UCI move or UNCLEAR):"""
                         # Valid moves can be short: "e4" (2), "Bb5" (3), "O-O" (3)
                         parsed_move = self._parse_move(content, board)
                         if parsed_move:
-                            # Content is a valid move despite being short - use it
+                            # Content is a valid move despite being short - track tokens and use it
+                            if "usage" in data:
+                                usage = data["usage"]
+                                self.prompt_tokens += usage.get("prompt_tokens", 0)
+                                self.completion_tokens += usage.get("completion_tokens", 0)
+                                self.total_tokens += usage.get("total_tokens", 0)
                             return parsed_move
 
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
