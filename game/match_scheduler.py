@@ -402,8 +402,10 @@ class MatchScheduler:
                 if anchor_games_remaining:
                     break
 
-        # Only try anchor phase if anchor games remain, otherwise go to LLM phase
-        phases = ["anchor"] if anchor_games_remaining else ["llm"]
+        # Try anchor phase first if anchor games remain, then LLM phase
+        # Always try both to avoid getting stuck when anchor games exist but can't be scheduled
+        # (e.g., all remaining anchor games involve frozen/capped LLMs)
+        phases = ["anchor", "llm"] if anchor_games_remaining else ["llm"]
 
         for phase in phases:
             for llm_id in llms_by_rd:
