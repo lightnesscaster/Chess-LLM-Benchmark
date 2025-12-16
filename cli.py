@@ -434,7 +434,7 @@ async def recalculate_ratings(args):
         return 1
 
     # Rating period configuration
-    BATCH_SIZE = 10  # Games per rating period
+    BATCH_SIZE = 1  # Games per rating period
     random.seed(42)  # Fixed seed for reproducible results
 
     # Count actual games and W-L-D per player, get all unique player IDs
