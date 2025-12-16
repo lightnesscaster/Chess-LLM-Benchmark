@@ -452,8 +452,15 @@ Your response (just the UCI move or UNCLEAR):"""
                     content = message.get("content", "")
                     reasoning_text = self._get_reasoning_text(data)
                     if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
+                        # Short content with long reasoning - but check if content is valid move first
+                        # Valid moves can be short: "e4" (2), "Bb5" (3), "O-O" (3)
+                        parsed_move = self._parse_move(content, board)
+                        if parsed_move:
+                            # Content is a valid move despite being short - use it
+                            return parsed_move
+
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
-                        # Try reasoning extraction first before retrying API call
+                        # Try reasoning extraction before retrying API call
                         extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
                         if extracted_move:
                             # Extraction succeeded - use this move, no need to retry
