@@ -516,9 +516,10 @@ async def recalculate_ratings(args):
 
     def run_rating_periods():
         """Run one full pass of rating periods (anchor games first, then LLM games)."""
-        # Phase 1: Process ALL anchor games as single rating period (calibration)
-        # This ensures all LLMs are calibrated simultaneously against anchors
-        process_batch(anchor_games)
+        # Phase 1: Process anchor games in batches (calibration)
+        for i in range(0, len(anchor_games), BATCH_SIZE):
+            batch = anchor_games[i:i + BATCH_SIZE]
+            process_batch(batch)
 
         # Phase 2: Process LLM vs LLM games in batches
         for i in range(0, len(llm_games), BATCH_SIZE):
