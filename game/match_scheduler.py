@@ -54,7 +54,7 @@ class MatchScheduler:
     # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
     LOW_ACCURACY_RATING_THRESHOLD = -200  # Only enforce accuracy requirement above this rating
-    RANDOM_BOT_MIN_GAMES = 5  # Min games vs random-bot to prove competence (must win all)
+    RANDOM_BOT_MIN_GAMES = 5  # Min games vs random-bot to prove competence (must not lose any)
     RANDOM_BOT_ID = "random-bot"
 
     def __init__(
@@ -280,11 +280,11 @@ class MatchScheduler:
 
         Returns True if:
         - LLM has no stats (new model)
-        - LLM has legal_move_rate below threshold AND rating > -200 AND
+        - LLM has legal_move_rate below 98% AND rating > -200 AND
           (played < 5 games vs random-bot OR lost at least one to random-bot)
 
-        Models are exempt from random-bot requirement if they've played at least
-        5 games against random-bot and won all of them.
+        Models are exempt if they've played at least 5 games against random-bot
+        without losing any (wins and draws both count as not losing).
 
         Args:
             llm_id: The LLM to check
