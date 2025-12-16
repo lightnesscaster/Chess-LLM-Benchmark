@@ -52,7 +52,7 @@ class MatchScheduler:
     FROZEN_RD_THRESHOLD = 60
 
     # Legal move rate threshold - models below this must play random-bot regardless of rating
-    LEGAL_MOVE_RATE_THRESHOLD = 0.97  # 97% accuracy
+    LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
     RANDOM_BOT_ID = "random-bot"
 
     def __init__(
