@@ -422,22 +422,31 @@ async def recalculate_ratings(args):
     non_reasoning_count = 0
     for player_id in all_players:
         if not rating_store.is_anchor(player_id):
-            # Get legal move rate for this player
-            legal_move_rate = player_stats.get(player_id, {}).get("legal_move_rate", 1.0)
+            # Check if player has stats (i.e., has played games with recorded stats)
+            if player_id in player_stats:
+                legal_move_rate = player_stats[player_id].get("legal_move_rate", 1.0)
 
-            # Determine starting rating based on legal move rate
-            if legal_move_rate < LEGAL_MOVE_THRESHOLD_LOW:
-                start_rating = LOW_LEGAL_MOVE_RATING
-                low_legal_count += 1
-            elif legal_move_rate < LEGAL_MOVE_THRESHOLD_MED:
-                start_rating = NON_REASONING_START_RATING
-                med_legal_count += 1
-            elif is_reasoning_model(player_id):
-                start_rating = REASONING_START_RATING
-                reasoning_count += 1
+                # Determine starting rating based on legal move rate
+                if legal_move_rate < LEGAL_MOVE_THRESHOLD_LOW:
+                    start_rating = LOW_LEGAL_MOVE_RATING
+                    low_legal_count += 1
+                elif legal_move_rate < LEGAL_MOVE_THRESHOLD_MED:
+                    start_rating = NON_REASONING_START_RATING
+                    med_legal_count += 1
+                elif is_reasoning_model(player_id):
+                    start_rating = REASONING_START_RATING
+                    reasoning_count += 1
+                else:
+                    start_rating = NON_REASONING_START_RATING
+                    non_reasoning_count += 1
             else:
-                start_rating = NON_REASONING_START_RATING
-                non_reasoning_count += 1
+                # Player has no stats yet - use model-type-based default
+                if is_reasoning_model(player_id):
+                    start_rating = REASONING_START_RATING
+                    reasoning_count += 1
+                else:
+                    start_rating = NON_REASONING_START_RATING
+                    non_reasoning_count += 1
 
             rating_store.set(PlayerRating(
                 player_id=player_id,
@@ -451,7 +460,7 @@ async def recalculate_ratings(args):
         if low_legal_count:
             print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
         if med_legal_count:
-            print(f"  {med_legal_count} models with <{LEGAL_MOVE_THRESHOLD_MED*100:.0f}% legal moves at {NON_REASONING_START_RATING}")
+            print(f"  {med_legal_count} models with {LEGAL_MOVE_THRESHOLD_LOW*100:.0f}%-{LEGAL_MOVE_THRESHOLD_MED*100:.0f}% legal moves at {NON_REASONING_START_RATING}")
         print(f"  {reasoning_count} reasoning models at {REASONING_START_RATING}")
         print(f"  {non_reasoning_count} non-reasoning models at {NON_REASONING_START_RATING}")
 
