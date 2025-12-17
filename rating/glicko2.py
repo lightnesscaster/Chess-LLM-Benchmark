@@ -213,16 +213,18 @@ class Glicko2System:
         raw_sum = self.calculate_delta(mu, opponent_params, scores)
         delta = v * raw_sum
 
-        # Step 5: Compute new volatility
-        new_sigma = self.calculate_new_volatility(sigma, phi, v, delta)
-        # Cap volatility to prevent explosion from extreme results (e.g., new player
-        # losing many games to much weaker opponent). Glickman's paper suggests
-        # sigma typically stays in 0.03-0.10 range; 0.15 allows adjustment while
-        # preventing cascading numerical issues in phi_star and subsequent steps.
-        new_sigma = min(new_sigma, 0.15)
+        # Step 5: Skip volatility update
+        # For fixed-strength players (engines, LLMs with fixed weights/prompts),
+        # volatility inflation doesn't make sense - it models skill drift over time,
+        # which doesn't apply. We keep sigma constant and don't inflate phi.
+        new_sigma = sigma
 
         # Step 6: Update rating deviation
-        phi_star = math.sqrt(phi * phi + new_sigma * new_sigma)
+        # Standard Glicko-2 does: phi_star = sqrt(phi² + sigma²)
+        # But that inflates RD every rating period, modeling "uncertainty from inactivity"
+        # For stationary players, we skip this inflation - RD only decreases from
+        # information gained, with a floor to acknowledge model misfit/nontransitivity.
+        phi_star = phi  # No volatility inflation
         new_phi = 1.0 / math.sqrt(1.0 / (phi_star * phi_star) + 1.0 / v)
 
         # Step 7: Update rating
@@ -241,7 +243,10 @@ class Glicko2System:
         if not math.isfinite(new_rd):
             new_rd = player.rating_deviation
         else:
-            new_rd = max(30, min(350, new_rd))
+            # RD floor of 45 acknowledges irreducible uncertainty from:
+            # - Model misfit (1D rating can't capture style/nontransitivity)
+            # - Sampling noise (temperature, decoding randomness)
+            new_rd = max(45, min(350, new_rd))
 
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
