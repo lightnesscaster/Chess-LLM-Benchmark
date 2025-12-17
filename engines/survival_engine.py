@@ -476,6 +476,56 @@ class SurvivalEngine(BaseEngine):
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
 
+        # Survival mode: when losing badly, play optimally to survive longer
+        # Select moves within 200cp of best, then filter
+        LOSING_THRESHOLD = -300
+        LOSING_MOVE_WINDOW = 200
+        if current_eval < LOSING_THRESHOLD:
+            logger.debug(f"  SURVIVAL MODE: current_eval={current_eval} < {LOSING_THRESHOLD}")
+            # Get best eval from candidates
+            best_eval = max(c["eval_cp"] for c in candidates)
+            # Select moves within 200cp of best
+            survival_candidates = [c for c in candidates if best_eval - c["eval_cp"] <= LOSING_MOVE_WINDOW]
+            logger.debug(f"  Survival candidates (within {LOSING_MOVE_WINDOW}cp of best {best_eval}): {[c['move'].uci() for c in survival_candidates]}")
+
+            # Skip extra filtering in extreme positions (near mate)
+            if abs(current_eval) >= 5000:
+                logger.debug(f"  Skipping extra filtering (extreme eval={current_eval})")
+                selected = survival_candidates[0]  # Best move
+                logger.debug(f"  SELECTED (survival, extreme): {selected['move'].uci()} eval={selected['eval_cp']}")
+                self._last_eval_cp = selected["eval_cp"]
+                return selected["move"]
+
+            # Apply response diversity filter
+            logger.debug(f"  Checking response diversity for {len(survival_candidates)} survival candidates...")
+            diverse_moves = self._filter_by_response_diversity(board, survival_candidates, min_responses=3)
+            if diverse_moves:
+                logger.debug(f"  {len(diverse_moves)} moves give opponent 3+ good responses")
+                survival_candidates = diverse_moves
+            else:
+                diverse_moves = [c for c in survival_candidates if c.get("opponent_good_responses", 0) >= 2]
+                if diverse_moves:
+                    logger.debug(f"  {len(diverse_moves)} moves give opponent 2+ good responses")
+                    survival_candidates = diverse_moves
+                else:
+                    logger.debug(f"  No diverse moves, keeping original survival candidates")
+
+            # Apply mate threat filter
+            logger.debug(f"  Checking for mate threats in {len(survival_candidates)} survival candidates...")
+            non_threatening = self._filter_by_mate_threats(board, survival_candidates)
+            if non_threatening:
+                logger.debug(f"  {len(non_threatening)} moves don't create mate threats")
+                survival_candidates = non_threatening
+            else:
+                logger.debug(f"  All moves create mate threats, keeping original list")
+
+            # Pick the best move from filtered candidates
+            survival_candidates.sort(key=lambda c: c["eval_cp"], reverse=True)
+            selected = survival_candidates[0]
+            logger.debug(f"  SELECTED (survival mode): {selected['move'].uci()} eval={selected['eval_cp']}")
+            self._last_eval_cp = selected["eval_cp"]
+            return selected["move"]
+
         # No blunder (or no winning moves) - filter by phase window based on game ply
         window_min, window_max = self._get_phase_window(game_ply)
         logger.debug(f"  Phase window: [{window_min}, {window_max}]")
