@@ -7,7 +7,7 @@ benchmark:
   max_moves: 200                   # Maximum half-moves per game
   max_concurrent: 10               # Maximum concurrent games
   rating_threshold: 600            # Only pair players within this rating difference
-  max_cost: 15.0                   # Maximum cost budget in dollars (stops when exceeded)
+  max_cost: 10.0                   # Maximum cost budget in dollars (stops when exceeded)
 
 # Engine anchors (fixed ratings)
 engines:

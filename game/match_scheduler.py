@@ -848,7 +848,7 @@ class MatchScheduler:
                     counters["errors"] += 1
 
     # Default cost budget for benchmark runs
-    DEFAULT_MAX_COST = 15.0  # $15 default budget
+    DEFAULT_MAX_COST = 10.0  # $10 default budget
 
     async def run_benchmark(
         self,

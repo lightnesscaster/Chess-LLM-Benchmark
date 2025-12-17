@@ -910,7 +910,7 @@ def main():
         "--max-cost",
         type=float,
         default=None,
-        help="Maximum cost budget in dollars (default: $15, or from config)",
+        help="Maximum cost budget in dollars (default: $10, or from config)",
     )
 
     # Leaderboard command
