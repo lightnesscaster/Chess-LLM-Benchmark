@@ -442,6 +442,14 @@ class SurvivalEngine(BaseEngine):
 
         # Filter by response diversity - prefer moves that give opponent many good options
         # This makes survival-bot more forgiving by avoiding forcing moves
+        # Skip in extreme positions (near mate) where diversity doesn't apply
+        if abs(current_eval) >= 5000:
+            logger.debug(f"  Skipping diversity check (extreme eval={current_eval})")
+            selected = self._rng.choice(acceptable)
+            logger.debug(f"  SELECTED (from acceptable, no diversity check): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+            self._last_eval_cp = selected["eval_cp"]
+            return selected["move"]
+
         logger.debug(f"  Checking response diversity for {len(acceptable)} acceptable moves...")
         diverse_moves = self._filter_by_response_diversity(board, acceptable, min_responses=3)
         if diverse_moves:
