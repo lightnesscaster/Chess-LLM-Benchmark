@@ -10,12 +10,14 @@ Strategy:
 
 import logging
 import random
+import time
 from pathlib import Path
 from typing import Optional
 
 import chess
 import chess.engine
 import chess.polyglot
+import requests
 
 from .base_engine import BaseEngine
 
@@ -151,9 +153,106 @@ class SurvivalEngine(BaseEngine):
 
     def _select_opening_move(self, board: chess.Board) -> Optional[chess.Move]:
         """
-        Select a move from the opening book using threshold-based filtering.
+        Select a move from Lichess opening explorer based on draw percentage.
+
+        Queries the Lichess API for W/D/L statistics and picks the move
+        with the highest draw percentage to play solid, drawish chess.
+        Falls back to polyglot book if API fails.
 
         Returns None if no book move available.
+        """
+        # Try Lichess API first
+        lichess_move = self._select_opening_move_lichess(board)
+        if lichess_move is not None:
+            return lichess_move
+
+        # Fall back to polyglot book
+        return self._select_opening_move_polyglot(board)
+
+    def _select_opening_move_lichess(self, board: chess.Board) -> Optional[chess.Move]:
+        """
+        Query Lichess opening explorer API and select move with highest draw %.
+        """
+        try:
+            fen = board.fen()
+            # Use masters database for high-quality games
+            url = "https://explorer.lichess.ovh/masters"
+            params = {
+                "fen": fen,
+                "topGames": 0,
+                "recentGames": 0,
+            }
+
+            response = requests.get(url, params=params, timeout=5)
+            if response.status_code == 429:
+                # Rate limited, wait and retry once
+                time.sleep(1)
+                response = requests.get(url, params=params, timeout=5)
+
+            if response.status_code != 200:
+                logger.debug(f"  Lichess API returned status {response.status_code}")
+                return None
+
+            data = response.json()
+            moves = data.get("moves", [])
+            if not moves:
+                logger.debug("  No moves from Lichess API")
+                return None
+
+            # Calculate draw percentage for each move
+            move_stats = []
+            for m in moves:
+                white_wins = m.get("white", 0)
+                draws = m.get("draws", 0)
+                black_wins = m.get("black", 0)
+                total = white_wins + draws + black_wins
+                if total < 10:
+                    continue  # Skip moves with too few games
+
+                draw_pct = draws / total if total > 0 else 0
+                uci_move = m.get("uci")
+                try:
+                    move = chess.Move.from_uci(uci_move)
+                    if move in board.legal_moves:
+                        move_stats.append({
+                            "move": move,
+                            "uci": uci_move,
+                            "draw_pct": draw_pct,
+                            "total_games": total,
+                        })
+                        logger.debug(f"    {uci_move}: draw%={draw_pct:.1%} ({total} games)")
+                except (ValueError, TypeError):
+                    continue
+
+            if not move_stats:
+                logger.debug("  No valid moves from Lichess API")
+                return None
+
+            # Sort by draw percentage (highest first)
+            move_stats.sort(key=lambda x: x["draw_pct"], reverse=True)
+
+            # Select from moves within threshold of best draw %
+            best_draw_pct = move_stats[0]["draw_pct"]
+            threshold = best_draw_pct - self.book_draw_threshold
+            acceptable = [m for m in move_stats if m["draw_pct"] >= threshold]
+
+            if not acceptable:
+                acceptable = move_stats[:3]  # Fallback to top 3
+
+            selected = self._rng.choice(acceptable)
+            logger.debug(f"  LICHESS OPENING: selected {selected['uci']} (draw%={selected['draw_pct']:.1%})")
+            return selected["move"]
+
+        except requests.RequestException as e:
+            logger.debug(f"  Lichess API request failed: {e}")
+            return None
+        except Exception as e:
+            logger.debug(f"  Lichess API error: {e}")
+            return None
+
+    def _select_opening_move_polyglot(self, board: chess.Board) -> Optional[chess.Move]:
+        """
+        Select a move from the polyglot opening book (fallback).
         """
         if self._book is None:
             return None
@@ -173,8 +272,6 @@ class SurvivalEngine(BaseEngine):
                 return self._rng.choice(entries).move
 
             # Calculate minimum acceptable weight
-            # Interpret weights as proxy for "solidness"
-            # threshold of 0.10 means accept moves with >= 90% of best weight
             min_weight = best_weight * (1.0 - self.book_draw_threshold)
 
             # Filter moves above threshold
@@ -184,6 +281,7 @@ class SurvivalEngine(BaseEngine):
 
             # Random selection from acceptable moves
             selected = self._rng.choice(acceptable)
+            logger.debug(f"  POLYGLOT OPENING: selected {selected.move.uci()}")
             return selected.move
 
         except Exception:
