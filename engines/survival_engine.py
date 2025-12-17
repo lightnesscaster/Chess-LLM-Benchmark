@@ -252,19 +252,21 @@ class SurvivalEngine(BaseEngine):
         board.push(move)
         try:
             # Flip turn to check our threats (as if we could move twice)
+            original_turn = board.turn
             board.turn = not board.turn
-
-            for threat_move in board.legal_moves:
-                board.push(threat_move)
-                is_mate = board.is_checkmate()
-                board.pop()
-                if is_mate:
-                    return True
-
-            return False
+            try:
+                for threat_move in board.legal_moves:
+                    board.push(threat_move)
+                    try:
+                        if board.is_checkmate():
+                            return True
+                    finally:
+                        board.pop()
+                return False
+            finally:
+                # Restore original turn
+                board.turn = original_turn
         finally:
-            # Restore turn before pop
-            board.turn = not board.turn
             board.pop()
 
     def _filter_by_mate_threats(self, board: chess.Board, candidates: list[dict]) -> list[dict]:
