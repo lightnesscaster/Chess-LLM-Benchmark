@@ -8,6 +8,7 @@ Strategy:
 4. Blunder punishment: If opponent blunders (+3), take minimal winning advantage
 """
 
+import logging
 import random
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,8 @@ import chess.engine
 import chess.polyglot
 
 from .base_engine import BaseEngine
+
+logger = logging.getLogger(__name__)
 
 
 class SurvivalEngine(BaseEngine):
@@ -256,7 +259,8 @@ class SurvivalEngine(BaseEngine):
         """
         # Get baseline evaluation: use eval after our last move if available,
         # otherwise use current position (first middlegame move of the game)
-        if self._last_eval_cp is not None:
+        baseline_from_last = self._last_eval_cp is not None
+        if baseline_from_last:
             baseline_cp = self._last_eval_cp
         else:
             baseline_cp = self._get_eval_cp(board)
@@ -264,6 +268,12 @@ class SurvivalEngine(BaseEngine):
         # Check current position vs baseline to detect opponent blunder
         current_eval = self._get_eval_cp(board)
         opponent_gift = current_eval - baseline_cp
+
+        logger.debug(
+            f"[Ply {game_ply}] FEN: {board.fen()}\n"
+            f"  baseline_cp={baseline_cp} (from_last={baseline_from_last}), "
+            f"current_eval={current_eval}, opponent_gift={opponent_gift}"
+        )
 
         # Analyze candidate moves (start with 10, expand to 20 if needed)
         candidates = self._analyze_moves(board, multipv=10)
@@ -273,28 +283,38 @@ class SurvivalEngine(BaseEngine):
         for c in candidates:
             c["delta_cp"] = c["eval_cp"] - baseline_cp
 
+        # Log all candidates
+        logger.debug(f"  Candidates (top 10):")
+        for c in candidates:
+            logger.debug(f"    {c['move'].uci()}: eval={c['eval_cp']}, delta={c['delta_cp']}")
+
         # Check for blunder punishment based on opponent's gift
         # If opponent gave us >= blunder_threshold, they blundered
         if opponent_gift >= self.blunder_threshold_cp:
+            logger.debug(f"  BLUNDER DETECTED: opponent_gift={opponent_gift} >= threshold={self.blunder_threshold_cp}")
             # Opponent blundered! Take the WORST move that still captures some advantage
             # Find moves that are still better than baseline (positive delta)
             winning_moves = [c for c in candidates if c["delta_cp"] > 0]
             if winning_moves:
                 winning_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
                 selected = winning_moves[0]  # Return move with minimum positive delta
+                logger.debug(f"  SELECTED (blunder punishment): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
                 self._last_eval_cp = selected["eval_cp"]
                 return selected["move"]
+            logger.debug(f"  No winning moves despite blunder, falling through")
             # No winning moves despite blunder - fall through to normal move selection
 
         # Advantage cap: if winning by too much, give back to target range
         # This prevents crushing weaker opponents while maintaining a slight edge
         # Don't cap mate positions (eval >= 10000) - always take the mate
         if self.ADVANTAGE_CAP_THRESHOLD <= current_eval < 10000:
+            logger.debug(f"  ADVANTAGE CAP: current_eval={current_eval} >= threshold={self.ADVANTAGE_CAP_THRESHOLD}")
             # Find moves that result in eval within target range (0 to +200cp)
             cap_moves = [c for c in candidates
                         if self.ADVANTAGE_CAP_MIN <= c["eval_cp"] <= self.ADVANTAGE_CAP_MAX]
             if cap_moves:
                 selected = self._rng.choice(cap_moves)
+                logger.debug(f"  SELECTED (advantage cap): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
                 self._last_eval_cp = selected["eval_cp"]
                 return selected["move"]
             else:
@@ -304,30 +324,37 @@ class SurvivalEngine(BaseEngine):
                 if above_cap:
                     above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
                     selected = above_cap[0]
+                    logger.debug(f"  SELECTED (above cap, closest): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
                 else:
                     # All moves result in eval below cap minimum (losing) - pick best available
                     candidates.sort(key=lambda c: c["eval_cp"], reverse=True)
                     selected = candidates[0]
+                    logger.debug(f"  SELECTED (cap but losing, best): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
 
         # No blunder (or no winning moves) - filter by phase window based on game ply
         window_min, window_max = self._get_phase_window(game_ply)
+        logger.debug(f"  Phase window: [{window_min}, {window_max}]")
 
         # Filter moves within the acceptable window
         acceptable = [c for c in candidates if window_min <= c["delta_cp"] <= window_max]
+        logger.debug(f"  Acceptable moves (in window): {[c['move'].uci() for c in acceptable]}")
 
         # If no moves in window, expand search to 20 PV
         if not acceptable:
+            logger.debug(f"  No moves in window, expanding to 20 PV...")
             candidates = self._analyze_moves(board, multipv=20)
             for c in candidates:
                 c["delta_cp"] = c["eval_cp"] - baseline_cp
             acceptable = [c for c in candidates if window_min <= c["delta_cp"] <= window_max]
+            logger.debug(f"  Acceptable moves after expansion: {[c['move'].uci() for c in acceptable]}")
 
         # If still no moves in window, pick the move closest to the window
         if not acceptable:
+            logger.debug(f"  Still no moves in window, picking closest...")
             # Find move that minimizes distance to window
             def distance_to_window(c):
                 delta = c["delta_cp"]
@@ -338,12 +365,16 @@ class SurvivalEngine(BaseEngine):
                 return 0
 
             candidates.sort(key=distance_to_window)
+            for c in candidates[:5]:
+                logger.debug(f"    {c['move'].uci()}: delta={c['delta_cp']}, distance={distance_to_window(c)}")
             selected = candidates[0]
+            logger.debug(f"  SELECTED (closest to window): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
             self._last_eval_cp = selected["eval_cp"]
             return selected["move"]
 
         # Random selection from acceptable moves
         selected = self._rng.choice(acceptable)
+        logger.debug(f"  SELECTED (from acceptable): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
         self._last_eval_cp = selected["eval_cp"]
         return selected["move"]
 
@@ -358,6 +389,7 @@ class SurvivalEngine(BaseEngine):
 
         # Detect new game and reset state if needed
         if self._is_new_game(board):
+            logger.debug(f"[Ply {game_ply}] NEW GAME DETECTED - resetting state (last_ply was {self._last_ply})")
             self._last_ply = -1  # Reset ply tracking
             self._last_eval_cp = None  # Reset eval baseline
 
@@ -369,6 +401,7 @@ class SurvivalEngine(BaseEngine):
         # Don't cap mate positions (eval >= 10000) - always take the mate
         current_eval = self._get_eval_cp(board)
         if self.ADVANTAGE_CAP_THRESHOLD <= current_eval < 10000:
+            logger.debug(f"[Ply {game_ply}] Skipping book due to advantage cap (eval={current_eval})")
             return self._select_middlegame_move(board, game_ply)
 
         # Opening phase: try book moves first (first 20 half-moves = ~10 full moves)
@@ -382,6 +415,7 @@ class SurvivalEngine(BaseEngine):
                     self._last_eval_cp = -self._get_eval_cp(board)
                 finally:
                     board.pop()
+                logger.debug(f"[Ply {game_ply}] BOOK MOVE: {book_move.uci()}, stored baseline={self._last_eval_cp}")
                 return book_move
 
         # Middlegame/endgame: use survival algorithm
