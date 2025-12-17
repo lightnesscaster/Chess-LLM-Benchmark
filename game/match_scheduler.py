@@ -160,7 +160,7 @@ class MatchScheduler:
             pass  # No publish dates available
 
     # Default cost for models with unknown pricing (conservative estimate)
-    UNKNOWN_MODEL_DEFAULT_COST = 0.01  # $0.01 per game
+    UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
 
     def _get_player_cost(self, player_id: str) -> float:
         """
