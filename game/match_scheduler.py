@@ -162,12 +162,30 @@ class MatchScheduler:
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
 
+    # Only include games against opponents within this rating difference for cost calculation
+    COST_RATING_THRESHOLD = 600
+
+    def _filter_results_by_rating_diff(self, results: List[GameResult]) -> List[GameResult]:
+        """Filter results to only include games where opponents are within rating threshold."""
+        filtered = []
+        for result in results:
+            white_rating = self.rating_store.get(result.white_id)
+            black_rating = self.rating_store.get(result.black_id)
+
+            if white_rating and black_rating:
+                diff = abs(white_rating.rating - black_rating.rating)
+                if diff <= self.COST_RATING_THRESHOLD:
+                    filtered.append(result)
+
+        return filtered
+
     def _get_player_cost(self, player_id: str) -> float:
         """
         Get estimated cost per game for a player.
 
         Uses historical average if available from stats_collector,
-        otherwise estimates from pricing data.
+        otherwise estimates from pricing data. Only considers games
+        against opponents within COST_RATING_THRESHOLD rating points.
 
         Args:
             player_id: The player to get cost for
@@ -186,9 +204,13 @@ class MatchScheduler:
 
         # Try to get historical cost from cached cost_data
         # Calculate cost_data once and cache it (avoid recalculating for every player)
+        # Only include games against similarly-rated opponents for accurate cost estimate
         if not hasattr(self, '_cost_data_cache') or self._cost_data_cache is None:
-            self._cost_data_cache = self._cost_calculator.calculate_player_costs(
+            filtered_results = self._filter_results_by_rating_diff(
                 self.stats_collector.results
+            )
+            self._cost_data_cache = self._cost_calculator.calculate_player_costs(
+                filtered_results
             )
 
         if player_id in self._cost_data_cache:
