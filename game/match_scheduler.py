@@ -534,34 +534,47 @@ class MatchScheduler:
             else:
                 white_score, black_score = 0.5, 0.5
 
-            # Update non-anchor players (full rating update)
-            if not self.rating_store.is_anchor(white_id):
+            # Check if either player is a ghost (opponents don't get rating updates)
+            white_is_ghost = self.rating_store.is_ghost(white_id)
+            black_is_ghost = self.rating_store.is_ghost(black_id)
+
+            # Update white player
+            if self.rating_store.is_anchor(white_id):
+                # Anchors: track game stats without changing rating
+                self._update_player_stats_only(white_rating, white_score)
+            elif black_is_ghost:
+                # Ghost opponent: track game stats without changing rating/RD
+                self._update_player_stats_only(white_rating, white_score)
+            else:
+                # Normal: full rating update
                 new_white = self.glicko.update_rating(
                     white_rating,
                     opponents=[black_rating],
                     scores=[white_score],
                 )
                 self.rating_store.set(new_white)
-            else:
-                # Anchors: track game stats without changing rating
-                self._update_anchor_stats(white_rating, white_score)
 
-            if not self.rating_store.is_anchor(black_id):
+            # Update black player
+            if self.rating_store.is_anchor(black_id):
+                # Anchors: track game stats without changing rating
+                self._update_player_stats_only(black_rating, black_score)
+            elif white_is_ghost:
+                # Ghost opponent: track game stats without changing rating/RD
+                self._update_player_stats_only(black_rating, black_score)
+            else:
+                # Normal: full rating update
                 new_black = self.glicko.update_rating(
                     black_rating,
                     opponents=[white_rating],
                     scores=[black_score],
                 )
                 self.rating_store.set(new_black)
-            else:
-                # Anchors: track game stats without changing rating
-                self._update_anchor_stats(black_rating, black_score)
 
             # Invalidate cost cache since ratings changed (affects filtering)
             self.invalidate_cost_cache()
 
-    def _update_anchor_stats(self, rating: PlayerRating, score: float) -> None:
-        """Update game statistics for an anchor without changing its rating."""
+    def _update_player_stats_only(self, rating: PlayerRating, score: float) -> None:
+        """Update game statistics without changing rating/RD (used for anchors and ghost opponents)."""
         rating.games_played += 1
         if score > 0.75:  # Win (1.0)
             rating.wins += 1

@@ -55,6 +55,7 @@ class RatingStore:
         self,
         path: str = "data/ratings.json",
         anchor_ids: Set[str] = None,
+        ghost_ids: Set[str] = None,
         use_firestore: bool = None,
     ):
         """
@@ -63,11 +64,14 @@ class RatingStore:
         Args:
             path: Path to the ratings JSON file (used for local storage)
             anchor_ids: Set of player IDs that are anchors (fixed ratings)
+            ghost_ids: Set of player IDs that are "ghosts" - their games don't
+                      affect opponents' ratings/RD (but their own rating updates)
             use_firestore: If True, use Firestore. If None, auto-detect based on
                           FIREBASE_ENABLED env var or presence of firebase-key.json
         """
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
+        self.ghost_ids = ghost_ids or set()
         self._ratings: Dict[str, PlayerRating] = {}
 
         # Determine storage backend
@@ -283,6 +287,10 @@ class RatingStore:
     def is_anchor(self, player_id: str) -> bool:
         """Check if a player is an anchor with fixed rating."""
         return player_id in self.anchor_ids
+
+    def is_ghost(self, player_id: str) -> bool:
+        """Check if a player is a ghost (opponents don't get rating updates)."""
+        return player_id in self.ghost_ids
 
     def has_player(self, player_id: str) -> bool:
         """Check if a player exists in the store."""

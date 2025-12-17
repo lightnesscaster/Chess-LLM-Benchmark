@@ -44,6 +44,7 @@ engines:
   #   base_depth: 12
   #   blunder_threshold: 3.0
   #   anchor: false  # Rating is updated like LLMs, not fixed
+  #   ghost: true    # Opponents don't get rating/RD updates from games against survival-bot
 
 # LLM players - budget models only
 llms:

@@ -73,15 +73,17 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def create_engines(config: dict) -> tuple[dict, set]:
+def create_engines(config: dict) -> tuple[dict, set, set]:
     """Create engine players from config.
 
     Returns:
-        Tuple of (engines dict, anchor_ids set)
+        Tuple of (engines dict, anchor_ids set, ghost_ids set)
         Engines with anchor: false are not included in anchor_ids.
+        Engines with ghost: true are included in ghost_ids (opponents don't get rating updates).
     """
     engines = {}
     anchor_ids = set()
+    ghost_ids = set()
 
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
@@ -147,7 +149,12 @@ def create_engines(config: dict) -> tuple[dict, set]:
         if is_anchor:
             anchor_ids.add(player_id)
 
-    return engines, anchor_ids
+        # Track ghosts (engines whose opponents don't get rating updates)
+        is_ghost = engine_cfg.get("ghost", False)
+        if is_ghost:
+            ghost_ids.add(player_id)
+
+    return engines, anchor_ids, ghost_ids
 
 
 def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
@@ -211,12 +218,12 @@ async def run_benchmark(args):
         return 1
 
     # Create players
-    engines, anchor_ids = create_engines(config)
+    engines, anchor_ids, ghost_ids = create_engines(config)
     llm_players, reasoning_ids = create_llm_players(config, api_key)
     all_players = {**engines, **llm_players}
 
-    # Set up rating store with anchors
-    rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchor_ids)
+    # Set up rating store with anchors and ghosts
+    rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchor_ids, ghost_ids=ghost_ids)
 
     # Initialize anchor ratings (only for engines with anchor: true)
     for engine_id in anchor_ids:
