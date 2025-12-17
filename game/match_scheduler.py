@@ -489,8 +489,8 @@ class MatchScheduler:
         Pick the next game to play based on current ratings.
 
         Prioritizes:
-        1. All anchor games first (globally) for rating calibration
-        2. Then LLM-vs-LLM games once all anchor games are complete
+        1. Random-bot games first (for low-accuracy models to prove competence)
+        2. Then all other games (anchors and LLMs mixed together)
 
         Within each phase, prioritizes LLMs with highest rating deviation.
 
@@ -519,31 +519,25 @@ class MatchScheduler:
 
         # Check if any random-bot games remain globally
         random_bot_games_remaining = False
-        other_anchor_games_remaining = False
         for llm_id in llm_ids:
             # Get valid opponents for this LLM (respects rating threshold)
             valid_opponents = self._get_valid_opponents(
                 llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
             )
-            # Filter to only anchors
-            valid_anchors = [opp_id for opp_id in valid_opponents if opp_id in anchor_set]
-            for anchor_id in valid_anchors:
-                for white_id, black_id in [(llm_id, anchor_id), (anchor_id, llm_id)]:
+            if self.RANDOM_BOT_ID in valid_opponents:
+                for white_id, black_id in [(llm_id, self.RANDOM_BOT_ID), (self.RANDOM_BOT_ID, llm_id)]:
                     played = games_per_pairing.get((white_id, black_id), 0)
                     if played < games_vs_anchor_per_color:
-                        if anchor_id == self.RANDOM_BOT_ID:
-                            random_bot_games_remaining = True
-                        else:
-                            other_anchor_games_remaining = True
+                        random_bot_games_remaining = True
+                        break
+            if random_bot_games_remaining:
+                break
 
-        # Build phase list: random-bot first, then other anchors, then LLM-vs-LLM
-        # Always include llm phase to avoid getting stuck when anchor games exist but can't be scheduled
+        # Build phase list: random-bot first, then all other games (anchors and LLMs mixed)
         phases = []
         if random_bot_games_remaining:
             phases.append("random-bot")
-        if other_anchor_games_remaining:
-            phases.append("anchor")
-        phases.append("llm")
+        phases.append("other")
 
         for phase in phases:
             for llm_id in llms_by_rd:
@@ -579,13 +573,10 @@ class MatchScheduler:
 
                     # Filter by phase:
                     # - random-bot phase: only random-bot
-                    # - anchor phase: only non-random-bot anchors
-                    # - llm phase: only non-anchors
+                    # - other phase: all opponents except random-bot
                     if phase == "random-bot" and not is_random_bot:
                         continue
-                    if phase == "anchor" and (not is_anchor or is_random_bot):
-                        continue
-                    if phase == "llm" and is_anchor:
+                    if phase == "other" and is_random_bot:
                         continue
 
                     # Check if LLM opponent has hit their caps
