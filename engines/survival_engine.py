@@ -48,7 +48,7 @@ class SurvivalEngine(BaseEngine):
         stockfish_path: str = "stockfish",
         opening_book_path: Optional[str] = None,
         book_draw_threshold: float = 0.10,
-        base_depth: int = 12,
+        base_depth: int = 15,
         blunder_threshold: float = 3.0,
         seed: Optional[int] = None,
     ):
