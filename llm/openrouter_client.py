@@ -491,7 +491,7 @@ Your response (just the UCI move or UNCLEAR):"""
                 # Success - break out of retry loop
                 break
 
-            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
+            except (asyncio.CancelledError, aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
                     json.JSONDecodeError, aiohttp.ContentTypeError, TruncatedResponseError) as e:
                 if attempt < max_retries - 1:
                     # Add jitter to prevent thundering herd
@@ -501,9 +501,9 @@ Your response (just the UCI move or UNCLEAR):"""
                     print(f"  [Transient error on {self.model_name}{provider_info}, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
                     await asyncio.sleep(sleep_time)
                     retry_delay = min(retry_delay * 2, 300)  # Exponential backoff with 5min cap
-                    # Recreate session in case connection is stale
-                    await self.close()
-                    session = await self._ensure_session()
+                    # Note: Don't close/recreate session here - aiohttp's connection pool
+                    # handles stale connections automatically, and closing would cancel
+                    # other concurrent requests sharing this player instance
                 else:
                     # Record timing even for failed API calls
                     elapsed = time.time() - move_start_time
