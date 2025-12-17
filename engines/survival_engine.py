@@ -242,6 +242,49 @@ class SurvivalEngine(BaseEngine):
         finally:
             board.pop()
 
+    def _creates_mate_threat(self, board: chess.Board, move: chess.Move) -> bool:
+        """
+        Check if playing this move creates a mate-in-1 threat.
+
+        A mate threat exists if, after our move, we would have checkmate
+        available if we could move again (i.e., opponent must defend or get mated).
+        """
+        board.push(move)
+        try:
+            # Flip turn to check our threats (as if we could move twice)
+            board.turn = not board.turn
+
+            for threat_move in board.legal_moves:
+                board.push(threat_move)
+                is_mate = board.is_checkmate()
+                board.pop()
+                if is_mate:
+                    return True
+
+            return False
+        finally:
+            # Restore turn before pop
+            board.turn = not board.turn
+            board.pop()
+
+    def _filter_by_mate_threats(self, board: chess.Board, candidates: list[dict]) -> list[dict]:
+        """
+        Filter out candidates that create mate-in-1 threats.
+
+        This makes survival-bot less aggressive by avoiding positions
+        where opponent must find the only defense or get mated.
+        """
+        filtered = []
+        for c in candidates:
+            creates_threat = self._creates_mate_threat(board, c["move"])
+            c["creates_mate_threat"] = creates_threat
+            if creates_threat:
+                logger.debug(f"    {c['move'].uci()}: creates mate threat - REJECTED")
+            else:
+                logger.debug(f"    {c['move'].uci()}: no mate threat")
+                filtered.append(c)
+        return filtered
+
     def _filter_by_response_diversity(self, board: chess.Board, candidates: list[dict], min_responses: int) -> list[dict]:
         """
         Filter candidates to only include moves that give opponent at least min_responses good options.
@@ -440,16 +483,26 @@ class SurvivalEngine(BaseEngine):
             self._last_eval_cp = selected["eval_cp"]
             return selected["move"]
 
-        # Filter by response diversity - prefer moves that give opponent many good options
-        # This makes survival-bot more forgiving by avoiding forcing moves
-        # Skip in extreme positions (near mate) where diversity doesn't apply
+        # Skip extra filtering in extreme positions (near mate)
         if abs(current_eval) >= 5000:
-            logger.debug(f"  Skipping diversity check (extreme eval={current_eval})")
+            logger.debug(f"  Skipping extra filtering (extreme eval={current_eval})")
             selected = self._rng.choice(acceptable)
-            logger.debug(f"  SELECTED (from acceptable, no diversity check): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+            logger.debug(f"  SELECTED (from acceptable, no extra filtering): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
             self._last_eval_cp = selected["eval_cp"]
             return selected["move"]
 
+        # Filter out moves that create mate-in-1 threats
+        # This makes survival-bot less aggressive
+        logger.debug(f"  Checking for mate threats in {len(acceptable)} acceptable moves...")
+        non_threatening = self._filter_by_mate_threats(board, acceptable)
+        if non_threatening:
+            logger.debug(f"  {len(non_threatening)} moves don't create mate threats")
+            acceptable = non_threatening
+        else:
+            logger.debug(f"  All moves create mate threats, keeping original list")
+
+        # Filter by response diversity - prefer moves that give opponent many good options
+        # This makes survival-bot more forgiving by avoiding forcing moves
         logger.debug(f"  Checking response diversity for {len(acceptable)} acceptable moves...")
         diverse_moves = self._filter_by_response_diversity(board, acceptable, min_responses=3)
         if diverse_moves:
