@@ -166,6 +166,11 @@ llms:
     model_name: "meta-llama/llama-4-maverick"
     temperature: 0.0
 
+  # kat-coder-pro
+  - player_id: "kat-coder-pro"
+    model_name: "kwaipilot/kat-coder-pro:free"
+    temperature: 0.0
+
   # --- Reasoning models ---
 
   - player_id: "deepseek-r1-distill-qwen-32b"

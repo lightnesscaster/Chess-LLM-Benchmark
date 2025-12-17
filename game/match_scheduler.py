@@ -159,6 +159,9 @@ class MatchScheduler:
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # No publish dates available
 
+    # Default cost for models with unknown pricing (conservative estimate)
+    UNKNOWN_MODEL_DEFAULT_COST = 0.01  # $0.01 per game
+
     def _get_player_cost(self, player_id: str) -> float:
         """
         Get estimated cost per game for a player.
@@ -181,33 +184,37 @@ class MatchScheduler:
             self._cost_cache[player_id] = 0.0
             return 0.0
 
-        # Try to get historical cost from stats
-        player_stats = self.stats_collector.get_player_stats()
-        if player_id in player_stats:
-            # Calculate from results if we have them
-            cost_data = self._cost_calculator.calculate_player_costs(self.stats_collector.results)
-            if player_id in cost_data:
-                avg_cost = cost_data[player_id].get("avg_cost_per_game", 0.0)
-                if avg_cost > 0:
-                    self._cost_cache[player_id] = avg_cost
-                    return avg_cost
+        # Try to get historical cost from cached cost_data
+        # Calculate cost_data once and cache it (avoid recalculating for every player)
+        if not hasattr(self, '_cost_data_cache') or self._cost_data_cache is None:
+            self._cost_data_cache = self._cost_calculator.calculate_player_costs(
+                self.stats_collector.results
+            )
+
+        if player_id in self._cost_data_cache:
+            avg_cost = self._cost_data_cache[player_id].get("avg_cost_per_game", 0.0)
+            if avg_cost > 0:
+                self._cost_cache[player_id] = avg_cost
+                return avg_cost
 
         # Fall back to estimate from pricing
         model = self._cost_calculator.get_model_for_player(player_id)
         if not model:
-            self._cost_cache[player_id] = 0.0
-            return 0.0
+            # Unknown model - use conservative default instead of 0
+            self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
+            return self.UNKNOWN_MODEL_DEFAULT_COST
 
         pricing = self._cost_calculator.get_pricing(model)
         if not pricing:
-            self._cost_cache[player_id] = 0.0
-            return 0.0
+            # No pricing data - use conservative default
+            self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
+            return self.UNKNOWN_MODEL_DEFAULT_COST
 
         # Estimate: ~100 LLM calls per game, ~1500 prompt tokens, ~10 completion tokens per call
-        estimated_cost = (
+        estimated_cost = max(0.0, (
             100 * 1500 * pricing.get("prompt", 0) +
             100 * 10 * pricing.get("completion", 0)
-        )
+        ))
         self._cost_cache[player_id] = estimated_cost
         return estimated_cost
 
@@ -822,6 +829,8 @@ class MatchScheduler:
         """
         # Reset trackers
         self._games_played = {}
+        self._cost_cache = {}  # Clear cost cache for fresh calculations
+        self._cost_data_cache = None  # Clear cost data cache for fresh calculations
         games_per_pairing: Dict[Tuple[str, str], int] = {}
         scheduler_lock = asyncio.Lock()  # Single lock for all scheduling state
 
