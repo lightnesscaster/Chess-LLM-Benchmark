@@ -666,16 +666,12 @@ async def run_manual_game(args):
     # Configure debug logging for survival engine if requested
     if args.debug_engine:
         logging.basicConfig(
-            level=logging.WARNING,
-            format='%(name)s: %(message)s'
+            level=logging.DEBUG,
+            format='%(message)s'
         )
-        # Only enable debug for survival engine, keep chess.engine quiet
+        # Only enable debug for survival engine, suppress chess.engine noise
         logging.getLogger('engines.survival_engine').setLevel(logging.DEBUG)
-        # Add a handler to actually output the debug logs
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(logging.Formatter('%(name)s: %(message)s'))
-        logging.getLogger('engines.survival_engine').addHandler(handler)
+        logging.getLogger('chess.engine').setLevel(logging.ERROR)
 
     # Validate arguments
     if args.games < 1:
