@@ -50,16 +50,48 @@ class Leaderboard:
         self.results = results or (stats.results if stats else [])
         self._cost_data: Optional[Dict[str, Dict[str, Any]]] = None
 
+    # Only include games against opponents within this rating difference for cost calculation
+    COST_RATING_THRESHOLD = 600
+
     @property
     def cost_data(self) -> Dict[str, Dict[str, Any]]:
-        """Lazily calculate cost data."""
+        """Lazily calculate cost data (only for games against similarly-rated opponents)."""
         if self._cost_data is None:
             if self.results:
+                # Filter to only include games where opponents are within rating threshold
+                filtered_results = self._filter_results_by_rating_diff(
+                    self.results, self.COST_RATING_THRESHOLD
+                )
                 calculator = CostCalculator()
-                self._cost_data = calculator.calculate_player_costs(self.results)
+                self._cost_data = calculator.calculate_player_costs(filtered_results)
             else:
                 self._cost_data = {}
         return self._cost_data
+
+    def _filter_results_by_rating_diff(
+        self, results: List[GameResult], max_diff: int
+    ) -> List[GameResult]:
+        """
+        Filter results to only include games where opponents are within rating threshold.
+
+        Args:
+            results: List of game results
+            max_diff: Maximum rating difference to include
+
+        Returns:
+            Filtered list of game results
+        """
+        filtered = []
+        for result in results:
+            white_rating = self.rating_store.get(result.white_id)
+            black_rating = self.rating_store.get(result.black_id)
+
+            if white_rating and black_rating:
+                diff = abs(white_rating.rating - black_rating.rating)
+                if diff <= max_diff:
+                    filtered.append(result)
+
+        return filtered
 
     def get_leaderboard(self, min_games: int = 1, sort_by: str = "rating") -> List[Dict[str, Any]]:
         """
