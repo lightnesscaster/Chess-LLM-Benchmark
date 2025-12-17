@@ -491,8 +491,10 @@ Your response (just the UCI move or UNCLEAR):"""
                 # Success - break out of retry loop
                 break
 
-            except (asyncio.CancelledError, aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
+            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
                     json.JSONDecodeError, aiohttp.ContentTypeError, TruncatedResponseError) as e:
+                # Note: asyncio.CancelledError is intentionally NOT caught here.
+                # It should propagate to allow proper task cancellation (e.g., Ctrl+C shutdown).
                 if attempt < max_retries - 1:
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * retry_delay)
