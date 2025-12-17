@@ -147,6 +147,7 @@ class MatchScheduler:
         self._cost_calculator = CostCalculator()
         self._cost_cache: Dict[str, float] = {}  # Cache estimated costs per player
         self._cost_data_cache: Optional[Dict[str, Dict[str, Any]]] = None  # Filtered cost data
+        self._pairwise_cost_cache: Optional[Dict[Tuple[str, str], float]] = None  # Pairwise game costs
 
     def _load_publish_dates(self) -> None:
         """Load model publish dates from data file."""
@@ -164,9 +165,10 @@ class MatchScheduler:
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
 
     def invalidate_cost_cache(self) -> None:
-        """Invalidate the cost data cache. Call this when ratings are updated."""
+        """Invalidate all cost caches. Call this when ratings are updated."""
         self._cost_data_cache = None
         self._cost_cache.clear()
+        self._pairwise_cost_cache = None
 
     def _get_player_cost(self, player_id: str) -> float:
         """
@@ -260,6 +262,63 @@ class MatchScheduler:
                 total_cost += black_cost
 
         return total_cost
+
+    def _estimate_game_cost(self, white_id: str, black_id: str) -> float:
+        """
+        Estimate cost for a game between two players before it starts.
+
+        Uses historical data in priority order:
+        1. Average cost of previous games between these specific players
+        2. Sum of each player's average cost (within rating threshold)
+        3. Falls back to pricing-based estimates
+
+        Args:
+            white_id: White player ID
+            black_id: Black player ID
+
+        Returns:
+            Estimated cost in dollars for the game
+        """
+        # Build pairwise cost cache if needed
+        if self._pairwise_cost_cache is None:
+            self._pairwise_cost_cache = self._build_pairwise_cost_cache()
+
+        # Try pairwise cost first (order-independent key)
+        pair_key = tuple(sorted([white_id, black_id]))
+        if pair_key in self._pairwise_cost_cache:
+            return self._pairwise_cost_cache[pair_key]
+
+        # Fall back to sum of individual player costs
+        return self._get_player_cost(white_id) + self._get_player_cost(black_id)
+
+    def _build_pairwise_cost_cache(self) -> Dict[Tuple[str, str], float]:
+        """
+        Build cache of average costs for games between specific player pairs.
+
+        Returns:
+            Dict mapping (player_a, player_b) tuple (sorted) to average game cost
+        """
+        # Track costs per pairing
+        pair_costs: Dict[Tuple[str, str], List[float]] = {}
+
+        for result in self.stats_collector.results:
+            # Calculate actual cost for this game
+            game_cost = self._calculate_game_cost(result)
+            if game_cost <= 0:
+                continue
+
+            # Use sorted tuple as key (order-independent)
+            pair_key = tuple(sorted([result.white_id, result.black_id]))
+
+            if pair_key not in pair_costs:
+                pair_costs[pair_key] = []
+            pair_costs[pair_key].append(game_cost)
+
+        # Calculate averages
+        return {
+            pair: sum(costs) / len(costs)
+            for pair, costs in pair_costs.items()
+        }
 
     def _calculate_priority(self, player_id: str) -> float:
         """
@@ -796,13 +855,18 @@ class MatchScheduler:
 
                 white_id, black_id = pairing
 
-                # Reserve everything atomically: pairing slot, game counts, counter
+                # Reserve everything atomically: pairing slot, game counts, counter, cost estimate
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
                 for player_id in [white_id, black_id]:
                     if player_id in llm_set:  # Track games for all LLMs
                         self._games_played[player_id] = self._games_played.get(player_id, 0) + 1
                 counters["game_num"] += 1
                 game_num = counters["game_num"]
+
+                # Estimate cost for this game and add to pending
+                estimated_cost = self._estimate_game_cost(white_id, black_id)
+                counters["pending_cost"] += estimated_cost
+                counters["pending_estimates"][game_num] = estimated_cost
 
             # Get player objects (outside lock - just dict lookup)
             try:
@@ -817,6 +881,9 @@ class MatchScheduler:
                     for player_id in [white_id, black_id]:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
+                    # Remove pending cost estimate
+                    if game_num in counters["pending_estimates"]:
+                        counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
                 continue
 
             # Show current ratings
@@ -833,22 +900,30 @@ class MatchScheduler:
                 result = await self.run_single_game(task)
 
                 if result is None:
-                    # API error - release the slots
+                    # API error - release the slots and pending cost
                     async with scheduler_lock:
                         games_per_pairing[(white_id, black_id)] -= 1
                         for player_id in [white_id, black_id]:
                             if player_id in llm_set:  # Track games for all LLMs
                                 self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                         counters["api_errors"] += 1
+                        # Remove pending cost estimate
+                        if game_num in counters["pending_estimates"]:
+                            counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
                 else:
-                    # Calculate and track game cost
+                    # Calculate actual game cost and update totals
                     game_cost = self._calculate_game_cost(result)
                     async with scheduler_lock:
+                        # Remove pending estimate, add actual cost
+                        if game_num in counters["pending_estimates"]:
+                            counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
                         counters["total_cost"] += game_cost
-                        if counters["total_cost"] >= max_cost:
+                        # Check budget (actual + estimated pending)
+                        effective_cost = counters["total_cost"] + counters["pending_cost"]
+                        if effective_cost >= max_cost:
                             counters["budget_exceeded"] = True
                             if self.verbose:
-                                print(f"  Budget exceeded: ${counters['total_cost']:.2f} >= ${max_cost:.2f}")
+                                print(f"  Budget exceeded: ${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending >= ${max_cost:.2f}")
                     results.append(result)
 
             except Exception as e:
@@ -860,6 +935,9 @@ class MatchScheduler:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                     counters["errors"] += 1
+                    # Remove pending cost estimate
+                    if game_num in counters["pending_estimates"]:
+                        counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
 
     # Default cost budget for benchmark runs
     DEFAULT_MAX_COST = 10.0  # $10 default budget
@@ -924,7 +1002,15 @@ class MatchScheduler:
 
         # Shared state for workers
         results: List[GameResult] = []
-        counters = {"game_num": 0, "errors": 0, "api_errors": 0, "total_cost": 0.0, "budget_exceeded": False}
+        counters: Dict[str, Any] = {
+            "game_num": 0,
+            "errors": 0,
+            "api_errors": 0,
+            "total_cost": 0.0,
+            "pending_cost": 0.0,  # Estimated cost of running games
+            "pending_estimates": {},  # game_num -> estimated cost
+            "budget_exceeded": False,
+        }
 
         # Launch worker tasks
         workers = [
