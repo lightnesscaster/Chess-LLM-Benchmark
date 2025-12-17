@@ -22,6 +22,7 @@ from .pgn_logger import PGNLogger
 from .stats_collector import StatsCollector
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
+from rating.cost_calculator import CostCalculator
 
 
 Player = Union[BaseEngine, BaseLLMPlayer]
@@ -85,6 +86,13 @@ class MatchScheduler:
     STABLE_RD_THRESHOLD = 100  # RD below this triggers tighter pairing
     STABLE_RATING_THRESHOLD = 300  # Use 300 point window instead of default (600)
 
+    # Cost-aware scheduling parameters
+    # LLM priority: RD / (1 + COST_SENSITIVITY * cost_per_game)
+    COST_SENSITIVITY = 0.5  # How much cost affects LLM priority
+    # Opponent selection: rating_diff + min(OPPONENT_COST_WEIGHT * cost, OPPONENT_COST_CAP)
+    OPPONENT_COST_WEIGHT = 50  # Rating points per $1 of opponent cost
+    OPPONENT_COST_CAP = 300  # Max rating points penalty from opponent cost
+
     def __init__(
         self,
         players: Dict[str, Player],
@@ -135,6 +143,10 @@ class MatchScheduler:
         self._publish_dates: Dict[str, int] = {}  # player_id -> timestamp
         self._load_publish_dates()
 
+        # Cost calculator for cost-aware scheduling
+        self._cost_calculator = CostCalculator()
+        self._cost_cache: Dict[str, float] = {}  # Cache estimated costs per player
+
     def _load_publish_dates(self) -> None:
         """Load model publish dates from data file."""
         publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
@@ -146,6 +158,77 @@ class MatchScheduler:
                         self._publish_dates[player_id] = info["created_timestamp"]
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # No publish dates available
+
+    def _get_player_cost(self, player_id: str) -> float:
+        """
+        Get estimated cost per game for a player.
+
+        Uses historical average if available from stats_collector,
+        otherwise estimates from pricing data.
+
+        Args:
+            player_id: The player to get cost for
+
+        Returns:
+            Estimated cost per game in dollars (0.0 for engines/free models)
+        """
+        # Return cached value if available
+        if player_id in self._cost_cache:
+            return self._cost_cache[player_id]
+
+        # Engines have no cost
+        if player_id in self.players and isinstance(self.players[player_id], BaseEngine):
+            self._cost_cache[player_id] = 0.0
+            return 0.0
+
+        # Try to get historical cost from stats
+        player_stats = self.stats_collector.get_player_stats()
+        if player_id in player_stats:
+            # Calculate from results if we have them
+            cost_data = self._cost_calculator.calculate_player_costs(self.stats_collector.results)
+            if player_id in cost_data:
+                avg_cost = cost_data[player_id].get("avg_cost_per_game", 0.0)
+                if avg_cost > 0:
+                    self._cost_cache[player_id] = avg_cost
+                    return avg_cost
+
+        # Fall back to estimate from pricing
+        model = self._cost_calculator.get_model_for_player(player_id)
+        if not model:
+            self._cost_cache[player_id] = 0.0
+            return 0.0
+
+        pricing = self._cost_calculator.get_pricing(model)
+        if not pricing:
+            self._cost_cache[player_id] = 0.0
+            return 0.0
+
+        # Estimate: ~100 LLM calls per game, ~1500 prompt tokens, ~10 completion tokens per call
+        estimated_cost = (
+            100 * 1500 * pricing.get("prompt", 0) +
+            100 * 10 * pricing.get("completion", 0)
+        )
+        self._cost_cache[player_id] = estimated_cost
+        return estimated_cost
+
+    def _calculate_priority(self, player_id: str) -> float:
+        """
+        Calculate scheduling priority for a player.
+
+        Priority = RD / (1 + COST_SENSITIVITY * cost_per_game)
+
+        Higher priority = scheduled sooner. High RD models are prioritized,
+        but cost acts as a penalty (expensive models get lower priority).
+
+        Args:
+            player_id: The player to calculate priority for
+
+        Returns:
+            Priority score (higher = more urgent to schedule)
+        """
+        rd = self.rating_store.get(player_id).rating_deviation
+        cost = self._get_player_cost(player_id)
+        return rd / (1 + self.COST_SENSITIVITY * cost)
 
     def _is_frozen(self, player_id: str, current_rd: float) -> bool:
         """
@@ -485,13 +568,15 @@ class MatchScheduler:
         rating_threshold: Optional[int],
     ) -> Optional[Tuple[str, str]]:
         """
-        Pick the next game to play based on current ratings.
+        Pick the next game to play based on current ratings and costs.
 
         Prioritizes:
         1. Random-bot games first (for low-accuracy models to prove competence)
         2. Then all other games (anchors and LLMs mixed together)
 
-        Within each phase, prioritizes LLMs with highest rating deviation.
+        Cost-aware scheduling:
+        - LLM priority: RD / (1 + 0.5 * cost) - prefers high RD and low cost
+        - Opponent selection: rating_diff + min(50 * cost, 300) - prefers close rating and low cost
 
         Args:
             llm_ids: List of LLM IDs
@@ -509,10 +594,11 @@ class MatchScheduler:
         # Cache player stats to avoid repeated computation in _needs_random_bot
         player_stats = self.stats_collector.get_player_stats()
 
-        # Sort LLMs by rating deviation (highest first)
-        llms_by_rd = sorted(
+        # Sort LLMs by cost-aware priority (highest first)
+        # Priority = RD / (1 + COST_SENSITIVITY * cost) - prefers high RD and low cost
+        llms_by_priority = sorted(
             llm_ids,
-            key=lambda lid: self.rating_store.get(lid).rating_deviation,
+            key=lambda lid: self._calculate_priority(lid),
             reverse=True,
         )
 
@@ -539,7 +625,7 @@ class MatchScheduler:
         phases.append("other")
 
         for phase in phases:
-            for llm_id in llms_by_rd:
+            for llm_id in llms_by_priority:
                 current_games = self._games_played.get(llm_id, 0)
                 current_rd = self.rating_store.get(llm_id).rating_deviation
 
@@ -600,13 +686,17 @@ class MatchScheduler:
                     # Check both color combinations
                     opp_rating = self.rating_store.get(opp_id).rating
                     rating_diff = abs(llm_rating - opp_rating)
+                    # Calculate cost-aware score for opponent selection
+                    opp_cost = self._get_player_cost(opp_id)
+                    cost_penalty = min(self.OPPONENT_COST_WEIGHT * opp_cost, self.OPPONENT_COST_CAP)
+                    score = rating_diff + cost_penalty
                     for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
                         played = games_per_pairing.get((white_id, black_id), 0)
                         if played < target:
-                            candidates.append((white_id, black_id, rating_diff))
+                            candidates.append((white_id, black_id, score))
 
                 if candidates:
-                    # Sort by rating difference (closest first), then pick first
+                    # Sort by cost-aware score (lower = better: close rating + cheap opponent)
                     candidates.sort(key=lambda c: c[2])
                     chosen = candidates[0]
                     return (chosen[0], chosen[1])
