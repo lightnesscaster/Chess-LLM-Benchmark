@@ -90,8 +90,8 @@ class MatchScheduler:
     # LLM priority: RD / (1 + COST_SENSITIVITY * cost_per_game)
     COST_SENSITIVITY = 0.5  # How much cost affects LLM priority
     # Opponent selection: rating_diff + min(OPPONENT_COST_WEIGHT * cost, OPPONENT_COST_CAP)
-    OPPONENT_COST_WEIGHT = 50  # Rating points per $1 of opponent cost
-    OPPONENT_COST_CAP = 300  # Max rating points penalty from opponent cost
+    OPPONENT_COST_WEIGHT = 200  # Rating points per $1 of opponent cost
+    OPPONENT_COST_CAP = 400  # Max rating points penalty from opponent cost
 
     def __init__(
         self,
