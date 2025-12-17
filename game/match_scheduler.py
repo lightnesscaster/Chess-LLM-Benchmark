@@ -146,6 +146,7 @@ class MatchScheduler:
         # Cost calculator for cost-aware scheduling
         self._cost_calculator = CostCalculator()
         self._cost_cache: Dict[str, float] = {}  # Cache estimated costs per player
+        self._cost_data_cache: Optional[Dict[str, Dict[str, Any]]] = None  # Filtered cost data
 
     def _load_publish_dates(self) -> None:
         """Load model publish dates from data file."""
@@ -193,7 +194,7 @@ class MatchScheduler:
         # Try to get historical cost from cached cost_data
         # Calculate cost_data once and cache it (avoid recalculating for every player)
         # Only include games against similarly-rated opponents for accurate cost estimate
-        if not hasattr(self, '_cost_data_cache') or self._cost_data_cache is None:
+        if self._cost_data_cache is None:
             filtered_results = filter_results_by_rating_diff(
                 self.stats_collector.results, self.rating_store
             )
