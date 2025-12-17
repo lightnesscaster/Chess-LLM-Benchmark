@@ -390,9 +390,15 @@ class SurvivalEngine(BaseEngine):
                 # (minimize advantage while staying winning)
                 above_cap = [c for c in candidates if c["eval_cp"] > self.ADVANTAGE_CAP_MAX]
                 if above_cap:
-                    above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
-                    selected = above_cap[0]
-                    logger.debug(f"  SELECTED (above cap, closest): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+                    # Always take mate if available (eval >= 10000)
+                    mate_moves = [c for c in above_cap if c["eval_cp"] >= 10000]
+                    if mate_moves:
+                        selected = mate_moves[0]
+                        logger.debug(f"  SELECTED (mate available): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+                    else:
+                        above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
+                        selected = above_cap[0]
+                        logger.debug(f"  SELECTED (above cap, closest): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
                     self._last_eval_cp = selected["eval_cp"]
                     return selected["move"]
                 else:
