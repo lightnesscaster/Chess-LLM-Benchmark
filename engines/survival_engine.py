@@ -244,34 +244,36 @@ class SurvivalEngine(BaseEngine):
 
     def _creates_mate_threat(self, board: chess.Board, move: chess.Move) -> bool:
         """
-        Check if playing this move creates a mate-in-1 threat.
+        Check if playing this move creates a forced mate threat.
 
-        A mate threat exists if, after our move, we would have checkmate
-        available if we could move again (i.e., opponent must defend or get mated).
+        Uses Stockfish to detect any forced mate (not just mate-in-1).
+        Returns True if the position after our move shows a forced mate for us.
         """
         board.push(move)
         try:
-            # Flip turn to check our threats (as if we could move twice)
-            original_turn = board.turn
-            board.turn = not board.turn
-            try:
-                for threat_move in board.legal_moves:
-                    board.push(threat_move)
-                    try:
-                        if board.is_checkmate():
-                            return True
-                    finally:
-                        board.pop()
+            engine = self._ensure_engine()
+            # Quick depth 10 analysis to detect forced mates
+            info = engine.analyse(board, chess.engine.Limit(depth=10))
+            score = info.get("score")
+            if score is None:
                 return False
-            finally:
-                # Restore original turn
-                board.turn = original_turn
+
+            # Get score from the perspective of the side that just moved (us)
+            # After push, it's opponent's turn, so we want pov(not board.turn)
+            pov_score = score.pov(not board.turn)
+            if pov_score.is_mate():
+                mate_in = pov_score.mate()
+                # Positive mate_in means we have a forced mate
+                if mate_in is not None and mate_in > 0:
+                    logger.debug(f"    {move.uci()} creates mate in {mate_in}")
+                    return True
+            return False
         finally:
             board.pop()
 
     def _filter_by_mate_threats(self, board: chess.Board, candidates: list[dict]) -> list[dict]:
         """
-        Filter out candidates that create mate-in-1 threats.
+        Filter out candidates that create forced mate threats.
 
         This makes survival-bot less aggressive by avoiding positions
         where opponent must find the only defense or get mated.
