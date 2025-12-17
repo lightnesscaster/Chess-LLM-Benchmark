@@ -409,6 +409,14 @@ class SurvivalEngine(BaseEngine):
             # Find moves that are still better than baseline (positive delta)
             winning_moves = [c for c in candidates if c["delta_cp"] > 0]
             if winning_moves:
+                # Filter out moves that create mate threats
+                logger.debug(f"  Checking for mate threats in {len(winning_moves)} winning moves...")
+                non_threatening_winning = self._filter_by_mate_threats(board, winning_moves)
+                if non_threatening_winning:
+                    winning_moves = non_threatening_winning
+                else:
+                    logger.debug(f"  All winning moves create mate threats, keeping original list")
+
                 winning_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
                 selected = winning_moves[0]  # Return move with minimum positive delta
                 logger.debug(f"  SELECTED (blunder punishment): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
