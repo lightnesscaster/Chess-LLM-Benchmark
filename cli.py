@@ -328,9 +328,10 @@ async def recalculate_ratings(args):
         print(f"Error: Invalid YAML in config file: {e}")
         return 1
 
-    # Build anchor map and non-anchor engine map from config
+    # Build anchor map, non-anchor engine map, and ghost set from config
     anchors = {}
     non_anchor_engines = {}
+    ghost_ids = set()
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
             print(f"Error: Engine {i+1} missing required 'player_id' field")
@@ -338,17 +339,23 @@ async def recalculate_ratings(args):
         if "rating" not in engine_cfg:
             print(f"Error: Engine '{engine_cfg['player_id']}' missing required 'rating' field")
             return 1
+        player_id = engine_cfg["player_id"]
         # Separate anchors (fixed ratings) from non-anchors (updatable ratings)
         if engine_cfg.get("anchor", True):
-            anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+            anchors[player_id] = engine_cfg["rating"]
         else:
-            non_anchor_engines[engine_cfg["player_id"]] = engine_cfg["rating"]
+            non_anchor_engines[player_id] = engine_cfg["rating"]
+        # Track ghosts (opponents don't get rating updates)
+        if engine_cfg.get("ghost", False):
+            ghost_ids.add(player_id)
 
     if not anchors:
         print("Warning: No anchors (engines) defined in config")
 
     if args.verbose:
         print(f"Anchors: {anchors}")
+        if ghost_ids:
+            print(f"Ghosts (opponents don't get rating updates): {ghost_ids}")
 
     # Load all results
     pgn_logger = PGNLogger()
@@ -380,8 +387,8 @@ async def recalculate_ratings(args):
     if args.verbose:
         print(f"Found {len(results)} game results")
 
-    # Initialize rating store with anchors
-    rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()))
+    # Initialize rating store with anchors and ghosts
+    rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()), ghost_ids=ghost_ids)
 
     # Always reset when recalculating to avoid double-counting
     rating_store.reset()
@@ -569,11 +576,13 @@ async def recalculate_ratings(args):
         for game in batch_games:
             white_id, black_id = game['white_id'], game['black_id']
 
-            if not rating_store.is_anchor(white_id):
+            # Update white's rating if: not an anchor AND opponent is not a ghost
+            if not rating_store.is_anchor(white_id) and not rating_store.is_ghost(black_id):
                 player_games[white_id]['opponents'].append(period_ratings[black_id])
                 player_games[white_id]['scores'].append(game['white_score'])
 
-            if not rating_store.is_anchor(black_id):
+            # Update black's rating if: not an anchor AND opponent is not a ghost
+            if not rating_store.is_anchor(black_id) and not rating_store.is_ghost(white_id):
                 player_games[black_id]['opponents'].append(period_ratings[white_id])
                 player_games[black_id]['scores'].append(game['black_score'])
 
