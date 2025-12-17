@@ -425,6 +425,16 @@ class SurvivalEngine(BaseEngine):
             # Find moves that result in eval within target range (0 to +200cp)
             cap_moves = [c for c in candidates
                         if self.ADVANTAGE_CAP_MIN <= c["eval_cp"] <= self.ADVANTAGE_CAP_MAX]
+
+            # Filter out moves that create mate threats
+            if cap_moves:
+                logger.debug(f"  Checking for mate threats in {len(cap_moves)} cap moves...")
+                non_threatening_cap = self._filter_by_mate_threats(board, cap_moves)
+                if non_threatening_cap:
+                    cap_moves = non_threatening_cap
+                else:
+                    logger.debug(f"  All cap moves create mate threats, keeping original list")
+
             if cap_moves:
                 selected = self._rng.choice(cap_moves)
                 logger.debug(f"  SELECTED (advantage cap): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
@@ -434,6 +444,16 @@ class SurvivalEngine(BaseEngine):
                 # No moves in target range - pick move closest to cap max while still above it
                 # (minimize advantage while staying winning)
                 above_cap = [c for c in candidates if c["eval_cp"] > self.ADVANTAGE_CAP_MAX]
+
+                # Filter out moves that create mate threats
+                if above_cap:
+                    logger.debug(f"  Checking for mate threats in {len(above_cap)} above-cap moves...")
+                    non_threatening_above = self._filter_by_mate_threats(board, above_cap)
+                    if non_threatening_above:
+                        above_cap = non_threatening_above
+                    else:
+                        logger.debug(f"  All above-cap moves create mate threats, keeping original list")
+
                 if above_cap:
                     above_cap.sort(key=lambda c: c["eval_cp"])  # Sort ascending (closest to cap)
                     selected = above_cap[0]
