@@ -448,6 +448,7 @@ class MatchScheduler:
         llm_rd = llm_data.rating_deviation
 
         # Use tighter threshold for stable models (low RD)
+        # Only narrows threshold; has no effect if rating_threshold <= STABLE_RATING_THRESHOLD
         effective_threshold = rating_threshold
         if llm_rd < self.STABLE_RD_THRESHOLD:
             effective_threshold = min(rating_threshold, self.STABLE_RATING_THRESHOLD)
@@ -756,7 +757,8 @@ class MatchScheduler:
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
-        print(f"Stable model pairing: RD < {self.STABLE_RD_THRESHOLD} uses ±{self.STABLE_RATING_THRESHOLD} threshold (vs ±{rating_threshold})")
+        if rating_threshold is not None:
+            print(f"Stable model pairing: RD < {self.STABLE_RD_THRESHOLD} uses ±{self.STABLE_RATING_THRESHOLD} threshold (vs ±{rating_threshold})")
         print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
         print(f"Within-year weak freeze: RD < {self.WITHIN_YEAR_WEAK_RD_THRESHOLD} + rating < {self.WITHIN_YEAR_WEAK_RATING_THRESHOLD} (any model <{self.FROZEN_AGE_MONTHS_1Y}mo)")
         print(f"Recent weak freeze (<{self.FROZEN_AGE_MONTHS_6M}mo): reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
