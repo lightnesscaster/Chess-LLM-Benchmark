@@ -491,16 +491,6 @@ class SurvivalEngine(BaseEngine):
             self._last_eval_cp = selected["eval_cp"]
             return selected["move"]
 
-        # Filter out moves that create mate-in-1 threats
-        # This makes survival-bot less aggressive
-        logger.debug(f"  Checking for mate threats in {len(acceptable)} acceptable moves...")
-        non_threatening = self._filter_by_mate_threats(board, acceptable)
-        if non_threatening:
-            logger.debug(f"  {len(non_threatening)} moves don't create mate threats")
-            acceptable = non_threatening
-        else:
-            logger.debug(f"  All moves create mate threats, keeping original list")
-
         # Filter by response diversity - prefer moves that give opponent many good options
         # This makes survival-bot more forgiving by avoiding forcing moves
         logger.debug(f"  Checking response diversity for {len(acceptable)} acceptable moves...")
@@ -517,6 +507,16 @@ class SurvivalEngine(BaseEngine):
                 acceptable = diverse_moves
             else:
                 logger.debug(f"  No moves with 2+ responses, using original acceptable list")
+
+        # Filter out moves that create mate-in-1 threats
+        # This makes survival-bot less aggressive
+        logger.debug(f"  Checking for mate threats in {len(acceptable)} acceptable moves...")
+        non_threatening = self._filter_by_mate_threats(board, acceptable)
+        if non_threatening:
+            logger.debug(f"  {len(non_threatening)} moves don't create mate threats")
+            acceptable = non_threatening
+        else:
+            logger.debug(f"  All moves create mate threats, keeping original list")
 
         # Random selection from acceptable moves
         selected = self._rng.choice(acceptable)
