@@ -183,17 +183,26 @@ class SurvivalEngine(BaseEngine):
                 "recentGames": 0,
             }
 
-            response = requests.get(url, params=params, timeout=5)
+            response = requests.get(url, params=params, timeout=(3, 7))
             if response.status_code == 429:
                 # Rate limited, wait and retry once
-                time.sleep(1)
-                response = requests.get(url, params=params, timeout=5)
+                logger.debug("  Rate limited by Lichess API, retrying after 2s")
+                time.sleep(2)
+                response = requests.get(url, params=params, timeout=(3, 7))
+                if response.status_code != 200:
+                    logger.debug(f"  Lichess API retry failed with status {response.status_code}")
+                    return None
 
             if response.status_code != 200:
                 logger.debug(f"  Lichess API returned status {response.status_code}")
                 return None
 
-            data = response.json()
+            try:
+                data = response.json()
+            except requests.exceptions.JSONDecodeError:
+                logger.debug("  Lichess API returned invalid JSON")
+                return None
+
             moves = data.get("moves", [])
             if not moves:
                 logger.debug("  No moves from Lichess API")
@@ -202,16 +211,16 @@ class SurvivalEngine(BaseEngine):
             # Calculate draw percentage for each move
             move_stats = []
             for m in moves:
-                white_wins = m.get("white", 0)
-                draws = m.get("draws", 0)
-                black_wins = m.get("black", 0)
-                total = white_wins + draws + black_wins
-                if total < 10:
-                    continue  # Skip moves with too few games
-
-                draw_pct = draws / total if total > 0 else 0
-                uci_move = m.get("uci")
                 try:
+                    white_wins = int(m.get("white", 0))
+                    draws = int(m.get("draws", 0))
+                    black_wins = int(m.get("black", 0))
+                    total = white_wins + draws + black_wins
+                    if total < 10:
+                        continue  # Skip moves with too few games
+
+                    draw_pct = draws / total if total > 0 else 0  # Range [0, 1]
+                    uci_move = m.get("uci")
                     move = chess.Move.from_uci(uci_move)
                     if move in board.legal_moves:
                         move_stats.append({
@@ -221,7 +230,7 @@ class SurvivalEngine(BaseEngine):
                             "total_games": total,
                         })
                         logger.debug(f"    {uci_move}: draw%={draw_pct:.1%} ({total} games)")
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, AttributeError):
                     continue
 
             if not move_stats:
@@ -231,13 +240,17 @@ class SurvivalEngine(BaseEngine):
             # Sort by draw percentage (highest first)
             move_stats.sort(key=lambda x: x["draw_pct"], reverse=True)
 
-            # Select from moves within threshold of best draw %
+            # Select from moves within relative threshold of best draw %
+            # (consistent with polyglot threshold logic)
             best_draw_pct = move_stats[0]["draw_pct"]
-            threshold = best_draw_pct - self.book_draw_threshold
+            threshold = best_draw_pct * (1.0 - self.book_draw_threshold)
             acceptable = [m for m in move_stats if m["draw_pct"] >= threshold]
 
             if not acceptable:
-                acceptable = move_stats[:3]  # Fallback to top 3
+                acceptable = move_stats[:3] if len(move_stats) >= 3 else move_stats
+
+            if not acceptable:  # Safety check
+                return None
 
             selected = self._rng.choice(acceptable)
             logger.debug(f"  LICHESS OPENING: selected {selected['uci']} (draw%={selected['draw_pct']:.1%})")
