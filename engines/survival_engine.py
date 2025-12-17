@@ -516,27 +516,32 @@ class SurvivalEngine(BaseEngine):
 
         # Check for blunder punishment based on opponent's gift
         # If opponent gave us >= blunder_threshold, they blundered
+        # Only punish blunders 50% of the time to be more forgiving
         if opponent_gift >= self.blunder_threshold_cp:
-            logger.debug(f"  BLUNDER DETECTED: opponent_gift={opponent_gift} >= threshold={self.blunder_threshold_cp}")
-            # Opponent blundered! Take the WORST move that still captures some advantage
-            # Find moves that are still better than baseline (positive delta)
-            winning_moves = [c for c in candidates if c["delta_cp"] > 0]
-            if winning_moves:
-                # Filter out moves that create mate threats
-                logger.debug(f"  Checking for mate threats in {len(winning_moves)} winning moves...")
-                non_threatening_winning = self._filter_by_mate_threats(board, winning_moves)
-                if non_threatening_winning:
-                    winning_moves = non_threatening_winning
-                else:
-                    logger.debug(f"  All winning moves create mate threats, keeping original list")
+            if self._rng.random() >= 0.5:
+                logger.debug(f"  BLUNDER DETECTED but FORGIVEN (50% chance): opponent_gift={opponent_gift}")
+                # Fall through to normal move selection
+            else:
+                logger.debug(f"  BLUNDER DETECTED: opponent_gift={opponent_gift} >= threshold={self.blunder_threshold_cp}")
+                # Opponent blundered! Take the WORST move that still captures some advantage
+                # Find moves that are still better than baseline (positive delta)
+                winning_moves = [c for c in candidates if c["delta_cp"] > 0]
+                if winning_moves:
+                    # Filter out moves that create mate threats
+                    logger.debug(f"  Checking for mate threats in {len(winning_moves)} winning moves...")
+                    non_threatening_winning = self._filter_by_mate_threats(board, winning_moves)
+                    if non_threatening_winning:
+                        winning_moves = non_threatening_winning
+                    else:
+                        logger.debug(f"  All winning moves create mate threats, keeping original list")
 
-                winning_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
-                selected = winning_moves[0]  # Return move with minimum positive delta
-                logger.debug(f"  SELECTED (blunder punishment): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
-                self._last_eval_cp = selected["eval_cp"]
-                return selected["move"]
-            logger.debug(f"  No winning moves despite blunder, falling through")
-            # No winning moves despite blunder - fall through to normal move selection
+                    winning_moves.sort(key=lambda c: c["delta_cp"])  # Sort ascending
+                    selected = winning_moves[0]  # Return move with minimum positive delta
+                    logger.debug(f"  SELECTED (blunder punishment): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+                    self._last_eval_cp = selected["eval_cp"]
+                    return selected["move"]
+                logger.debug(f"  No winning moves despite blunder, falling through")
+                # No winning moves despite blunder - fall through to normal move selection
 
         # Advantage cap: if winning by too much, give back to target range
         # This prevents crushing weaker opponents while maintaining a slight edge
@@ -734,6 +739,14 @@ class SurvivalEngine(BaseEngine):
 
         # Update ply tracking
         self._update_ply_tracking(board)
+
+        # Always play g3 as first move when white (ply 0)
+        if game_ply == 0:
+            g3_move = chess.Move.from_uci("g2g3")
+            if g3_move in board.legal_moves:
+                logger.debug(f"[Ply {game_ply}] FORCED OPENING: g3")
+                self._last_eval_cp = self._get_eval_cp(board)
+                return g3_move
 
         # Check if we're winning by too much - if so, skip book and use middlegame
         # algorithm which handles advantage cap (gives back to 0-200cp range)
