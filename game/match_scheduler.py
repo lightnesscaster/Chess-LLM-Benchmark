@@ -218,6 +218,38 @@ class MatchScheduler:
         self._cost_cache[player_id] = estimated_cost
         return estimated_cost
 
+    def _calculate_game_cost(self, result: GameResult) -> float:
+        """
+        Calculate the cost of a completed game from token usage.
+
+        Args:
+            result: The game result with token data
+
+        Returns:
+            Total cost in dollars for both players
+        """
+        total_cost = 0.0
+
+        # Calculate white player cost
+        if result.tokens_white:
+            white_cost = self._cost_calculator.calculate_game_cost(
+                result.tokens_white,
+                self._cost_calculator.get_model_for_player(result.white_id) or ""
+            )
+            if white_cost:
+                total_cost += white_cost
+
+        # Calculate black player cost
+        if result.tokens_black:
+            black_cost = self._cost_calculator.calculate_game_cost(
+                result.tokens_black,
+                self._cost_calculator.get_model_for_player(result.black_id) or ""
+            )
+            if black_cost:
+                total_cost += black_cost
+
+        return total_cost
+
     def _calculate_priority(self, player_id: str) -> float:
         """
         Calculate scheduling priority for a player.
@@ -721,16 +753,21 @@ class MatchScheduler:
         games_vs_llm_per_color: int,
         rating_threshold: Optional[int],
         results: List,
-        counters: Dict[str, int],
+        counters: Dict[str, Any],
+        max_cost: float,
     ) -> None:
         """
-        Worker that continuously picks and plays games until none remain.
+        Worker that continuously picks and plays games until none remain or budget exceeded.
         """
         llm_set = set(llm_ids)  # Constant for tracking which players are LLMs
 
         while True:
             # Pick next game under lock (covers pairing selection, game counts, and counters)
             async with scheduler_lock:
+                # Check if budget exceeded
+                if counters["budget_exceeded"]:
+                    return  # Budget exceeded, stop
+
                 pairing = self._pick_next_game(
                     llm_ids=llm_ids,
                     anchor_ids=anchor_ids,
@@ -790,6 +827,14 @@ class MatchScheduler:
                                 self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                         counters["api_errors"] += 1
                 else:
+                    # Calculate and track game cost
+                    game_cost = self._calculate_game_cost(result)
+                    async with scheduler_lock:
+                        counters["total_cost"] += game_cost
+                        if counters["total_cost"] >= max_cost:
+                            counters["budget_exceeded"] = True
+                            if self.verbose:
+                                print(f"  Budget exceeded: ${counters['total_cost']:.2f} >= ${max_cost:.2f}")
                     results.append(result)
 
             except Exception as e:
@@ -802,6 +847,9 @@ class MatchScheduler:
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                     counters["errors"] += 1
 
+    # Default cost budget for benchmark runs
+    DEFAULT_MAX_COST = 15.0  # $15 default budget
+
     async def run_benchmark(
         self,
         llm_ids: List[str],
@@ -809,6 +857,7 @@ class MatchScheduler:
         games_vs_anchor_per_color: int = 10,
         games_vs_llm_per_color: int = 5,
         rating_threshold: Optional[int] = None,
+        max_cost: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Run the full benchmark with dynamic matchmaking.
@@ -816,6 +865,7 @@ class MatchScheduler:
         Games are scheduled dynamically based on current ratings.
         Runs up to max_concurrent games in parallel.
         Prioritizes LLMs with highest rating deviation.
+        Stops when cost budget is exceeded.
 
         Args:
             llm_ids: List of LLM player IDs to benchmark
@@ -823,10 +873,13 @@ class MatchScheduler:
             games_vs_anchor_per_color: Games per LLM vs each anchor (per color)
             games_vs_llm_per_color: Games per LLM pair (per color)
             rating_threshold: Only pair players within this rating difference
+            max_cost: Maximum cost budget in dollars (default: $15)
 
         Returns:
             Benchmark results summary
         """
+        if max_cost is None:
+            max_cost = self.DEFAULT_MAX_COST
         # Reset trackers
         self._games_played = {}
         self._cost_cache = {}  # Clear cost cache for fresh calculations
@@ -852,11 +905,12 @@ class MatchScheduler:
         print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
         print(f"Within-year weak freeze: RD < {self.WITHIN_YEAR_WEAK_RD_THRESHOLD} + rating < {self.WITHIN_YEAR_WEAK_RATING_THRESHOLD} (any model <{self.FROZEN_AGE_MONTHS_1Y}mo)")
         print(f"Recent weak freeze (<{self.FROZEN_AGE_MONTHS_6M}mo): reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
+        print(f"Cost budget: ${max_cost:.2f}")
         print()
 
         # Shared state for workers
         results: List[GameResult] = []
-        counters = {"game_num": 0, "errors": 0, "api_errors": 0}
+        counters = {"game_num": 0, "errors": 0, "api_errors": 0, "total_cost": 0.0, "budget_exceeded": False}
 
         # Launch worker tasks
         workers = [
@@ -871,13 +925,19 @@ class MatchScheduler:
                 rating_threshold=rating_threshold,
                 results=results,
                 counters=counters,
+                max_cost=max_cost,
             )
             for i in range(self.max_concurrent)
         ]
 
         await asyncio.gather(*workers)
 
-        print(f"\nBenchmark complete: {len(results)} games, {counters['errors']} errors, {counters['api_errors']} API errors")
+        # Show completion message
+        if counters["budget_exceeded"]:
+            print(f"\nBenchmark stopped: cost budget exceeded (${counters['total_cost']:.2f} / ${max_cost:.2f})")
+        else:
+            print(f"\nBenchmark complete: {len(results)} games, ${counters['total_cost']:.2f} spent")
+        print(f"Errors: {counters['errors']}, API errors: {counters['api_errors']}")
 
         # Show final ratings for all LLMs
         print("\nFinal ratings:")
@@ -891,6 +951,8 @@ class MatchScheduler:
             "completed_games": len(results),
             "errors": counters["errors"],
             "api_errors": counters["api_errors"],
+            "total_cost": counters["total_cost"],
+            "budget_exceeded": counters["budget_exceeded"],
             "results": results,
         }
 
