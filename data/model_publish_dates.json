@@ -341,7 +341,7 @@
   },
   "kat-coder-pro": {
     "model_id": "kwaipilot/kat-coder-pro:free",
-    "created_timestamp": 1762819200,
+    "created_timestamp": 1762732800,
     "created_date": "2025-11-10",
     "organization": "KwaiKat",
     "notes": "free"
