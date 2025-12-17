@@ -10,6 +10,7 @@ Commands:
 
 import argparse
 import asyncio
+import logging
 import os
 import random
 import sys
@@ -662,6 +663,14 @@ async def recalculate_ratings(args):
 
 async def run_manual_game(args):
     """Run manual game(s)."""
+    # Configure debug logging for survival engine if requested
+    if args.debug_engine:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(name)s: %(message)s'
+        )
+        logging.getLogger('engines.survival_engine').setLevel(logging.DEBUG)
+
     # Validate arguments
     if args.games < 1:
         print("Error: --games must be at least 1")
@@ -1073,6 +1082,11 @@ def main():
         type=int,
         default=1,
         help="Number of games to play (alternates colors if > 1)",
+    )
+    manual_parser.add_argument(
+        "--debug-engine",
+        action="store_true",
+        help="Enable debug logging for survival engine",
     )
 
     args = parser.parse_args()
