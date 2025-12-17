@@ -23,6 +23,9 @@ class BaseLLMPlayer(abc.ABC):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        # Timing tracking (seconds per move)
+        self.move_times: list[float] = []
+        self.total_move_time: float = 0.0
         # Last request/response for debugging illegal moves
         self.last_prompt: str = ""
         self.last_raw_response: str = ""
@@ -41,6 +44,11 @@ class BaseLLMPlayer(abc.ABC):
         if hasattr(self, 'last_provider'):
             self.last_provider = None
 
+    def reset_timing(self) -> None:
+        """Reset timing counters (call at start of each game)."""
+        self.move_times = []
+        self.total_move_time = 0.0
+
     def mark_move_successful(self) -> None:
         """Mark the last response as successful (called after a legal move)."""
         self.last_successful_response = self.last_raw_response
@@ -51,6 +59,16 @@ class BaseLLMPlayer(abc.ABC):
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
+        }
+
+    def get_timing_usage(self) -> dict:
+        """Get current timing stats."""
+        move_count = len(self.move_times)
+        return {
+            "total_time": self.total_move_time,
+            "move_count": move_count,
+            "avg_time": self.total_move_time / move_count if move_count > 0 else 0.0,
+            "move_times": self.move_times.copy(),
         }
 
     @abc.abstractmethod

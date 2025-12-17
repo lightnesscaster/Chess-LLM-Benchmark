@@ -87,11 +87,13 @@ class GameRunner:
         game_id = str(uuid.uuid4())
         board = chess.Board()
 
-        # Reset token counters for LLM players
+        # Reset token counters and timing for LLM players
         if isinstance(self.white, BaseLLMPlayer):
             self.white.reset_token_usage()
+            self.white.reset_timing()
         if isinstance(self.black, BaseLLMPlayer):
             self.black.reset_token_usage()
+            self.black.reset_timing()
 
         # Set up PGN
         pgn_game = chess.pgn.Game()
@@ -214,13 +216,17 @@ class GameRunner:
         pgn_game.headers["Termination"] = termination
         pgn_str = str(pgn_game)
 
-        # Collect token usage from LLM players
+        # Collect token usage and timing from LLM players
         tokens_white = None
         tokens_black = None
+        timing_white = None
+        timing_black = None
         if isinstance(self.white, BaseLLMPlayer):
             tokens_white = self.white.get_token_usage()
+            timing_white = self.white.get_timing_usage()
         if isinstance(self.black, BaseLLMPlayer):
             tokens_black = self.black.get_token_usage()
+            timing_black = self.black.get_timing_usage()
 
         # Build result object
         game_result = GameResult(
@@ -238,6 +244,8 @@ class GameRunner:
             created_at=datetime.now(timezone.utc).isoformat(),
             tokens_white=tokens_white,
             tokens_black=tokens_black,
+            timing_white=timing_white,
+            timing_black=timing_black,
             illegal_move_details=illegal_move_details if illegal_move_details else None,
         )
 

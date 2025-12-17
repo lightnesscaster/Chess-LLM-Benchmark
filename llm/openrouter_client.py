@@ -7,6 +7,7 @@ import os
 import re
 import asyncio
 import random
+import time
 import aiohttp
 import chess
 from typing import Optional
@@ -325,6 +326,7 @@ Your response (just the UCI move or UNCLEAR):"""
         Raises:
             TransientAPIError: If the API call fails after retries due to network issues
         """
+        move_start_time = time.time()
         session = await self._ensure_session()
 
         # Pass previous successful response for context
@@ -462,6 +464,9 @@ Your response (just the UCI move or UNCLEAR):"""
                                 self.prompt_tokens += usage.get("prompt_tokens", 0)
                                 self.completion_tokens += usage.get("completion_tokens", 0)
                                 self.total_tokens += usage.get("total_tokens", 0)
+                            elapsed = time.time() - move_start_time
+                            self.move_times.append(elapsed)
+                            self.total_move_time += elapsed
                             return parsed_move
 
                         print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
@@ -474,6 +479,9 @@ Your response (just the UCI move or UNCLEAR):"""
                                 self.prompt_tokens += usage.get("prompt_tokens", 0)
                                 self.completion_tokens += usage.get("completion_tokens", 0)
                                 self.total_tokens += usage.get("total_tokens", 0)
+                            elapsed = time.time() - move_start_time
+                            self.move_times.append(elapsed)
+                            self.total_move_time += elapsed
                             return extracted_move
                         # Extraction failed - retry API call with fresh session
                         raise TruncatedResponseError(
@@ -497,6 +505,10 @@ Your response (just the UCI move or UNCLEAR):"""
                     await self.close()
                     session = await self._ensure_session()
                 else:
+                    # Record timing even for failed API calls
+                    elapsed = time.time() - move_start_time
+                    self.move_times.append(elapsed)
+                    self.total_move_time += elapsed
                     raise TransientAPIError(
                         f"API call failed after {max_retries} retries: {e}"
                     ) from e
@@ -528,14 +540,23 @@ Your response (just the UCI move or UNCLEAR):"""
                 print(f"  [DEBUG] Attempting to extract move from reasoning trace ({len(reasoning_text)} chars)")
                 extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
                 if extracted_move:
+                    elapsed = time.time() - move_start_time
+                    self.move_times.append(elapsed)
+                    self.total_move_time += elapsed
                     return extracted_move
 
         if move is None:
             # Debug: print raw response when parsing fails
             print(f"  [DEBUG] Raw LLM response: {repr(response_text[:200] if response_text else '')}")
             # Return raw response for logging, will be marked as illegal
+            elapsed = time.time() - move_start_time
+            self.move_times.append(elapsed)
+            self.total_move_time += elapsed
             return response_text.strip()[:20] if response_text else ""
 
+        elapsed = time.time() - move_start_time
+        self.move_times.append(elapsed)
+        self.total_move_time += elapsed
         return move
 
     async def close(self) -> None:

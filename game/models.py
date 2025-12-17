@@ -49,6 +49,10 @@ class GameResult(BaseModel):
     # Token usage for LLM players (None for engine players)
     tokens_white: Optional[dict] = None  # {"prompt_tokens", "completion_tokens", "total_tokens"}
     tokens_black: Optional[dict] = None
+    # Timing for LLM players (None for engine players)
+    # {"total_time", "move_count", "avg_time", "move_times"}
+    timing_white: Optional[dict] = None
+    timing_black: Optional[dict] = None
     # Details about illegal moves for debugging (prompt, response, parsed move)
     illegal_move_details: Optional[List[dict]] = None
 
