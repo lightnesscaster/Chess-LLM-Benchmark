@@ -189,6 +189,74 @@ class SurvivalEngine(BaseEngine):
         except Exception:
             return None
 
+    def _count_opponent_good_responses(self, board: chess.Board, move: chess.Move, threshold_cp: int = 200) -> int:
+        """
+        Count how many good responses the opponent has after we play a move.
+
+        A "good" response is within threshold_cp of the best move.
+        Uses lower depth (8) for speed since this is called per candidate.
+
+        Returns count of good responses (moves within threshold of best).
+        """
+        engine = self._ensure_engine()
+
+        # Push our move to analyze opponent's position
+        board.push(move)
+        try:
+            analysis = engine.analyse(
+                board,
+                chess.engine.Limit(depth=8),
+                multipv=10
+            )
+
+            if not analysis:
+                return 10  # Assume many good responses if analysis fails
+
+            # Get best eval from opponent's perspective
+            best_eval = None
+            evals = []
+            for info in analysis:
+                score = info.get("score")
+                if score is None:
+                    continue
+                pov_score = score.pov(board.turn)
+                if pov_score.is_mate():
+                    mate_in = pov_score.mate()
+                    eval_cp = 10000 if mate_in > 0 else -10000
+                else:
+                    cp_score = pov_score.score()
+                    eval_cp = cp_score if cp_score is not None else 0
+                evals.append(eval_cp)
+                if best_eval is None:
+                    best_eval = eval_cp
+
+            if best_eval is None:
+                return 10  # Assume many good responses if no evals
+
+            # Count moves within threshold of best
+            good_count = sum(1 for e in evals if best_eval - e <= threshold_cp)
+            return good_count
+
+        except Exception:
+            return 10  # Assume many good responses on error
+        finally:
+            board.pop()
+
+    def _filter_by_response_diversity(self, board: chess.Board, candidates: list[dict], min_responses: int) -> list[dict]:
+        """
+        Filter candidates to only include moves that give opponent at least min_responses good options.
+
+        This makes survival-bot more forgiving by avoiding forcing moves.
+        """
+        filtered = []
+        for c in candidates:
+            good_responses = self._count_opponent_good_responses(board, c["move"])
+            c["opponent_good_responses"] = good_responses
+            logger.debug(f"    {c['move'].uci()}: opponent has {good_responses} good responses")
+            if good_responses >= min_responses:
+                filtered.append(c)
+        return filtered
+
     def _analyze_moves(self, board: chess.Board, multipv: int = 10) -> list[dict]:
         """
         Analyze position with multi-PV.
@@ -372,9 +440,26 @@ class SurvivalEngine(BaseEngine):
             self._last_eval_cp = selected["eval_cp"]
             return selected["move"]
 
+        # Filter by response diversity - prefer moves that give opponent many good options
+        # This makes survival-bot more forgiving by avoiding forcing moves
+        logger.debug(f"  Checking response diversity for {len(acceptable)} acceptable moves...")
+        diverse_moves = self._filter_by_response_diversity(board, acceptable, min_responses=3)
+        if diverse_moves:
+            logger.debug(f"  {len(diverse_moves)} moves give opponent 3+ good responses")
+            acceptable = diverse_moves
+        else:
+            # Fall back to requiring only 2 good responses
+            logger.debug(f"  No moves with 3+ responses, trying 2+...")
+            diverse_moves = [c for c in acceptable if c.get("opponent_good_responses", 0) >= 2]
+            if diverse_moves:
+                logger.debug(f"  {len(diverse_moves)} moves give opponent 2+ good responses")
+                acceptable = diverse_moves
+            else:
+                logger.debug(f"  No moves with 2+ responses, using original acceptable list")
+
         # Random selection from acceptable moves
         selected = self._rng.choice(acceptable)
-        logger.debug(f"  SELECTED (from acceptable): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']}")
+        logger.debug(f"  SELECTED (from acceptable): {selected['move'].uci()} eval={selected['eval_cp']} delta={selected['delta_cp']} opponent_responses={selected.get('opponent_good_responses', 'N/A')}")
         self._last_eval_cp = selected["eval_cp"]
         return selected["move"]
 
