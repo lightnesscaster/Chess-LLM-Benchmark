@@ -246,7 +246,7 @@ llms:
   - player_id: "gemini-3-flash-preview"
     model_name: "google/gemini-3-flash-preview"
     temperature: 0.0
-    reasoning: true
+    reasoning_effort: high
 
   # grok-4-fast
   - player_id: "grok-4-fast"
