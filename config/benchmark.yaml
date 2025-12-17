@@ -241,6 +241,12 @@ llms:
     model_name: "google/gemini-3-pro-preview"
     temperature: 0.0
 
+  # grok-4-fast
+  - player_id: "grok-4-fast"
+    model_name: "x-ai/grok-4-fast"
+    temperature: 0.0
+    reasoning: true
+
   # grok-4.1-fast
   - player_id: "grok-4.1-fast"
     model_name: "x-ai/grok-4.1-fast"
