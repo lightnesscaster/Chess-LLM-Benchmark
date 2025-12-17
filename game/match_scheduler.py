@@ -855,6 +855,17 @@ class MatchScheduler:
 
                 white_id, black_id = pairing
 
+                # Estimate cost BEFORE reserving to check budget
+                estimated_cost = self._estimate_game_cost(white_id, black_id)
+                effective_cost = counters["total_cost"] + counters["pending_cost"] + estimated_cost
+
+                # Pre-flight budget check: don't start game if it would exceed budget
+                if effective_cost >= max_cost:
+                    counters["budget_exceeded"] = True
+                    if self.verbose:
+                        print(f"  Budget would be exceeded: ${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending + ${estimated_cost:.2f} new >= ${max_cost:.2f}")
+                    return  # Don't start this game
+
                 # Reserve everything atomically: pairing slot, game counts, counter, cost estimate
                 games_per_pairing[(white_id, black_id)] = games_per_pairing.get((white_id, black_id), 0) + 1
                 for player_id in [white_id, black_id]:
@@ -863,8 +874,7 @@ class MatchScheduler:
                 counters["game_num"] += 1
                 game_num = counters["game_num"]
 
-                # Estimate cost for this game and add to pending
-                estimated_cost = self._estimate_game_cost(white_id, black_id)
+                # Add estimated cost to pending
                 counters["pending_cost"] += estimated_cost
                 counters["pending_estimates"][game_num] = estimated_cost
 
@@ -881,9 +891,9 @@ class MatchScheduler:
                     for player_id in [white_id, black_id]:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
-                    # Remove pending cost estimate
-                    if game_num in counters["pending_estimates"]:
-                        counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
+                    # Remove pending cost estimate (use pop with default for thread safety)
+                    estimate = counters["pending_estimates"].pop(game_num, 0)
+                    counters["pending_cost"] -= estimate
                 continue
 
             # Show current ratings
@@ -907,16 +917,16 @@ class MatchScheduler:
                             if player_id in llm_set:  # Track games for all LLMs
                                 self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                         counters["api_errors"] += 1
-                        # Remove pending cost estimate
-                        if game_num in counters["pending_estimates"]:
-                            counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
+                        # Remove pending cost estimate (use pop with default for thread safety)
+                        estimate = counters["pending_estimates"].pop(game_num, 0)
+                        counters["pending_cost"] -= estimate
                 else:
                     # Calculate actual game cost and update totals
                     game_cost = self._calculate_game_cost(result)
                     async with scheduler_lock:
-                        # Remove pending estimate, add actual cost
-                        if game_num in counters["pending_estimates"]:
-                            counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
+                        # Remove pending estimate, add actual cost (use pop with default for thread safety)
+                        estimate = counters["pending_estimates"].pop(game_num, 0)
+                        counters["pending_cost"] -= estimate
                         counters["total_cost"] += game_cost
                         # Check budget (actual + estimated pending)
                         effective_cost = counters["total_cost"] + counters["pending_cost"]
@@ -935,9 +945,9 @@ class MatchScheduler:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
                     counters["errors"] += 1
-                    # Remove pending cost estimate
-                    if game_num in counters["pending_estimates"]:
-                        counters["pending_cost"] -= counters["pending_estimates"].pop(game_num)
+                    # Remove pending cost estimate (use pop with default for thread safety)
+                    estimate = counters["pending_estimates"].pop(game_num, 0)
+                    counters["pending_cost"] -= estimate
 
     # Default cost budget for benchmark runs
     DEFAULT_MAX_COST = 10.0  # $10 default budget
@@ -1031,6 +1041,12 @@ class MatchScheduler:
         ]
 
         await asyncio.gather(*workers)
+
+        # Verify all pending estimates were cleaned up (defensive check)
+        if counters["pending_estimates"]:
+            print(f"Warning: {len(counters['pending_estimates'])} pending estimates not cleaned up")
+        if abs(counters["pending_cost"]) > 0.01:
+            print(f"Warning: pending_cost not zero: ${counters['pending_cost']:.4f}")
 
         # Show completion message
         if counters["budget_exceeded"]:
