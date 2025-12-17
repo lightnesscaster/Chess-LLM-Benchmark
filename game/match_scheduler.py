@@ -22,7 +22,7 @@ from .pgn_logger import PGNLogger
 from .stats_collector import StatsCollector
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
-from rating.cost_calculator import CostCalculator
+from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
 
 
 Player = Union[BaseEngine, BaseLLMPlayer]
@@ -162,22 +162,10 @@ class MatchScheduler:
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
 
-    # Only include games against opponents within this rating difference for cost calculation
-    COST_RATING_THRESHOLD = 600
-
-    def _filter_results_by_rating_diff(self, results: List[GameResult]) -> List[GameResult]:
-        """Filter results to only include games where opponents are within rating threshold."""
-        filtered = []
-        for result in results:
-            white_rating = self.rating_store.get(result.white_id)
-            black_rating = self.rating_store.get(result.black_id)
-
-            if white_rating and black_rating:
-                diff = abs(white_rating.rating - black_rating.rating)
-                if diff <= self.COST_RATING_THRESHOLD:
-                    filtered.append(result)
-
-        return filtered
+    def invalidate_cost_cache(self) -> None:
+        """Invalidate the cost data cache. Call this when ratings are updated."""
+        self._cost_data_cache = None
+        self._cost_cache.clear()
 
     def _get_player_cost(self, player_id: str) -> float:
         """
@@ -185,7 +173,7 @@ class MatchScheduler:
 
         Uses historical average if available from stats_collector,
         otherwise estimates from pricing data. Only considers games
-        against opponents within COST_RATING_THRESHOLD rating points.
+        against opponents within 600 rating points (DEFAULT_COST_RATING_THRESHOLD).
 
         Args:
             player_id: The player to get cost for
@@ -206,8 +194,8 @@ class MatchScheduler:
         # Calculate cost_data once and cache it (avoid recalculating for every player)
         # Only include games against similarly-rated opponents for accurate cost estimate
         if not hasattr(self, '_cost_data_cache') or self._cost_data_cache is None:
-            filtered_results = self._filter_results_by_rating_diff(
-                self.stats_collector.results
+            filtered_results = filter_results_by_rating_diff(
+                self.stats_collector.results, self.rating_store
             )
             self._cost_data_cache = self._cost_calculator.calculate_player_costs(
                 filtered_results
@@ -508,6 +496,9 @@ class MatchScheduler:
             else:
                 # Anchors: track game stats without changing rating
                 self._update_anchor_stats(black_rating, black_score)
+
+            # Invalidate cost cache since ratings changed (affects filtering)
+            self.invalidate_cost_cache()
 
     def _update_anchor_stats(self, rating: PlayerRating, score: float) -> None:
         """Update game statistics for an anchor without changing its rating."""

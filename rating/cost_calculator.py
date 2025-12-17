@@ -3,13 +3,73 @@ Cost calculation for LLM players based on token usage and OpenRouter pricing.
 """
 
 import json
+import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Protocol
 
 import yaml
 
 from game.models import GameResult
+
+logger = logging.getLogger(__name__)
+
+
+# Default threshold for filtering games by rating difference
+DEFAULT_COST_RATING_THRESHOLD = 600
+
+
+class RatingProvider(Protocol):
+    """Protocol for objects that can provide player ratings."""
+    def get(self, player_id: str) -> Optional[Any]:
+        """Get rating info for a player. Returns object with .rating attribute or None."""
+        ...
+
+
+def filter_results_by_rating_diff(
+    results: List[GameResult],
+    rating_provider: RatingProvider,
+    max_diff: int = DEFAULT_COST_RATING_THRESHOLD,
+) -> List[GameResult]:
+    """
+    Filter game results to only include games where opponents are within rating threshold.
+
+    This is used for cost calculations to get more accurate cost estimates by excluding
+    mismatched games (e.g., strong LLM vs random-bot) which tend to be shorter/cheaper.
+
+    Args:
+        results: List of game results to filter
+        rating_provider: Object with get(player_id) method returning rating info
+        max_diff: Maximum rating difference to include (default: 600)
+
+    Returns:
+        Filtered list of game results where both players' ratings are within max_diff
+    """
+    filtered = []
+    skipped_missing_rating = 0
+
+    for result in results:
+        white_rating = rating_provider.get(result.white_id)
+        black_rating = rating_provider.get(result.black_id)
+
+        if not white_rating or not black_rating:
+            skipped_missing_rating += 1
+            continue
+
+        diff = abs(white_rating.rating - black_rating.rating)
+        if diff <= max_diff:
+            filtered.append(result)
+
+    if skipped_missing_rating > 0:
+        logger.debug(
+            f"Cost filtering: skipped {skipped_missing_rating} games due to missing ratings"
+        )
+
+    logger.debug(
+        f"Cost filtering: {len(filtered)}/{len(results)} games within {max_diff} rating diff"
+    )
+
+    return filtered
 
 
 class CostCalculator:
