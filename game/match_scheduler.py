@@ -9,7 +9,6 @@ Handles:
 
 import asyncio
 import json
-import random
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Union, Tuple, Optional
@@ -567,6 +566,7 @@ class MatchScheduler:
 
                 # Find opponents with games remaining
                 candidates = []
+                llm_rating = self.rating_store.get(llm_id).rating
                 for opp_id in valid_opponents:
                     is_anchor = opp_id in anchor_set
                     is_random_bot = opp_id == self.RANDOM_BOT_ID
@@ -598,17 +598,17 @@ class MatchScheduler:
                     target = games_vs_anchor_per_color if is_anchor else games_vs_llm_per_color
 
                     # Check both color combinations
+                    opp_rating = self.rating_store.get(opp_id).rating
+                    rating_diff = abs(llm_rating - opp_rating)
                     for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
                         played = games_per_pairing.get((white_id, black_id), 0)
                         if played < target:
-                            # Weight by how many games remaining (more remaining = higher priority)
-                            remaining = target - played
-                            candidates.append((white_id, black_id, remaining))
+                            candidates.append((white_id, black_id, rating_diff))
 
                 if candidates:
-                    # Pick randomly among candidates, weighted by games remaining
-                    weights = [c[2] for c in candidates]
-                    chosen = random.choices(candidates, weights=weights, k=1)[0]
+                    # Sort by rating difference (closest first), then pick first
+                    candidates.sort(key=lambda c: c[2])
+                    chosen = candidates[0]
                     return (chosen[0], chosen[1])
 
         return None
