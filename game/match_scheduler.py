@@ -81,6 +81,11 @@ class MatchScheduler:
     RANDOM_BOT_MIN_GAMES = 5  # Min games vs random-bot to prove competence (must not lose any)
     RANDOM_BOT_ID = "random-bot"
 
+    # Tighter rating threshold for stable models (low RD)
+    # When RD is below this, use a tighter rating threshold for pairings
+    STABLE_RD_THRESHOLD = 100  # RD below this triggers tighter pairing
+    STABLE_RATING_THRESHOLD = 300  # Use 300 point window instead of default (600)
+
     def __init__(
         self,
         players: Dict[str, Player],
@@ -438,13 +443,21 @@ class MatchScheduler:
             # No threshold - all anchors and other LLMs are valid
             return anchor_ids + [lid for lid in llm_ids if lid != llm_id]
 
-        llm_rating = self.rating_store.get(llm_id).rating
+        llm_data = self.rating_store.get(llm_id)
+        llm_rating = llm_data.rating
+        llm_rd = llm_data.rating_deviation
+
+        # Use tighter threshold for stable models (low RD)
+        effective_threshold = rating_threshold
+        if llm_rd < self.STABLE_RD_THRESHOLD:
+            effective_threshold = min(rating_threshold, self.STABLE_RATING_THRESHOLD)
+
         valid = []
 
         # Check anchors
         for anchor_id in anchor_ids:
             anchor_rating = self.rating_store.get(anchor_id).rating
-            if abs(llm_rating - anchor_rating) <= rating_threshold:
+            if abs(llm_rating - anchor_rating) <= effective_threshold:
                 valid.append(anchor_id)
 
         # Check other LLMs
@@ -452,7 +465,7 @@ class MatchScheduler:
             if other_id == llm_id:
                 continue
             other_rating = self.rating_store.get(other_id).rating
-            if abs(llm_rating - other_rating) <= rating_threshold:
+            if abs(llm_rating - other_rating) <= effective_threshold:
                 valid.append(other_id)
 
         # Add random-bot for models with low accuracy or no stats, regardless of rating
@@ -743,6 +756,7 @@ class MatchScheduler:
             print(f"Reasoning models ({len(reasoning_in_benchmark)}): {reasoning_in_benchmark}")
             print(f"Reasoning game caps: {self.REASONING_BASE_CAP} (base), {self.REASONING_HIGH_RATING_CAP} (if rating > {self.REASONING_HIGH_RATING_THRESHOLD})")
         print(f"Low RD cap: {self.LOW_RD_CAP} games if RD < {self.LOW_RD_THRESHOLD}")
+        print(f"Stable model pairing: RD < {self.STABLE_RD_THRESHOLD} uses ±{self.STABLE_RATING_THRESHOLD} threshold (vs ±{rating_threshold})")
         print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
         print(f"Within-year weak freeze: RD < {self.WITHIN_YEAR_WEAK_RD_THRESHOLD} + rating < {self.WITHIN_YEAR_WEAK_RATING_THRESHOLD} (any model <{self.FROZEN_AGE_MONTHS_1Y}mo)")
         print(f"Recent weak freeze (<{self.FROZEN_AGE_MONTHS_6M}mo): reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
