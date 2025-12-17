@@ -335,6 +335,10 @@
     "completion": 1e-05,
     "prompt": 1.25e-06
   },
+  "google/gemini-3-flash-preview": {
+    "completion": 3e-06,
+    "prompt": 5e-07
+  },
   "google/gemini-3-pro-image-preview": {
     "completion": 1.2e-05,
     "prompt": 2e-06
