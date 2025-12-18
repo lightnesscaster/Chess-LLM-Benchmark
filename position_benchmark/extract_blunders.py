@@ -84,6 +84,7 @@ def analyze_game(
     board = game.board()
     move_history = []
     move_number = 0
+    last_blunder_move = -100  # Track last blunder to avoid consecutive ones
 
     for node in game.mainline():
         move = node.move
@@ -124,6 +125,11 @@ def analyze_game(
                 move_history.append(move_san)
                 continue
 
+            # Skip consecutive blunders (within 4 moves of last one in this game)
+            if move_number - last_blunder_move <= 4:
+                move_history.append(move_san)
+                continue
+
             # Undo move to get FEN before blunder and best move SAN
             board.pop()
             fen_before_blunder = board.fen()
@@ -148,6 +154,7 @@ def analyze_game(
             )
 
             blunders.append(blunder)
+            last_blunder_move = move_number
 
         move_history.append(move_san)
 
