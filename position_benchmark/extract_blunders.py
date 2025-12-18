@@ -116,14 +116,23 @@ def analyze_game(
                 move_history.append(move_san)
                 continue
 
-            # Get best move SAN (need to undo move first)
+            # Filter: skip if still winning by +5, unless they missed mate in 4 or less
+            # Mate in N is encoded as 10000 - N*10, so mate in 4 = 9960
+            still_winning_big = eval_after >= 500
+            missed_quick_mate = eval_before >= 9960
+            if still_winning_big and not missed_quick_mate:
+                move_history.append(move_san)
+                continue
+
+            # Undo move to get FEN before blunder and best move SAN
             board.pop()
+            fen_before_blunder = board.fen()
             best_move_san = board.san(best_move_uci) if best_move_uci else "?"
-            board.push(move)  # Re-apply the move
+            board.push(move)  # Restore state
 
             blunder = BlunderPosition(
-                fen=board.fen(),  # Position AFTER the blunder (for reference)
-                move_history=move_history.copy(),  # Moves BEFORE this position
+                fen=fen_before_blunder,
+                move_history=move_history.copy(),
                 blunder_move=move.uci(),
                 blunder_move_san=move_san,
                 best_move=best_move_uci.uci() if best_move_uci else "",
@@ -137,19 +146,6 @@ def analyze_game(
                 player_id=white_id if side_to_move == chess.WHITE else black_id,
                 opponent_id=black_id if side_to_move == chess.WHITE else white_id,
             )
-
-            # Actually store the FEN BEFORE the blunder (undo move)
-            board.pop()
-            blunder.fen = board.fen()
-            board.push(move)  # Re-apply
-
-            # Filter: skip if still winning by +5, unless they missed mate in 4 or less
-            # Mate in N is encoded as 10000 - N*10, so mate in 4 = 9960
-            still_winning_big = eval_after >= 500
-            missed_quick_mate = eval_before >= 9960
-            if still_winning_big and not missed_quick_mate:
-                move_history.append(move_san)
-                continue
 
             blunders.append(blunder)
 
