@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "gemini-3-pro-preview"]
+[Black "eubos"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5 5. Nb5 d6 6. N1c3 a6 7. Na3 Nf6 8. Bg5 Be7 9. Bxf6 Bxf6 10. Nd5 Ra7 11. c3 O-O 12. Nc2 Bg5 13. a4 Be6 14. h4 Bh6 15. g3 Ra8 16. Bc4 Rc8 17. Qe2 Ne7 18. Nce3 Bxe3 19. Nxe3 Bxc4 20. Nxc4 Qc7 21. Ne3 Qc6 22. Qd3 f5 23. Nd5 Nxd5 24. Qxd5+ Qxd5 25. exd5 Rc5 26. Rd1 Ra5 27. b3 Rc8 28. c4 b5 29. axb5 axb5 30. b4 Ra4 31. cxb5 Rxb4 32. O-O Rxb5 33. Rd2 Rcc5 34. Rfd1 Kf7 35. Kg2 Kg6 36. f3 Rc3 37. Rd3 Rb2+ 38. R3d2 Rbb3 39. Rf2 e4 40. fxe4 Rxg3+ 41. Kh2 fxe4 42. Rg1 Rxg1 43. Kxg1 e3 44. Re2 Rd3 45. Kg2 Rd2 46. Kf3 Rxe2 47. Kxe2 Kh5 48. Kxe3 Kxh4 49. Kf3 g5 50. Ke4 Kg4 51. Ke3 Kh3 52. Ke4 g4 53. Kf5 g3 54. Ke6 g2 55. Kxd6 g1=Q 56. Ke6 Kg4 57. d6 Qe3+ 58. Kf6 Qe8 59. Kg7 Kg5 60. d7 Qxd7+ 61. Kh8 Kf6 62. Kg8 Qg7# 0-1

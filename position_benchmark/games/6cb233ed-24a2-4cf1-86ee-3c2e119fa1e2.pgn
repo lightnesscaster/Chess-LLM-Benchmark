@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "gpt-5.1 (high)"]
+[Black "maia-1100"]
+[Result "1/2-1/2"]
+[Termination "stalemate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 5. Re1 d5 6. Nxe5 Bc5 7. d4 Bxd4 8. Bxc6+ bxc6 9. Qxd4 O-O 10. Nc3 Nxc3 11. Qxc3 Re8 12. Nxc6 Rxe1+ 13. Qxe1 Qd6 14. Qe8+ Qf8 15. Qxf8+ Kxf8 16. Bf4 Bf5 17. Bxc7 Rc8 18. Bd6+ Ke8 19. Re1+ Kd7 20. c3 Rxc6 21. Re7+ Kxd6 22. Re1 Rb6 23. b3 Ra6 24. a4 Rb6 25. g4 Bxg4 26. h3 Bxh3 27. Re3 Be6 28. b4 Rc6 29. a5 a6 30. Kg2 h5 31. Re1 Rxc3 32. Re3 Rxe3 33. fxe3 g5 34. Kg3 h4+ 35. Kf2 g4 36. Ke1 h3 37. e4 dxe4 38. Kf2 f5 39. b5 axb5 40. a6 Kc7 41. a7 Kb7 42. a8=Q+ Kxa8 43. Ke3 h2 44. Ke2 h1=Q 45. Ke3 g3 46. Kf4 g2 47. Ke5 g1=Q 48. Kxe6 f4 49. Kd7 f3 50. Kc8 f2 51. Kc7 f1=Q 52. Kc8 e3 53. Kd8 e2 54. Kc8 e1=Q 55. Kd8 b4 56. Kc7 b3 57. Kc8 b2 58. Kd8 b1=Q 59. Kc7 Ka7 60. Kc8 Ka6 61. Kc7 Ka5 62. Kc8 Ka4 63. Kd8 Ka3 64. Kc8 Ka2 65. Kc7 Ka1 66. Kc8 Qbc1+ 67. Kb8 Ka2 1/2-1/2

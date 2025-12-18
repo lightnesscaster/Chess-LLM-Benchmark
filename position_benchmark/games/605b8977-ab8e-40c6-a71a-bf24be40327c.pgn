@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "claude-opus-4 (no thinking)"]
+[Black "random-bot"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 Nc6 2. Nf3 a6 3. d4 f5 4. exf5 b5 5. d5 Nd4 6. Nxd4 c6 7. Ne6 Qc7 8. Nxg7+ Kf7 9. Ne6 Qxh2 10. g3 Qxh1 0-1

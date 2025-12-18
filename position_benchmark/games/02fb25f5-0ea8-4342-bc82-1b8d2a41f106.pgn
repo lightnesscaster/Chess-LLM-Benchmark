@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "claude-opus-4 (no thinking)"]
+[Black "random-bot"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 Na6 2. d4 h6 3. Nf3 e6 4. Bd3 Qg5 5. Nxg5 Ba3 6. bxa3 f6 7. Nf7 Nb8 8. Nxh8 b6 9. O-O a6 10. f4 Bb7 11. Rf3 Nc6 12. c3 h5 13. Rg3 g5 14. fxg5 Nxd4 15. cxd4 Kf8 16. gxf6 Bd5 17. exd5 e5 18. dxe5 Re8 19. e6 Ne7 20. f7 h4 21. fxe8=Q+ Kxe8 22. Rg7 d6 23. Rg8+ Nxg8 24. Nf7 Kf8 25. Nd8 Ne7 26. Nf7 Nxd5 27. Bh7 c5 28. g3 Ke7 29. Qh5 Nc3 30. Qxh4+ Kf8 31. Qh6+ Ke8 32. Nxd6+ Kd8 33. Nf7+ Ke7 34. Qg7 Ne4 35. Qf8+ Kxe6 36. Qe8+ Kd5 37. Bf4 Kd4 38. Qxe4# 1-0

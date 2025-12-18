@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "random-bot"]
+[Black "deepseek-chat-v3-0324"]
+[Result "1-0"]
+[Termination "forfeit_illegal_move"]
+
+1. Nh3 d5 2. b4 a5 3. Bb2 axb4 4. f3 b3 5. Bf6 b2 6. Kf2 1-0

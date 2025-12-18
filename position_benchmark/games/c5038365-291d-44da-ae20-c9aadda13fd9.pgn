@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "gpt-4o-2024-11-20"]
+[Black "random-bot"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 h5 2. e5 f5 3. exf6 d5 4. fxg7 Qd7 5. gxh8=Q Qa4 6. Qhxh5+ Kd7 7. Qxd5+ Ke8 8. Q5h5+ Kd7 9. Qa5 Qa3 10. Qxa3 c5 11. Qxa7 Kd6 0-1

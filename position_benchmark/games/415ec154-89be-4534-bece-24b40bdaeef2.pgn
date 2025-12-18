@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "survival-bot"]
+[Black "maia-1100"]
+[Result "1/2-1/2"]
+[Termination "insufficient_material"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 5. d4 exd4 6. c3 dxc3 7. Qc2 cxb2 8. Bxb2 d5 9. a3 Bd7 10. Nc3 Nxc3 11. Bxc3 a6 12. Bd3 Bd6 13. h3 O-O 14. Bxh7+ Kh8 15. Rad1 Be6 16. Rfe1 Re8 17. Bf5 Bxf5 18. Rxe8+ Qxe8 19. Qxf5 Ne7 20. Qh5+ Kg8 21. Ng5 f6 22. Qh7+ Kf8 23. Qh8+ Ng8 24. Nh7+ Kf7 25. Re1 Qd7 26. Nxf6 gxf6 27. Qh7+ Kf8 28. Qxd7 Ne7 29. Qa4 b5 30. Qc2 Bxa3 31. Bb2 Bb4 32. Qb1 Bxe1 33. Ba1 Bb4 34. Qb3 a5 35. Bb2 a4 36. Qd1 a3 37. Ba1 a2 38. Bxf6 a1=Q 39. Bxa1 Rxa1 40. Qxa1 c5 41. g3 d4 42. Qa6 d3 43. h4 d2 44. Qa1 c4 45. Qd1 c3 46. Qf3+ Ke8 47. Kf1 c2 48. Qh5+ Kd7 49. Qxb5+ Nc6 50. Qd3+ Kc7 51. Qh7+ Kb6 52. Qxc2 Nd4 53. Qa4 Kc5 54. Kg1 Ne2+ 55. Kh2 Nc3 56. Qa7+ Kc4 57. Qc7+ Kb3 58. Qf7+ Kc2 59. Qb7 d1=Q 60. Qxb4 Qf3 61. Qa5 Qxf2+ 62. Kh3 Qf1+ 63. Kg4 Qe2+ 64. Kh3 Qf1+ 65. Kg4 Qe2+ 66. Kh3 Qf1+ 67. Kg4 Qe2+ 68. Kg5 Qe3+ 69. Kf6 Ne4+ 70. Kf7 Nd6+ 71. Kg8 Qe8+ 72. Kh7 Qf7+ 73. Kh6 Nf5+ 74. Kg5 Nxg3 75. Qb4 Qf5+ 76. Kh6 Qh5+ 77. Kg7 Nf5+ 78. Kf8 Qh8+ 79. Kf7 Qg7+ 80. Ke8 Qe7+ 81. Qxe7 Nxe7 82. h5 Nf5 83. Kd7 Kd3 84. Kc6 Ke4 85. Kc5 Ke5 86. Kc4 Kf6 87. Kd3 Kg5 88. Kd2 Kxh5 1/2-1/2

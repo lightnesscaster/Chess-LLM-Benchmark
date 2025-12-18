@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "gemini-2.5-pro"]
+[Black "o3"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e6 7. f3 b5 8. Qd2 Nbd7 9. g4 b4 10. Na4 Bb7 11. O-O-O Nxe4 12. fxe4 Bxe4 13. Rg1 Qa5 14. b3 Rc8 15. Kb1 Rxc2 16. Nxc2 Bxc2+ 17. Qxc2 Nc5 18. Nxc5 dxc5 19. Qd2 Qxa2+ 20. Kxa2 Be7 21. Qd8+ Bxd8 22. Bxc5 Be7 23. Bxe7 Kxe7 24. Bxa6 Rd8 25. Rxd8 Kxd8 26. Rd1+ Ke7 27. Rd4 e5 0-1

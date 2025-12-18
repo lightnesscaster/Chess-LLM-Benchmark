@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.01"]
+[Round "1"]
+[White "gemini-2.5-pro"]
+[Black "gpt-oss-120b (medium)"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 exd4 7. Re1 Qe7 8. Nxd4 Nxd4 9. Qxd4 Qe5 10. Qxe5+ Kd8 11. Rxe4 a5 12. Qe8# 1-0

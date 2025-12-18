@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "gemini-2.0-flash-001"]
+[Black "maia-1100"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nxd4 5. Qxd4 Nf6 6. Nc3 b6 7. Qe5+ Be7 8. Ba6 Bxa6 9. Kd1 O-O 10. Qg5 Nxe4 11. Re1 Nxg5 12. Bxg5 Bxg5 13. a4 Re8 14. Rxe8+ Qxe8 15. Nb5 Bxb5 16. axb5 Qe5 17. Ra3 Qxb2 18. Ra2 Qxa2 19. Ke1 Qxc2 20. h4 Qd2+ 21. Kf1 Bxh4 22. g3 Bg5 23. Kg1 Re8 24. f4 Re1# 0-1

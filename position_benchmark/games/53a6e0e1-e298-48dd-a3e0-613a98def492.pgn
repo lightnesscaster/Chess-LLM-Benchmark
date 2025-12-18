@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "maia-1100"]
+[Black "gpt-oss-120b (medium)"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. Qe2 Ke7 5. Qxe4 Ke8 6. Nc6+ Be7 7. Nxd8 Kxd8 8. Bc4 Bc5 9. Bxf7 Rg8 10. Bxg8 Bxf2+ 11. Kxf2 b6 12. Qxa8 a5 13. Qxb8 Ke8 14. Qxc8+ Ke7 15. Re1+ Kd6 16. Qf8+ Kc6 17. Qf3+ Kc5 18. Qd5+ Kb4 19. Re4# 1-0

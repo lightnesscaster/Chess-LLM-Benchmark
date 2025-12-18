@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "gemini-3-pro-preview"]
+[Black "eubos"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 d5 3. exd5 Nf6 4. d4 e4 5. Ne5 Nbd7 6. Nc3 Bd6 7. Nc4 Bb4 8. Bd2 O-O 9. Be2 Bxc3 10. Bxc3 Nxd5 11. Bd2 c5 12. dxc5 Nxc5 13. O-O Be6 14. Ne3 Nf4 15. Bc4 Qc7 16. Bxe6 Ncxe6 17. Bc3 Rad8 18. Qg4 f5 19. Qh4 h5 20. Kh1 g5 21. Qg3 h4 22. Nxf5 hxg3 23. Nh6+ Kh7 24. fxg3 Kxh6 25. gxf4 Nxf4 26. Rxf4 Qxf4 27. h3 e3 28. Re1 e2 29. Rxe2 Rd1+ 30. Re1 Rxe1+ 31. Bxe1 Qe5 32. Bc3 Rf1# 0-1

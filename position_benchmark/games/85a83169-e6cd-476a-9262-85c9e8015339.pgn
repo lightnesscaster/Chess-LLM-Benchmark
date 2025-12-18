@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "maia-1900"]
+[Black "deepseek-chat-v3.1 (thinking)"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Be6 10. Bc2 d5 11. exd5 Nxd5 12. Nxe5 Nxe5 13. Rxe5 Nf4 14. d4 Bf6 15. Bxf4 Bxe5 16. Bxe5 Re8 17. Nd2 Qd6 18. Bxd6 cxd6 19. Ne4 d5 20. Nc5 Bf5 21. Bxf5 Re1+ 22. Qxe1 Re8 23. Qxe8# 1-0

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "survival-bot"]
+[Black "maia-1900"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. Nf3 d5 2. d4 Nf6 3. Bf4 e6 4. Nbd2 Bd6 5. Bg3 O-O 6. e3 c5 7. dxc5 Bxc5 8. Qc1 Nc6 9. Ne5 Nxe5 10. Bxe5 Ng4 11. Nf3 Nxe5 12. Nxe5 f6 13. Nd3 Bd6 14. Qd2 Bd7 15. Nf4 Rc8 16. Rb1 Qc7 17. c4 Bxf4 18. exf4 dxc4 19. f3 Rfd8 20. Ra1 Bb5 21. Qb4 a6 22. a4 Bc6 23. f5 exf5 24. Rc1 Re8+ 25. Kf2 b5 26. Qc5 Re5 27. Qd4 Rd5 28. Qh4 Rd2+ 29. Be2 Re8 30. Rhe1 Qb6+ 31. Kf1 Qe3 32. Rc3 Rxe2 33. Rxe3 R2xe3 34. Rc1 Re2 35. h3 Rxb2 36. Qg3 Ree2 37. Qf4 Rf2+ 38. Ke1 Rxg2 39. Kf1 Rgf2+ 40. Kg1 Rg2+ 41. Kf1 Rgf2+ 42. Kg1 Rg2+ 43. Kf1 Rgf2+ 44. Kg1 Rg2+ 45. Kf1 Rgf2+ 46. Kg1 Rg2+ 47. Kf1 1/2-1/2

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.16"]
+[Round "1"]
+[White "gpt-5.1-chat"]
+[Black "random-bot"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 b6 2. d4 b5 3. Nf3 a6 4. c4 a5 5. Nc3 Ba6 6. cxb5 Bc8 7. Bd3 Ba6 8. bxa6 c6 9. O-O f6 10. a7 Rxa7 11. Nb5 Na6 12. Nc7+ Kf7 13. Nxa6 e6 14. Ne5+ fxe5 15. dxe5 Qf6 16. Qf3 Ke8 17. Qxf6 d6 18. Nc5 Nh6 19. Nxe6 g6 20. Nxf8 Ra8 21. Qd8+ Kf7 22. Qd7+ Kxf8 23. Qxd6+ Kf7 24. Qf6+ Kg8 25. Qe6+ Kf8 26. Bxh6# 1-0

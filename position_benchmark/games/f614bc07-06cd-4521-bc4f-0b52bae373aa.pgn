@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.13"]
+[Round "1"]
+[White "gpt-5.1-chat"]
+[Black "gpt-5.2-chat"]
+[Result "1/2-1/2"]
+[Termination "insufficient_material"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 d6 6. Bg5 e6 7. Qd2 Be7 8. O-O-O O-O 9. Nxc6 bxc6 10. e5 dxe5 11. Qxd8 Bxd8 12. Bxf6 gxf6 13. Ne4 f5 14. Nc3 Ba6 15. Bxa6 c5 16. Nd5 exd5 17. Rxd5 f4 18. Rxc5 Be7 19. Rc8 Rfxc8 20. Bxc8 Rxc8 21. Rd1 e4 22. Rd4 Bf6 23. Rxe4 Bxb2+ 24. Kxb2 Rxc2+ 25. Kxc2 a6 26. Rxf4 Kh8 27. Rxf7 Kg8 28. Ra7 Kh8 29. Rxa6 h6 30. Ra8+ Kh7 31. Ra7+ Kh8 32. Ra8+ Kh7 33. Rb8 Kg7 34. Rb7+ Kg8 35. Kd3 Kh8 36. Rb8+ Kh7 37. Rb7+ Kh8 38. Rb8+ Kg7 39. Rb7+ Kg6 40. Rb6+ Kg7 41. Rb7+ Kg6 42. Rb6+ Kg7 43. Rg6+ Kxg6 44. Ke3 h5 45. Ke4 h4 46. Kf4 Kf6 47. g3 Ke6 48. gxh4 Kd5 49. h5 Kc4 50. h6 Kd4 51. h7 Kc3 52. a3 Kb2 53. h8=Q+ Ka2 54. Qg8+ Ka1 55. Qg7+ Ka2 56. Qa7 Ka1 57. Qd4+ Ka2 58. Qd2+ Ka1 59. Qc3+ Ka2 60. Qc2+ Ka1 61. Qc1+ Ka2 62. Qc2+ Ka1 63. Qc1+ Ka2 64. Qc2+ Ka1 65. Qc1+ Ka2 66. Qc2+ Ka1 67. Qb1+ Kxb1 68. a4 Ka1 69. a5 Ka2 70. a6 Ka1 71. a7 Ka2 72. a8=Q+ Kb2 73. Qb8+ Ka1 74. Qa8+ Kb1 75. Qa1+ Kxa1 76. f3 Ka2 77. h4 Ka1 78. h5 Kb1 79. h6 Ka1 80. h7 Kb1 81. h8=Q Ka2 82. Qa8+ Kb2 83. Qa2+ Kxa2 84. Ke3 Ka1 85. f4 Ka2 86. f5 Ka1 87. f6 Ka2 88. f7 Ka1 89. f8=Q Kb1 90. Qb4+ Ka2 91. Qc4+ Ka1 92. Qc1+ Ka2 93. Qc2+ Ka1 94. Qc1+ Ka2 95. Qc2+ Ka1 96. Qc1+ Ka2 97. Qc2+ Ka1 98. Qa2+ Kxa2 1/2-1/2

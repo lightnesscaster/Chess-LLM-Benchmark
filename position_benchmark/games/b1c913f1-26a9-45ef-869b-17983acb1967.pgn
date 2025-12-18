@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.11.26"]
+[Round "1"]
+[White "llama-4-maverick"]
+[Black "random-bot"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 b6 2. d4 d5 3. exd5 b5 4. Nc3 g6 5. a4 a6 6. axb5 Bb7 7. b4 Nh6 8. Bg5 Qd6 9. h3 Qb6 0-1

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.16"]
+[Round "1"]
+[White "gpt-5.1 (no thinking)"]
+[Black "random-bot"]
+[Result "1/2-1/2"]
+[Termination "max_moves"]
+
+1. e4 Na6 2. Nf3 Nc5 3. Nc3 f6 4. d4 h5 5. dxc5 a5 6. Bc4 f5 7. Bxg8 b6 8. Bg5 bxc5 9. e5 Bb7 10. O-O g6 11. Qxd7+ Kxd7 12. Rfd1+ Ke8 13. Nb5 Qd4 14. Nfxd4 cxd4 15. Bxe7 Be4 16. Nxc7+ Kxe7 17. Nxa8 Bc6 18. Rxd4 g5 19. e6 Bg7 20. Rd7+ Ke8 21. Rd8+ Ke7 22. Rd7+ Kf6 23. Nc7 Kg6 24. Rxg7+ Kh6 25. Rxg5 h4 26. Bh7 Bf3 27. g3 Ba8 28. Rg4 Bh1 29. Rxh4+ Kg7 30. Ne8+ Kf8 31. Nd6 Bd5 32. Ne8 Bc6 33. Nc7 Bd7 34. Ne8 Kxe8 35. Re1 Rxh7 36. exd7+ Kxd7 37. Rxh7+ Kc6 38. Ree7 Kd6 39. Rd7+ Kc6 40. Rc7+ Kb6 41. Rh6+ Kxc7 42. Rh7+ Kd6 43. Rh6+ Ke5 44. Rh5 Kd6 45. Rxf5 Kd7 46. Rxa5 Kd8 47. Ra8+ Kc7 48. a3 Kc6 49. Ra6+ Kd5 50. Ra5+ Ke6 51. Ra6+ Kf5 52. Ra5+ Ke4 53. a4 Kf3 54. Ra8 Ke4 55. Re8+ Kd5 56. a5 Kc5 57. a6 Kd6 58. a7 Kc7 59. a8=Q Kd6 60. Qd8+ Kc5 61. Qd5+ Kxd5 62. Rd8+ Ke6 63. Re8+ Kf6 64. Kg2 Kf5 65. Re5+ Kf6 66. Re4 Kf5 67. Re5+ Kg4 68. Re4+ Kh5 69. g4+ Kg6 70. Re5 Kh6 71. Rh5+ Kg6 72. Rh6+ Kg5 73. Rg6+ Kf4 74. Rf6+ Ke4 75. Re6+ Kf4 76. g5 Kxg5 77. Re5+ Kf6 78. Re4 Kg5 79. Re5+ Kf4 80. Rf5+ Kg4 81. Rg5+ Kxg5 82. f3 Kh5 83. h3 Kh4 84. f4 Kh5 85. f5 Kh4 86. f6 Kg5 87. f7 Kf4 88. f8=Q+ Kg5 89. Qg7+ Kf4 90. Qg3+ Kf5 91. Qg4+ Ke5 92. Qg5+ Ke6 93. Qg6+ Kd7 94. Qf7+ Kd6 95. Qf6+ Kd7 96. Qf5+ Kc7 97. Qe5+ Kc6 98. Qc3+ Kb6 99. Qb4+ Kc7 100. Qc5+ Kb7 1/2-1/2

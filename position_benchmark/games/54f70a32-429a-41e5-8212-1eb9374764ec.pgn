@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.16"]
+[Round "1"]
+[White "gemini-2.5-pro"]
+[Black "random-bot"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 f6 2. d4 g6 3. Nc3 a5 4. Nf3 c5 5. dxc5 Kf7 6. Bc4+ Ke8 7. e5 fxe5 8. Nxe5 Bh6 9. Qf3 b6 10. Qf7# 1-0

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "survival-bot"]
+[Black "maia-1900"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. c4 Nf6 2. d4 g6 3. e3 Bg7 4. Nf3 O-O 5. Nc3 d6 6. Bd3 Nbd7 7. Qc2 e5 8. a4 Re8 9. h3 exd4 10. Nxd4 Ne5 11. O-O Nxd3 12. Qxd3 c6 13. Re1 d5 14. Rd1 dxc4 15. Qxc4 Qe7 16. f3 Be6 17. Qf1 Rad8 18. Kh2 Nh5 19. Rd2 Be5+ 20. Kg1 Ng3 21. Qe1 Bc4 22. Ra3 Bxd4 23. Ne4 Nxe4 24. exd4 Nxd2 25. Qxd2 Qe1+ 26. Kh2 Qxd2 27. Bxd2 Rxd4 28. Bg5 Re2 29. Be3 Rd3 30. Bxa7 Rxa3 31. bxa3 Ra2 32. Bd4 Rxa3 33. Bf6 Rxa4 34. f4 b5 35. f5 gxf5 36. g4 fxg4 37. hxg4 Be6 38. g5 b4 39. Kg1 b3 40. g6 hxg6 41. Kg2 Ra2+ 42. Kf3 b2 43. Bxb2 Rxb2 44. Ke3 c5 45. Kd3 c4+ 46. Kc3 Rb3+ 47. Kd2 c3+ 48. Ke2 c2 49. Kf1 c1=Q+ 50. Kg2 Qd2+ 51. Kf1 Rb1# 0-1

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "llama-4-maverick"]
+[Black "deepseek-v3.2 (no thinking)-exp (no thinking)"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. d4 exd4 3. c3 dxc3 4. Nxc3 Qf6 5. Nf3 Bb4 6. Qc2 Bxc3+ 0-1

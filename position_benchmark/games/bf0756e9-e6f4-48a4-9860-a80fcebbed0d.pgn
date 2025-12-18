@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "random-bot"]
+[Black "grok-3-mini"]
+[Result "1-0"]
+[Termination "forfeit_illegal_move"]
+
+1. Na3 e5 2. f4 Nc6 3. e4 Nf6 4. Qh5 g6 5. Ba6 Bg7 6. b3 b5 7. Qf3 exf4 8. Bxc8 Qxc8 9. Qe3 fxe3 10. Nh3 O-O 11. Ke2 Nxe4 12. Rd1 Nc3+ 13. Kd3 Nxd1 14. Ke4 Nc3+ 15. Kd3 e2 16. Nc4 e1=Q 17. dxc3 Qe2+ 18. Kxe2 Nd4+ 19. Kd2 Nxc2 20. Rb1 Qa6 21. Nf4 Bxc3+ 22. Kd1 1-0

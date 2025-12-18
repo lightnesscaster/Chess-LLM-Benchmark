@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.14"]
+[Round "1"]
+[White "gpt-5.2 (no thinking)"]
+[Black "gpt-oss-120b (medium)"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. Bb5 a6 5. Ba4 Nxe4 6. Nxe4 Nd4 7. Nxd4 exd4 8. O-O d3 9. cxd3 Qe7 10. Re1 Qxe4 11. dxe4 a5 12. d4 b5 13. Bxb5 Be7 14. Bxd7+ Kxd7 15. Qg4+ Kd8 16. Qxg7 Kd7 17. Qg4+ Kd8 18. Qg8+ Rxg8 19. Bg5 Rxg5 20. a3 Rxg2+ 21. Kxg2 a4 22. e5 Bh4 23. Re4 Bh3+ 24. Kxh3 c5 25. e6 f6 26. e7+ Kc8 27. e8=Q+ Kc7 28. Qe6 Kb8 29. Qc8+ Kxc8 30. Re8+ Kc7 31. Rxa8 Kc6 32. Kxh4 cxd4 33. Rd1 d3 34. Rxd3 Kc5 35. Rxa4 Kc6 36. Rdd4 Kb5 37. Rd5+ Kc6 38. h3 Kb6 39. Rd6+ Kb5 40. Ra5+ Kxa5 41. Rd5+ Ka6 42. Rd6+ Ka5 43. Rd5+ Ka4 44. Rd4+ Ka5 45. Rd5+ Ka4 46. Rd4+ Ka5 47. Kh5 Ka6 48. Rd6+ Ka5 49. Rd5+ Ka6 50. Rd6+ Ka5 51. Rd5+ Ka6 52. Rd6+ Ka5 53. Rd5+ Ka4 54. Rd4+ Ka5 55. Rd5+ Ka4 56. Rd4+ Ka5 57. Rd5+ 1/2-1/2

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.18"]
+[Round "1"]
+[White "gemini-3-flash-preview (medium)"]
+[Black "maia-1100"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Bc5 5. Nxe5 Nxe5 6. d4 Bxd4 7. Qxd4 Nc6 8. Bxc6 bxc6 9. e5 Nd5 10. c4 Nb6 11. Nc3 O-O 12. b3 d6 13. exd6 cxd6 14. Ba3 c5 15. Qd3 Bb7 16. Rad1 Qg5 17. f3 Rad8 18. Ne4 Bxe4 19. Qxe4 Rfe8 20. Qd3 Re3 21. Bc1 Rxd3 22. Bxg5 Rxd1 23. Rxd1 Rd7 24. Bf4 Nc8 25. Kf2 h6 26. h4 f6 27. g4 g5 28. hxg5 hxg5 29. Bg3 Kf7 30. Ke3 Ke6 31. Ke4 Nb6 32. f4 gxf4 33. Bxf4 d5+ 34. cxd5+ Nxd5 35. Kf3 Nc3 36. Rxd7 Kxd7 37. a4 Nd5 38. Bd2 Ke6 39. Ke4 Ne7 40. Be3 f5+ 41. gxf5+ Nxf5 42. Bxc5 Ng3+ 43. Kd3 Kd5 44. Bxa7 Ne4 45. b4 Nd6 46. a5 Kc6 47. Bc5 Nb5 48. Kc4 Na3+ 49. Kb3 Nb5 50. Be3 Kb7 51. Kc4 Ka6 52. Bf4 Na3+ 53. Kb3 Nb5 54. Kc4 Na3+ 55. Kb3 Nb5 56. Kc4 Na3+ 57. Kb3 Nb5 58. Be3 Nd6 59. Kc3 Nb5+ 60. Kc4 Na3+ 61. Kb3 Nb5 62. Kc4 Na3+ 63. Kb3 Nb5 64. Kc4 Na3+ 65. Kb3 Nb5 66. Bc5 Nc7 67. Kc4 Nb5 68. Be7 Na3+ 69. Kb3 Nb5 70. Kc4 Na3+ 71. Kb3 Nb5 72. Bc5 Nc7 73. Kc4 Nb5 74. Be7 Na3+ 75. Kb3 Nb5 0-1
