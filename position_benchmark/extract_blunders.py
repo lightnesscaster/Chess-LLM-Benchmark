@@ -143,6 +143,14 @@ def analyze_game(
             blunder.fen = board.fen()
             board.push(move)  # Re-apply
 
+            # Filter: skip if still winning by +5, unless they missed mate in 4 or less
+            # Mate in N is encoded as 10000 - N*10, so mate in 4 = 9960
+            still_winning_big = eval_after >= 500
+            missed_quick_mate = eval_before >= 9960
+            if still_winning_big and not missed_quick_mate:
+                move_history.append(move_san)
+                continue
+
             blunders.append(blunder)
 
         move_history.append(move_san)
