@@ -252,6 +252,12 @@ Your response (just the UCI move or UNCLEAR):"""
                     return None
 
                 data = await response.json()
+
+                # Handle null JSON response
+                if data is None:
+                    print(f"  [Reasoning extraction API returned null response]")
+                    return None
+
                 first_choice = data.get("choices", [{}])[0] or {}
                 message = first_choice.get("message") or {}
                 response_text = message.get("content", "")
@@ -414,12 +420,14 @@ Your response (just the UCI move or UNCLEAR):"""
 
                     # Handle null JSON response
                     if data is None:
-                        raise aiohttp.ClientResponseError(
-                            response.request_info,
-                            response.history,
+                        error = aiohttp.ClientResponseError(
+                            request_info=response.request_info,
+                            history=response.history,
                             status=500,
-                            message="API returned null response"
+                            headers=response.headers
                         )
+                        error.message = "API returned null response"
+                        raise error
 
                     # Capture provider immediately (even before error checks, so we know which provider failed)
                     response_provider = data.get("provider")
