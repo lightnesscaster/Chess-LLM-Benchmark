@@ -258,6 +258,11 @@ llms:
     temperature: 0.0
     reasoning_effort: medium
 
+  - player_id: "gemini-3-flash-preview (low)"
+    model_name: "google/gemini-3-flash-preview"
+    temperature: 0.0
+    reasoning_effort: low
+
   # grok-4-fast
   - player_id: "grok-4-fast"
     model_name: "x-ai/grok-4-fast"
