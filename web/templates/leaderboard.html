@@ -40,7 +40,7 @@
             {% set is_reasoning = entry.player_id|is_reasoning %}
             {% set is_top_standard = not entry.is_anchor and not is_reasoning and not ns.top_standard_found %}
             {% if is_top_standard %}{% set ns.top_standard_found = true %}{% endif %}
-            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %}{% if not entry.is_anchor and entry.rating_deviation > 100 %} unreliable{% endif %} clickable-row"
+            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %}{% if not entry.is_anchor and entry.rating_deviation > 150 %} unreliable{% endif %} clickable-row"
                 data-player-id="{{ entry.player_id|e }}"
                 data-rating="{{ entry.rating }}"
                 data-legal="{{ entry.legal_move_rate|default(1.0) }}"
@@ -72,7 +72,7 @@
     <p>👑 = Top-rated LLM</p>
     <p>🥇 = Top-rated non-reasoning LLM</p>
     <p><strong style="color: var(--accent)">*</strong> = Anchor player (fixed rating, used for calibration)</p>
-    <p><span class="unreliable-indicator">Greyed rows</span> = Rating unreliable (RD > 100, needs more games)</p>
+    <p><span class="unreliable-indicator">Greyed rows</span> = Rating unreliable (RD > 150, needs more games)</p>
     <p><strong>FIDE Est.</strong> = Estimated FIDE rating based on <a href="https://chessgoals.com/rating-comparison/" target="_blank">ChessGoals.com</a> survey data</p>
     <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
     <p><strong>95% CI</strong> = 95% Confidence Interval</p>

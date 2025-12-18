@@ -59,13 +59,13 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     except (FileNotFoundError, json.JSONDecodeError):
         pass
 
-    # Filter to models with publish dates (exclude anchors), sufficient confidence (RD <= 100),
+    # Filter to models with publish dates (exclude anchors), sufficient confidence (RD <= 150),
     # and rating >= -500
     models_with_dates = [
         entry for entry in leaderboard_data
         if entry.get("publish_timestamp")
         and not entry.get("is_anchor")
-        and entry.get("rating_deviation", 350) <= 100
+        and entry.get("rating_deviation", 350) <= 150
         and entry.get("rating", 0) >= -500
     ]
 
