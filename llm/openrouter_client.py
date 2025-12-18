@@ -412,6 +412,15 @@ Your response (just the UCI move or UNCLEAR):"""
 
                     data = await response.json()
 
+                    # Handle null JSON response
+                    if data is None:
+                        raise aiohttp.ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=500,
+                            message="API returned null response"
+                        )
+
                     # Capture provider immediately (even before error checks, so we know which provider failed)
                     response_provider = data.get("provider")
                     if response_provider and isinstance(response_provider, str):
