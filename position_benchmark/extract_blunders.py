@@ -193,10 +193,9 @@ def main():
         help="Maximum number of positions to collect",
     )
     parser.add_argument(
-        "--resume",
-        type=Path,
-        default=None,
-        help="Resume from a partial results file",
+        "--fresh",
+        action="store_true",
+        help="Start fresh, ignoring any existing output file",
     )
 
     args = parser.parse_args()
@@ -205,17 +204,25 @@ def main():
     pgn_files = sorted(args.games_dir.glob("*.pgn"))
     print(f"Found {len(pgn_files)} PGN files")
 
-    # Load existing results if resuming
+    # Load existing results if output file exists (auto-resume)
     all_blunders = []
     processed_games = set()
 
-    if args.resume and args.resume.exists():
-        print(f"Resuming from {args.resume}...")
-        with open(args.resume) as f:
+    if not args.fresh and args.output.exists():
+        print(f"Resuming from {args.output}...")
+        with open(args.output) as f:
             existing = json.load(f)
-        all_blunders = [BlunderPosition(**b) for b in existing]
-        processed_games = {b.game_id for b in all_blunders}
-        print(f"  Loaded {len(all_blunders)} existing blunders from {len(processed_games)} games")
+
+        # Handle both old format (list) and new format (dict with metadata)
+        if isinstance(existing, dict):
+            all_blunders = [BlunderPosition(**b) for b in existing.get("blunders", [])]
+            processed_games = set(existing.get("metadata", {}).get("processed_games", []))
+        else:
+            # Old format: just a list of blunders
+            all_blunders = [BlunderPosition(**b) for b in existing]
+            processed_games = {b.game_id for b in all_blunders}
+
+        print(f"  Loaded {len(all_blunders)} existing blunders from {len(processed_games)} processed games")
 
     # Filter out already processed games
     pgn_files = [p for p in pgn_files if p.stem not in processed_games]
@@ -257,11 +264,12 @@ def main():
                       f"(CPL: {b.cpl_loss:.0f}, best: {b.best_move_san})")
 
             all_blunders.extend(blunders)
+            processed_games.add(pgn_path.stem)
             games_processed += 1
 
             # Save progress every 100 games
             if games_processed % 100 == 0:
-                _save_progress(args.output, all_blunders)
+                _save_progress(args.output, all_blunders, processed_games, args)
 
             if len(all_blunders) >= args.max_positions:
                 print(f"\nReached {args.max_positions} positions, stopping early.")
@@ -277,7 +285,7 @@ def main():
     all_blunders = all_blunders[:args.max_positions]
 
     # Save final results
-    _save_progress(args.output, all_blunders)
+    _save_progress(args.output, all_blunders, processed_games, args)
 
     print(f"\nSaved {len(all_blunders)} blunder positions to {args.output}")
 
@@ -285,11 +293,26 @@ def main():
     _print_summary(all_blunders)
 
 
-def _save_progress(output_path: Path, blunders: list):
-    """Save current progress to file."""
+def _save_progress(output_path: Path, blunders: list, processed_games: set, args):
+    """Save current progress to file with metadata."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    output = {
+        "metadata": {
+            "processed_games": sorted(processed_games),
+            "params": {
+                "depth": args.depth,
+                "threshold": args.threshold,
+                "max_positions": args.max_positions,
+            },
+            "total_processed": len(processed_games),
+            "total_blunders": len(blunders),
+        },
+        "blunders": [asdict(b) for b in blunders],
+    }
+
     with open(output_path, "w") as f:
-        json.dump([asdict(b) for b in blunders], f, indent=2)
+        json.dump(output, f, indent=2)
 
 
 def _print_summary(all_blunders: list):
