@@ -127,6 +127,11 @@ async def test_llm_on_position(
     # Build prompt and get model's move
     prompt = build_position_prompt(fen, move_history, side)
 
+    # Calculate illegal move CPL: half the swing to losing (eval_before + 5000)
+    # This represents "half a game loss" since 2 illegals = forfeit
+    eval_before = position["eval_before"]
+    illegal_cpl = eval_before + 5000
+
     try:
         model_move_uci = await player.select_move(board, is_retry=False)
     except Exception as e:
@@ -139,12 +144,12 @@ async def test_llm_on_position(
             best_move=best_move_uci,
             best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=10000,  # Max penalty for failure
+            cpl=illegal_cpl,
             is_legal=False,
             is_best=False,
             avoided_blunder=True,  # Technically didn't play the blunder
-            eval_model=-10000,
-            eval_best=position["eval_before"],
+            eval_model=-5000,  # Halfway to losing
+            eval_best=eval_before,
         )
 
     # Check if move is legal
@@ -163,12 +168,12 @@ async def test_llm_on_position(
             best_move=best_move_uci,
             best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=10000,
+            cpl=illegal_cpl,
             is_legal=False,
             is_best=False,
             avoided_blunder=model_move_uci != blunder_move_uci,
-            eval_model=-10000,
-            eval_best=position["eval_before"],
+            eval_model=-5000,
+            eval_best=eval_before,
         )
 
     # Evaluate model's move
@@ -310,26 +315,43 @@ async def run_benchmark(
             player.close()
     else:
         # Create LLM player
+        # Note: use .get("reasoning") without default to allow None (vs explicit False)
         player = OpenRouterPlayer(
             player_id=player_id,
             model_name=player_config.get("model_name"),
             temperature=player_config.get("temperature", 0.0),
-            reasoning=player_config.get("reasoning", False),
+            reasoning=player_config.get("reasoning"),
             reasoning_effort=player_config.get("reasoning_effort"),
         )
 
-        for i, pos in enumerate(positions):
-            print(f"  [{i+1}/{len(positions)}] ", end="", flush=True)
-            result = await test_llm_on_position(player, pos, stockfish, depth)
-            result.position_idx = i
-            results.append(result)
-            status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
-            if result.is_best:
-                status += " (best!)"
-            print(status)
+        # Run positions in parallel (10 at a time)
+        max_concurrent = 10
+        semaphore = asyncio.Semaphore(max_concurrent)
+        completed = [0]  # Use list to allow modification in nested function
+        results = [None] * len(positions)  # Pre-allocate to maintain order
+
+        async def test_with_semaphore(idx: int, pos: dict):
+            async with semaphore:
+                result = await test_llm_on_position(player, pos, stockfish, depth)
+                result.position_idx = idx
+                results[idx] = result
+                completed[0] += 1
+                status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
+                if result.is_best:
+                    status += " (best!)"
+                print(f"  [{completed[0]}/{len(positions)}] {status}")
+                return result
+
+        # Launch all tasks
+        tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
+        await asyncio.gather(*tasks)
 
     # Calculate summary stats
     legal_results = [r for r in results if r.is_legal]
+
+    # CPL now includes illegal moves (with penalty = eval_before + 5000)
+    all_cpls = [r.cpl for r in results]
+    legal_cpls = [r.cpl for r in legal_results]
 
     summary = {
         "player_id": player_id,
@@ -340,8 +362,9 @@ async def run_benchmark(
         "best_pct": sum(1 for r in results if r.is_best) / len(positions) * 100 if positions else 0,
         "avoided_blunders": sum(1 for r in results if r.avoided_blunder),
         "avoided_pct": sum(1 for r in results if r.avoided_blunder) / len(positions) * 100 if positions else 0,
-        "avg_cpl": sum(r.cpl for r in legal_results) / len(legal_results) if legal_results else 10000,
-        "median_cpl": sorted([r.cpl for r in legal_results])[len(legal_results)//2] if legal_results else 10000,
+        "avg_cpl": sum(all_cpls) / len(all_cpls) if all_cpls else 10000,  # Includes illegal move penalties
+        "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,  # Only legal moves
+        "median_cpl": sorted(all_cpls)[len(all_cpls)//2] if all_cpls else 10000,
     }
 
     return {"summary": summary, "results": [asdict(r) for r in results]}
