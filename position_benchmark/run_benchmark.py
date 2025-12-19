@@ -41,6 +41,7 @@ class PositionResult:
     avoided_blunder: bool  # Did model avoid the original blunder?
     eval_model: float  # Eval after model's move
     eval_best: float  # Eval after best move
+    eval_before: float  # Eval before the position (for illegal CPL calculation)
 
 
 def _calculate_median(values: list[float]) -> float:
@@ -162,6 +163,7 @@ async def test_llm_on_position(
             avoided_blunder=True,  # Technically didn't play the blunder
             eval_model=-5000,  # Halfway to losing
             eval_best=eval_before,
+            eval_before=eval_before,
         )
 
     # Check if move is legal
@@ -186,6 +188,7 @@ async def test_llm_on_position(
             avoided_blunder=model_move_uci != blunder_move_uci,
             eval_model=-5000,
             eval_best=eval_before,
+            eval_before=eval_before,
         )
 
     # Evaluate model's move
@@ -214,6 +217,7 @@ async def test_llm_on_position(
         avoided_blunder=model_move_uci != blunder_move_uci,
         eval_model=eval_model,
         eval_best=eval_best,
+        eval_before=eval_before,
     )
 
 
@@ -231,6 +235,8 @@ def test_engine_on_position(
     board = chess.Board(fen)
     perspective = board.turn
 
+    eval_before = position["eval_before"]
+
     # Get engine's move
     try:
         move = engine_player.select_move(board)
@@ -246,12 +252,13 @@ def test_engine_on_position(
             best_move=best_move_uci,
             best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=10000,
+            cpl=eval_before + 5000,  # Same formula as LLM illegal moves
             is_legal=False,
             is_best=False,
             avoided_blunder=True,
             eval_model=-10000,
-            eval_best=position["eval_before"],
+            eval_best=eval_before,
+            eval_before=eval_before,
         )
 
     # Evaluate engine's move
@@ -260,8 +267,7 @@ def test_engine_on_position(
     eval_model = -eval_to_cp(info_after, not perspective)
     board.pop()
 
-    eval_best = position["eval_before"]
-    cpl = max(0, eval_best - eval_model)
+    cpl = max(0, eval_before - eval_model)
 
     return PositionResult(
         position_idx=0,
@@ -276,7 +282,8 @@ def test_engine_on_position(
         is_best=model_move_uci == best_move_uci,
         avoided_blunder=model_move_uci != blunder_move_uci,
         eval_model=eval_model,
-        eval_best=eval_best,
+        eval_best=eval_before,
+        eval_before=eval_before,
     )
 
 
