@@ -132,7 +132,7 @@ async def test_llm_on_position(
     move_history = position["move_history"]
     side = position["side_to_move"].capitalize()
     best_move_uci = position["best_move"]
-    blunder_move_uci = position["blunder_move"]
+    blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
 
     board = chess.Board(fen)
     perspective = board.turn
@@ -230,7 +230,7 @@ def test_engine_on_position(
     """Test an engine on a single position."""
     fen = position["fen"]
     best_move_uci = position["best_move"]
-    blunder_move_uci = position["blunder_move"]
+    blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
 
     board = chess.Board(fen)
     perspective = board.turn
