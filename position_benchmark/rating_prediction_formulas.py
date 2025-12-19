@@ -2,7 +2,9 @@
 Rating prediction formulas from position benchmark data.
 
 These formulas predict Glicko-2 rating from position benchmark metrics.
-Derived from 21 models tested on 100 equal positions and 100 blunder positions.
+Derived from 22 models tested on 100 equal positions and 100 blunder positions.
+
+Updated: Now includes gpt-5-chat in training data.
 """
 
 import numpy as np
@@ -11,9 +13,9 @@ import numpy as np
 # =============================================================================
 # FORMULA 1: Simple Log-Linear (Best single feature)
 # =============================================================================
-# R² = 0.9809, RMSE = 114 rating points
+# R² = 0.9808, RMSE = 111 rating points
 #
-# rating = -501.23 * log(equal_cpl + 1) + 3653.55
+# rating = -501.26 * log(equal_cpl + 1) + 3655.39
 
 def predict_rating_simple(equal_cpl: float) -> float:
     """
@@ -25,15 +27,15 @@ def predict_rating_simple(equal_cpl: float) -> float:
     Returns:
         Predicted Glicko-2 rating
     """
-    return -501.23 * np.log(equal_cpl + 1) + 3653.55
+    return -501.26 * np.log(equal_cpl + 1) + 3655.39
 
 
 # =============================================================================
 # FORMULA 2: Two-Feature Linear (Best practical)
 # =============================================================================
-# R² = 0.9845, RMSE = 103 rating points
+# R² = 0.9844, RMSE = 100 rating points
 #
-# rating = -417.5 * log(equal_cpl + 1) + 8.7 * equal_best_pct + 2952.3
+# rating = -418.67 * log(equal_cpl + 1) + 8.53 * equal_best_pct + 2961.70
 
 def predict_rating_two_feature(equal_cpl: float, equal_best_pct: float) -> float:
     """
@@ -46,19 +48,19 @@ def predict_rating_two_feature(equal_cpl: float, equal_best_pct: float) -> float
     Returns:
         Predicted Glicko-2 rating
     """
-    return -417.5 * np.log(equal_cpl + 1) + 8.7 * equal_best_pct + 2952.3
+    return -418.67 * np.log(equal_cpl + 1) + 8.53 * equal_best_pct + 2961.70
 
 
 # =============================================================================
 # FORMULA 3: Four-Feature Linear (Both benchmarks)
 # =============================================================================
-# R² = 0.9860, RMSE = 97 rating points
+# R² = 0.9860, RMSE = 95 rating points
 #
-# rating = -363.9 * log(equal_cpl + 1)
-#          - 69.1 * log(blunder_cpl + 1)
-#          + 8.0 * equal_best_pct
-#          + 4.3 * blunder_best_pct
-#          + 3157.0
+# rating = -366.34 * log(equal_cpl + 1)
+#          - 66.03 * log(blunder_cpl + 1)
+#          + 7.83 * equal_best_pct
+#          + 4.36 * blunder_best_pct
+#          + 3148.48
 
 def predict_rating_four_feature(
     equal_cpl: float,
@@ -79,29 +81,28 @@ def predict_rating_four_feature(
         Predicted Glicko-2 rating
     """
     return (
-        -363.9 * np.log(equal_cpl + 1)
-        - 69.1 * np.log(blunder_cpl + 1)
-        + 8.0 * equal_best_pct
-        + 4.3 * blunder_best_pct
-        + 3157.0
+        -366.34 * np.log(equal_cpl + 1)
+        - 66.03 * np.log(blunder_cpl + 1)
+        + 7.83 * equal_best_pct
+        + 4.36 * blunder_best_pct
+        + 3148.48
     )
 
 
 # =============================================================================
-# FORMULA 4: Polynomial Degree 2 (Best accuracy without overfitting)
+# FORMULA 4: Polynomial Degree 2 (Best accuracy)
 # =============================================================================
-# R² = 0.9900, RMSE = 82 rating points
+# R² = 0.9897, RMSE = 82 rating points
 #
 # Features: log(e_cpl), e_best, log(e_cpl)², log(e_cpl)*e_best, e_best²
-# Coefficients fitted from sklearn PolynomialFeatures(degree=2)
 
 POLY2_COEFFICIENTS = {
-    'log_cpl': -2745.28,
-    'best_pct': -156.06,
-    'log_cpl_squared': 153.21,
-    'log_cpl_times_best': 20.51,
-    'best_pct_squared': 0.83,
-    'intercept': 11772.84,
+    'log_cpl': -2629.84,
+    'best_pct': -147.08,
+    'log_cpl_squared': 145.81,
+    'log_cpl_times_best': 19.58,
+    'best_pct_squared': 0.77,
+    'intercept': 11318.16,
 }
 
 def predict_rating_poly2(equal_cpl: float, equal_best_pct: float) -> float:
@@ -131,19 +132,19 @@ def predict_rating_poly2(equal_cpl: float, equal_best_pct: float) -> float:
 # SUMMARY TABLE
 # =============================================================================
 """
-| Model                    | R²     | RMSE | Max Error | Formula Complexity |
-|--------------------------|--------|------|-----------|-------------------|
-| Simple log(CPL)          | 0.9809 | 114  | 323       | 1 feature         |
-| Two-feature              | 0.9845 | 103  | ~250      | 2 features        |
-| Four-feature             | 0.9860 | 97   | ~200      | 4 features        |
-| Polynomial degree 2      | 0.9900 | 82   | 244       | 5 terms           |
+| Model                    | R²     | RMSE | Formula Complexity |
+|--------------------------|--------|------|-------------------|
+| Simple log(CPL)          | 0.9808 | 111  | 1 feature         |
+| Two-feature              | 0.9844 | 100  | 2 features        |
+| Four-feature             | 0.9860 | 95   | 4 features        |
+| Polynomial degree 2      | 0.9897 | 82   | 5 terms           |
 
 Key insights:
 - log(CPL) is essential - linear CPL gives R² = 0.68, log gives R² = 0.98
 - Equal positions are better predictors than blunder positions
-- Each 1% increase in best_move% ≈ +48 rating points
+- Each 1% increase in best_move% ≈ +48 rating points (simple regression)
 - Polynomial helps capture non-linear effects at extremes
-- qwen3-235b remains biggest outlier (-244 to -323 error across all models)
+- Models trained on 22 data points (21 original + gpt-5-chat)
 """
 
 
@@ -162,3 +163,14 @@ if __name__ == "__main__":
     print(f"  Two-feature: {predict_rating_two_feature(equal_cpl, equal_best):.0f}")
     print(f"  Four-feature:{predict_rating_four_feature(equal_cpl, blunder_cpl, equal_best, blunder_best):.0f}")
     print(f"  Polynomial:  {predict_rating_poly2(equal_cpl, equal_best):.0f}")
+
+    # Test on gpt-5-chat (should be close to 276)
+    print("\nVerification on gpt-5-chat (actual rating: 276):")
+    gpt5_e_cpl = 904.2
+    gpt5_e_best = 21.0
+    gpt5_b_cpl = 5889.2
+    gpt5_b_best = 12.0
+    print(f"  Simple:      {predict_rating_simple(gpt5_e_cpl):.0f}")
+    print(f"  Two-feature: {predict_rating_two_feature(gpt5_e_cpl, gpt5_e_best):.0f}")
+    print(f"  Four-feature:{predict_rating_four_feature(gpt5_e_cpl, gpt5_b_cpl, gpt5_e_best, gpt5_b_best):.0f}")
+    print(f"  Polynomial:  {predict_rating_poly2(gpt5_e_cpl, gpt5_e_best):.0f}")
