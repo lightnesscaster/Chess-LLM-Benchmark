@@ -214,6 +214,7 @@ def main():
     # Load existing results if output file exists (auto-resume)
     all_blunders = []
     processed_games = set()
+    seen_fens = set()  # Track unique FENs to avoid duplicates
 
     if not args.fresh and args.output.exists():
         print(f"Resuming from {args.output}...")
@@ -229,7 +230,18 @@ def main():
             all_blunders = [BlunderPosition(**b) for b in existing]
             processed_games = {b.game_id for b in all_blunders}
 
-        print(f"  Loaded {len(all_blunders)} existing blunders from {len(processed_games)} processed games")
+        # Deduplicate existing blunders by FEN
+        unique_blunders = []
+        for b in all_blunders:
+            if b.fen not in seen_fens:
+                seen_fens.add(b.fen)
+                unique_blunders.append(b)
+
+        if len(unique_blunders) < len(all_blunders):
+            print(f"  Removed {len(all_blunders) - len(unique_blunders)} duplicate FENs")
+            all_blunders = unique_blunders
+
+        print(f"  Loaded {len(all_blunders)} unique blunders from {len(processed_games)} processed games")
 
     # Filter out already processed games
     pgn_files = [p for p in pgn_files if p.stem not in processed_games]
@@ -267,10 +279,16 @@ def main():
             )
 
             for b in blunders:
+                # Skip duplicate FENs
+                if b.fen in seen_fens:
+                    print(f"    Skipping duplicate FEN: {b.player_id} played {b.blunder_move_san}")
+                    continue
+
                 print(f"    Blunder: {b.player_id} played {b.blunder_move_san} "
                       f"(CPL: {b.cpl_loss:.0f}, best: {b.best_move_san})")
+                seen_fens.add(b.fen)
+                all_blunders.append(b)
 
-            all_blunders.extend(blunders)
             processed_games.add(pgn_path.stem)
             games_processed += 1
 
@@ -279,7 +297,7 @@ def main():
                 _save_progress(args.output, all_blunders, processed_games, args)
 
             if len(all_blunders) >= args.max_positions:
-                print(f"\nReached {args.max_positions} positions, stopping early.")
+                print(f"\nReached {args.max_positions} unique positions, stopping early.")
                 break
 
     finally:
@@ -288,7 +306,7 @@ def main():
     # Sort by CPL loss (worst blunders first)
     all_blunders.sort(key=lambda b: b.cpl_loss, reverse=True)
 
-    # Trim to max positions
+    # Trim to max positions (already unique, no need to dedupe)
     all_blunders = all_blunders[:args.max_positions]
 
     # Save final results

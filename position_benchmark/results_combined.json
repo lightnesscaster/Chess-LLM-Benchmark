@@ -1,134 +1,177 @@
 {
   "metadata": {
     "positions_tested": 100,
-    "description": "Position benchmark testing LLMs and engines on blunder positions",
-    "illegal_cpl_formula": "eval_before + 5000 (half swing to losing)"
+    "description": "Position benchmark testing LLMs and engines on 100 unique blunder positions",
+    "illegal_cpl_formula": "eval_before + 5000 (half swing to losing)",
+    "deduplicated": true
   },
   "results": {
     "eubos": {
       "legal_pct": 100.0,
-      "best_pct": 62.0,
-      "avg_cpl": 1266.6,
+      "best_pct": 62.4,
+      "avg_cpl": 1360.8,
+      "avoided_pct": 92.5,
+      "median_cpl": 0,
       "type": "engine"
     },
     "survival-bot": {
       "legal_pct": 100.0,
-      "best_pct": 41.0,
-      "avg_cpl": 2394.5,
+      "best_pct": 37.0,
+      "avg_cpl": 2490.5,
+      "avoided_pct": 96.0,
+      "median_cpl": 10.0,
       "type": "engine"
     },
     "maia-1900": {
       "legal_pct": 100.0,
-      "best_pct": 39.0,
-      "avg_cpl": 3884.0,
+      "best_pct": 37.0,
+      "avg_cpl": 4183.3,
+      "avoided_pct": 84.0,
+      "median_cpl": 25.5,
       "type": "engine"
     },
     "maia-1100": {
       "legal_pct": 100.0,
-      "best_pct": 30.0,
-      "avg_cpl": 4215.8,
+      "best_pct": 28.0,
+      "avg_cpl": 4418.2,
+      "avoided_pct": 78.0,
+      "median_cpl": 149.0,
       "type": "engine"
     },
     "gemini-2.5-flash (no thinking)": {
-      "legal_pct": 82.0,
+      "legal_pct": 81.0,
       "best_pct": 6.0,
-      "avg_cpl": 5039.5,
+      "avg_cpl": 4591.4,
+      "avoided_pct": 82.0,
+      "median_cpl": 5000.0,
       "type": "llm"
     },
-    "random-bot": {
-      "legal_pct": 100.0,
-      "best_pct": 4.0,
-      "avg_cpl": 5799.6,
-      "type": "engine"
-    },
-    "deepseek-chat-v3-0324": {
-      "legal_pct": 79.0,
-      "best_pct": 4.0,
-      "avg_cpl": 6534.5,
-      "type": "llm"
-    },
-    "kimi-k2-0905": {
-      "legal_pct": 74.0,
-      "best_pct": 3.0,
-      "avg_cpl": 6672.5,
-      "type": "llm"
-    },
-    "gemini-2.0-flash-001": {
-      "legal_pct": 86.0,
-      "best_pct": 6.0,
-      "avg_cpl": 7049.9,
-      "type": "llm"
-    },
-    "gpt-3.5-turbo-0613": {
-      "legal_pct": 67.0,
-      "best_pct": 1.0,
-      "avg_cpl": 7262.5,
-      "type": "llm"
-    },
-    "kimi-k2": {
-      "legal_pct": 70.0,
-      "best_pct": 2.0,
-      "avg_cpl": 7546.8,
-      "type": "llm"
-    },
-    "deepseek-chat-v3.1 (no thinking)": {
-      "legal_pct": 68.0,
-      "best_pct": 2.0,
-      "avg_cpl": 7578.5,
-      "type": "llm"
-    },
-    "qwen3-235b-a22b-2507": {
-      "legal_pct": 65.0,
-      "best_pct": 3.0,
-      "avg_cpl": 7592.2,
-      "type": "llm"
-    },
-    "llama-4-maverick": {
-      "legal_pct": 62.0,
-      "best_pct": 2.0,
-      "avg_cpl": 7640.6,
-      "type": "llm"
-    },
-    "deepseek-v3.1-terminus (no thinking)": {
-      "legal_pct": 64.0,
-      "best_pct": 3.0,
-      "avg_cpl": 7699.7,
-      "type": "llm"
-    },
-    "deepseek-v3.2 (no thinking)": {
-      "legal_pct": 66.0,
-      "best_pct": 3.0,
-      "avg_cpl": 7800.6,
-      "type": "llm"
-    },
-    "deepseek-r1-distill-qwen-32b": {
-      "legal_pct": 48.0,
-      "best_pct": 3.0,
-      "avg_cpl": 8447.4,
+    "llama-3.3-70b-instruct": {
+      "legal_pct": 6.0,
+      "best_pct": 0.0,
+      "avg_cpl": 4916.1,
+      "avoided_pct": 100.0,
+      "median_cpl": 5000.0,
       "type": "llm"
     },
     "glm-4.6 (no thinking)": {
-      "legal_pct": 27.0,
-      "best_pct": 0.0,
-      "avg_cpl": 9749.6,
+      "legal_pct": 30.0,
+      "best_pct": 1.0,
+      "avg_cpl": 5396.1,
+      "avoided_pct": 96.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "gpt-3.5-turbo": {
+      "legal_pct": 20.0,
+      "best_pct": 3.0,
+      "avg_cpl": 5464.6,
+      "avoided_pct": 96.0,
+      "median_cpl": 5000.0,
       "type": "llm"
     },
     "mistral-medium-3": {
       "legal_pct": 32.0,
       "best_pct": 0.0,
-      "avg_cpl": 9760.1,
+      "avg_cpl": 5470.6,
+      "avoided_pct": 98.0,
+      "median_cpl": 5000.0,
       "type": "llm"
     },
-    "gpt-3.5-turbo": {
-      "legal_pct": 17.0,
+    "llama-4-maverick": {
+      "legal_pct": 64.0,
       "best_pct": 2.0,
-      "avg_cpl": 10598.9,
+      "avg_cpl": 5530.5,
+      "avoided_pct": 91.0,
+      "median_cpl": 5000.0,
       "type": "llm"
     },
-    "llama-3.3-70b-instruct": {
-      "legal_pct": 5.0,
-      "best_pct": 0.0,
-      "avg_cpl": 11338.8,
+    "deepseek-r1-distill-qwen-32b": {
+      "legal_pct": 48.0,
+      "best_pct": 3.0,
+      "avg_cpl": 5571.6,
+      "avoided_pct": 95.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "gpt-3.5-turbo-0613": {
+      "legal_pct": 65.0,
+      "best_pct": 1.0,
+      "avg_cpl": 5575.6,
+      "avoided_pct": 88.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "kimi-k2-0905": {
+      "legal_pct": 74.0,
+      "best_pct": 3.0,
+      "avg_cpl": 5654.2,
+      "avoided_pct": 84.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "random-bot": {
+      "legal_pct": 100.0,
+      "best_pct": 5.0,
+      "avg_cpl": 5716.5,
+      "avoided_pct": 93.0,
+      "median_cpl": 8882.5,
+      "type": "engine"
+    },
+    "qwen3-235b-a22b-2507": {
+      "legal_pct": 63.0,
+      "best_pct": 2.0,
+      "avg_cpl": 5792.1,
+      "avoided_pct": 82.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "deepseek-chat-v3-0324": {
+      "legal_pct": 77.0,
+      "best_pct": 2.0,
+      "avg_cpl": 5831.2,
+      "avoided_pct": 90.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "kimi-k2": {
+      "legal_pct": 71.0,
+      "best_pct": 2.0,
+      "avg_cpl": 5897.1,
+      "avoided_pct": 86.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "deepseek-v3.1-terminus (no thinking)": {
+      "legal_pct": 62.0,
+      "best_pct": 2.0,
+      "avg_cpl": 5918.1,
+      "avoided_pct": 91.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "deepseek-chat-v3.1 (no thinking)": {
+      "legal_pct": 67.0,
+      "best_pct": 1.0,
+      "avg_cpl": 5952.7,
+      "avoided_pct": 90.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "deepseek-v3.2 (no thinking)": {
+      "legal_pct": 66.0,
+      "best_pct": 3.0,
+      "avg_cpl": 6102.1,
+      "avoided_pct": 92.0,
+      "median_cpl": 5000.0,
+      "type": "llm"
+    },
+    "gemini-2.0-flash-001": {
+      "legal_pct": 84.0,
+      "best_pct": 5.0,
+      "avg_cpl": 6254.1,
+      "avoided_pct": 88.0,
+      "median_cpl": 8809.5,
       "type": "llm"
     }
   }
