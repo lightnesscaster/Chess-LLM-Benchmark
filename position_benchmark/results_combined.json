@@ -5,154 +5,124 @@
     "illegal_cpl_formula": "eval_before + 5000 (half swing to losing)"
   },
   "results": {
-    "eubos": {
+    "random-bot": {
       "legal_pct": 100.0,
-      "best_pct": 62.0,
-      "avg_cpl": 1202.0,
-      "type": "engine"
-    },
-    "maia-1900": {
-      "legal_pct": 100.0,
-      "best_pct": 39.0,
-      "avg_cpl": 3809.4,
+      "best_pct": 4.0,
+      "avg_cpl": 5799.6,
       "type": "engine"
     },
     "maia-1100": {
       "legal_pct": 100.0,
       "best_pct": 30.0,
-      "avg_cpl": 4307.9,
+      "avg_cpl": 4215.8,
       "type": "engine"
     },
-    "random-bot": {
+    "maia-1900": {
       "legal_pct": 100.0,
-      "best_pct": 8.0,
-      "avg_cpl": 6641.9,
+      "best_pct": 39.0,
+      "avg_cpl": 3884.0,
       "type": "engine"
     },
-    "gpt-oss-120b (high)": {
-      "legal_pct": 99.0,
-      "best_pct": 5.0,
-      "avg_cpl": 6415.0,
-      "type": "llm"
-    },
-    "gpt-oss-120b (medium)": {
-      "legal_pct": 97.0,
-      "best_pct": 7.0,
-      "avg_cpl": 5578.6,
-      "type": "llm"
+    "eubos": {
+      "legal_pct": 100.0,
+      "best_pct": 62.0,
+      "avg_cpl": 1266.6,
+      "type": "engine"
     },
     "gemini-2.0-flash-001": {
-      "legal_pct": 82.0,
+      "legal_pct": 86.0,
       "best_pct": 6.0,
-      "avg_cpl": 6320.2,
+      "avg_cpl": 7049.9,
       "type": "llm"
     },
     "gemini-2.5-flash (no thinking)": {
       "legal_pct": 82.0,
       "best_pct": 6.0,
-      "avg_cpl": 4550.0,
-      "type": "llm"
-    },
-    "grok-3-mini": {
-      "legal_pct": 79.0,
-      "best_pct": 2.0,
-      "avg_cpl": 6801.7,
+      "avg_cpl": 5039.5,
       "type": "llm"
     },
     "deepseek-chat-v3-0324": {
-      "legal_pct": 76.0,
+      "legal_pct": 79.0,
       "best_pct": 4.0,
-      "avg_cpl": 5670.1,
-      "type": "llm"
-    },
-    "kimi-k2": {
-      "legal_pct": 75.0,
-      "best_pct": 3.0,
-      "avg_cpl": 5563.5,
+      "avg_cpl": 6534.5,
       "type": "llm"
     },
     "kimi-k2-0905": {
-      "legal_pct": 72.0,
+      "legal_pct": 74.0,
+      "best_pct": 3.0,
+      "avg_cpl": 6672.5,
+      "type": "llm"
+    },
+    "kimi-k2": {
+      "legal_pct": 70.0,
       "best_pct": 2.0,
-      "avg_cpl": 6071.2,
+      "avg_cpl": 7546.8,
       "type": "llm"
     },
     "deepseek-chat-v3.1 (no thinking)": {
-      "legal_pct": 69.0,
-      "best_pct": 4.0,
-      "avg_cpl": 6224.9,
-      "type": "llm"
-    },
-    "llama-4-maverick": {
       "legal_pct": 68.0,
-      "best_pct": 4.0,
-      "avg_cpl": 5812.9,
-      "type": "llm"
-    },
-    "deepseek-v3.2 (no thinking)": {
-      "legal_pct": 67.0,
-      "best_pct": 5.0,
-      "avg_cpl": 6862.9,
+      "best_pct": 2.0,
+      "avg_cpl": 7578.5,
       "type": "llm"
     },
     "gpt-3.5-turbo-0613": {
       "legal_pct": 67.0,
       "best_pct": 1.0,
-      "avg_cpl": 5679.8,
+      "avg_cpl": 7262.5,
       "type": "llm"
     },
-    "kat-coder-pro": {
-      "legal_pct": 67.0,
-      "best_pct": 1.0,
-      "avg_cpl": 5707.9,
+    "deepseek-v3.2 (no thinking)": {
+      "legal_pct": 66.0,
+      "best_pct": 3.0,
+      "avg_cpl": 7800.6,
       "type": "llm"
     },
     "qwen3-235b-a22b-2507": {
-      "legal_pct": 66.0,
+      "legal_pct": 65.0,
       "best_pct": 3.0,
-      "avg_cpl": 5230.9,
+      "avg_cpl": 7592.2,
       "type": "llm"
     },
     "deepseek-v3.1-terminus (no thinking)": {
-      "legal_pct": 65.0,
-      "best_pct": 2.0,
-      "avg_cpl": 6226.8,
+      "legal_pct": 64.0,
+      "best_pct": 3.0,
+      "avg_cpl": 7699.7,
       "type": "llm"
     },
-    "glm-4.6 (thinking)": {
-      "legal_pct": 60.0,
-      "best_pct": 1.0,
-      "avg_cpl": 6619.8,
+    "llama-4-maverick": {
+      "legal_pct": 62.0,
+      "best_pct": 2.0,
+      "avg_cpl": 7640.6,
       "type": "llm"
     },
     "deepseek-r1-distill-qwen-32b": {
       "legal_pct": 48.0,
-      "best_pct": 5.0,
-      "avg_cpl": 5429.1,
+      "best_pct": 3.0,
+      "avg_cpl": 8447.4,
       "type": "llm"
     },
     "mistral-medium-3": {
-      "legal_pct": 36.0,
+      "legal_pct": 32.0,
       "best_pct": 0.0,
-      "avg_cpl": 6245.8,
+      "avg_cpl": 9760.1,
       "type": "llm"
     },
     "glm-4.6 (no thinking)": {
-      "legal_pct": 24.0,
-      "best_pct": 1.0,
-      "avg_cpl": 4884.8,
+      "legal_pct": 27.0,
+      "best_pct": 0.0,
+      "avg_cpl": 9749.6,
       "type": "llm"
     },
     "gpt-3.5-turbo": {
-      "legal_pct": 16.0,
+      "legal_pct": 17.0,
       "best_pct": 2.0,
-      "avg_cpl": 6079.5,
+      "avg_cpl": 10598.9,
       "type": "llm"
     },
     "llama-3.3-70b-instruct": {
-      "legal_pct": 4.0,
+      "legal_pct": 5.0,
       "best_pct": 0.0,
-      "avg_cpl": 3125.5,
+      "avg_cpl": 11338.8,
       "type": "llm"
     }
   }

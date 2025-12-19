@@ -10,7 +10,8 @@
       "avoided_blunders": 93,
       "avoided_pct": 93.0,
       "avg_cpl": 5799.64,
-      "median_cpl": 8926
+      "median_cpl": 8926,
+      "avg_cpl_legal": 5799.64
     },
     "results": [
       {
@@ -1526,7 +1527,8 @@
       "avoided_blunders": 79,
       "avoided_pct": 79.0,
       "avg_cpl": 4215.8,
-      "median_cpl": 45
+      "median_cpl": 45,
+      "avg_cpl_legal": 4215.8
     },
     "results": [
       {
@@ -3042,7 +3044,8 @@
       "avoided_blunders": 85,
       "avoided_pct": 85.0,
       "avg_cpl": 3884.04,
-      "median_cpl": 20
+      "median_cpl": 20,
+      "avg_cpl_legal": 3884.04
     },
     "results": [
       {
@@ -4558,7 +4561,8 @@
       "avoided_blunders": 93,
       "avoided_pct": 93.0,
       "avg_cpl": 1266.63,
-      "median_cpl": 0
+      "median_cpl": 0,
+      "avg_cpl_legal": 1266.63
     },
     "results": [
       {
@@ -6073,8 +6077,9 @@
       "best_pct": 6.0,
       "avoided_blunders": 81,
       "avoided_pct": 81.0,
-      "avg_cpl": 4437.865853658536,
-      "median_cpl": 609
+      "avg_cpl": 5039.49,
+      "median_cpl": 609,
+      "avg_cpl_legal": 4437.865853658536
     },
     "results": [
       {
@@ -7589,8 +7594,9 @@
       "best_pct": 6.0,
       "avoided_blunders": 87,
       "avoided_pct": 87.0,
-      "avg_cpl": 6559.337209302325,
-      "median_cpl": 8985
+      "avg_cpl": 7049.91,
+      "median_cpl": 8985,
+      "avg_cpl_legal": 6559.337209302325
     },
     "results": [
       {
@@ -9105,8 +9111,9 @@
       "best_pct": 0.0,
       "avoided_blunders": 97,
       "avoided_pct": 97.0,
-      "avg_cpl": 5948.555555555556,
-      "median_cpl": 8823
+      "avg_cpl": 9749.61,
+      "median_cpl": 8823,
+      "avg_cpl_legal": 5948.555555555556
     },
     "results": [
       {
@@ -10621,8 +10628,9 @@
       "best_pct": 3.0,
       "avoided_blunders": 94,
       "avoided_pct": 94.0,
-      "avg_cpl": 6361.666666666667,
-      "median_cpl": 8950
+      "avg_cpl": 7800.62,
+      "median_cpl": 8950,
+      "avg_cpl_legal": 6361.666666666667
     },
     "results": [
       {
@@ -12137,8 +12145,9 @@
       "best_pct": 3.0,
       "avoided_blunders": 85,
       "avoided_pct": 85.0,
-      "avg_cpl": 5628.675675675676,
-      "median_cpl": 8892
+      "avg_cpl": 6672.49,
+      "median_cpl": 8892,
+      "avg_cpl_legal": 5628.675675675676
     },
     "results": [
       {
@@ -13653,8 +13662,9 @@
       "best_pct": 3.0,
       "avoided_blunders": 93,
       "avoided_pct": 93.0,
-      "avg_cpl": 6417.46875,
-      "median_cpl": 8984
+      "avg_cpl": 7699.68,
+      "median_cpl": 8984,
+      "avg_cpl_legal": 6417.46875
     },
     "results": [
       {
@@ -15169,8 +15179,9 @@
       "best_pct": 2.0,
       "avoided_blunders": 88,
       "avoided_pct": 88.0,
-      "avg_cpl": 6208.642857142857,
-      "median_cpl": 8971
+      "avg_cpl": 7546.81,
+      "median_cpl": 8971,
+      "avg_cpl_legal": 6208.642857142857
     },
     "results": [
       {
@@ -16685,8 +16696,9 @@
       "best_pct": 3.0,
       "avoided_blunders": 83,
       "avoided_pct": 83.0,
-      "avg_cpl": 5765.123076923077,
-      "median_cpl": 8851
+      "avg_cpl": 7592.18,
+      "median_cpl": 8851,
+      "avg_cpl_legal": 5765.123076923077
     },
     "results": [
       {
@@ -18201,8 +18213,9 @@
       "best_pct": 4.0,
       "avoided_blunders": 91,
       "avoided_pct": 91.0,
-      "avg_cpl": 5922.974683544304,
-      "median_cpl": 8909
+      "avg_cpl": 6534.5,
+      "median_cpl": 8909,
+      "avg_cpl_legal": 5922.974683544304
     },
     "results": [
       {
@@ -19717,8 +19730,9 @@
       "best_pct": 0.0,
       "avoided_blunders": 98,
       "avoided_pct": 98.0,
-      "avg_cpl": 6468.375,
-      "median_cpl": 8900
+      "avg_cpl": 9760.13,
+      "median_cpl": 8900,
+      "avg_cpl_legal": 6468.375
     },
     "results": [
       {
@@ -21233,8 +21247,9 @@
       "best_pct": 1.0,
       "avoided_blunders": 87,
       "avoided_pct": 87.0,
-      "avg_cpl": 5987.477611940299,
-      "median_cpl": 8868
+      "avg_cpl": 7262.49,
+      "median_cpl": 8868,
+      "avg_cpl_legal": 5987.477611940299
     },
     "results": [
       {
@@ -22749,8 +22764,9 @@
       "best_pct": 2.0,
       "avoided_blunders": 92,
       "avoided_pct": 92.0,
-      "avg_cpl": 6463.661764705882,
-      "median_cpl": 8999
+      "avg_cpl": 7578.47,
+      "median_cpl": 8999,
+      "avg_cpl_legal": 6463.661764705882
     },
     "results": [
       {
@@ -24265,8 +24281,9 @@
       "best_pct": 0.0,
       "avoided_blunders": 100,
       "avoided_pct": 100.0,
-      "avg_cpl": 4322.2,
-      "median_cpl": 925
+      "avg_cpl": 11338.79,
+      "median_cpl": 925,
+      "avg_cpl_legal": 4322.2
     },
     "results": [
       {
@@ -25781,8 +25798,9 @@
       "best_pct": 2.0,
       "avoided_blunders": 97,
       "avoided_pct": 97.0,
-      "avg_cpl": 6826.294117647059,
-      "median_cpl": 9503
+      "avg_cpl": 10598.94,
+      "median_cpl": 9503,
+      "avg_cpl_legal": 6826.294117647059
     },
     "results": [
       {
@@ -27297,8 +27315,9 @@
       "best_pct": 2.0,
       "avoided_blunders": 91,
       "avoided_pct": 91.0,
-      "avg_cpl": 6017.241935483871,
-      "median_cpl": 8955
+      "avg_cpl": 7640.6,
+      "median_cpl": 8955,
+      "avg_cpl_legal": 6017.241935483871
     },
     "results": [
       {
@@ -28813,8 +28832,9 @@
       "best_pct": 3.0,
       "avoided_blunders": 96,
       "avoided_pct": 96.0,
-      "avg_cpl": 5975.3125,
-      "median_cpl": 8910
+      "avg_cpl": 8447.42,
+      "median_cpl": 8910,
+      "avg_cpl_legal": 5975.3125
     },
     "results": [
       {
