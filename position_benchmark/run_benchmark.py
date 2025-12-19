@@ -290,7 +290,7 @@ async def run_benchmark(
     """Run benchmark for a single player."""
     results = []
 
-    is_engine = player_config.get("type") in ["stockfish", "maia", "random", "uci"]
+    is_engine = player_config.get("type") in ["stockfish", "maia", "random", "uci", "survival"]
 
     if is_engine:
         # Create engine player
@@ -311,6 +311,16 @@ async def run_benchmark(
                 player_id=player_id,
                 rating=player_config.get("rating", 2000),
                 engine_path=player_config.get("path"),
+            )
+        elif engine_type == "survival":
+            from engines.survival_engine import SurvivalEngine
+            player = SurvivalEngine(
+                player_id=player_id,
+                rating=player_config.get("rating", 1200),
+                opening_book_path=player_config.get("opening_book_path"),
+                book_draw_threshold=player_config.get("book_draw_threshold", 0.10),
+                base_depth=player_config.get("base_depth", 12),
+                blunder_threshold=player_config.get("blunder_threshold", 3.0),
             )
         else:
             raise ValueError(f"Unknown engine type: {engine_type}")
