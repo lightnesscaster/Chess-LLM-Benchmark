@@ -43,6 +43,18 @@ class PositionResult:
     eval_best: float  # Eval after best move
 
 
+def _calculate_median(values: list[float]) -> float:
+    """Calculate median, properly handling even-length lists."""
+    if not values:
+        return 10000
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    if n % 2 == 0:
+        return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
+    else:
+        return sorted_vals[n // 2]
+
+
 def build_position_prompt(fen: str, move_history: list[str], side_to_move: str) -> str:
     """Build prompt for a position."""
     board = chess.Board(fen)
@@ -364,7 +376,7 @@ async def run_benchmark(
         "avoided_pct": sum(1 for r in results if r.avoided_blunder) / len(positions) * 100 if positions else 0,
         "avg_cpl": sum(all_cpls) / len(all_cpls) if all_cpls else 10000,  # Includes illegal move penalties
         "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,  # Only legal moves
-        "median_cpl": sorted(all_cpls)[len(all_cpls)//2] if all_cpls else 10000,
+        "median_cpl": _calculate_median(all_cpls),
     }
 
     return {"summary": summary, "results": [asdict(r) for r in results]}
