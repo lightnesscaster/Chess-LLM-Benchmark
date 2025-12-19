@@ -509,7 +509,12 @@ async def main():
     print("\nStarting Stockfish...")
     stockfish = chess.engine.SimpleEngine.popen_uci("stockfish")
 
+    # Load existing results to merge with (don't overwrite)
     all_results = {}
+    if Path(args.output).exists():
+        with open(args.output) as f:
+            all_results = json.load(f)
+        print(f"Loaded {len(all_results)} existing results from {args.output}")
 
     try:
         for player_id, config in players_to_test.items():
