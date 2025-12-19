@@ -1327,7 +1327,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "c2c4",
         "model_move_san": "c4",
@@ -1343,7 +1343,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5g4",
         "model_move_san": "Qg4",
@@ -1359,7 +1359,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "b1c3",
         "model_move_san": "Nc3",
@@ -1375,7 +1375,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "a7a5",
         "model_move_san": "a5",
@@ -1391,7 +1391,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f2f4",
         "model_move_san": "f4",
@@ -1407,7 +1407,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -1423,7 +1423,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "h1h4",
         "model_move_san": "Rh4",
@@ -1439,7 +1439,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b4",
         "model_move_san": "Rb4",
@@ -1455,7 +1455,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1c2",
         "model_move_san": "Nc2",
@@ -1471,7 +1471,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "d1h5",
         "model_move_san": "Qxh5+",
@@ -1487,7 +1487,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5g3",
         "model_move_san": "Qg3",
@@ -1503,7 +1503,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -1519,7 +1519,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8b7",
         "model_move_san": "Qb7+",
@@ -1535,7 +1535,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "g7g6",
         "model_move_san": "g6",
@@ -1551,7 +1551,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e6c4",
         "model_move_san": "Bc4+",
@@ -1567,7 +1567,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "f8e7",
         "model_move_san": "Be7",
@@ -1583,7 +1583,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7b8",
         "model_move_san": "Qb8+",
@@ -1599,7 +1599,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8",
         "model_move_san": "Rh8",
@@ -2944,7 +2944,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4f5",
         "model_move_san": "exf5",
@@ -2960,7 +2960,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5d5",
         "model_move_san": "Qxd5",
@@ -2976,7 +2976,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -2992,7 +2992,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8h4",
         "model_move_san": "Qh4#",
@@ -3008,7 +3008,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -3024,7 +3024,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -3040,7 +3040,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "h1h8",
         "model_move_san": "Rxh8",
@@ -3056,7 +3056,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d8d5",
         "model_move_san": "Qxd5",
@@ -3072,7 +3072,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "d8d2",
         "model_move_san": "Qd2+",
@@ -3088,7 +3088,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c4f7",
         "model_move_san": "Bf7+",
@@ -3104,7 +3104,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "e2h5",
         "model_move_san": "Bh5+",
@@ -3120,7 +3120,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -3136,7 +3136,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4f4",
         "model_move_san": "Kf4",
@@ -3152,7 +3152,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d4",
         "model_move_san": "Nd4",
@@ -3168,7 +3168,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1c1",
         "model_move_san": "Qxc1",
@@ -3184,7 +3184,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "f8e7",
         "model_move_san": "Be7",
@@ -3200,7 +3200,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c6",
         "model_move_san": "Qc6+",
@@ -3216,7 +3216,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "g7g8q",
         "model_move_san": "g8=Q",
@@ -4561,7 +4561,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4f5",
         "model_move_san": "exf5",
@@ -4577,7 +4577,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5d5",
         "model_move_san": "Qxd5",
@@ -4593,7 +4593,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -4609,7 +4609,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8h4",
         "model_move_san": "Qh4#",
@@ -4625,7 +4625,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -4641,7 +4641,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "g2g4",
         "model_move_san": "g4+",
@@ -4657,7 +4657,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "h1h8",
         "model_move_san": "Rxh8",
@@ -4673,7 +4673,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "g7g6",
         "model_move_san": "g6",
@@ -4689,7 +4689,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "d8d2",
         "model_move_san": "Qd2+",
@@ -4705,7 +4705,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c4f7",
         "model_move_san": "Bf7+",
@@ -4721,7 +4721,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "e2h5",
         "model_move_san": "Bh5+",
@@ -4737,7 +4737,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -4753,7 +4753,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4f5",
         "model_move_san": "Kf5",
@@ -4769,7 +4769,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d4",
         "model_move_san": "Nd4",
@@ -4785,7 +4785,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e6g4",
         "model_move_san": "Bg4+",
@@ -4801,7 +4801,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "f8e7",
         "model_move_san": "Be7",
@@ -4817,7 +4817,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "h7h5",
         "model_move_san": "h5",
@@ -4833,7 +4833,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "g7g8q",
         "model_move_san": "g8=Q",
@@ -7795,7 +7795,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4f5",
         "model_move_san": "exf5",
@@ -7811,7 +7811,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "d1c1",
         "model_move_san": "",
@@ -7827,7 +7827,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5g6",
         "model_move_san": "",
@@ -7843,7 +7843,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8h4",
         "model_move_san": "Qh4#",
@@ -7859,7 +7859,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -7875,7 +7875,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -7891,7 +7891,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "f5g6",
         "model_move_san": "",
@@ -7907,7 +7907,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "f8g8",
         "model_move_san": "Kg8",
@@ -7923,7 +7923,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "c4b3",
         "model_move_san": "",
@@ -7939,7 +7939,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c4g8",
         "model_move_san": "Bxg8",
@@ -7955,7 +7955,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5h5",
         "model_move_san": "Qh5+",
@@ -7971,7 +7971,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a7a8",
         "model_move_san": "",
@@ -7987,7 +7987,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4h3",
         "model_move_san": "Kh3",
@@ -8003,7 +8003,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "d8d7",
         "model_move_san": "Qd7",
@@ -8019,7 +8019,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1g2",
         "model_move_san": "Qg2",
@@ -8035,7 +8035,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5c3",
         "model_move_san": "Nxc3",
@@ -8051,7 +8051,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c2",
         "model_move_san": "Qc2",
@@ -8067,7 +8067,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -9412,7 +9412,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4f5",
         "model_move_san": "exf5",
@@ -9428,7 +9428,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h1g1",
         "model_move_san": "Rg1",
@@ -9444,7 +9444,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "g1h3",
         "model_move_san": "Nh3",
@@ -9460,7 +9460,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8h4",
         "model_move_san": "Qh4#",
@@ -9476,7 +9476,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "d2d4",
         "model_move_san": "d4",
@@ -9492,7 +9492,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h7",
         "model_move_san": "Rh7",
@@ -9508,7 +9508,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c3e4",
         "model_move_san": "Ne4",
@@ -9524,7 +9524,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b6",
         "model_move_san": "Rb6",
@@ -9540,7 +9540,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "e6e5",
         "model_move_san": "Re5",
@@ -9556,7 +9556,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c5b6",
         "model_move_san": "cxb6",
@@ -9572,7 +9572,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5g7",
         "model_move_san": "Qg7+",
@@ -9588,7 +9588,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a1b1",
         "model_move_san": "",
@@ -9604,7 +9604,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8a1",
         "model_move_san": "Qa1",
@@ -9620,7 +9620,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c8e6",
         "model_move_san": "Be6",
@@ -9636,7 +9636,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e7f8q",
         "model_move_san": "",
@@ -9652,7 +9652,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5b6",
         "model_move_san": "Nb6",
@@ -9668,7 +9668,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c2",
         "model_move_san": "Qc2",
@@ -9684,7 +9684,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -11029,7 +11029,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d2d4",
         "model_move_san": "",
@@ -11045,7 +11045,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h2h3",
         "model_move_san": "h3",
@@ -11061,7 +11061,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -11077,7 +11077,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d7d5",
         "model_move_san": "",
@@ -11093,7 +11093,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -11109,7 +11109,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h7",
         "model_move_san": "Rh7",
@@ -11125,7 +11125,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c2c3",
         "model_move_san": "",
@@ -11141,7 +11141,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "e8f7",
         "model_move_san": "",
@@ -11157,7 +11157,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a6a5",
         "model_move_san": "",
@@ -11173,7 +11173,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "g2g3",
         "model_move_san": "g3",
@@ -11189,7 +11189,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "h2h3",
         "model_move_san": "h3",
@@ -11205,7 +11205,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -11221,7 +11221,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8a7",
         "model_move_san": "Qa7",
@@ -11237,7 +11237,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c7c5",
         "model_move_san": "",
@@ -11253,7 +11253,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1h8",
         "model_move_san": "",
@@ -11269,7 +11269,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "c7c5",
         "model_move_san": "c5",
@@ -11285,7 +11285,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "f7f6",
         "model_move_san": "f6",
@@ -11301,7 +11301,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "d8g5",
         "model_move_san": "",
@@ -12646,7 +12646,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -12662,7 +12662,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5g6",
         "model_move_san": "Qg6",
@@ -12678,7 +12678,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -12694,7 +12694,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4c3",
         "model_move_san": "",
@@ -12710,7 +12710,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -12726,7 +12726,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6e6",
         "model_move_san": "Rxe6",
@@ -12742,7 +12742,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -12758,7 +12758,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b1q",
         "model_move_san": "",
@@ -12774,7 +12774,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "c5c4",
         "model_move_san": "",
@@ -12790,7 +12790,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -12806,7 +12806,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5f6",
         "model_move_san": "Qf6+",
@@ -12822,7 +12822,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "c8b6",
         "model_move_san": "",
@@ -12838,7 +12838,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4f3",
         "model_move_san": "Kf3",
@@ -12854,7 +12854,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d4",
         "model_move_san": "Nd4",
@@ -12870,7 +12870,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f6g5",
         "model_move_san": "Kg5",
@@ -12886,7 +12886,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5e3",
         "model_move_san": "Ne3",
@@ -12902,7 +12902,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "g7h8",
         "model_move_san": "Kh8",
@@ -12918,7 +12918,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "c8f5",
         "model_move_san": "Qf5",
@@ -14263,7 +14263,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -14279,7 +14279,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5h6",
         "model_move_san": "Qxh6",
@@ -14295,7 +14295,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -14311,7 +14311,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "b8c6",
         "model_move_san": "Nc6",
@@ -14327,7 +14327,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -14343,7 +14343,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -14359,7 +14359,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -14375,7 +14375,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d8h4",
         "model_move_san": "Qh4",
@@ -14391,7 +14391,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a8b8",
         "model_move_san": "",
@@ -14407,7 +14407,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c5d6",
         "model_move_san": "",
@@ -14423,7 +14423,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5f6",
         "model_move_san": "Qf6+",
@@ -14439,7 +14439,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b7",
         "model_move_san": "",
@@ -14455,7 +14455,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8b8",
         "model_move_san": "Qb8+",
@@ -14471,7 +14471,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "b8c6",
         "model_move_san": "",
@@ -14487,7 +14487,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1h2",
         "model_move_san": "Qxh2",
@@ -14503,7 +14503,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5c3",
         "model_move_san": "Nxc3",
@@ -14519,7 +14519,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c8",
         "model_move_san": "Qc8+",
@@ -14535,7 +14535,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -15880,7 +15880,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4f5",
         "model_move_san": "",
@@ -15896,7 +15896,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5h8",
         "model_move_san": "",
@@ -15912,7 +15912,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -15928,7 +15928,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4e3",
         "model_move_san": "",
@@ -15944,7 +15944,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -15960,7 +15960,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6e6",
         "model_move_san": "Rxe6",
@@ -15976,7 +15976,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -15992,7 +15992,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b1q",
         "model_move_san": "",
@@ -16008,7 +16008,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1b3",
         "model_move_san": "Nb3",
@@ -16024,7 +16024,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -16040,7 +16040,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5f6",
         "model_move_san": "Qf6+",
@@ -16056,7 +16056,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "Kc8",
         "model_move_san": "",
@@ -16072,7 +16072,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g3f4",
         "model_move_san": "",
@@ -16088,7 +16088,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d5",
         "model_move_san": "",
@@ -16104,7 +16104,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f6e6",
         "model_move_san": "",
@@ -16120,7 +16120,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5e3",
         "model_move_san": "Ne3",
@@ -16136,7 +16136,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7a5",
         "model_move_san": "Qa5+",
@@ -16152,7 +16152,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "g7g8q",
         "model_move_san": "g8=Q",
@@ -17497,7 +17497,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -17513,7 +17513,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5h6",
         "model_move_san": "Qxh6",
@@ -17529,7 +17529,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -17545,7 +17545,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8d6",
         "model_move_san": "Qd6",
@@ -17561,7 +17561,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f1b5",
         "model_move_san": "Bb5",
@@ -17577,7 +17577,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h7",
         "model_move_san": "Rh7",
@@ -17593,7 +17593,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -17609,7 +17609,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d8e7",
         "model_move_san": "Qe7",
@@ -17625,7 +17625,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a8b8",
         "model_move_san": "",
@@ -17641,7 +17641,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "d1h5",
         "model_move_san": "Qxh5+",
@@ -17657,7 +17657,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5g7",
         "model_move_san": "Qg7+",
@@ -17673,7 +17673,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b7",
         "model_move_san": "",
@@ -17689,7 +17689,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8b8",
         "model_move_san": "Qb8+",
@@ -17705,7 +17705,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "e8d7",
         "model_move_san": "Kd7",
@@ -17721,7 +17721,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f6g5",
         "model_move_san": "Kg5",
@@ -17737,7 +17737,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5e3",
         "model_move_san": "Ne3",
@@ -17753,7 +17753,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c8",
         "model_move_san": "Qc8+",
@@ -17769,7 +17769,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "b8a8",
         "model_move_san": "Ka8",
@@ -19114,7 +19114,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4e5",
         "model_move_san": "e5",
@@ -19130,7 +19130,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "d3c3",
         "model_move_san": "",
@@ -19146,7 +19146,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e4e5",
         "model_move_san": "",
@@ -19162,7 +19162,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4d3",
         "model_move_san": "d3",
@@ -19178,7 +19178,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f5g6",
         "model_move_san": "",
@@ -19194,7 +19194,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h8",
         "model_move_san": "Rh8",
@@ -19210,7 +19210,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -19226,7 +19226,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d8d5",
         "model_move_san": "Qxd5",
@@ -19242,7 +19242,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1b3",
         "model_move_san": "Nb3",
@@ -19258,7 +19258,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e5f7",
         "model_move_san": "Nf7",
@@ -19274,7 +19274,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5f5",
         "model_move_san": "Qf5+",
@@ -19290,7 +19290,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b8",
         "model_move_san": "",
@@ -19306,7 +19306,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4f5",
         "model_move_san": "Kf5",
@@ -19322,7 +19322,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "g8f6",
         "model_move_san": "",
@@ -19338,7 +19338,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f8h6",
         "model_move_san": "",
@@ -19354,7 +19354,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5b4",
         "model_move_san": "Nb4",
@@ -19370,7 +19370,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "g7g6",
         "model_move_san": "Kg6",
@@ -19386,7 +19386,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "g7g8q",
         "model_move_san": "g8=Q",
@@ -20731,7 +20731,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -20747,7 +20747,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5h6",
         "model_move_san": "Qxh6",
@@ -20763,7 +20763,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -20779,7 +20779,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4d3",
         "model_move_san": "d3",
@@ -20795,7 +20795,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -20811,7 +20811,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -20827,7 +20827,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "a1b1",
         "model_move_san": "Rb1",
@@ -20843,7 +20843,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b1r",
         "model_move_san": "",
@@ -20859,7 +20859,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1b3",
         "model_move_san": "Nb3",
@@ -20875,7 +20875,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -20891,7 +20891,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5f6",
         "model_move_san": "Qf6+",
@@ -20907,7 +20907,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b8",
         "model_move_san": "",
@@ -20923,7 +20923,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4f3",
         "model_move_san": "Kf3",
@@ -20939,7 +20939,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "e7e6",
         "model_move_san": "",
@@ -20955,7 +20955,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1h2",
         "model_move_san": "Qxh2",
@@ -20971,7 +20971,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5e3",
         "model_move_san": "Ne3",
@@ -20987,7 +20987,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c6",
         "model_move_san": "Qc6+",
@@ -21003,7 +21003,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -22348,7 +22348,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d2d4",
         "model_move_san": "",
@@ -22364,7 +22364,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h1g1",
         "model_move_san": "Rg1",
@@ -22380,7 +22380,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f2f3",
         "model_move_san": "f3",
@@ -22396,7 +22396,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "e5d4",
         "model_move_san": "",
@@ -22412,7 +22412,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "e5f6",
         "model_move_san": "",
@@ -22428,7 +22428,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "g3g6",
         "model_move_san": "",
@@ -22444,7 +22444,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "f3e5",
         "model_move_san": "",
@@ -22460,7 +22460,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "a2a1",
         "model_move_san": "",
@@ -22476,7 +22476,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "f6f4",
         "model_move_san": "",
@@ -22492,7 +22492,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e5f7",
         "model_move_san": "Nf7",
@@ -22508,7 +22508,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "f3f7",
         "model_move_san": "",
@@ -22524,7 +22524,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a1b1",
         "model_move_san": "",
@@ -22540,7 +22540,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "f4e4",
         "model_move_san": "",
@@ -22556,7 +22556,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "e5d4",
         "model_move_san": "",
@@ -22572,7 +22572,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f6e5",
         "model_move_san": "",
@@ -22588,7 +22588,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5b4",
         "model_move_san": "Nb4",
@@ -22604,7 +22604,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "f7f8",
         "model_move_san": "",
@@ -22620,7 +22620,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h5h6",
         "model_move_san": "h6",
@@ -23965,7 +23965,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -23981,7 +23981,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "d3xc3",
         "model_move_san": "",
@@ -23997,7 +23997,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -24013,7 +24013,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4d3",
         "model_move_san": "d3",
@@ -24029,7 +24029,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "c2c4",
         "model_move_san": "",
@@ -24045,7 +24045,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -24061,7 +24061,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -24077,7 +24077,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b1q",
         "model_move_san": "",
@@ -24093,7 +24093,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1c2",
         "model_move_san": "Nc2",
@@ -24109,7 +24109,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c5c6",
         "model_move_san": "c6",
@@ -24125,7 +24125,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "e2c4",
         "model_move_san": "Bc4+",
@@ -24141,7 +24141,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b7",
         "model_move_san": "",
@@ -24157,7 +24157,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "h4h5",
         "model_move_san": "",
@@ -24173,7 +24173,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "d8d5",
         "model_move_san": "Qxd5",
@@ -24189,7 +24189,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e6d4",
         "model_move_san": "",
@@ -24205,7 +24205,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5b4",
         "model_move_san": "Nb4",
@@ -24221,7 +24221,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c1",
         "model_move_san": "Qc1",
@@ -24237,7 +24237,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -25582,7 +25582,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -25598,7 +25598,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "h5g6",
         "model_move_san": "Qg6",
@@ -25614,7 +25614,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f5f6",
         "model_move_san": "f6",
@@ -25630,7 +25630,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4e3",
         "model_move_san": "",
@@ -25646,7 +25646,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -25662,7 +25662,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6h5",
         "model_move_san": "Rh5+",
@@ -25678,7 +25678,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c3d5",
         "model_move_san": "Nd5",
@@ -25694,7 +25694,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "b2b1q",
         "model_move_san": "",
@@ -25710,7 +25710,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1b3",
         "model_move_san": "Nb3",
@@ -25726,7 +25726,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -25742,7 +25742,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "d4d5",
         "model_move_san": "d5",
@@ -25758,7 +25758,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8b8",
         "model_move_san": "",
@@ -25774,7 +25774,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g5f4",
         "model_move_san": "",
@@ -25790,7 +25790,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d4",
         "model_move_san": "Nd4",
@@ -25806,7 +25806,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "f6e6",
         "model_move_san": "",
@@ -25822,7 +25822,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5c3",
         "model_move_san": "Nxc3",
@@ -25838,7 +25838,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c8",
         "model_move_san": "Qc8+",
@@ -25854,7 +25854,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8",
         "model_move_san": "Rh8",
@@ -27199,7 +27199,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27215,7 +27215,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "ee",
         "model_move_san": "",
@@ -27231,7 +27231,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27247,7 +27247,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27263,7 +27263,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27279,7 +27279,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27295,7 +27295,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27311,7 +27311,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27327,7 +27327,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27343,7 +27343,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27359,7 +27359,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27375,7 +27375,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "e2e4",
         "model_move_san": "",
@@ -27391,7 +27391,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4g3",
         "model_move_san": "Kg3",
@@ -27407,7 +27407,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27423,7 +27423,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27439,7 +27439,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27455,7 +27455,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "e7e5",
         "model_move_san": "",
@@ -27471,7 +27471,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h7h8q",
         "model_move_san": "",
@@ -28816,7 +28816,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d2d4",
         "model_move_san": "",
@@ -28832,7 +28832,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "g5h6",
         "model_move_san": "",
@@ -28848,7 +28848,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "f2f4",
         "model_move_san": "f4",
@@ -28864,7 +28864,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d7d5",
         "model_move_san": "",
@@ -28880,7 +28880,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "d2d4",
         "model_move_san": "d4",
@@ -28896,7 +28896,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "g7g8q",
         "model_move_san": "",
@@ -28912,7 +28912,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c2c4",
         "model_move_san": "",
@@ -28928,7 +28928,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "c8g4",
         "model_move_san": "",
@@ -28944,7 +28944,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "b8c6",
         "model_move_san": "",
@@ -28960,7 +28960,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "d1d2",
         "model_move_san": "Qd2",
@@ -28976,7 +28976,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "d1h5",
         "model_move_san": "",
@@ -28992,7 +28992,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -29008,7 +29008,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g5h6",
         "model_move_san": "",
@@ -29024,7 +29024,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "d7d6",
         "model_move_san": "",
@@ -29040,7 +29040,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1g1",
         "model_move_san": "Qg1",
@@ -29056,7 +29056,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5c3",
         "model_move_san": "Nxc3",
@@ -29072,7 +29072,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "g7g6",
         "model_move_san": "Kg6",
@@ -29088,7 +29088,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h8g8",
         "model_move_san": "",
@@ -30433,7 +30433,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -30449,7 +30449,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "f1g1",
         "model_move_san": "Kg1",
@@ -30465,7 +30465,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -30481,7 +30481,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d4c3",
         "model_move_san": "",
@@ -30497,7 +30497,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -30513,7 +30513,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6e6",
         "model_move_san": "Rxe6",
@@ -30529,7 +30529,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c1g5",
         "model_move_san": "Bg5",
@@ -30545,7 +30545,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d8d5",
         "model_move_san": "Qxd5",
@@ -30561,7 +30561,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "e6g6",
         "model_move_san": "Rg6",
@@ -30577,7 +30577,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e1g1",
         "model_move_san": "O-O",
@@ -30593,7 +30593,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g2g4",
         "model_move_san": "g4",
@@ -30609,7 +30609,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "c1b1",
         "model_move_san": "",
@@ -30625,7 +30625,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "g4h5",
         "model_move_san": "Kh5",
@@ -30641,7 +30641,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "d8e7",
         "model_move_san": "Qe7",
@@ -30657,7 +30657,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "h1g1",
         "model_move_san": "Qg1",
@@ -30673,7 +30673,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d8d7",
         "model_move_san": "Rd7",
@@ -30689,7 +30689,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7c5",
         "model_move_san": "Qc5",
@@ -30705,7 +30705,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "c8b7",
         "model_move_san": "Qb7",
@@ -32050,7 +32050,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "b1c3",
         "model_move_san": "Nc3",
@@ -32066,7 +32066,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "c3d4",
         "model_move_san": "",
@@ -32082,7 +32082,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "b1c3",
         "model_move_san": "Nc3",
@@ -32098,7 +32098,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "f7f6",
         "model_move_san": "f6",
@@ -32114,7 +32114,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "c1g5",
         "model_move_san": "",
@@ -32130,7 +32130,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "h6d6",
         "model_move_san": "",
@@ -32146,7 +32146,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "c1f4",
         "model_move_san": "Bf4",
@@ -32162,7 +32162,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "d5c7",
         "model_move_san": "",
@@ -32178,7 +32178,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "h7h6",
         "model_move_san": "h6",
@@ -32194,7 +32194,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "e5d7",
         "model_move_san": "Nxd7",
@@ -32210,7 +32210,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g1f3",
         "model_move_san": "Nf3",
@@ -32226,7 +32226,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "d8e7",
         "model_move_san": "",
@@ -32242,7 +32242,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "h4h3",
         "model_move_san": "",
@@ -32258,7 +32258,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "c6d4",
         "model_move_san": "Nd4",
@@ -32274,7 +32274,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e5e4",
         "model_move_san": "e4",
@@ -32290,7 +32290,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "d5b6",
         "model_move_san": "Nb6",
@@ -32306,7 +32306,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "f7f8q",
         "model_move_san": "",
@@ -32322,7 +32322,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "h5h6q",
         "model_move_san": "",
@@ -33667,7 +33667,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 83,
+        "position_idx": 82,
         "fen": "rnbqkbnr/ppppp1p1/7p/5p2/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -33683,7 +33683,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 84,
+        "position_idx": 83,
         "fen": "r1b1r1k1/p1p2pp1/7p/3p3Q/8/P1qB4/2P2PPP/R4K1R w - - 0 15",
         "model_move": "a1d1",
         "model_move_san": "Rd1",
@@ -33699,7 +33699,7 @@
         "eval_before": -288
       },
       {
-        "position_idx": 85,
+        "position_idx": 84,
         "fen": "rnbqkbnr/ppppp1p1/7p/5P2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -33715,7 +33715,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 86,
+        "position_idx": 85,
         "fen": "rnbqkbnr/ppp2ppp/8/4p3/P2p2P1/5P2/1PPPP2P/RNBQKBNR b KQkq - 0 4",
         "model_move": "d8h4",
         "model_move_san": "Qh4#",
@@ -33731,7 +33731,7 @@
         "eval_before": 9990
       },
       {
-        "position_idx": 87,
+        "position_idx": 86,
         "fen": "rnbqkbnr/p1ppp1p1/1p5p/5P2/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 4",
         "model_move": "d1h5",
         "model_move_san": "Qh5+",
@@ -33747,7 +33747,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 88,
+        "position_idx": 87,
         "fen": "3r4/ppp5/4b2R/4pk2/2p5/2P5/P4PPP/6K1 w - - 5 23",
         "model_move": "f2f3",
         "model_move_san": "f3",
@@ -33763,7 +33763,7 @@
         "eval_before": -406
       },
       {
-        "position_idx": 89,
+        "position_idx": 88,
         "fen": "r2q3r/1pp2kp1/8/p1P2P2/6p1/P1N5/1PP2PP1/R1B1K2R w KQ - 0 18",
         "model_move": "h1g1",
         "model_move_san": "Rg1",
@@ -33779,7 +33779,7 @@
         "eval_before": -419
       },
       {
-        "position_idx": 90,
+        "position_idx": 89,
         "fen": "3q1k1r/pp3ppp/8/3N4/8/4Q3/Pr3PPP/4R1K1 b - - 0 19",
         "model_move": "a7a6",
         "model_move_san": "a6",
@@ -33795,7 +33795,7 @@
         "eval_before": -461
       },
       {
-        "position_idx": 91,
+        "position_idx": 90,
         "fen": "1rbq2k1/p4p1p/1p2r3/2p4P/2p4R/5PP1/PK2BP2/nR4N1 b - - 2 24",
         "model_move": "a1b3",
         "model_move_san": "Nb3",
@@ -33811,7 +33811,7 @@
         "eval_before": 9930
       },
       {
-        "position_idx": 92,
+        "position_idx": 91,
         "fen": "rn1qkbn1/1b1p2pr/pp3p2/2P1N1Bp/2B1P3/2N5/PPP2PPP/R2QK2R w KQq - 1 9",
         "model_move": "c4f7",
         "model_move_san": "Bf7+",
@@ -33827,7 +33827,7 @@
         "eval_before": 9980
       },
       {
-        "position_idx": 93,
+        "position_idx": 92,
         "fen": "r1bq4/p1pppk2/8/1p4Q1/3P4/8/PPP1BPPP/R1B1K1NR w KQ - 7 31",
         "model_move": "g5g3",
         "model_move_san": "Qg3",
@@ -33843,7 +33843,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 93,
         "fen": "K1q5/5pkp/8/8/8/8/8/8 w - - 24 59",
         "model_move": "a8a7",
         "model_move_san": "Ka7",
@@ -33859,7 +33859,7 @@
         "eval_before": 0
       },
       {
-        "position_idx": 0,
+        "position_idx": 94,
         "fen": "q7/8/8/1K6/6k1/8/8/8 b - - 5 87",
         "model_move": "a8h1",
         "model_move_san": "Qh1",
@@ -33875,7 +33875,7 @@
         "eval_before": 9890
       },
       {
-        "position_idx": 0,
+        "position_idx": 95,
         "fen": "r1bqkb1r/ppp3pp/2n5/3Bp3/8/5Q2/PPPP1PPP/RNB1K2R b KQ - 0 8",
         "model_move": "d8d6",
         "model_move_san": "Qd6",
@@ -33891,7 +33891,7 @@
         "eval_before": -254
       },
       {
-        "position_idx": 0,
+        "position_idx": 96,
         "fen": "7Q/p3bppp/4bk2/4p3/8/8/PPPPKP1P/RNB4q b - - 1 16",
         "model_move": "e6d7",
         "model_move_san": "Bd7",
@@ -33907,7 +33907,7 @@
         "eval_before": 9970
       },
       {
-        "position_idx": 0,
+        "position_idx": 97,
         "fen": "1k1r1b1r/ppp3pp/8/3n4/4P3/1KP3PB/P6P/R2R4 b - - 0 24",
         "model_move": "a7a5",
         "model_move_san": "a5",
@@ -33923,7 +33923,7 @@
         "eval_before": 41
       },
       {
-        "position_idx": 0,
+        "position_idx": 98,
         "fen": "K7/2q2pkp/8/8/8/8/8/8 b - - 19 56",
         "model_move": "c7a7",
         "model_move_san": "Qa7+",
@@ -33939,7 +33939,7 @@
         "eval_before": 9880
       },
       {
-        "position_idx": 0,
+        "position_idx": 99,
         "fen": "1KQ5/6PR/8/7P/7k/8/8/8 w - - 1 68",
         "model_move": "b8b7",
         "model_move_san": "Kb7",
