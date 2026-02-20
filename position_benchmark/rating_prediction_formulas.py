@@ -2,7 +2,8 @@
 Rating prediction formulas from position benchmark data.
 
 These formulas predict Glicko-2 rating from position benchmark metrics.
-Derived from 22 models tested on 100 equal positions and 100 blunder positions.
+Derived from 22 models tested on 200 equal positions and 100 blunder positions.
+Data lives in unified results.json with per-type summary breakdowns.
 
 Updated: Now includes gpt-5-chat in training data.
 """
@@ -145,6 +146,9 @@ Key insights:
 - Each 1% increase in best_move% ≈ +48 rating points (simple regression)
 - Polynomial helps capture non-linear effects at extremes
 - Models trained on 22 data points (21 original + gpt-5-chat)
+
+Data source: unified results.json with per-type breakdowns (summary.blunder, summary.equal).
+Run regression_analysis.py to refit models from results.json.
 """
 
 

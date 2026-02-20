@@ -223,7 +223,7 @@ def main():
 
         # Handle both old format (list) and new format (dict with metadata)
         if isinstance(existing, dict):
-            all_blunders = [BlunderPosition(**b) for b in existing.get("blunders", [])]
+            all_blunders = [BlunderPosition(**b) for b in existing.get("positions", existing.get("blunders", []))]
             processed_games = set(existing.get("metadata", {}).get("processed_games", []))
         else:
             # Old format: just a list of blunders
@@ -333,7 +333,7 @@ def _save_progress(output_path: Path, blunders: list, processed_games: set, args
             "total_processed": len(processed_games),
             "total_blunders": len(blunders),
         },
-        "blunders": [asdict(b) for b in blunders],
+        "positions": [asdict(b) for b in blunders],
     }
 
     with open(output_path, "w") as f:

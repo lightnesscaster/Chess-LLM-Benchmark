@@ -2246,7 +2246,7 @@
     "total_processed": 2236,
     "total_blunders": 1000
   },
-  "blunders": [
+  "positions": [
     {
       "fen": "r1bqkb1r/pp3ppp/2p2n2/P2p4/2P2n2/8/1P1R1KPP/1N1Q1B1R b kq - 0 12",
       "move_history": [

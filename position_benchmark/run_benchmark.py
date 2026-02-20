@@ -1,7 +1,8 @@
 """
 Run position benchmark on models.
 
-Tests models on blunder positions and measures CPL (centipawn loss).
+Tests models on blunder and equal positions, measures CPL (centipawn loss).
+Uses unified positions.json containing both position types.
 """
 
 import asyncio
@@ -376,27 +377,41 @@ async def run_benchmark(
         await asyncio.gather(*tasks)
 
     # Calculate summary stats
-    legal_results = [r for r in results if r.is_legal]
+    result_dicts = [asdict(r) for r in results]
 
-    # CPL now includes illegal moves (with penalty = eval_before + 5000)
-    all_cpls = [r.cpl for r in results]
-    legal_cpls = [r.cpl for r in legal_results]
+    def _calc_type_summary(subset_results):
+        """Calculate summary stats for a subset of results."""
+        legal = [r for r in subset_results if r.is_legal]
+        all_cpls = [r.cpl for r in subset_results]
+        legal_cpls = [r.cpl for r in legal]
+        n = len(subset_results)
+        return {
+            "total_positions": n,
+            "legal_moves": len(legal),
+            "legal_pct": len(legal) / n * 100 if n else 0,
+            "best_moves": sum(1 for r in subset_results if r.is_best),
+            "best_pct": sum(1 for r in subset_results if r.is_best) / n * 100 if n else 0,
+            "avoided_blunders": sum(1 for r in subset_results if r.avoided_blunder),
+            "avoided_pct": sum(1 for r in subset_results if r.avoided_blunder) / n * 100 if n else 0,
+            "avg_cpl": sum(all_cpls) / len(all_cpls) if all_cpls else 10000,
+            "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,
+            "median_cpl": _calculate_median(all_cpls),
+        }
 
-    summary = {
-        "player_id": player_id,
-        "total_positions": len(positions),
-        "legal_moves": len(legal_results),
-        "legal_pct": len(legal_results) / len(positions) * 100 if positions else 0,
-        "best_moves": sum(1 for r in results if r.is_best),
-        "best_pct": sum(1 for r in results if r.is_best) / len(positions) * 100 if positions else 0,
-        "avoided_blunders": sum(1 for r in results if r.avoided_blunder),
-        "avoided_pct": sum(1 for r in results if r.avoided_blunder) / len(positions) * 100 if positions else 0,
-        "avg_cpl": sum(all_cpls) / len(all_cpls) if all_cpls else 10000,  # Includes illegal move penalties
-        "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,  # Only legal moves
-        "median_cpl": _calculate_median(all_cpls),
-    }
+    # Overall summary
+    summary = _calc_type_summary(results)
+    summary["player_id"] = player_id
 
-    return {"summary": summary, "results": [asdict(r) for r in results]}
+    # Per-type breakdowns (if positions have type field)
+    blunder_results = [r for r, p in zip(results, positions) if p.get("type") == "blunder"]
+    equal_results = [r for r, p in zip(results, positions) if p.get("type") == "equal"]
+
+    if blunder_results:
+        summary["blunder"] = _calc_type_summary(blunder_results)
+    if equal_results:
+        summary["equal"] = _calc_type_summary(equal_results)
+
+    return {"summary": summary, "results": result_dicts}
 
 
 def load_player_configs():
@@ -425,20 +440,14 @@ async def main():
     parser.add_argument(
         "--positions",
         type=Path,
-        default=Path("position_benchmark/blunders.json"),
-        help="Path to positions JSON",
+        default=Path("position_benchmark/positions.json"),
+        help="Path to positions JSON (unified format)",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("position_benchmark/results.json"),
         help="Output results file",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=100,
-        help="Number of positions to test (default: 100)",
     )
     parser.add_argument(
         "--depth",
@@ -459,8 +468,10 @@ async def main():
     with open(args.positions) as f:
         data = json.load(f)
 
-    positions = data["blunders"][:args.limit]
-    print(f"Testing on {len(positions)} positions")
+    positions = data["positions"]
+    blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
+    equal_count = sum(1 for p in positions if p.get("type") == "equal")
+    print(f"Testing on {len(positions)} positions ({blunder_count} blunder, {equal_count} equal)")
 
     # Load player configs
     all_players = load_player_configs()
@@ -532,6 +543,10 @@ async def main():
             print(f"  Best moves: {summary['best_moves']} ({summary['best_pct']:.1f}%)")
             print(f"  Avoided blunders: {summary['avoided_blunders']} ({summary['avoided_pct']:.1f}%)")
             print(f"  Avg CPL: {summary['avg_cpl']:.1f}")
+            for ptype in ["blunder", "equal"]:
+                if ptype in summary:
+                    ts = summary[ptype]
+                    print(f"  [{ptype}] Legal: {ts['legal_pct']:.1f}%  Best: {ts['best_pct']:.1f}%  CPL: {ts['avg_cpl']:.1f}")
             print(f"  Time: {elapsed:.1f}s")
 
             all_results[player_id] = result

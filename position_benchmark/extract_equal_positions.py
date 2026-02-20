@@ -51,8 +51,8 @@ def extract_equal_positions(
     if existing_positions_file.exists():
         with open(existing_positions_file) as f:
             data = json.load(f)
-            blunders = data.get("blunders", [])
-            for pos in blunders:
+            positions = data.get("positions", data.get("blunders", []))
+            for pos in positions:
                 existing_fens.add(pos["fen"])
         print(f"Loaded {len(existing_fens)} existing positions to exclude")
 

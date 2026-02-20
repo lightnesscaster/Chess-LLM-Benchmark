@@ -5,6 +5,8 @@ Fits various regression models to understand relationships between:
 - Position benchmark metrics (CPL, legal%, best%) and game-play ratings
 - Legal move percentage and CPL
 - Performance on blunder vs equal positions
+
+Reads from unified results.json with per-type summary breakdowns.
 """
 
 import json
@@ -44,40 +46,33 @@ BENCHMARK_RATINGS = {
 
 
 def load_results():
-    """Load both benchmark result files."""
+    """Load unified benchmark results file."""
     base_path = Path(__file__).parent
 
-    # Load blunder results
-    with open(base_path / "results_combined.json") as f:
-        blunder_data = json.load(f)
+    with open(base_path / "results.json") as f:
+        data = json.load(f)
 
-    # Load equal position results
-    with open(base_path / "equal_results.json") as f:
-        equal_data = json.load(f)
-
-    return blunder_data, equal_data
+    return data
 
 
-def extract_model_features(blunder_data, equal_data):
-    """Extract features for each model from both benchmarks."""
+def extract_model_features(data):
+    """Extract features for each model from unified results with per-type breakdowns."""
     models = []
 
-    # Get blunder results
-    blunder_results = blunder_data.get("results", blunder_data)
-
-    for model_name in blunder_results:
-        blunder_stats = blunder_results[model_name]
-
-        # Check if model exists in equal results and has a rating
-        if model_name not in equal_data:
-            continue
+    for model_name, model_data in data.items():
         if model_name not in BENCHMARK_RATINGS:
             continue
 
-        equal_stats = equal_data[model_name].get("summary", equal_data[model_name])
+        summary = model_data.get("summary", {})
 
-        model_type = blunder_stats.get("type", "llm")
-        is_llm = 1 if model_type == "llm" else 0
+        # Need both blunder and equal breakdowns
+        blunder_stats = summary.get("blunder")
+        equal_stats = summary.get("equal")
+        if not blunder_stats or not equal_stats:
+            continue
+
+        # Detect engine vs LLM from results (engines always have 100% legal)
+        is_llm = 0 if blunder_stats["legal_pct"] == 100.0 and equal_stats["legal_pct"] == 100.0 else 1
 
         models.append({
             "name": model_name,
@@ -87,8 +82,8 @@ def extract_model_features(blunder_data, equal_data):
             "blunder_legal_pct": blunder_stats["legal_pct"],
             "blunder_best_pct": blunder_stats["best_pct"],
             "blunder_avg_cpl": blunder_stats["avg_cpl"],
-            "blunder_avoided_pct": blunder_stats["avoided_pct"],
-            "blunder_median_cpl": blunder_stats["median_cpl"],
+            "blunder_avoided_pct": blunder_stats.get("avoided_pct", 100.0),
+            "blunder_median_cpl": blunder_stats.get("median_cpl", blunder_stats["avg_cpl"]),
             # Equal position benchmark metrics
             "equal_legal_pct": equal_stats["legal_pct"],
             "equal_best_pct": equal_stats["best_pct"],
@@ -312,8 +307,8 @@ def fit_regression_models(models):
 
 
 def main():
-    blunder_data, equal_data = load_results()
-    models = extract_model_features(blunder_data, equal_data)
+    data = load_results()
+    models = extract_model_features(data)
 
     if len(models) < 3:
         print(f"Error: Only {len(models)} models found in both datasets. Need at least 3.")
