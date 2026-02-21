@@ -19,7 +19,7 @@ import time
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from llm.openrouter_client import OpenRouterPlayer
+from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
@@ -146,26 +146,12 @@ async def test_llm_on_position(
     eval_before = position["eval_before"]
     illegal_cpl = eval_before + 5000
 
-    try:
-        model_move_uci = await player.select_move(board, is_retry=False)
-    except Exception as e:
-        # Model failed to respond
-        return PositionResult(
-            position_idx=0,
-            fen=fen,
-            model_move="",
-            model_move_san="",
-            best_move=best_move_uci,
-            best_move_san=position["best_move_san"],
-            blunder_move=blunder_move_uci,
-            cpl=illegal_cpl,
-            is_legal=False,
-            is_best=False,
-            avoided_blunder=True,  # Technically didn't play the blunder
-            eval_model=-5000,  # Halfway to losing
-            eval_best=eval_before,
-            eval_before=eval_before,
-        )
+    # Let TransientAPIError propagate — API failures are not illegal moves
+    model_move_uci = await player.select_move(board, is_retry=False)
+
+    # Empty response means the API returned no content (truncation, etc.)
+    if not model_move_uci or not model_move_uci.strip():
+        raise TransientAPIError("Model returned empty response")
 
     # Check if move is legal
     try:
@@ -174,7 +160,7 @@ async def test_llm_on_position(
             raise ValueError("Illegal move")
         model_move_san = board.san(move)
         is_legal = True
-    except:
+    except (ValueError, chess.InvalidMoveError):
         return PositionResult(
             position_idx=0,
             fen=fen,
@@ -362,22 +348,43 @@ async def run_benchmark(
 
         async def test_with_semaphore(idx: int, pos: dict):
             async with semaphore:
-                result = await test_llm_on_position(player, pos, stockfish, depth)
-                result.position_idx = idx
-                results[idx] = result
-                completed[0] += 1
-                status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
-                if result.is_best:
-                    status += " (best!)"
-                print(f"  [{completed[0]}/{len(positions)}] {status}")
-                return result
+                max_api_retries = 3
+                for attempt in range(max_api_retries):
+                    try:
+                        result = await test_llm_on_position(player, pos, stockfish, depth)
+                        result.position_idx = idx
+                        results[idx] = result
+                        completed[0] += 1
+                        status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
+                        if result.is_best:
+                            status += " (best!)"
+                        print(f"  [{completed[0]}/{len(positions)}] {status}")
+                        return result
+                    except TransientAPIError as e:
+                        if attempt < max_api_retries - 1:
+                            print(f"  [API error pos {idx}, retry {attempt+1}/{max_api_retries}]: {e}")
+                            await asyncio.sleep(5 * (attempt + 1))
+                        else:
+                            completed[0] += 1
+                            print(f"  [{completed[0]}/{len(positions)}] ERROR (API failure, skipping pos {idx})")
+                            results[idx] = None  # Mark as skipped
+                            return None
 
         # Launch all tasks
         tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
         await asyncio.gather(*tasks)
 
+        # Filter out skipped positions (API failures)
+        skipped = sum(1 for r in results if r is None)
+        if skipped:
+            print(f"\n  Skipped {skipped} positions due to API errors")
+        results = [r for r in results if r is not None]
+
     # Calculate summary stats
     result_dicts = [asdict(r) for r in results]
+
+    # Build index -> position type mapping for per-type breakdowns
+    pos_type_by_idx = {i: p.get("type") for i, p in enumerate(positions)}
 
     def _calc_type_summary(subset_results):
         """Calculate summary stats for a subset of results."""
@@ -402,9 +409,9 @@ async def run_benchmark(
     summary = _calc_type_summary(results)
     summary["player_id"] = player_id
 
-    # Per-type breakdowns (if positions have type field)
-    blunder_results = [r for r, p in zip(results, positions) if p.get("type") == "blunder"]
-    equal_results = [r for r, p in zip(results, positions) if p.get("type") == "equal"]
+    # Per-type breakdowns using position_idx to look up type
+    blunder_results = [r for r in results if pos_type_by_idx.get(r.position_idx) == "blunder"]
+    equal_results = [r for r in results if pos_type_by_idx.get(r.position_idx) == "equal"]
 
     if blunder_results:
         summary["blunder"] = _calc_type_summary(blunder_results)
