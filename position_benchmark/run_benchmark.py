@@ -347,28 +347,28 @@ async def run_benchmark(
         results = [None] * len(positions)  # Pre-allocate to maintain order
 
         async def test_with_semaphore(idx: int, pos: dict):
-            async with semaphore:
-                max_api_retries = 3
-                for attempt in range(max_api_retries):
-                    try:
+            max_api_retries = 3
+            for attempt in range(max_api_retries):
+                try:
+                    async with semaphore:
                         result = await test_llm_on_position(player, pos, stockfish, depth)
-                        result.position_idx = idx
-                        results[idx] = result
+                    result.position_idx = idx
+                    results[idx] = result
+                    completed[0] += 1
+                    status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
+                    if result.is_best:
+                        status += " (best!)"
+                    print(f"  [{completed[0]}/{len(positions)}] {status}")
+                    return result
+                except TransientAPIError as e:
+                    if attempt < max_api_retries - 1:
+                        print(f"  [API error pos {idx}, retry {attempt+1}/{max_api_retries}]: {e}")
+                        await asyncio.sleep(5 * (attempt + 1))
+                    else:
                         completed[0] += 1
-                        status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
-                        if result.is_best:
-                            status += " (best!)"
-                        print(f"  [{completed[0]}/{len(positions)}] {status}")
-                        return result
-                    except TransientAPIError as e:
-                        if attempt < max_api_retries - 1:
-                            print(f"  [API error pos {idx}, retry {attempt+1}/{max_api_retries}]: {e}")
-                            await asyncio.sleep(5 * (attempt + 1))
-                        else:
-                            completed[0] += 1
-                            print(f"  [{completed[0]}/{len(positions)}] ERROR (API failure, skipping pos {idx})")
-                            results[idx] = None  # Mark as skipped
-                            return None
+                        print(f"  [{completed[0]}/{len(positions)}] ERROR (API failure, skipping pos {idx})")
+                        results[idx] = None  # Mark as skipped
+                        return None
 
         # Launch all tasks
         tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
@@ -408,6 +408,8 @@ async def run_benchmark(
     # Overall summary
     summary = _calc_type_summary(results)
     summary["player_id"] = player_id
+    summary["positions_attempted"] = len(positions)
+    summary["positions_skipped"] = len(positions) - len(results)
 
     # Per-type breakdowns using position_idx to look up type
     blunder_results = [r for r in results if pos_type_by_idx.get(r.position_idx) == "blunder"]

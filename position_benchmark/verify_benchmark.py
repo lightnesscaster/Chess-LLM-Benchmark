@@ -106,25 +106,30 @@ def verify_results(base_path: Path) -> list[str]:
     print(f"  Models: {len(data)}")
     print(f"  Expected: {expected_total} positions per model ({expected_blunder} blunder + {expected_equal} equal)")
 
+    # Build position type lookup by index
+    pos_type_by_idx = {i: p.get("type") for i, p in enumerate(positions)} if positions_file.exists() else {}
+
     for model_name, model_data in data.items():
         summary = model_data.get("summary", {})
         results = model_data.get("results", [])
+        skipped = summary.get("positions_skipped", 0)
 
-        # Check result count
-        if len(results) != expected_total:
-            issues.append(f"{model_name}: {len(results)} results, expected {expected_total}")
+        # Check result count (allow skipped positions)
+        if len(results) + skipped != expected_total and len(results) != expected_total:
+            issues.append(f"{model_name}: {len(results)} results + {skipped} skipped != {expected_total} expected")
             continue
 
-        # Check position indices
+        if skipped > 0:
+            print(f"  {model_name}: {skipped} positions skipped (API errors)")
+
+        # Check position indices are valid (subset of expected range)
         indices = [r["position_idx"] for r in results]
-        expected_indices = list(range(expected_total))
-        if sorted(indices) != expected_indices:
-            missing = set(expected_indices) - set(indices)
-            extra = set(indices) - set(expected_indices)
-            if missing:
-                issues.append(f"{model_name}: missing position indices: {sorted(missing)[:5]}...")
-            if extra:
-                issues.append(f"{model_name}: unexpected position indices: {sorted(extra)[:5]}...")
+        out_of_range = [i for i in indices if i < 0 or i >= expected_total]
+        if out_of_range:
+            issues.append(f"{model_name}: position indices out of range: {out_of_range[:5]}")
+        if len(indices) != len(set(indices)):
+            dup_count = len(indices) - len(set(indices))
+            issues.append(f"{model_name}: {dup_count} duplicate position indices")
 
         # Verify required fields in results
         required_fields = ["position_idx", "fen", "model_move", "best_move", "cpl", "is_legal", "is_best"]
@@ -135,6 +140,9 @@ def verify_results(base_path: Path) -> list[str]:
                     break
 
         # Verify overall summary matches per-position data
+        if not results:
+            continue
+
         legal = [r for r in results if r["is_legal"]]
         all_cpls = [r["cpl"] for r in results]
 
@@ -151,19 +159,20 @@ def verify_results(base_path: Path) -> list[str]:
         if abs(computed_best_pct - summary["best_pct"]) > 0.01:
             issues.append(f"{model_name}: best_pct mismatch: summary={summary['best_pct']}, computed={computed_best_pct}")
 
-        # Verify per-type breakdowns using position types from positions.json
-        for ptype, expected_count in [("blunder", expected_blunder), ("equal", expected_equal)]:
+        # Verify per-type breakdowns using position_idx to look up type
+        for ptype in ["blunder", "equal"]:
             if ptype not in summary:
                 issues.append(f"{model_name}: missing '{ptype}' breakdown in summary")
                 continue
 
             type_summary = summary[ptype]
+            type_results = [r for r in results if pos_type_by_idx.get(r["position_idx"]) == ptype]
 
-            # Get results matching this position type
-            type_results = [r for r, p in zip(results, positions) if p.get("type") == ptype]
+            if not type_results:
+                continue
 
-            if type_summary["total_positions"] != expected_count:
-                issues.append(f"{model_name}.{ptype}: total_positions={type_summary['total_positions']}, expected={expected_count}")
+            if type_summary["total_positions"] != len(type_results):
+                issues.append(f"{model_name}.{ptype}: total_positions={type_summary['total_positions']}, actual results={len(type_results)}")
 
             type_legal = [r for r in type_results if r["is_legal"]]
             type_cpls = [r["cpl"] for r in type_results]
