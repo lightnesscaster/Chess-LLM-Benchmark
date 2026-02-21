@@ -469,6 +469,11 @@ async def main():
         nargs="+",
         help="Specific players to test (default: all cheap + engines)",
     )
+    parser.add_argument(
+        "--retry-missing",
+        action="store_true",
+        help="Only run positions missing from existing results (skipped or errored)",
+    )
 
     args = parser.parse_args()
 
@@ -542,9 +547,77 @@ async def main():
             print(f"Testing: {player_id}")
             print(f"{'='*60}")
 
+            # Determine which positions to test
+            positions_to_test = positions
+            existing_by_idx = {}
+
+            if args.retry_missing and player_id in all_results:
+                existing = all_results[player_id].get("results", [])
+                existing_by_idx = {r["position_idx"]: r for r in existing}
+                missing_indices = set(range(len(positions))) - set(existing_by_idx.keys())
+
+                if not missing_indices:
+                    print(f"  All {len(positions)} positions already have results, skipping")
+                    continue
+
+                positions_to_test = [positions[i] for i in sorted(missing_indices)]
+                print(f"  Retrying {len(positions_to_test)} missing positions (have {len(existing_by_idx)} existing)")
+
             start = time.time()
-            result = await run_benchmark(player_id, positions, stockfish, config, args.depth)
+            result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth)
             elapsed = time.time() - start
+
+            # Merge with existing results if retrying missing
+            if existing_by_idx:
+                for r in result["results"]:
+                    existing_by_idx[r["position_idx"]] = r
+                merged_results = [existing_by_idx[i] for i in sorted(existing_by_idx.keys())]
+
+                # Recalculate summary on merged results
+                pos_type_by_idx = {i: p.get("type") for i, p in enumerate(positions)}
+
+                @dataclass
+                class _R:
+                    """Thin wrapper for summary calculation."""
+                    is_legal: bool
+                    is_best: bool
+                    avoided_blunder: bool
+                    cpl: float
+                    position_idx: int
+
+                wrapped = [_R(**{k: r[k] for k in ["is_legal", "is_best", "avoided_blunder", "cpl", "position_idx"]}) for r in merged_results]
+
+                def _calc(subset):
+                    legal = [r for r in subset if r.is_legal]
+                    all_cpls = [r.cpl for r in subset]
+                    legal_cpls = [r.cpl for r in legal]
+                    n = len(subset)
+                    return {
+                        "total_positions": n,
+                        "legal_moves": len(legal),
+                        "legal_pct": len(legal) / n * 100 if n else 0,
+                        "best_moves": sum(1 for r in subset if r.is_best),
+                        "best_pct": sum(1 for r in subset if r.is_best) / n * 100 if n else 0,
+                        "avoided_blunders": sum(1 for r in subset if r.avoided_blunder),
+                        "avoided_pct": sum(1 for r in subset if r.avoided_blunder) / n * 100 if n else 0,
+                        "avg_cpl": sum(all_cpls) / len(all_cpls) if all_cpls else 10000,
+                        "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,
+                        "median_cpl": _calculate_median(all_cpls),
+                    }
+
+                summary = _calc(wrapped)
+                summary["player_id"] = player_id
+                summary["positions_attempted"] = len(positions)
+                summary["positions_skipped"] = len(positions) - len(merged_results)
+
+                blunder_r = [r for r in wrapped if pos_type_by_idx.get(r.position_idx) == "blunder"]
+                equal_r = [r for r in wrapped if pos_type_by_idx.get(r.position_idx) == "equal"]
+                if blunder_r:
+                    summary["blunder"] = _calc(blunder_r)
+                if equal_r:
+                    summary["equal"] = _calc(equal_r)
+
+                result = {"summary": summary, "results": merged_results}
 
             summary = result["summary"]
             print(f"\nSummary for {player_id}:")
@@ -552,6 +625,8 @@ async def main():
             print(f"  Best moves: {summary['best_moves']} ({summary['best_pct']:.1f}%)")
             print(f"  Avoided blunders: {summary['avoided_blunders']} ({summary['avoided_pct']:.1f}%)")
             print(f"  Avg CPL: {summary['avg_cpl']:.1f}")
+            if summary.get("positions_skipped"):
+                print(f"  Skipped: {summary['positions_skipped']}")
             for ptype in ["blunder", "equal"]:
                 if ptype in summary:
                     ts = summary[ptype]
