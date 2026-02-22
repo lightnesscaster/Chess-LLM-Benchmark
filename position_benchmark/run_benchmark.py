@@ -570,7 +570,7 @@ async def main():
             elapsed = time.time() - start
 
             # Merge with existing results if retrying missing
-            if existing_by_idx:
+            if args.retry_missing and existing_by_idx:
                 # Remap subset indices back to original position indices
                 for r in result["results"]:
                     r["position_idx"] = retry_idx_map[r["position_idx"]]
