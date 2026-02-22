@@ -554,13 +554,15 @@ async def main():
             if args.retry_missing and player_id in all_results:
                 existing = all_results[player_id].get("results", [])
                 existing_by_idx = {r["position_idx"]: r for r in existing}
-                missing_indices = set(range(len(positions))) - set(existing_by_idx.keys())
+                missing_indices = sorted(set(range(len(positions))) - set(existing_by_idx.keys()))
 
                 if not missing_indices:
                     print(f"  All {len(positions)} positions already have results, skipping")
                     continue
 
-                positions_to_test = [positions[i] for i in sorted(missing_indices)]
+                # Build mapping from subset index (0..N-1) -> original position index
+                retry_idx_map = {subset_idx: orig_idx for subset_idx, orig_idx in enumerate(missing_indices)}
+                positions_to_test = [positions[i] for i in missing_indices]
                 print(f"  Retrying {len(positions_to_test)} missing positions (have {len(existing_by_idx)} existing)")
 
             start = time.time()
@@ -569,7 +571,9 @@ async def main():
 
             # Merge with existing results if retrying missing
             if existing_by_idx:
+                # Remap subset indices back to original position indices
                 for r in result["results"]:
+                    r["position_idx"] = retry_idx_map[r["position_idx"]]
                     existing_by_idx[r["position_idx"]] = r
                 merged_results = [existing_by_idx[i] for i in sorted(existing_by_idx.keys())]
 
