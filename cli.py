@@ -26,6 +26,7 @@ from engines.random_engine import RandomEngine
 from engines.survival_engine import SurvivalEngine
 from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
+from llm.gemini_client import GeminiPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
@@ -157,7 +158,7 @@ def create_engines(config: dict) -> tuple[dict, set, set]:
     return engines, anchor_ids, ghost_ids
 
 
-def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
+def create_llm_players(config: dict, api_key: str = None, api_backend: str = "openrouter") -> tuple[dict, set]:
     """Create LLM players from config.
 
     Returns:
@@ -182,17 +183,30 @@ def create_llm_players(config: dict, api_key: str = None) -> tuple[dict, set]:
         if reasoning_effort and f"({reasoning_effort})" not in player_id:
             player_id = f"{player_id} ({reasoning_effort})"
 
-        players[player_id] = OpenRouterPlayer(
-            player_id=player_id,
-            model_name=model_name,
-            api_key=api_key,
-            temperature=llm_cfg.get("temperature", 0.0),
-            max_tokens=llm_cfg.get("max_tokens", 0),
-            reasoning=reasoning,
-            reasoning_effort=reasoning_effort,
-            provider_order=llm_cfg.get("provider_order"),
-            timeout=llm_cfg.get("timeout", 600),
-        )
+        if api_backend == "gemini":
+            # Strip google/ prefix for direct Gemini API
+            gemini_model = model_name.removeprefix("google/")
+            players[player_id] = GeminiPlayer(
+                player_id=player_id,
+                model_name=gemini_model,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+                timeout=llm_cfg.get("timeout", 600),
+            )
+        else:
+            players[player_id] = OpenRouterPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                max_tokens=llm_cfg.get("max_tokens", 0),
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+                provider_order=llm_cfg.get("provider_order"),
+                timeout=llm_cfg.get("timeout", 600),
+            )
 
         # Track reasoning models:
         # 1. Has reasoning_effort set, OR
@@ -211,15 +225,22 @@ async def run_benchmark(args):
     # Load config
     config = load_config(args.config)
 
-    # Get API key
-    api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
-        return 1
+    # Get API key based on backend
+    api_backend = getattr(args, "api", "openrouter")
+    if api_backend == "gemini":
+        api_key = args.api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
+            return 1
+    else:
+        api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
+            return 1
 
     # Create players
     engines, anchor_ids, ghost_ids = create_engines(config)
-    llm_players, reasoning_ids = create_llm_players(config, api_key)
+    llm_players, reasoning_ids = create_llm_players(config, api_key, api_backend)
     all_players = {**engines, **llm_players}
 
     # Set up rating store with anchors and ghosts
@@ -694,11 +715,18 @@ async def run_manual_game(args):
         print("Error: --games must be at least 1")
         return 1
 
-    # Get API key
-    api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
-        return 1
+    # Get API key based on backend
+    api_backend = getattr(args, "api", "openrouter")
+    if api_backend == "gemini":
+        api_key = args.api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
+            return 1
+    else:
+        api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
+            return 1
 
     # Validate reasoning settings don't conflict
     if args.white_reasoning is False and args.white_reasoning_effort is not None:
@@ -773,6 +801,15 @@ async def run_manual_game(args):
                 player_id = f"{player_id} ({reasoning_effort})"
             elif reasoning is False and "(no thinking)" not in player_id.lower():
                 player_id = f"{player_id} (no thinking)"
+        if api_backend == "gemini":
+            gemini_model = model_name.removeprefix("google/")
+            return GeminiPlayer(
+                player_id=player_id,
+                model_name=gemini_model,
+                api_key=api_key,
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+            )
         return OpenRouterPlayer(
             player_id=player_id,
             model_name=model_name,
@@ -926,7 +963,7 @@ def main():
     )
     run_parser.add_argument(
         "--api-key",
-        help="OpenRouter API key (or set OPENROUTER_API_KEY)",
+        help="API key (OPENROUTER_API_KEY or GEMINI_API_KEY depending on --api)",
     )
     run_parser.add_argument(
         "--verbose", "-v",
@@ -938,6 +975,12 @@ def main():
         type=float,
         default=None,
         help="Maximum cost budget in dollars (default: $10, or from config)",
+    )
+    run_parser.add_argument(
+        "--api",
+        choices=["openrouter", "gemini"],
+        default="openrouter",
+        help="API backend to use (default: openrouter)",
     )
 
     # Leaderboard command
@@ -1086,7 +1129,7 @@ def main():
     )
     manual_parser.add_argument(
         "--api-key",
-        help="OpenRouter API key",
+        help="API key (OPENROUTER_API_KEY or GEMINI_API_KEY depending on --api)",
     )
     manual_parser.add_argument(
         "--no-save",
@@ -1105,6 +1148,12 @@ def main():
         "--debug-engine",
         action="store_true",
         help="Enable debug logging for survival engine",
+    )
+    manual_parser.add_argument(
+        "--api",
+        choices=["openrouter", "gemini"],
+        default="openrouter",
+        help="API backend to use (default: openrouter)",
     )
 
     args = parser.parse_args()

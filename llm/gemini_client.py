@@ -44,7 +44,6 @@ class GeminiPlayer(BaseLLMPlayer):
 
         from google import genai
         self._genai = genai
-        self._client = self._create_client()
 
     def _create_client(self):
         """Create a fresh genai client."""
@@ -52,6 +51,13 @@ class GeminiPlayer(BaseLLMPlayer):
             api_key=self.api_key,
             http_options=self._genai.types.HttpOptions(timeout=self.timeout * 1000),
         )
+
+    async def _close_client(self, client) -> None:
+        """Close a genai client instance."""
+        try:
+            await client.aio.aclose()
+        finally:
+            client.close()
 
     def _parse_move(self, response_text: str, board: chess.Board = None) -> Optional[str]:
         """
@@ -171,10 +177,11 @@ class GeminiPlayer(BaseLLMPlayer):
         retry_delay = 2.0
 
         for attempt in range(max_retries):
+            client = self._create_client()
             try:
                 # Use the SDK's native async client so cancelled requests do not
                 # strand worker threads in asyncio's default executor.
-                response = await self._client.aio.models.generate_content(
+                response = await client.aio.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
                     config=config,
@@ -225,10 +232,16 @@ class GeminiPlayer(BaseLLMPlayer):
 
             except Exception as e:
                 error_str = str(e).lower()
-                is_transient = any(kw in error_str for kw in [
+                error_type = type(e).__name__.lower()
+                error_text = f"{error_type}: {error_str}"
+                is_transient = any(kw in error_text for kw in [
                     "429", "500", "502", "503", "504",
                     "resource_exhausted", "unavailable", "deadline_exceeded",
                     "internal", "timeout", "rate limit",
+                    "connection reset", "connection aborted", "connection refused",
+                    "server disconnected", "broken pipe", "remoteprotocolerror",
+                    "readtimeout", "connecttimeout", "pooltimeout",
+                    "clientoserror", "clientconnectorerror",
                 ])
                 if is_transient and attempt < max_retries - 1:
                     jitter = random.uniform(0, 0.1 * retry_delay)
@@ -248,16 +261,9 @@ class GeminiPlayer(BaseLLMPlayer):
                     raise TransientAPIError(
                         f"Gemini API call failed after {max_retries} retries: {e}"
                     ) from e
+            finally:
+                await self._close_client(client)
 
     async def close(self) -> None:
-        """Close the Gemini SDK clients."""
-        if self._client is None:
-            return
-
-        client = self._client
-        self._client = None
-
-        try:
-            await client.aio.aclose()
-        finally:
-            client.close()
+        """No persistent client to close."""
+        pass
