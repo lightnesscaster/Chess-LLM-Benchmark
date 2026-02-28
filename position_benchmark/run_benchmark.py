@@ -20,6 +20,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
+from llm.gemini_client import GeminiPlayer
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
@@ -123,7 +124,7 @@ def eval_to_cp(info: chess.engine.InfoDict, perspective: chess.Color) -> float:
 
 
 async def test_llm_on_position(
-    player: OpenRouterPlayer,
+    player: "BaseLLMPlayer",
     position: dict,
     engine: chess.engine.SimpleEngine,
     depth: int = 16,
@@ -280,6 +281,7 @@ async def run_benchmark(
     stockfish: chess.engine.SimpleEngine,
     player_config: dict,
     depth: int = 16,
+    api_backend: str = "openrouter",
 ) -> dict:
     """Run benchmark for a single player."""
     results = []
@@ -330,25 +332,45 @@ async def run_benchmark(
         if hasattr(player, 'close'):
             player.close()
     else:
-        # Create LLM player
-        # Note: use .get("reasoning") without default to allow None (vs explicit False)
-        player = OpenRouterPlayer(
-            player_id=player_id,
-            model_name=player_config.get("model_name"),
-            temperature=player_config.get("temperature", 0.0),
-            reasoning=player_config.get("reasoning"),
-            reasoning_effort=player_config.get("reasoning_effort"),
-        )
+        def create_llm_player():
+            """Create a fresh LLM player for this benchmark run."""
+            common_kwargs = {
+                "player_id": player_id,
+                "temperature": player_config.get("temperature", 0.0),
+                "reasoning": player_config.get("reasoning"),
+                "reasoning_effort": player_config.get("reasoning_effort"),
+                "timeout": player_config.get("timeout", 600),
+            }
 
-        # Run positions in parallel (10 at a time)
-        max_concurrent = 10
+            if api_backend == "gemini":
+                # Strip provider prefix for direct Gemini API
+                model_name = player_config.get("model_name", "")
+                if model_name.startswith("google/"):
+                    model_name = model_name[len("google/"):]
+                return GeminiPlayer(
+                    model_name=model_name,
+                    **common_kwargs,
+                )
+
+            return OpenRouterPlayer(
+                model_name=player_config.get("model_name"),
+                **common_kwargs,
+            )
+
+        # Gemini preview/reasoning models have been more reliable in this
+        # benchmark when requests are serialized and use a fresh client per
+        # position, instead of sharing one mutable player across tasks.
+        max_concurrent = 1 if api_backend == "gemini" else 10
         semaphore = asyncio.Semaphore(max_concurrent)
         completed = [0]  # Use list to allow modification in nested function
         results = [None] * len(positions)  # Pre-allocate to maintain order
 
+        shared_player = None if api_backend == "gemini" else create_llm_player()
+
         async def test_with_semaphore(idx: int, pos: dict):
             max_api_retries = 3
             for attempt in range(max_api_retries):
+                player = shared_player if shared_player is not None else create_llm_player()
                 try:
                     async with semaphore:
                         result = await test_llm_on_position(player, pos, stockfish, depth)
@@ -369,10 +391,17 @@ async def run_benchmark(
                         print(f"  [{completed[0]}/{len(positions)}] ERROR (API failure, skipping pos {idx})")
                         results[idx] = None  # Mark as skipped
                         return None
+                finally:
+                    if shared_player is None:
+                        await player.close()
 
-        # Launch all tasks
-        tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
-        await asyncio.gather(*tasks)
+        try:
+            # Launch all tasks
+            tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
+            await asyncio.gather(*tasks)
+        finally:
+            if shared_player is not None:
+                await shared_player.close()
 
         # Filter out skipped positions (API failures)
         skipped = sum(1 for r in results if r is None)
@@ -474,6 +503,12 @@ async def main():
         action="store_true",
         help="Only run positions missing from existing results (skipped or errored)",
     )
+    parser.add_argument(
+        "--api",
+        choices=["openrouter", "gemini"],
+        default="openrouter",
+        help="API backend to use (default: openrouter)",
+    )
 
     args = parser.parse_args()
 
@@ -566,7 +601,7 @@ async def main():
                 print(f"  Retrying {len(positions_to_test)} missing positions (have {len(existing_by_idx)} existing)")
 
             start = time.time()
-            result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth)
+            result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth, args.api)
             elapsed = time.time() - start
 
             # Merge with existing results if retrying missing
