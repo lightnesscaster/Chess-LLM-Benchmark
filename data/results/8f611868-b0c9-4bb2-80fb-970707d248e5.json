@@ -1,7 +1,7 @@
 {
   "game_id": "8f611868-b0c9-4bb2-80fb-970707d248e5",
   "white_id": "gpt-5.1 (high)",
-  "black_id": "gemini-3-pro-preview",
+  "black_id": "gemini-3-pro-preview (high)",
   "winner": "black",
   "termination": "checkmate",
   "moves": 66,

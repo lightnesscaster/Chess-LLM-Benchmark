@@ -3,7 +3,7 @@
 [Date "2025.12.13"]
 [Round "1"]
 [White "gpt-5.2-chat"]
-[Black "gemini-3-pro-preview"]
+[Black "gemini-3-pro-preview (high)"]
 [Result "0-1"]
 [Termination "checkmate"]
 

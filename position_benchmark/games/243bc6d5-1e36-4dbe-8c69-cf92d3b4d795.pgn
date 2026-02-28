@@ -3,7 +3,7 @@
 [Date "2025.12.14"]
 [Round "1"]
 [White "gpt-5.1 (no thinking)"]
-[Black "gemini-3-pro-preview"]
+[Black "gemini-3-pro-preview (high)"]
 [Result "0-1"]
 [Termination "forfeit_illegal_move"]
 

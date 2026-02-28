@@ -35,12 +35,13 @@
         <tbody>
             {% set ns = namespace(top_llm_found=false, top_standard_found=false) %}
             {% for entry in leaderboard %}
-            {% set is_top_llm = not entry.is_anchor and not ns.top_llm_found %}
+            {% set is_any_engine = entry.is_anchor or entry.get('is_engine', false) %}
+            {% set is_top_llm = not is_any_engine and not ns.top_llm_found %}
             {% if is_top_llm %}{% set ns.top_llm_found = true %}{% endif %}
             {% set is_reasoning = entry.player_id|is_reasoning %}
-            {% set is_top_standard = not entry.is_anchor and not is_reasoning and not ns.top_standard_found %}
+            {% set is_top_standard = not is_any_engine and not is_reasoning and not ns.top_standard_found %}
             {% if is_top_standard %}{% set ns.top_standard_found = true %}{% endif %}
-            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %}{% if not entry.is_anchor and entry.rating_deviation > 150 %} unreliable{% endif %} clickable-row"
+            <tr class="{% if entry.is_anchor %}anchor{% elif is_top_llm %}top-llm{% endif %}{% if not is_any_engine and entry.rating_deviation > 150 %} unreliable{% endif %} clickable-row"
                 data-player-id="{{ entry.player_id|e }}"
                 data-rating="{{ entry.rating }}"
                 data-legal="{{ entry.legal_move_rate|default(1.0) }}"

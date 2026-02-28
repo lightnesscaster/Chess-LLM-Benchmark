@@ -11335,7 +11335,7 @@
       "move_number": 48,
       "side_to_move": "black",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1bqk2r/p1npp2Q/2p5/4nP2/3P4/2N5/PPP2PP1/R1B1KBNR w KQkq - 1 12",
@@ -11842,7 +11842,7 @@
       "move_number": 36,
       "side_to_move": "black",
       "player_id": "maia-1900",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1bq1br1/p2pk1pp/B3pN1n/1p4BQ/3NP3/8/PPP2PPP/R4RK1 w - - 2 13",
@@ -12705,7 +12705,7 @@
       "move_number": 101,
       "side_to_move": "white",
       "player_id": "maia-1900",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "rn1q1rk1/p4pp1/1p6/2pp2P1/3P1BQ1/4P3/PP3PP1/R3K2R b KQ - 0 14",
@@ -13948,7 +13948,7 @@
       "move_number": 39,
       "side_to_move": "white",
       "player_id": "claude-opus-4.5 (high)",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "8/k4Q2/1q6/4P3/3N3p/P7/3K4/8 b - - 9 84",
@@ -14332,7 +14332,7 @@
       "move_number": 34,
       "side_to_move": "black",
       "player_id": "gpt-5.2 (high)",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r2k4/4P2p/5p2/2p5/p2PR2b/P6K/1P3P1P/R7 b - - 0 26",
@@ -14856,7 +14856,7 @@
       "move_number": 95,
       "side_to_move": "white",
       "player_id": "maia-1900",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r3kb1r/ppp2pp1/7p/4N3/3Q4/8/PP3PPP/R1B2RK1 b kq - 0 16",
@@ -15101,7 +15101,7 @@
       "game_id": "6547069b-d0af-4671-9501-e8e1cbf033d7",
       "move_number": 106,
       "side_to_move": "black",
-      "player_id": "gemini-3-pro-preview",
+      "player_id": "gemini-3-pro-preview (high)",
       "opponent_id": "maia-1900"
     },
     {
@@ -15193,7 +15193,7 @@
       "game_id": "5edd08b1-d473-445f-a030-371e8584ec01",
       "move_number": 76,
       "side_to_move": "black",
-      "player_id": "gemini-3-pro-preview",
+      "player_id": "gemini-3-pro-preview (high)",
       "opponent_id": "eubos"
     },
     {
@@ -17008,7 +17008,7 @@
       "move_number": 28,
       "side_to_move": "black",
       "player_id": "o3",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1b1kb1r/p1pp1ppp/3q4/Pp5P/1P2K3/N7/2PP1PP1/2Bn1BR1 b kq - 2 17",
@@ -18342,7 +18342,7 @@
       "game_id": "212c3d7e-86a8-4ddc-8ce2-a99d926aa22f",
       "move_number": 69,
       "side_to_move": "white",
-      "player_id": "gemini-3-pro-preview",
+      "player_id": "gemini-3-pro-preview (high)",
       "opponent_id": "eubos"
     },
     {
@@ -30250,7 +30250,7 @@
       "game_id": "6547069b-d0af-4671-9501-e8e1cbf033d7",
       "move_number": 112,
       "side_to_move": "black",
-      "player_id": "gemini-3-pro-preview",
+      "player_id": "gemini-3-pro-preview (high)",
       "opponent_id": "maia-1900"
     },
     {
@@ -44640,7 +44640,7 @@
       "game_id": "212c3d7e-86a8-4ddc-8ce2-a99d926aa22f",
       "move_number": 55,
       "side_to_move": "white",
-      "player_id": "gemini-3-pro-preview",
+      "player_id": "gemini-3-pro-preview (high)",
       "opponent_id": "eubos"
     },
     {
@@ -47731,7 +47731,7 @@
       "move_number": 20,
       "side_to_move": "black",
       "player_id": "o3",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1b1kb1r/p1p1qp1p/2p2np1/3p4/2B1P3/4BP2/PPPN2PP/R2QK2R w KQkq - 0 10",
@@ -49763,7 +49763,7 @@
       "move_number": 14,
       "side_to_move": "black",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1bqkbnr/pppp1ppp/2n5/4P3/3p4/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 1 6",
@@ -51611,7 +51611,7 @@
       "move_number": 29,
       "side_to_move": "white",
       "player_id": "gpt-5.2-chat",
-      "opponent_id": "gemini-3-pro-preview"
+      "opponent_id": "gemini-3-pro-preview (high)"
     },
     {
       "fen": "r1bq1rk1/ppp2ppp/8/3N4/1b1n4/8/PPP1BPPP/R1BQ1RK1 w - - 0 10",

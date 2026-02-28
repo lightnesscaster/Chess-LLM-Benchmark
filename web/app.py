@@ -84,6 +84,20 @@ def get_anchors_from_config() -> dict:
         app.logger.warning(f"Could not load anchors from config: {e}")
         return {}
 
+
+def get_all_engine_ids_from_config() -> set:
+    """Load all engine IDs from config (both anchor and non-anchor)."""
+    try:
+        with open(CONFIG_PATH) as f:
+            config = yaml.safe_load(f)
+        return {
+            engine["player_id"]
+            for engine in config.get("engines", [])
+        }
+    except Exception as e:
+        app.logger.warning(f"Could not load engine IDs from config: {e}")
+        return set()
+
 # Game ID validation pattern (UUID format or alphanumeric with hyphens/underscores)
 VALID_GAME_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
 
@@ -134,6 +148,11 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
 
         leaderboard = Leaderboard(rating_store, stats_collector)
         result = leaderboard.get_leaderboard(min_games=min_games, sort_by=sort_by)
+
+        # Mark all engine entries (anchor or not) so the UI can distinguish them from LLMs
+        all_engine_ids = get_all_engine_ids_from_config()
+        for entry in result:
+            entry["is_engine"] = entry["player_id"] in all_engine_ids
 
         # Update cache under lock
         with _leaderboard_lock:
@@ -258,13 +277,13 @@ def set_security_headers(response):
 @app.route("/")
 def index():
     """Redirect to leaderboard."""
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data())
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=5))
 
 
 @app.route("/leaderboard")
 def leaderboard():
     """Show leaderboard page."""
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data())
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=5))
 
 
 @app.route("/games")
@@ -326,7 +345,7 @@ def methodology():
 @app.route("/timeline")
 def timeline():
     """Show timeline visualization."""
-    leaderboard_data = get_leaderboard_data()
+    leaderboard_data = get_leaderboard_data(min_games=5)
     chart_html = get_timeline_html(leaderboard_data)
     return render_template("timeline.html", chart_html=chart_html)
 
@@ -334,7 +353,7 @@ def timeline():
 @app.route("/cost")
 def cost():
     """Show cost vs rating visualization."""
-    leaderboard_data = get_leaderboard_data()
+    leaderboard_data = get_leaderboard_data(min_games=5)
     chart_html = get_cost_chart_html(leaderboard_data)
     return render_template("cost.html", chart_html=chart_html)
 

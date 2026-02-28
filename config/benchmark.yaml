@@ -237,10 +237,17 @@ llms:
     reasoning: true
     timeout: 1200
 
-  # gemini-3-pro-preview
-  - player_id: "gemini-3-pro-preview"
+  # gemini-3-pro-preview (high)
+  - player_id: "gemini-3-pro-preview (high)"
     model_name: "google/gemini-3-pro-preview"
     temperature: 0.0
+    reasoning_effort: high
+
+  # gemini-3-pro-preview (medium)
+  - player_id: "gemini-3-pro-preview (medium)"
+    model_name: "google/gemini-3-pro-preview"
+    temperature: 0.0
+    reasoning_effort: medium
 
   # gemini-3-flash-preview (reasoning model)
   - player_id: "gemini-3-flash-preview (high)"
@@ -274,11 +281,18 @@ llms:
     model_name: "x-ai/grok-4.1-fast"
     temperature: 0.0
 
-  # gemini-3.1-pro-preview (mandatory reasoning)
-  - player_id: "gemini-3.1-pro-preview"
+  # gemini-3.1-pro-preview (high) — disabled: crashes with 500 on complex positions
+  # - player_id: "gemini-3.1-pro-preview (high)"
+  #   model_name: "google/gemini-3.1-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: high
+  #   timeout: 1200
+
+  # gemini-3.1-pro-preview (medium)
+  - player_id: "gemini-3.1-pro-preview (medium)"
     model_name: "google/gemini-3.1-pro-preview"
     temperature: 0.0
-    reasoning: true
+    reasoning_effort: medium
     timeout: 1200
 
   # gpt-5.1 (high)

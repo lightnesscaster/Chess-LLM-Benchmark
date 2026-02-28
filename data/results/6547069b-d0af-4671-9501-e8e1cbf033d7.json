@@ -1,7 +1,7 @@
 {
   "game_id": "6547069b-d0af-4671-9501-e8e1cbf033d7",
   "white_id": "maia-1900",
-  "black_id": "gemini-3-pro-preview",
+  "black_id": "gemini-3-pro-preview (high)",
   "winner": "white",
   "termination": "checkmate",
   "moves": 135,

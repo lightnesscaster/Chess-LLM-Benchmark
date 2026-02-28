@@ -14,11 +14,6 @@
     "created_timestamp": 1766014361,
     "created_date": "2025-12-17"
   },
-  "gemini-3-pro-preview": {
-    "model_id": "google/gemini-3-pro-preview",
-    "created_timestamp": 1763474668,
-    "created_date": "2025-11-18"
-  },
   "o3": {
     "model_id": "openai/o3",
     "created_timestamp": 1744823457,
@@ -360,5 +355,25 @@
     "created_date": "2025-11-10",
     "organization": "KwaiKat",
     "notes": "free"
+  },
+  "gemini-3-pro-preview (high)": {
+    "model_id": "google/gemini-3-pro-preview",
+    "created_timestamp": 1763474668,
+    "created_date": "2025-11-18"
+  },
+  "gemini-3-pro-preview (medium)": {
+    "model_id": "google/gemini-3-pro-preview",
+    "created_timestamp": 1763474668,
+    "created_date": "2025-11-18"
+  },
+  "gemini-3-flash-preview (low)": {
+    "model_id": "google/gemini-3-flash-preview",
+    "created_timestamp": 1766014361,
+    "created_date": "2025-12-17"
+  },
+  "gemini-3.1-pro-preview (medium)": {
+    "model_id": "google/gemini-3.1-pro-preview",
+    "created_timestamp": 1771509627,
+    "created_date": "2026-02-19"
   }
 }

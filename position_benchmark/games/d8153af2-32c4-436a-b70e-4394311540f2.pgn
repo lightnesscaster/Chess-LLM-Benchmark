@@ -2,7 +2,7 @@
 [Site "Local"]
 [Date "2025.12.01"]
 [Round "1"]
-[White "gemini-3-pro-preview"]
+[White "gemini-3-pro-preview (high)"]
 [Black "maia-1900"]
 [Result "1-0"]
 [Termination "checkmate"]
