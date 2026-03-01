@@ -24,6 +24,7 @@ class PlayerRating:
     draws: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     unclamped_rating: float = None  # Legacy field, kept for backwards compatibility
+    games_rd: float = 350.0          # RD tracking only game results (not benchmark seeding)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -37,6 +38,7 @@ class PlayerRating:
             "losses": self.losses,
             "draws": self.draws,
             "last_updated": self.last_updated,
+            "games_rd": self.games_rd,
         }
         if self.unclamped_rating is not None:
             d["unclamped_rating"] = self.unclamped_rating
@@ -44,10 +46,17 @@ class PlayerRating:
 
     @classmethod
     def from_dict(cls, data: dict) -> "PlayerRating":
-        """Create from dictionary (handles old data without new fields)."""
+        """Create from dictionary (handles old/new data with missing/extra fields)."""
         # Ensure backwards compatibility with old ratings.json files
-        defaults = {'wins': 0, 'losses': 0, 'draws': 0, 'unclamped_rating': None}
-        return cls(**{**defaults, **data})
+        defaults = {
+            'wins': 0, 'losses': 0, 'draws': 0,
+            'unclamped_rating': None,
+            'games_rd': data.get('rating_deviation', 350.0),
+        }
+        merged = {**defaults, **data}
+        # Strip unknown fields so old code can deserialize new Firestore data
+        valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        return cls(**{k: v for k, v in merged.items() if k in valid_fields})
 
 
 class Glicko2System:
@@ -263,6 +272,11 @@ class Glicko2System:
             else:  # Draw (0.5)
                 new_draws += 1
 
+        # Parallel games_rd tracking (decreases only from games, independent of benchmark seeding)
+        games_phi = player.games_rd / self.SCALE_FACTOR
+        games_phi_new = 1.0 / math.sqrt(1.0 / (games_phi ** 2) + 1.0 / v)
+        new_games_rd = max(45, min(350, games_phi_new * self.SCALE_FACTOR))
+
         return PlayerRating(
             player_id=player.player_id,
             rating=new_rating,
@@ -273,6 +287,8 @@ class Glicko2System:
             losses=new_losses,
             draws=new_draws,
             last_updated=datetime.now(timezone.utc).isoformat(),
+            unclamped_rating=player.unclamped_rating,
+            games_rd=new_games_rd,
         )
 
     def expected_score(self, player: PlayerRating, opponent: PlayerRating) -> float:

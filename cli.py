@@ -10,7 +10,9 @@ Commands:
 
 import argparse
 import asyncio
+import json
 import logging
+import math
 import os
 import random
 import sys
@@ -44,6 +46,83 @@ LOW_LEGAL_MOVE_RATING = 0  # For models with legal move rate < 90%
 # Legal move rate thresholds for initial rating
 LEGAL_MOVE_THRESHOLD_LOW = 0.90  # Below this: start at 0
 LEGAL_MOVE_THRESHOLD_MED = 0.95  # Below this: start at 400 (even for reasoning models)
+
+
+def load_benchmark_predictions() -> dict:
+    """
+    Load position benchmark results and compute predicted ratings.
+
+    Same formula as rating_store._load_benchmark_predictions():
+      rating = 1794.14 - 260.55*log(eq_cpl+1) + 21.48*pct_lt10 + 2.09*surv_40
+
+    Returns:
+        Dict mapping model name to predicted rating, or empty dict if files missing.
+    """
+    base = Path(__file__).parent / "position_benchmark"
+    results_path = base / "results.json"
+    positions_path = base / "positions.json"
+
+    if not results_path.exists() or not positions_path.exists():
+        return {}
+
+    try:
+        with open(results_path) as f:
+            results_data = json.load(f)
+        with open(positions_path) as f:
+            positions_data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    pos_type = {}
+    for i, p in enumerate(positions_data.get("positions", [])):
+        pos_type[i] = p.get("type", "")
+
+    predictions = {}
+    for model_name, model_data in results_data.items():
+        model_results = model_data.get("results", [])
+        if not model_results:
+            continue
+
+        eq_cpls = []
+        eq_lt10_count = 0
+        eq_illegal_count = 0
+        eq_total = 0
+
+        for r in model_results:
+            idx = r.get("position_idx", -1)
+            if pos_type.get(idx) != "equal":
+                continue
+            eq_total += 1
+            cpl = r.get("cpl", 0)
+            eq_cpls.append(cpl)
+            if cpl < 10:
+                eq_lt10_count += 1
+            if not r.get("is_legal", True):
+                eq_illegal_count += 1
+
+        if eq_total == 0:
+            continue
+
+        eq_cpl = sum(eq_cpls) / len(eq_cpls)
+        pct_lt10 = 100.0 * eq_lt10_count / eq_total
+        p = eq_illegal_count / eq_total
+
+        if p <= 0:
+            surv_40 = 100.0
+        elif p >= 1:
+            surv_40 = 0.0
+        else:
+            surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
+
+        predicted = (
+            1794.14
+            - 260.55 * math.log(eq_cpl + 1)
+            + 21.48 * pct_lt10
+            + 2.09 * surv_40
+        )
+        predictions[model_name] = predicted
+
+    return predictions
 
 
 def invalidate_remote_cache():
@@ -512,18 +591,23 @@ async def recalculate_ratings(args):
     player_stats = stats_collector.get_player_stats()
 
     # Pre-initialize all non-anchor players with appropriate starting ratings
-    # Rating is based on legal move rate and whether model is reasoning
+    # Priority: benchmark prediction > legal move rate heuristic > model type default
+    benchmark_preds = load_benchmark_predictions()
+    benchmark_count = 0
     low_legal_count = 0
     med_legal_count = 0
     reasoning_count = 0
     non_reasoning_count = 0
     for player_id in all_players:
         if not rating_store.is_anchor(player_id):
-            # Check if player has stats (i.e., has played games with recorded stats)
-            if player_id in player_stats:
+            # Check benchmark predictions first
+            if player_id in benchmark_preds:
+                start_rating = benchmark_preds[player_id]
+                start_rd = 149.0
+                benchmark_count += 1
+            elif player_id in player_stats:
+                # Fall back to legal move rate heuristic
                 legal_move_rate = player_stats[player_id].get("legal_move_rate", 1.0)
-
-                # Determine starting rating based on legal move rate
                 if legal_move_rate < LEGAL_MOVE_THRESHOLD_LOW:
                     start_rating = LOW_LEGAL_MOVE_RATING
                     low_legal_count += 1
@@ -536,6 +620,7 @@ async def recalculate_ratings(args):
                 else:
                     start_rating = NON_REASONING_START_RATING
                     non_reasoning_count += 1
+                start_rd = 350.0
             else:
                 # Player has no stats yet - use model-type-based default
                 if is_reasoning_model(player_id):
@@ -544,16 +629,20 @@ async def recalculate_ratings(args):
                 else:
                     start_rating = NON_REASONING_START_RATING
                     non_reasoning_count += 1
+                start_rd = 350.0
 
             rating_store.set(PlayerRating(
                 player_id=player_id,
                 rating=start_rating,
-                rating_deviation=350.0,
+                rating_deviation=start_rd,
                 volatility=0.06,
+                games_rd=350.0,
             ), auto_save=False)
     rating_store.save()
     if args.verbose:
-        print(f"Initialized ratings based on legal move rate and model type:")
+        print(f"Initialized ratings:")
+        if benchmark_count:
+            print(f"  {benchmark_count} models from benchmark predictions (RD=149)")
         if low_legal_count:
             print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
         if med_legal_count:

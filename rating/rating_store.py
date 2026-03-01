@@ -4,6 +4,7 @@ Rating storage and persistence.
 
 import json
 import logging
+import math
 import os
 import time
 from pathlib import Path
@@ -74,6 +75,9 @@ class RatingStore:
         self.ghost_ids = ghost_ids or set()
         self._ratings: Dict[str, PlayerRating] = {}
 
+        # Load benchmark predictions for seeding new players
+        self._benchmark_predictions = self._load_benchmark_predictions()
+
         # Determine storage backend
         if use_firestore is None:
             use_firestore = self._should_use_firestore()
@@ -101,6 +105,89 @@ class RatingStore:
                 return True
 
         return False
+
+    def _load_benchmark_predictions(self) -> Dict[str, float]:
+        """
+        Load position benchmark results and compute predicted ratings.
+
+        Uses the 3-feature formula from rating_prediction_formulas.py:
+          rating = 1794.14 - 260.55*log(eq_cpl+1) + 21.48*pct_lt10 + 2.09*surv_40
+
+        Returns:
+            Dict mapping model name to predicted rating, or empty dict if files missing.
+        """
+        base = Path(__file__).parent.parent / "position_benchmark"
+        results_path = base / "results.json"
+        positions_path = base / "positions.json"
+
+        if not results_path.exists() or not positions_path.exists():
+            return {}
+
+        try:
+            with open(results_path) as f:
+                results_data = json.load(f)
+            with open(positions_path) as f:
+                positions_data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load benchmark data: {e}")
+            return {}
+
+        # Build position type lookup
+        pos_type = {}
+        for i, p in enumerate(positions_data.get("positions", [])):
+            pos_type[i] = p.get("type", "")
+
+        predictions = {}
+        for model_name, model_data in results_data.items():
+            model_results = model_data.get("results", [])
+            if not model_results:
+                continue
+
+            # Collect equal-position metrics
+            eq_cpls = []
+            eq_lt10_count = 0
+            eq_illegal_count = 0
+            eq_total = 0
+
+            for r in model_results:
+                idx = r.get("position_idx", -1)
+                if pos_type.get(idx) != "equal":
+                    continue
+                eq_total += 1
+                cpl = r.get("cpl", 0)
+                eq_cpls.append(cpl)
+                if cpl < 10:
+                    eq_lt10_count += 1
+                if not r.get("is_legal", True):
+                    eq_illegal_count += 1
+
+            if eq_total == 0:
+                continue
+
+            eq_cpl = sum(eq_cpls) / len(eq_cpls)
+            pct_lt10 = 100.0 * eq_lt10_count / eq_total
+            p = eq_illegal_count / eq_total  # illegal rate
+
+            # Survival probability: P(0 or 1 illegal in 40 moves) - pure Python binomial
+            if p <= 0:
+                surv_40 = 100.0
+            elif p >= 1:
+                surv_40 = 0.0
+            else:
+                surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
+
+            predicted = (
+                1794.14
+                - 260.55 * math.log(eq_cpl + 1)
+                + 21.48 * pct_lt10
+                + 2.09 * surv_40
+            )
+            predictions[model_name] = predicted
+
+        if predictions:
+            logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
+
+        return predictions
 
     def _init_firestore(self) -> None:
         """Initialize Firestore connection and load ratings."""
@@ -130,6 +217,7 @@ class RatingStore:
                     losses=pr.losses,
                     draws=pr.draws,
                     unclamped_rating=pr.unclamped_rating,
+                    games_rd=pr.games_rd,
                 )
                 for pid, pr in _firestore_cache.items()
             }
@@ -169,6 +257,7 @@ class RatingStore:
                         losses=pr.losses,
                         draws=pr.draws,
                         unclamped_rating=pr.unclamped_rating,
+                        games_rd=pr.games_rd,
                     )
                     for pid, pr in _firestore_cache.items()
                 }
@@ -202,6 +291,7 @@ class RatingStore:
                     losses=rating.losses,
                     draws=rating.draws,
                     unclamped_rating=rating.unclamped_rating,
+                    games_rd=rating.games_rd,
                 )
 
     def _save_all_to_firestore(self) -> None:
@@ -224,6 +314,7 @@ class RatingStore:
                 losses=rating.losses,
                 draws=rating.draws,
                 unclamped_rating=rating.unclamped_rating,
+                games_rd=rating.games_rd,
             )
             for player_id, rating in self._ratings.items()
         }
@@ -259,7 +350,16 @@ class RatingStore:
             PlayerRating object
         """
         if player_id not in self._ratings:
-            self._ratings[player_id] = PlayerRating(player_id=player_id)
+            if player_id in self._benchmark_predictions:
+                predicted = self._benchmark_predictions[player_id]
+                self._ratings[player_id] = PlayerRating(
+                    player_id=player_id,
+                    rating=predicted,
+                    rating_deviation=149.0,
+                    games_rd=350.0,
+                )
+            else:
+                self._ratings[player_id] = PlayerRating(player_id=player_id)
         return self._ratings[player_id]
 
     def set(self, rating: PlayerRating, auto_save: bool = True) -> None:

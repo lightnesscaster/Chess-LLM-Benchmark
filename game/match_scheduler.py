@@ -335,7 +335,7 @@ class MatchScheduler:
         Returns:
             Priority score (higher = more urgent to schedule)
         """
-        rd = self.rating_store.get(player_id).rating_deviation
+        rd = self.rating_store.get(player_id).games_rd
         cost = self._get_player_cost(player_id)
         return rd / (1 + self.COST_SENSITIVITY * cost)
 
@@ -752,7 +752,7 @@ class MatchScheduler:
         for phase in phases:
             for llm_id in llms_by_priority:
                 current_games = self._games_played.get(llm_id, 0)
-                current_rd = self.rating_store.get(llm_id).rating_deviation
+                current_rd = self.rating_store.get(llm_id).games_rd
 
                 # Check if this LLM is frozen (RD too low or old model with stable rating)
                 if self._is_frozen(llm_id, current_rd):
@@ -793,7 +793,7 @@ class MatchScheduler:
                     # Check if LLM opponent has hit their caps
                     if not is_anchor:
                         opp_current = self._games_played.get(opp_id, 0)
-                        opp_rd = self.rating_store.get(opp_id).rating_deviation
+                        opp_rd = self.rating_store.get(opp_id).games_rd
 
                         # Frozen models can always be challenged - no cap
                         if not self._is_frozen(opp_id, opp_rd):
@@ -1073,7 +1073,7 @@ class MatchScheduler:
         for llm_id in sorted(llm_ids, key=lambda x: self.rating_store.get(x).rating, reverse=True):
             r = self.rating_store.get(llm_id)
             games = self._games_played.get(llm_id, 0)
-            print(f"  {llm_id}: {r.rating:.0f} ±{r.rating_deviation:.0f} ({games} games)")
+            print(f"  {llm_id}: {r.rating:.0f} ±{r.rating_deviation:.0f} (games_rd={r.games_rd:.0f}, {games} games)")
 
         return {
             "total_games": counters["game_num"],
