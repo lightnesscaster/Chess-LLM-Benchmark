@@ -1,35 +1,151 @@
 {
-  "maia-1900": {
-    "player_id": "maia-1900",
-    "rating": 1816,
+  "maia-1100": {
+    "player_id": "maia-1100",
+    "rating": 1628,
     "rating_deviation": 30.0,
     "volatility": 0.03,
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "last_updated": "2025-12-01T20:26:00.465577+00:00"
+    "games_played": 52,
+    "wins": 44,
+    "losses": 6,
+    "draws": 2,
+    "last_updated": "2026-03-01T08:52:56.158681+00:00",
+    "games_rd": 350.0,
+    "unclamped_rating": 1628
   },
   "random-bot": {
     "player_id": "random-bot",
     "rating": 400,
     "rating_deviation": 30.0,
     "volatility": 0.03,
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
+    "games_played": 17,
+    "wins": 15,
+    "losses": 2,
     "draws": 0,
-    "last_updated": "2025-12-01T20:26:00.465568+00:00"
+    "last_updated": "2026-03-01T08:52:56.158668+00:00",
+    "games_rd": 350.0,
+    "unclamped_rating": 400
   },
-  "maia-1100": {
-    "player_id": "maia-1100",
-    "rating": 1628,
+  "maia-1900": {
+    "player_id": "maia-1900",
+    "rating": 1816,
+    "rating_deviation": 30.0,
+    "volatility": 0.03,
+    "games_played": 3,
+    "wins": 1,
+    "losses": 2,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.158684+00:00",
+    "games_rd": 350.0,
+    "unclamped_rating": 1816
+  },
+  "eubos": {
+    "player_id": "eubos",
+    "rating": 2211,
     "rating_deviation": 30.0,
     "volatility": 0.03,
     "games_played": 0,
     "wins": 0,
     "losses": 0,
     "draws": 0,
-    "last_updated": "2025-12-01T20:26:00.465575+00:00"
+    "last_updated": "2026-03-01T08:52:56.158686+00:00",
+    "games_rd": 350.0,
+    "unclamped_rating": 2211
+  },
+  "survival-bot": {
+    "player_id": "survival-bot",
+    "rating": 1200,
+    "rating_deviation": 350,
+    "volatility": 0.06,
+    "games_played": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.158688+00:00",
+    "games_rd": 350.0,
+    "unclamped_rating": 1200
+  },
+  "gemini-2.5-pro": {
+    "player_id": "gemini-2.5-pro",
+    "rating": -3.987927395939778,
+    "rating_deviation": 347.2684849244299,
+    "volatility": 0.06,
+    "games_played": 1,
+    "wins": 0,
+    "losses": 1,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164076+00:00",
+    "games_rd": 347.2684849244299
+  },
+  "gpt-oss-120b (medium)": {
+    "player_id": "gpt-oss-120b (medium)",
+    "rating": 1017.6871725769615,
+    "rating_deviation": 205.00555595295572,
+    "volatility": 0.06,
+    "games_played": 16,
+    "wins": 5,
+    "losses": 11,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164088+00:00",
+    "games_rd": 205.00555595295572
+  },
+  "grok-4.1-fast": {
+    "player_id": "grok-4.1-fast",
+    "rating": 1429.4101283471477,
+    "rating_deviation": 106.45120078754974,
+    "volatility": 0.06,
+    "games_played": 9,
+    "wins": 2,
+    "losses": 5,
+    "draws": 2,
+    "last_updated": "2026-03-01T08:52:56.163967+00:00",
+    "games_rd": 139.5268445906259
+  },
+  "gemini-3-pro-preview (high)": {
+    "player_id": "gemini-3-pro-preview (high)",
+    "rating": 1904.0612853805726,
+    "rating_deviation": 106.27862253558631,
+    "volatility": 0.06,
+    "games_played": 8,
+    "wins": 7,
+    "losses": 1,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164081+00:00",
+    "games_rd": 139.13891701478732
+  },
+  "claude-opus-4.5 (high)": {
+    "player_id": "claude-opus-4.5 (high)",
+    "rating": 1217.1346419120566,
+    "rating_deviation": 334.373147567139,
+    "volatility": 0.06,
+    "games_played": 3,
+    "wins": 3,
+    "losses": 0,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164073+00:00",
+    "games_rd": 334.373147567139
+  },
+  "llama-4-maverick": {
+    "player_id": "llama-4-maverick",
+    "rating": -275.88793061288766,
+    "rating_deviation": 133.29468384421335,
+    "volatility": 0.06,
+    "games_played": 45,
+    "wins": 0,
+    "losses": 45,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164091+00:00",
+    "games_rd": 227.0214897285971
+  },
+  "gpt-5.1 (high)": {
+    "player_id": "gpt-5.1 (high)",
+    "rating": 1473.4416432503785,
+    "rating_deviation": 147.787525464749,
+    "volatility": 0.06,
+    "games_played": 8,
+    "wins": 2,
+    "losses": 6,
+    "draws": 0,
+    "last_updated": "2026-03-01T08:52:56.164084+00:00",
+    "games_rd": 147.787525464749
   }
 }
