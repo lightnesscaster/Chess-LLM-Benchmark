@@ -127,7 +127,7 @@ async def test_llm_on_position(
     player: "BaseLLMPlayer",
     position: dict,
     engine: chess.engine.SimpleEngine,
-    depth: int = 16,
+    depth: int = 30,
 ) -> PositionResult:
     """Test an LLM on a single position."""
     fen = position["fen"]
@@ -213,7 +213,7 @@ def test_engine_on_position(
     engine_player,
     position: dict,
     stockfish: chess.engine.SimpleEngine,
-    depth: int = 16,
+    depth: int = 30,
 ) -> PositionResult:
     """Test an engine on a single position."""
     fen = position["fen"]
@@ -280,7 +280,7 @@ async def run_benchmark(
     positions: list[dict],
     stockfish: chess.engine.SimpleEngine,
     player_config: dict,
-    depth: int = 16,
+    depth: int = 30,
     api_backend: str = "openrouter",
 ) -> dict:
     """Run benchmark for a single player."""
@@ -490,7 +490,7 @@ async def main():
     parser.add_argument(
         "--depth",
         type=int,
-        default=16,
+        default=30,
         help="Stockfish analysis depth",
     )
     parser.add_argument(

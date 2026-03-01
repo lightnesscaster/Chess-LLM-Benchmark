@@ -2,153 +2,181 @@
 Rating prediction formulas from position benchmark data.
 
 These formulas predict Glicko-2 rating from position benchmark metrics.
-Derived from 22 models tested on 200 equal positions and 100 blunder positions.
-Data lives in unified results.json with per-type summary breakdowns.
+Derived from 30 models (RD < 100) tested on 50 equal positions at
+Stockfish depth 30.
 
-Updated: Now includes gpt-5-chat in training data.
+The recommended approach uses three features, all from the 50 equal positions:
+- log(mean CPL) captures overall move quality
+- pct_lt10 (% of positions with CPL < 10) captures consistency
+- surv_40 (probability of surviving a 40-move game) captures illegal move impact
+
+The survival feature models the 2-strikes-forfeit rule: a model that plays
+illegal moves at rate p will survive N moves with probability
+P(0 or 1 illegal in N) = (1-p)^N + N*p*(1-p)^(N-1). This is highly nonlinear:
+2% illegal -> 81% survive, 4% -> 42%, 10% -> 8%.
+
+Updated: Mar 2026
+- All evaluations at depth 30 (was 16)
+- Models with RD >= 100 excluded (unreliable game-play ratings)
+- All features derived from equal positions only (50 positions)
+- Survival probability uses is_legal field, not CPL heuristic
+- LOO CV: R² = 0.9652, RMSE = 149 (30 models)
 """
 
 import numpy as np
+from scipy.stats import binom
 
 
 # =============================================================================
-# FORMULA 1: Simple Log-Linear (Best single feature)
+# RECOMMENDED: log(mean CPL) + consistency + survival (Best validated accuracy)
 # =============================================================================
-# R² = 0.9808, RMSE = 111 rating points
+# LOO CV:       R² = 0.9652, RMSE = 149 rating points  (30 models, RD < 100)
+# Training fit:  R² = 0.9799, RMSE = 114 rating points
 #
-# rating = -501.26 * log(equal_cpl + 1) + 3655.39
+# rating = 1794.14 - 260.55 * log(mean_eq_cpl + 1) + 21.48 * pct_lt10 + 2.09 * surv_40
+#
+# Where:
+#   mean_eq_cpl = average centipawn loss on the 50 equal positions
+#   pct_lt10    = percentage of equal positions with CPL < 10 (0-100)
+#   surv_40     = P(0 or 1 illegal moves in 40 moves) as percentage (0-100)
+#                 computed from the is_legal field on the 50 equal positions
 
-def predict_rating_simple(equal_cpl: float) -> float:
+def survival_probability(illegal_rate: float, game_length: int = 40) -> float:
     """
-    Predict rating from equal position CPL using log-linear model.
+    Compute probability of surviving a game under 2-strikes-forfeit rule.
+
+    Uses binomial model: P(0 or 1 illegal moves in N moves).
 
     Args:
-        equal_cpl: Average centipawn loss on equal positions
+        illegal_rate: Per-move illegal move rate (0.0 to 1.0)
+        game_length: Expected number of moves in a game
 
     Returns:
-        Predicted Glicko-2 rating
+        Survival probability as percentage (0-100)
     """
-    return -501.26 * np.log(equal_cpl + 1) + 3655.39
+    if illegal_rate <= 0:
+        return 100.0
+    if illegal_rate >= 1:
+        return 0.0
+    p = illegal_rate
+    n = game_length
+    return 100.0 * (binom.pmf(0, n, p) + binom.pmf(1, n, p))
 
 
-# =============================================================================
-# FORMULA 2: Two-Feature Linear (Best practical)
-# =============================================================================
-# R² = 0.9844, RMSE = 100 rating points
-#
-# rating = -418.67 * log(equal_cpl + 1) + 8.53 * equal_best_pct + 2961.70
-
-def predict_rating_two_feature(equal_cpl: float, equal_best_pct: float) -> float:
-    """
-    Predict rating from equal position CPL and best move percentage.
-
-    Args:
-        equal_cpl: Average centipawn loss on equal positions
-        equal_best_pct: Percentage of best moves found (0-100)
-
-    Returns:
-        Predicted Glicko-2 rating
-    """
-    return -418.67 * np.log(equal_cpl + 1) + 8.53 * equal_best_pct + 2961.70
-
-
-# =============================================================================
-# FORMULA 3: Four-Feature Linear (Both benchmarks)
-# =============================================================================
-# R² = 0.9860, RMSE = 95 rating points
-#
-# rating = -366.34 * log(equal_cpl + 1)
-#          - 66.03 * log(blunder_cpl + 1)
-#          + 7.83 * equal_best_pct
-#          + 4.36 * blunder_best_pct
-#          + 3148.48
-
-def predict_rating_four_feature(
-    equal_cpl: float,
-    blunder_cpl: float,
-    equal_best_pct: float,
-    blunder_best_pct: float
+def predict_rating(
+    equal_cpl: float, pct_lt10: float, surv_40: float
 ) -> float:
     """
-    Predict rating using metrics from both equal and blunder benchmarks.
+    Predict rating using equal position CPL, consistency, and survival.
+
+    This is the recommended formula. It combines:
+    - Overall move quality (log of mean CPL)
+    - Consistency (% near-perfect moves with CPL < 10)
+    - Game viability (survival probability under 2-strikes-forfeit)
 
     Args:
-        equal_cpl: Average CPL on equal positions
-        blunder_cpl: Average CPL on blunder positions
-        equal_best_pct: Best move % on equal positions (0-100)
-        blunder_best_pct: Best move % on blunder positions (0-100)
+        equal_cpl: Average centipawn loss on the 50 equal positions
+        pct_lt10: Percentage of equal positions with CPL < 10 (0-100)
+        surv_40: Survival probability for 40-move game (0-100),
+                 from survival_probability(illegal_rate, 40)
 
     Returns:
         Predicted Glicko-2 rating
     """
     return (
-        -366.34 * np.log(equal_cpl + 1)
-        - 66.03 * np.log(blunder_cpl + 1)
-        + 7.83 * equal_best_pct
-        + 4.36 * blunder_best_pct
-        + 3148.48
+        1794.14
+        - 260.55 * np.log(equal_cpl + 1)
+        + 21.48 * pct_lt10
+        + 2.09 * surv_40
     )
 
 
 # =============================================================================
-# FORMULA 4: Polynomial Degree 2 (Best accuracy)
+# 2-FEATURE: log(mean CPL) + consistency (No illegal move data needed)
 # =============================================================================
-# R² = 0.9897, RMSE = 82 rating points
+# LOO CV:       R² = 0.9615, RMSE = 157 rating points  (30 models, RD < 100)
+# Training fit:  R² = 0.9765, RMSE = 123 rating points
 #
-# Features: log(e_cpl), e_best, log(e_cpl)², log(e_cpl)*e_best, e_best²
+# rating = 2139.13 - 302.30 * log(mean_eq_cpl + 1) + 22.94 * pct_lt10
+#
+# Note: Use this when the is_legal field is not available.
+#
+# Where:
+#   mean_eq_cpl = average centipawn loss on the 50 equal positions
+#   pct_lt10    = percentage of equal positions with CPL < 10 (0-100)
 
-POLY2_COEFFICIENTS = {
-    'log_cpl': -2629.84,
-    'best_pct': -147.08,
-    'log_cpl_squared': 145.81,
-    'log_cpl_times_best': 19.58,
-    'best_pct_squared': 0.77,
-    'intercept': 11318.16,
-}
-
-def predict_rating_poly2(equal_cpl: float, equal_best_pct: float) -> float:
+def predict_rating_2feat(equal_cpl: float, pct_lt10: float) -> float:
     """
-    Predict rating using polynomial (degree 2) model.
+    Predict rating using equal position CPL and consistency only.
+
+    Use when illegal move data (is_legal field) is not available.
 
     Args:
-        equal_cpl: Average centipawn loss on equal positions
-        equal_best_pct: Percentage of best moves found (0-100)
+        equal_cpl: Average centipawn loss on the 50 equal positions
+        pct_lt10: Percentage of equal positions with CPL < 10 (0-100)
 
     Returns:
         Predicted Glicko-2 rating
     """
-    log_cpl = np.log(equal_cpl + 1)
-
-    return (
-        POLY2_COEFFICIENTS['log_cpl'] * log_cpl
-        + POLY2_COEFFICIENTS['best_pct'] * equal_best_pct
-        + POLY2_COEFFICIENTS['log_cpl_squared'] * log_cpl ** 2
-        + POLY2_COEFFICIENTS['log_cpl_times_best'] * log_cpl * equal_best_pct
-        + POLY2_COEFFICIENTS['best_pct_squared'] * equal_best_pct ** 2
-        + POLY2_COEFFICIENTS['intercept']
-    )
+    return 2139.13 - 302.30 * np.log(equal_cpl + 1) + 22.94 * pct_lt10
 
 
 # =============================================================================
-# SUMMARY TABLE
+# SIMPLE: log(capped mean CPL) — Single feature fallback
+# =============================================================================
+# LOO CV:       R² = 0.9352, RMSE = 204 rating points  (30 models, RD < 100)
+# Training fit:  R² = 0.9483, RMSE = 182 rating points
+#
+# rating = 4549.27 - 661.27 * log(capped_mean_eq_cpl + 1)
+#
+# Where:
+#   capped_mean_eq_cpl = mean of min(cpl, 2000) for each equal position
+
+def predict_rating_simple(capped_equal_cpl: float) -> float:
+    """
+    Predict rating from capped equal position CPL only.
+
+    Use this when only CPL values are available (no consistency or
+    illegal move data). CPL values should be capped at 2000 before
+    averaging to reduce the impact of illegal moves.
+
+    Args:
+        capped_equal_cpl: Average of min(cpl, 2000) on the 50 equal positions
+
+    Returns:
+        Predicted Glicko-2 rating
+    """
+    return 4549.27 - 661.27 * np.log(capped_equal_cpl + 1)
+
+
+# =============================================================================
+# SUMMARY
 # =============================================================================
 """
-| Model                    | R²     | RMSE | Formula Complexity |
-|--------------------------|--------|------|-------------------|
-| Simple log(CPL)          | 0.9808 | 111  | 1 feature         |
-| Two-feature              | 0.9844 | 100  | 2 features        |
-| Four-feature             | 0.9860 | 95   | 4 features        |
-| Polynomial degree 2      | 0.9897 | 82   | 5 terms           |
+| Model                          | LOO R² | LOO RMSE | Inputs                                   |
+|--------------------------------|--------|----------|------------------------------------------|
+| Recommended (3-feat + surv)    | 0.9652 |      149 | log(eq CPL) + pct_lt10 + surv_40         |
+| 2-feature                      | 0.9615 |      157 | log(eq CPL) + pct_lt10                   |
+| Simple (1-feat)                | 0.9352 |      204 | log(capped eq CPL)                       |
 
-Key insights:
-- log(CPL) is essential - linear CPL gives R² = 0.68, log gives R² = 0.98
-- Equal positions are better predictors than blunder positions
-- Each 1% increase in best_move% ≈ +48 rating points (simple regression)
-- Polynomial helps capture non-linear effects at extremes
-- Models trained on 22 data points (21 original + gpt-5-chat)
+Fitted on 30 models with RD < 100 (excluded gemini-3.1-pro-preview high/medium).
+All three features derived from the 50 equal positions only.
 
-Data source: unified results.json with per-type breakdowns (summary.blunder, summary.equal).
-Run regression_analysis.py to refit models from results.json.
+Key insights (depth 30):
+- log(mean CPL) captures overall move quality
+- pct_lt10 (consistency) is the key 2nd feature — separates reliably decent
+  models from those that oscillate between brilliant and catastrophic
+- surv_40 (survival probability) captures the highly nonlinear impact of
+  illegal moves under the 2-strikes-forfeit rule:
+    0% illegal -> 100% survive, 2% -> 81%, 4% -> 42%, 10% -> 8%
+- Illegal moves MUST be detected via the is_legal field, NOT via CPL > 5000
+  (legal moves on blunder positions can exceed CPL 5000 when missing forced mate)
+- Blunder positions add noise to CPL features at depth 30 and are excluded
+- CPL capping at 2000 helps single-feature models handle illegal move outliers
+- Gemini 3-pro reasoning models remain the largest outliers (~450 rating pts)
+
+All evaluations use Stockfish depth 30.
+Data source: results.json — 50 equal positions, 30 models with RD < 100.
 """
 
 
@@ -156,25 +184,34 @@ Run regression_analysis.py to refit models from results.json.
 # EXAMPLE USAGE
 # =============================================================================
 if __name__ == "__main__":
-    # Example: A model with 500 CPL and 20% best moves on equal positions
+    # Example: A model with 500 CPL, 10% near-perfect, 5% illegal rate
     equal_cpl = 500
-    equal_best = 20
-    blunder_cpl = 3000
-    blunder_best = 5
+    pct10 = 10
+    illegal_rate = 0.05
+    surv40 = survival_probability(illegal_rate, 40)
 
-    print("Example predictions for CPL=500, Best%=20:")
-    print(f"  Simple:      {predict_rating_simple(equal_cpl):.0f}")
-    print(f"  Two-feature: {predict_rating_two_feature(equal_cpl, equal_best):.0f}")
-    print(f"  Four-feature:{predict_rating_four_feature(equal_cpl, blunder_cpl, equal_best, blunder_best):.0f}")
-    print(f"  Polynomial:  {predict_rating_poly2(equal_cpl, equal_best):.0f}")
+    print(f"Example predictions for eq_CPL=500, pct_lt10={pct10}%, illegal_rate={illegal_rate}:")
+    print(f"  Recommended: {predict_rating(equal_cpl, pct10, surv40):.0f}")
+    print(f"  2-feature:   {predict_rating_2feat(equal_cpl, pct10):.0f}")
+    print(f"  Simple:      {predict_rating_simple(min(equal_cpl, 2000)):.0f}")
 
-    # Test on gpt-5-chat (should be close to 276)
-    print("\nVerification on gpt-5-chat (actual rating: 276):")
-    gpt5_e_cpl = 904.2
-    gpt5_e_best = 21.0
-    gpt5_b_cpl = 5889.2
-    gpt5_b_best = 12.0
-    print(f"  Simple:      {predict_rating_simple(gpt5_e_cpl):.0f}")
-    print(f"  Two-feature: {predict_rating_two_feature(gpt5_e_cpl, gpt5_e_best):.0f}")
-    print(f"  Four-feature:{predict_rating_four_feature(gpt5_e_cpl, gpt5_b_cpl, gpt5_e_best, gpt5_b_best):.0f}")
-    print(f"  Polynomial:  {predict_rating_poly2(gpt5_e_cpl, gpt5_e_best):.0f}")
+    # Survival probability examples
+    print("\nSurvival probability (40-move game):")
+    for rate in [0, 0.01, 0.02, 0.04, 0.05, 0.10, 0.20]:
+        print(f"  {rate:5.1%} illegal -> {survival_probability(rate, 40):5.1f}% survive")
+
+    # Verification on known models
+    print("\nVerification on eubos (actual: 2211, 0% illegal):")
+    s = survival_probability(0.0, 40)
+    print(f"  Recommended: {predict_rating(19.8, 46.0, s):.0f}")
+    print(f"  2-feature:   {predict_rating_2feat(19.8, 46.0):.0f}")
+
+    print("\nVerification on gemini-3-pro-preview high (actual: 1998, 0% illegal):")
+    s = survival_probability(0.0, 40)
+    print(f"  Recommended: {predict_rating(487.4, 66.0, s):.0f}")
+    print(f"  2-feature:   {predict_rating_2feat(487.4, 66.0):.0f}")
+
+    print("\nVerification on gemini-3-pro-preview medium (actual: 537, 4.8% illegal):")
+    s = survival_probability(0.048, 40)
+    print(f"  Recommended: {predict_rating(487.4, 54.0, s):.0f}  (surv_40={s:.1f}%)")
+    print(f"  2-feature:   {predict_rating_2feat(487.4, 54.0):.0f}")

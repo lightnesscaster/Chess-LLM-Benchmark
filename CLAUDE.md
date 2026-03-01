@@ -75,6 +75,16 @@ LLMs receive FEN + ASCII board and must return a single UCI move. On illegal mov
 - Game results JSON: `data/results/`
 - Ratings: `data/ratings.json`
 
+## Position Benchmark
+
+The position benchmark evaluates models on static chess positions and calculates CPL (centipawn loss). All Stockfish evaluations use **depth 30**. This applies to:
+- `run_benchmark.py` — evaluating model/engine moves
+- `extract_blunders.py` — detecting blunders in game PGNs
+- `extract_equal_positions.py` — finding equal positions
+- `reeval_depth30.py` — bulk re-evaluation script
+
+Do not lower the depth below 30 without good reason.
+
 ## Configuration
 
 Edit `config/benchmark.yaml` to configure:

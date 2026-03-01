@@ -42,7 +42,7 @@ def extract_equal_positions(
     max_eval: int = 300,
     min_ply: int = 10,  # Skip very early positions
     stockfish_path: str = "stockfish",
-    depth: int = 16,
+    depth: int = 30,
 ):
     """Extract positions with equal evaluation."""
 

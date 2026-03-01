@@ -60,7 +60,7 @@ def eval_to_cp(info: chess.engine.InfoDict, perspective: chess.Color) -> float:
 def analyze_game(
     pgn_path: Path,
     engine: chess.engine.SimpleEngine,
-    depth: int = 18,
+    depth: int = 30,
     blunder_threshold: float = 500.0,  # 5 pawns
 ) -> list[BlunderPosition]:
     """
@@ -184,7 +184,7 @@ def main():
     parser.add_argument(
         "--depth",
         type=int,
-        default=16,
+        default=30,
         help="Stockfish analysis depth",
     )
     parser.add_argument(
