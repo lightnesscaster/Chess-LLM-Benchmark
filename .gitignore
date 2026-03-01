@@ -27,3 +27,13 @@ Thumbs.db
 
 # Firebase
 firebase-key.json
+
+# Large data files
+lichess_db_puzzle.csv
+
+# Position benchmark intermediate/backup data
+position_benchmark/*_depth16_backup.json
+position_benchmark/lichess_*.json
+position_benchmark/game_blunders*.json
+position_benchmark/gemini_good_positions.json
+position_benchmark/results_*.json
