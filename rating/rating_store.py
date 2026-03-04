@@ -25,6 +25,9 @@ _CACHE_INVALIDATE_FILE = Path(__file__).parent.parent / "data" / ".cache_invalid
 
 def invalidate_cache() -> None:
     """Touch the cache invalidation file to signal all processes to refresh."""
+    global _benchmark_predictions_cache, _benchmark_predictions_cache_time
+    _benchmark_predictions_cache = None
+    _benchmark_predictions_cache_time = 0
     try:
         _CACHE_INVALIDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
         _CACHE_INVALIDATE_FILE.touch()
@@ -48,6 +51,10 @@ def _should_invalidate_cache() -> bool:
 # Benchmark-seeded initial rating parameters (from position benchmark RMSE=166)
 BENCHMARK_SEED_RD = 166.0
 BENCHMARK_SEED_GAMES_RD = 350.0
+
+# Module-level cache for benchmark predictions (rarely changes)
+_benchmark_predictions_cache: Optional[Dict[str, float]] = None
+_benchmark_predictions_cache_time: float = 0
 
 
 class RatingStore:
@@ -111,7 +118,7 @@ class RatingStore:
 
         return False
 
-    def _load_benchmark_predictions(self) -> Dict[str, float]:
+    def _load_benchmark_predictions(self, force_refresh: bool = False) -> Dict[str, float]:
         """
         Load position benchmark results and compute predicted ratings.
 
@@ -119,10 +126,20 @@ class RatingStore:
           rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
 
         Tries Firestore first (if enabled), falls back to local files.
+        Results are cached at module level (benchmark data rarely changes).
 
         Returns:
             Dict mapping model name to predicted rating, or empty dict if files missing.
         """
+        global _benchmark_predictions_cache, _benchmark_predictions_cache_time
+
+        # Return cached predictions if available and not stale
+        if not force_refresh and _benchmark_predictions_cache is not None:
+            cache_age = time.time() - _benchmark_predictions_cache_time
+            if cache_age < _FIRESTORE_CACHE_TTL:
+                logger.debug(f"Using cached benchmark predictions ({len(_benchmark_predictions_cache)} models, age={cache_age:.0f}s)")
+                return dict(_benchmark_predictions_cache)
+
         results_data = None
         positions_data = None
 
@@ -219,6 +236,10 @@ class RatingStore:
         if predictions:
             logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
 
+        # Cache at module level
+        _benchmark_predictions_cache = dict(predictions)
+        _benchmark_predictions_cache_time = time.time()
+
         return predictions
 
     def refresh_benchmark_predictions(self) -> None:
@@ -229,7 +250,7 @@ class RatingStore:
         benchmark phase. It picks up new predictions and updates any _ratings entries
         that were created with defaults (1500/RD=350) before the benchmark ran.
         """
-        new_predictions = self._load_benchmark_predictions()
+        new_predictions = self._load_benchmark_predictions(force_refresh=True)
 
         # Apply new predictions to models that haven't played games yet
         for player_id, predicted in new_predictions.items():
