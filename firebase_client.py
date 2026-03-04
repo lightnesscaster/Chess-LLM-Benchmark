@@ -63,3 +63,4 @@ def get_firestore_client():
 RATINGS_COLLECTION = "ratings"
 GAMES_COLLECTION = "games"
 RESULTS_COLLECTION = "results"
+BENCHMARK_RESULTS_COLLECTION = "benchmark_results"

@@ -80,13 +80,13 @@ class RatingStore:
         self.ghost_ids = ghost_ids or set()
         self._ratings: Dict[str, PlayerRating] = {}
 
-        # Load benchmark predictions for seeding new players
-        self._benchmark_predictions = self._load_benchmark_predictions()
-
-        # Determine storage backend
+        # Determine storage backend (must be set before _load_benchmark_predictions)
         if use_firestore is None:
             use_firestore = self._should_use_firestore()
         self._use_firestore = use_firestore
+
+        # Load benchmark predictions for seeding new players
+        self._benchmark_predictions = self._load_benchmark_predictions()
 
         if self._use_firestore:
             self._init_firestore()
@@ -118,23 +118,50 @@ class RatingStore:
         Uses the 3-feature formula from rating_prediction_formulas.py:
           rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
 
+        Tries Firestore first (if enabled), falls back to local files.
+
         Returns:
             Dict mapping model name to predicted rating, or empty dict if files missing.
         """
+        results_data = None
+        positions_data = None
+
+        # Try Firestore first (per-model documents to avoid 1 MiB limit)
+        if self._use_firestore:
+            try:
+                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
+                db = get_firestore_client()
+                docs = db.collection(BENCHMARK_RESULTS_COLLECTION).stream()
+                results_data = {}
+                for doc in docs:
+                    results_data[doc.id] = doc.to_dict()
+                if results_data:
+                    logger.info(f"Loaded benchmark results from Firestore ({len(results_data)} models)")
+            except Exception as e:
+                logger.warning(f"Failed to load benchmark results from Firestore: {e}")
+
+        # Fall back to local file for results
         base = Path(__file__).parent.parent / "position_benchmark"
-        results_path = base / "results.json"
+        if results_data is None:
+            results_path = base / "results.json"
+            if not results_path.exists():
+                return {}
+            try:
+                with open(results_path) as f:
+                    results_data = json.load(f)
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"Failed to load benchmark results: {e}")
+                return {}
+
+        # Positions file is static and always local
         positions_path = base / "positions.json"
-
-        if not results_path.exists() or not positions_path.exists():
+        if not positions_path.exists():
             return {}
-
         try:
-            with open(results_path) as f:
-                results_data = json.load(f)
             with open(positions_path) as f:
                 positions_data = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load benchmark data: {e}")
+            logger.warning(f"Failed to load positions data: {e}")
             return {}
 
         # Build position type lookup

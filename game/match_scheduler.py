@@ -9,6 +9,7 @@ Handles:
 
 import asyncio
 import json
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Union, Tuple, Optional
@@ -112,6 +113,21 @@ class MatchScheduler:
     PROVIDER_INFERIOR_TIME_WINDOW = 3  # months after this model's release to consider
     PROVIDER_INFERIOR_COST_RATIO = 2.0  # must be this much cheaper to avoid freeze
 
+    # Expensive inferior model freezing (cross-provider)
+    # Freeze if: RD < 150, lost >= 3 games, and a stronger model exists
+    # (released before or within 3 months after) that is at least 2x cheaper
+    EXPENSIVE_INFERIOR_RD_THRESHOLD = 150
+    EXPENSIVE_INFERIOR_MIN_LOSSES = 3
+    EXPENSIVE_INFERIOR_TIME_WINDOW = 3  # months after this model's release to consider
+    EXPENSIVE_INFERIOR_COST_RATIO = 2.0  # stronger model must be this much cheaper
+
+    # Lost to much weaker model freezing
+    # Freeze if: lost to a model rated 600+ points lower
+    # (released before or within 3 months after), unless this model is 5x cheaper
+    LOST_TO_WEAKER_RATING_GAP = 600
+    LOST_TO_WEAKER_TIME_WINDOW = 3  # months after this model's release to consider
+    LOST_TO_WEAKER_COST_RATIO = 5.0  # must be this much cheaper to avoid freeze
+
     # Tighter rating threshold for stable models (low RD)
     # When RD is below this, use a tighter rating threshold for pairings
     STABLE_RD_THRESHOLD = 100  # RD below this triggers tighter pairing
@@ -175,6 +191,16 @@ class MatchScheduler:
         # Track games played per LLM during benchmark (for reasoning caps and low RD caps)
         # Note: Only used in run_benchmark() flow, protected by scheduler_lock
         self._games_played: Dict[str, int] = {}
+
+        # Pre-estimated RD: tracks projected RD accounting for in-flight games.
+        # RD reduction in Glicko-2 is result-independent, so we can predict it
+        # before games complete. This prevents scheduling wasted games for models
+        # whose RD will drop below freeze/cap thresholds once in-flight games finish.
+        self._estimated_rd: Dict[str, float] = {}
+        # Track in-flight opponents per player so we can recompute estimated RD
+        # correctly when any single game completes or fails (without losing info
+        # about other in-flight games). Maps player_id -> {game_num: opponent_id}.
+        self._inflight_opponents: Dict[str, Dict[int, str]] = {}
 
         # Load model publish dates for age-based freezing
         self._publish_dates: Dict[str, int] = {}  # player_id -> timestamp
@@ -434,10 +460,13 @@ class MatchScheduler:
             self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
             return self.UNKNOWN_MODEL_DEFAULT_COST
 
-        # Estimate: ~100 LLM calls per game, ~1500 prompt tokens, ~10 completion tokens per call
+        # Estimate: ~100 LLM calls per game, ~1500 prompt tokens per call
+        # Reasoning models produce ~3000 completion tokens/call (extended thinking);
+        # non-reasoning models produce ~10
+        comp_per_call = 3000 if player_id in self.reasoning_ids else 10
         estimated_cost = max(0.0, (
             100 * 1500 * pricing.get("prompt", 0) +
-            100 * 10 * pricing.get("completion", 0)
+            100 * comp_per_call * pricing.get("completion", 0)
         ))
         self._cost_cache[player_id] = estimated_cost
         return estimated_cost
@@ -546,9 +575,50 @@ class MatchScheduler:
         Returns:
             Priority score (higher = more urgent to schedule)
         """
-        rd = self.rating_store.get(player_id).rating_deviation
+        rd = self._get_estimated_rd(player_id)
         cost = self._get_player_cost(player_id)
         return rd / (1 + self.COST_SENSITIVITY * cost)
+
+    def _estimate_rd_after_game(self, player_id: str, opponent_id: str, current_rd: float) -> float:
+        """
+        Estimate RD after playing a game against opponent, using Glicko-2 variance formula.
+
+        RD reduction in Glicko-2 is result-independent — it depends only on opponent
+        strength, not the game outcome. This allows accurate pre-estimation.
+
+        Args:
+            player_id: The player whose RD to estimate
+            opponent_id: The opponent
+            current_rd: The player's current (possibly already estimated) RD
+
+        Returns:
+            Projected RD after the game (with floor of 45)
+        """
+        player_data = self.rating_store.get(player_id)
+        opp_data = self.rating_store.get(opponent_id)
+
+        mu, _ = self.glicko.glicko_to_glicko2(player_data.rating, current_rd)
+        phi = current_rd / self.glicko.SCALE_FACTOR
+        opp_mu, opp_phi = self.glicko.glicko_to_glicko2(opp_data.rating, opp_data.rating_deviation)
+
+        v = self.glicko.calculate_variance(mu, [(opp_mu, opp_phi)])
+        new_phi = 1.0 / math.sqrt(1.0 / (phi * phi) + 1.0 / v)
+        new_rd = new_phi * self.glicko.SCALE_FACTOR
+
+        return max(45.0, new_rd)
+
+    def _get_estimated_rd(self, player_id: str) -> float:
+        """Get estimated RD for a player, falling back to actual RD from rating store."""
+        if player_id in self._estimated_rd:
+            return self._estimated_rd[player_id]
+        return self.rating_store.get(player_id).rating_deviation
+
+    def _recompute_estimated_rd(self, player_id: str) -> None:
+        """Recompute estimated RD from actual RD plus all remaining in-flight games."""
+        rd = self.rating_store.get(player_id).rating_deviation
+        for opp_id in self._inflight_opponents.get(player_id, {}).values():
+            rd = self._estimate_rd_after_game(player_id, opp_id, rd)
+        self._estimated_rd[player_id] = rd
 
     def _is_proven_worse(self, player_id: str,
                          player_stats: Dict[str, Any]) -> bool:
@@ -720,6 +790,122 @@ class MatchScheduler:
 
         return False
 
+    def _lost_to_much_weaker(self, player_id: str) -> bool:
+        """
+        Check if model lost to a model far below its peer group.
+
+        Returns True if:
+        - Model A (player_id) lost to Model B in any game
+        - There exists a peer Model C (released before A or within 3 months after)
+          rated 600+ points above B
+        - A is NOT at least 5x cheaper than C
+        """
+        my_timestamp = self._publish_dates.get(player_id)
+        if my_timestamp is None:
+            return False
+
+        my_cost = self._get_player_cost(player_id)
+
+        three_months = self.LOST_TO_WEAKER_TIME_WINDOW * 30.44 * 24 * 60 * 60
+
+        # Collect opponent IDs this model lost to
+        lost_to = set()
+        for result in self.stats_collector.results:
+            if result.winner == "white" and result.black_id == player_id:
+                lost_to.add(result.white_id)
+            elif result.winner == "black" and result.white_id == player_id:
+                lost_to.add(result.black_id)
+
+        if not lost_to:
+            return False
+
+        # Get ratings of models we lost to
+        lost_to_ratings = {}
+        for opp_id in lost_to:
+            if self.rating_store.has_player(opp_id):
+                lost_to_ratings[opp_id] = self.rating_store.get(opp_id).rating
+
+        if not lost_to_ratings:
+            return False
+
+        lowest_loss_rating = min(lost_to_ratings.values())
+
+        # Check if any peer model C is rated 600+ points above any model we lost to
+        for peer_id, peer_timestamp in self._publish_dates.items():
+            if peer_id == player_id:
+                continue
+
+            # Peer must be released before this model or within 3 months after
+            if peer_timestamp > my_timestamp + three_months:
+                continue
+
+            if not self.rating_store.has_player(peer_id):
+                continue
+
+            peer_rating = self.rating_store.get(peer_id).rating
+            if peer_rating - lowest_loss_rating < self.LOST_TO_WEAKER_RATING_GAP:
+                continue
+
+            # Cost exception: free models are always exempt; otherwise check 5x ratio
+            if my_cost == 0:
+                continue
+            peer_cost = self._get_player_cost(peer_id)
+            if peer_cost > 0 and my_cost * self.LOST_TO_WEAKER_COST_RATIO <= peer_cost:
+                continue  # This model is cheap enough relative to this peer
+
+            return True
+
+        return False
+
+    def _is_expensive_inferior(self, player_id: str) -> bool:
+        """
+        Check if model is outperformed by a cheaper model (any provider).
+
+        Returns True if there exists any model that:
+        - Was released before this model, or within 3 months after
+        - Has a higher rating
+        - Is at least 2x cheaper than this model
+        """
+        my_timestamp = self._publish_dates.get(player_id)
+        if my_timestamp is None:
+            return False
+
+        my_rating = self.rating_store.get(player_id).rating
+        my_cost = self._get_player_cost(player_id)
+
+        # Free models can't be "expensive inferior"
+        if my_cost == 0:
+            return False
+
+        three_months = self.EXPENSIVE_INFERIOR_TIME_WINDOW * 30.44 * 24 * 60 * 60
+        is_reasoning = player_id in self.reasoning_ids
+
+        for other_id, other_timestamp in self._publish_dates.items():
+            if other_id == player_id:
+                continue
+
+            # Don't freeze non-reasoning models based on reasoning model comparisons
+            if not is_reasoning and other_id in self.reasoning_ids:
+                continue
+
+            # Must be released before this model OR within 3 months after
+            if other_timestamp > my_timestamp + three_months:
+                continue
+
+            if not self.rating_store.has_player(other_id):
+                continue
+
+            other_rating = self.rating_store.get(other_id).rating
+            if other_rating <= my_rating:
+                continue  # Not stronger
+
+            # The other model must be at least 2x cheaper
+            other_cost = self._get_player_cost(other_id)
+            if other_cost == 0 or my_cost >= self.EXPENSIVE_INFERIOR_COST_RATIO * other_cost:
+                return True  # Found a stronger model that's at least 2x cheaper
+
+        return False
+
     def _is_frozen(self, player_id: str, current_rd: float,
                    player_stats: Optional[Dict[str, Any]] = None) -> bool:
         """
@@ -739,6 +925,10 @@ class MatchScheduler:
           (same model_id) has higher rating (also RD < 150 and 3+ losses)
         - RD < 100, lost >= 3 games, and a higher-rated same-provider model exists
           (released before or within 3 months after) unless this model is 2x cheaper
+        - RD < 150, lost >= 3 games, and a stronger model (any provider, released
+          before or within 3 months after) is at least 2x cheaper
+        - Lost to a model rated 600+ points lower (released before or within 3
+          months after), unless this model is 5x cheaper
 
         Args:
             player_id: The player to check
@@ -818,6 +1008,21 @@ class MatchScheduler:
             losses = player_stats.get(player_id, {}).get("losses", 0)
             if losses >= self.PROVIDER_INFERIOR_MIN_LOSSES:
                 if self._is_inferior_to_provider_sibling(player_id):
+                    return True
+
+        # Lost to much weaker model freezing
+        # Lost to a model rated 600+ points lower (within release window), unless 5x cheaper
+        if self._lost_to_much_weaker(player_id):
+            return True
+
+        # Expensive inferior model freezing (cross-provider)
+        # RD < 150, lost >= 3 games, and a stronger model is at least 2x cheaper
+        if current_rd < self.EXPENSIVE_INFERIOR_RD_THRESHOLD:
+            if player_stats is None:
+                player_stats = self.stats_collector.get_player_stats()
+            losses = player_stats.get(player_id, {}).get("losses", 0)
+            if losses >= self.EXPENSIVE_INFERIOR_MIN_LOSSES:
+                if self._is_expensive_inferior(player_id):
                     return True
 
         return False
@@ -1073,7 +1278,7 @@ class MatchScheduler:
 
         llm_data = self.rating_store.get(llm_id)
         llm_rating = llm_data.rating
-        llm_rd = llm_data.rating_deviation
+        llm_rd = self._get_estimated_rd(llm_id)
 
         # Use tighter threshold for stable models (low RD)
         # Only narrows threshold; has no effect if rating_threshold <= STABLE_RATING_THRESHOLD
@@ -1173,7 +1378,7 @@ class MatchScheduler:
         for phase in phases:
             for llm_id in llms_by_priority:
                 current_games = self._games_played.get(llm_id, 0)
-                current_rd = self.rating_store.get(llm_id).rating_deviation
+                current_rd = self._get_estimated_rd(llm_id)
 
                 # Check if this LLM is frozen (RD too low or old model with stable rating)
                 if self._is_frozen(llm_id, current_rd, player_stats):
@@ -1214,7 +1419,7 @@ class MatchScheduler:
                     # Check if LLM opponent has hit their caps
                     if not is_anchor:
                         opp_current = self._games_played.get(opp_id, 0)
-                        opp_rd = self.rating_store.get(opp_id).rating_deviation
+                        opp_rd = self._get_estimated_rd(opp_id)
 
                         # Frozen models can always be challenged - no cap
                         if not self._is_frozen(opp_id, opp_rd, player_stats):
@@ -1308,6 +1513,16 @@ class MatchScheduler:
                 counters["game_num"] += 1
                 game_num = counters["game_num"]
 
+                # Track in-flight opponents and update estimated RD for LLMs
+                # RD reduction is result-independent, so we can predict it before the game completes
+                for player_id, opp_id in [(white_id, black_id), (black_id, white_id)]:
+                    if player_id in llm_set:
+                        self._inflight_opponents.setdefault(player_id, {})[game_num] = opp_id
+                        est_rd = self._get_estimated_rd(player_id)
+                        self._estimated_rd[player_id] = self._estimate_rd_after_game(
+                            player_id, opp_id, est_rd
+                        )
+
                 # Add estimated cost to pending
                 counters["pending_cost"] += estimated_cost
                 counters["pending_estimates"][game_num] = estimated_cost
@@ -1325,6 +1540,9 @@ class MatchScheduler:
                     for player_id in [white_id, black_id]:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
+                            # Remove this game from in-flight tracking and recompute estimated RD
+                            self._inflight_opponents.get(player_id, {}).pop(game_num, None)
+                            self._recompute_estimated_rd(player_id)
                     # Remove pending cost estimate (use pop with default for thread safety)
                     estimate = counters["pending_estimates"].pop(game_num, 0)
                     counters["pending_cost"] -= estimate
@@ -1350,6 +1568,9 @@ class MatchScheduler:
                         for player_id in [white_id, black_id]:
                             if player_id in llm_set:  # Track games for all LLMs
                                 self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
+                                # Remove this game from in-flight tracking and recompute estimated RD
+                                self._inflight_opponents.get(player_id, {}).pop(game_num, None)
+                                self._recompute_estimated_rd(player_id)
                         counters["api_errors"] += 1
                         # Remove pending cost estimate (use pop with default for thread safety)
                         estimate = counters["pending_estimates"].pop(game_num, 0)
@@ -1362,6 +1583,12 @@ class MatchScheduler:
                         estimate = counters["pending_estimates"].pop(game_num, 0)
                         counters["pending_cost"] -= estimate
                         counters["total_cost"] += game_cost
+                        # Remove this game from in-flight tracking and recompute estimated RD
+                        # (actual RD now reflects this game; recompute layers remaining in-flight games on top)
+                        for player_id in [white_id, black_id]:
+                            if player_id in llm_set:
+                                self._inflight_opponents.get(player_id, {}).pop(game_num, None)
+                                self._recompute_estimated_rd(player_id)
                         # Check budget (actual + estimated pending)
                         effective_cost = counters["total_cost"] + counters["pending_cost"]
                         if effective_cost >= max_cost:
@@ -1378,6 +1605,9 @@ class MatchScheduler:
                     for player_id in [white_id, black_id]:
                         if player_id in llm_set:  # Track games for all LLMs
                             self._games_played[player_id] = max(0, self._games_played.get(player_id, 0) - 1)
+                            # Remove this game from in-flight tracking and recompute estimated RD
+                            self._inflight_opponents.get(player_id, {}).pop(game_num, None)
+                            self._recompute_estimated_rd(player_id)
                     counters["errors"] += 1
                     # Remove pending cost estimate (use pop with default for thread safety)
                     estimate = counters["pending_estimates"].pop(game_num, 0)
@@ -1418,6 +1648,8 @@ class MatchScheduler:
             max_cost = self.DEFAULT_MAX_COST
         # Reset trackers
         self._games_played = {}
+        self._estimated_rd = {}
+        self._inflight_opponents = {}
         self._cost_cache = {}  # Clear cost cache for fresh calculations
         self._cost_data_cache = None  # Clear cost data cache for fresh calculations
         games_per_pairing: Dict[Tuple[str, str], int] = {}
@@ -1450,6 +1682,11 @@ class MatchScheduler:
         print(f"Provider inferior freeze: RD < {self.PROVIDER_INFERIOR_RD_THRESHOLD} + "
               f">={self.PROVIDER_INFERIOR_MIN_LOSSES} losses + better same-provider model "
               f"(within {self.PROVIDER_INFERIOR_TIME_WINDOW}mo) unless {self.PROVIDER_INFERIOR_COST_RATIO}x cheaper")
+        print(f"Expensive inferior freeze: RD < {self.EXPENSIVE_INFERIOR_RD_THRESHOLD} + "
+              f">={self.EXPENSIVE_INFERIOR_MIN_LOSSES} losses + stronger model (any provider, "
+              f"within {self.EXPENSIVE_INFERIOR_TIME_WINDOW}mo) that is {self.EXPENSIVE_INFERIOR_COST_RATIO}x cheaper")
+        print(f"Lost to weaker freeze: lost to model {self.LOST_TO_WEAKER_RATING_GAP}+ pts lower "
+              f"(within {self.LOST_TO_WEAKER_TIME_WINDOW}mo) unless {self.LOST_TO_WEAKER_COST_RATIO}x cheaper")
         print(f"Cost budget: ${max_cost:.2f}")
         print()
 

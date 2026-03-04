@@ -39,6 +39,16 @@
     "created_timestamp": 1764010580,
     "created_date": "2025-11-24"
   },
+  "claude-opus-4.6 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.6",
+    "created_timestamp": 1770249600,
+    "created_date": "2026-02-05"
+  },
+  "claude-opus-4.6 (medium)": {
+    "model_id": "anthropic/claude-opus-4.6",
+    "created_timestamp": 1770249600,
+    "created_date": "2026-02-05"
+  },
   "gpt-oss-120b (medium)": {
     "model_id": "openai/gpt-oss-120b",
     "created_timestamp": 1754414231,

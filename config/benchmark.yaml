@@ -299,6 +299,18 @@ llms:
     temperature: 0.0
     reasoning_effort: high
 
+  # claude-opus-4.6 (no thinking)
+  - player_id: "claude-opus-4.6 (no thinking)"
+    model_name: "anthropic/claude-opus-4.6"
+    temperature: 0.0
+    reasoning: false
+
+  # claude-opus-4.6 (medium)
+  - player_id: "claude-opus-4.6 (medium)"
+    model_name: "anthropic/claude-opus-4.6"
+    temperature: 0.0
+    reasoning_effort: medium
+
   # gemini-3.1-pro-preview (medium)
   - player_id: "gemini-3.1-pro-preview (medium)"
     model_name: "google/gemini-3.1-pro-preview"
