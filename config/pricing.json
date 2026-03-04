@@ -327,6 +327,10 @@
     "completion": 1.5e-06,
     "prompt": 2.5e-07
   },
+  "google/gemini-3.1-flash-lite-preview": {
+    "completion": 1.5e-06,
+    "prompt": 2.5e-07
+  },
   "google/gemini-3.1-pro-preview": {
     "completion": 1.2e-05,
     "prompt": 2e-06

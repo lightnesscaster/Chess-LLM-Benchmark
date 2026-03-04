@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Any, Union, Protocol
 
 import yaml
 
+from utils import resolve_player_id
+
 from game.models import GameResult
 
 logger = logging.getLogger(__name__)
@@ -125,9 +127,8 @@ class CostCalculator:
                 mapping[player_id] = model_name
 
                 # Also handle reasoning effort suffix
-                reasoning_effort = llm.get("reasoning_effort")
-                if reasoning_effort and f"({reasoning_effort})" not in player_id:
-                    full_id = f"{player_id} ({reasoning_effort})"
+                full_id = resolve_player_id(player_id, llm.get("reasoning_effort"))
+                if full_id != player_id:
                     mapping[full_id] = model_name
 
         return mapping

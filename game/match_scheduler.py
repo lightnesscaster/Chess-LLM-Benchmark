@@ -62,24 +62,55 @@ class MatchScheduler:
     FROZEN_AGE_RD_THRESHOLD_1Y = 80
     FROZEN_AGE_MONTHS_1Y = 12
 
-    # Recent weak model freezing (released < 6 months ago)
+    # Recent weak model freezing (released after Nov 2025)
     # Reasoning models: freeze at RD < 100 if rating < 1000
     RECENT_WEAK_REASONING_RD_THRESHOLD = 100
     RECENT_WEAK_REASONING_RATING_THRESHOLD = 1000
     # Non-reasoning models: freeze at RD < 100 if rating < 500
     RECENT_WEAK_NONREASONING_RD_THRESHOLD = 100
     RECENT_WEAK_NONREASONING_RATING_THRESHOLD = 500
+    RECENT_WEAK_CUTOFF = datetime(2025, 11, 1, tzinfo=timezone.utc).timestamp()
 
-    # Within-year weak model freezing (released < 1 year ago)
+    # Within-year weak model freezing (released after Apr 2025)
     # Any model: freeze at RD < 100 if rating < 0
     WITHIN_YEAR_WEAK_RD_THRESHOLD = 100
     WITHIN_YEAR_WEAK_RATING_THRESHOLD = 0
+    WITHIN_YEAR_WEAK_CUTOFF = datetime(2025, 4, 1, tzinfo=timezone.utc).timestamp()
 
     # Legal move rate threshold - models below this must play random-bot (if rated above -200)
     LEGAL_MOVE_RATE_THRESHOLD = 0.98  # 98% accuracy
     LOW_ACCURACY_RATING_THRESHOLD = -200  # Only enforce accuracy requirement above this rating
     RANDOM_BOT_MIN_GAMES = 5  # Min games vs random-bot to prove competence (must not lose any)
     RANDOM_BOT_ID = "random-bot"
+
+    # Proven worse freezing
+    # Freeze if: RD < 80, 3+ losses, and another model (any provider) with RD < 80 and 3+ losses
+    # has a rating advantage exceeding the combined RD of both models
+    PROVEN_WORSE_RD_THRESHOLD = 80
+    PROVEN_WORSE_MIN_LOSSES = 3
+    PROVEN_WORSE_TIME_WINDOW = 2  # months after this model's release to consider
+
+    # Inferior effort variant freezing
+    # Freeze if: higher effort variant is rated lower than a lower effort sibling (same model_id),
+    # both have RD < 150 and both have lost >= 3 games
+    EFFORT_VARIANT_RD_THRESHOLD = 150
+    EFFORT_VARIANT_MIN_LOSSES = 3
+    EFFORT_LEVELS = {
+        "no thinking": 0,
+        "minimal": 1,
+        "low": 2,
+        "medium": 3,
+        "thinking": 4,
+        "high": 4,
+    }
+
+    # Inferior same-provider model freezing
+    # Freeze if: RD < 100, lost >= 3 games, rated lower than a same-provider model
+    # that was released before or within 3 months after, unless 2x cheaper
+    PROVIDER_INFERIOR_RD_THRESHOLD = 100
+    PROVIDER_INFERIOR_MIN_LOSSES = 3
+    PROVIDER_INFERIOR_TIME_WINDOW = 3  # months after this model's release to consider
+    PROVIDER_INFERIOR_COST_RATIO = 2.0  # must be this much cheaper to avoid freeze
 
     # Tighter rating threshold for stable models (low RD)
     # When RD is below this, use a tighter rating threshold for pairings
@@ -104,6 +135,7 @@ class MatchScheduler:
         max_moves: int = 200,
         verbose: bool = False,
         reasoning_ids: Optional[set] = None,
+        llm_configs: Optional[Dict[str, dict]] = None,
     ):
         """
         Initialize the scheduler.
@@ -118,6 +150,7 @@ class MatchScheduler:
             max_moves: Maximum moves per game
             verbose: Print verbose output
             reasoning_ids: Set of player IDs that are reasoning models (have game caps)
+            llm_configs: Dict mapping player_id to LLM config dict (for position benchmarks)
         """
         self.players = players
         self.rating_store = rating_store
@@ -128,6 +161,10 @@ class MatchScheduler:
         self.max_moves = max_moves
         self.verbose = verbose
         self.reasoning_ids = reasoning_ids or set()
+        self._llm_configs = llm_configs or {}
+
+        # Track which models already have position benchmark results
+        self._benchmark_completed = self._load_existing_benchmark_results()
 
         # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(max_concurrent)
@@ -141,6 +178,10 @@ class MatchScheduler:
 
         # Load model publish dates for age-based freezing
         self._publish_dates: Dict[str, int] = {}  # player_id -> timestamp
+        self._player_providers: Dict[str, str] = {}  # player_id -> provider name
+        self._models_by_provider: Dict[str, List[str]] = {}  # provider -> [player_ids]
+        self._player_model_ids: Dict[str, str] = {}  # player_id -> model_id
+        self._models_by_model_id: Dict[str, List[str]] = {}  # model_id -> [player_ids]
         self._load_publish_dates()
 
         # Cost calculator for cost-aware scheduling
@@ -150,7 +191,7 @@ class MatchScheduler:
         self._pairwise_cost_cache: Optional[Dict[Tuple[str, str], float]] = None  # Pairwise game costs
 
     def _load_publish_dates(self) -> None:
-        """Load model publish dates from data file."""
+        """Load model publish dates and provider info from data file."""
         publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
         try:
             with open(publish_dates_path) as f:
@@ -158,8 +199,178 @@ class MatchScheduler:
                 for player_id, info in data.items():
                     if "created_timestamp" in info:
                         self._publish_dates[player_id] = info["created_timestamp"]
+                    model_id = info.get("model_id", "")
+                    if "/" in model_id:
+                        provider = model_id.split("/")[0]
+                        self._player_providers[player_id] = provider
+                        if provider not in self._models_by_provider:
+                            self._models_by_provider[provider] = []
+                        self._models_by_provider[provider].append(player_id)
+                    if model_id:
+                        self._player_model_ids[player_id] = model_id
+                        if model_id not in self._models_by_model_id:
+                            self._models_by_model_id[model_id] = []
+                        self._models_by_model_id[model_id].append(player_id)
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # No publish dates available
+
+    def _load_existing_benchmark_results(self) -> set:
+        """Load player IDs that already have position benchmark results."""
+        results_path = Path(__file__).parent.parent / "position_benchmark" / "results.json"
+        try:
+            if results_path.exists():
+                with open(results_path) as f:
+                    data = json.load(f)
+                return set(data.keys())
+        except (json.JSONDecodeError, OSError):
+            pass
+        return set()
+
+    def _needs_position_benchmark(self, player_id: str) -> bool:
+        """Check if a player needs a position benchmark run."""
+        # Engines don't need benchmarks
+        if isinstance(self.players.get(player_id), BaseEngine):
+            return False
+        # Already has results
+        if player_id in self._benchmark_completed:
+            return False
+        # No config available (can't run benchmark without it)
+        if player_id not in self._llm_configs:
+            return False
+        return True
+
+    def _estimate_benchmark_cost(self, player_id: str) -> float:
+        """
+        Estimate cost of running position benchmark for a model.
+
+        50 equal positions, ~1500 prompt tokens each, ~10-200 completion tokens.
+        """
+        model = self._cost_calculator.get_model_for_player(player_id)
+        if not model:
+            return 0.0
+        pricing = self._cost_calculator.get_pricing(model)
+        if not pricing:
+            return 0.0
+
+        comp_est = 200 if player_id in self.reasoning_ids else 10
+
+        return 50 * 1500 * pricing.get("prompt", 0) + 50 * comp_est * pricing.get("completion", 0)
+
+    async def _run_position_benchmarks(
+        self,
+        llm_ids: List[str],
+        counters: Dict[str, Any],
+        max_cost: float,
+    ) -> set:
+        """
+        Phase 1: Run position benchmarks for models missing results.
+
+        Runs sequentially with a shared Stockfish instance.
+        Each benchmark counts as 1 game for the model.
+
+        Returns:
+            Set of player IDs that were successfully benchmarked.
+        """
+        import chess.engine as ce
+        from position_benchmark.run_benchmark import run_benchmark_for_scheduler
+
+        benchmarked = set()
+
+        # Find models needing benchmarks
+        eligible = [lid for lid in llm_ids if self._needs_position_benchmark(lid)]
+
+        if not eligible:
+            return benchmarked
+
+        # Sort by priority (highest RD / lowest cost first)
+        eligible.sort(key=lambda lid: self._calculate_priority(lid), reverse=True)
+
+        # Filter out frozen models
+        eligible = [
+            lid for lid in eligible
+            if not self._is_frozen(lid, self.rating_store.get(lid).rating_deviation)
+        ]
+
+        if not eligible:
+            return benchmarked
+
+        print(f"Phase 1: Position benchmarks for {len(eligible)} model(s)")
+
+        # Load positions and open Stockfish once
+        positions_path = Path(__file__).parent.parent / "position_benchmark" / "positions.json"
+        if not positions_path.exists():
+            print(f"  Warning: {positions_path} not found, skipping position benchmarks")
+            return benchmarked
+
+        with open(positions_path) as f:
+            positions_data = json.load(f)
+        all_positions = positions_data["positions"]
+        # Only run equal positions — blunder positions don't contribute to rating prediction.
+        # Track original indices so results.json entries have correct position_idx values
+        # (needed by _load_benchmark_predictions which looks up pos_type by index).
+        equal_indices = [i for i, p in enumerate(all_positions) if p.get("type") == "equal"]
+        positions = [all_positions[i] for i in equal_indices]
+
+        stockfish = None
+        try:
+            stockfish = ce.SimpleEngine.popen_uci("stockfish")
+
+            for llm_id in eligible:
+                # Check budget
+                estimated_cost = self._estimate_benchmark_cost(llm_id)
+                if counters["total_cost"] + estimated_cost >= max_cost:
+                    print(f"  Skipping {llm_id}: would exceed budget "
+                          f"(${counters['total_cost']:.2f} + ${estimated_cost:.2f} >= ${max_cost:.2f})")
+                    continue
+
+                config = self._llm_configs[llm_id]
+                print(f"  Running position benchmark for {llm_id}...")
+
+                result = await run_benchmark_for_scheduler(
+                    player_id=llm_id,
+                    player_config=config,
+                    stockfish=stockfish,
+                    positions=positions,
+                    depth=30,
+                    original_indices=equal_indices,
+                )
+
+                if result["success"]:
+                    summary = result["summary"]
+                    token_usage = result.get("token_usage", {"prompt": 0, "completion": 0})
+
+                    # Calculate actual cost from token usage
+                    model_name = self._cost_calculator.get_model_for_player(llm_id) or ""
+                    tokens = {
+                        "prompt_tokens": token_usage.get("prompt", 0),
+                        "completion_tokens": token_usage.get("completion", 0),
+                    }
+                    actual_cost = self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
+
+                    counters["total_cost"] += actual_cost
+                    self._benchmark_completed.add(llm_id)
+                    benchmarked.add(llm_id)
+
+                    # Count as 1 game played (reduces remaining game cap by 1 for reasoning models)
+                    self._games_played[llm_id] = self._games_played.get(llm_id, 0) + 1
+
+                    print(f"  Position benchmark for {llm_id}: "
+                          f"CPL={summary['avg_cpl']:.0f}, "
+                          f"Legal={summary['legal_pct']:.1f}%, "
+                          f"Cost=${actual_cost:.4f}")
+                else:
+                    print(f"  Warning: Position benchmark failed for {llm_id}: {result.get('error', 'unknown')}")
+
+        finally:
+            if stockfish is not None:
+                stockfish.quit()
+
+        # Refresh rating store once with all new benchmark predictions
+        if benchmarked:
+            self.rating_store.refresh_benchmark_predictions()
+
+        print()
+        return benchmarked
 
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
@@ -339,7 +550,178 @@ class MatchScheduler:
         cost = self._get_player_cost(player_id)
         return rd / (1 + self.COST_SENSITIVITY * cost)
 
-    def _is_frozen(self, player_id: str, current_rd: float) -> bool:
+    def _is_proven_worse(self, player_id: str,
+                         player_stats: Dict[str, Any]) -> bool:
+        """
+        Check if model is statistically significantly worse than another model.
+
+        Returns True if there exists any model (any provider) that:
+        - Was released before this model, or within 2 months after
+        - Has RD < 80 and at least 3 losses
+        - Has a rating advantage exceeding the combined RD of both models
+        """
+        my_timestamp = self._publish_dates.get(player_id)
+        if my_timestamp is None:
+            return False
+
+        my_data = self.rating_store.get(player_id)
+        my_rating = my_data.rating
+        my_rd = my_data.rating_deviation
+
+        two_months = self.PROVEN_WORSE_TIME_WINDOW * 30.44 * 24 * 60 * 60
+
+        is_reasoning = player_id in self.reasoning_ids
+
+        for other_id, other_timestamp in self._publish_dates.items():
+            if other_id == player_id:
+                continue
+
+            # Don't freeze non-reasoning models based on reasoning model comparisons
+            if not is_reasoning and other_id in self.reasoning_ids:
+                continue
+
+            # Must be released before this model OR within 2 months after
+            if other_timestamp > my_timestamp + two_months:
+                continue
+
+            if not self.rating_store.has_player(other_id):
+                continue
+
+            other_data = self.rating_store.get(other_id)
+            if other_data.rating_deviation >= self.PROVEN_WORSE_RD_THRESHOLD:
+                continue
+
+            if other_data.rating <= my_rating:
+                continue
+
+            other_losses = player_stats.get(other_id, {}).get("losses", 0)
+            if other_losses < self.PROVEN_WORSE_MIN_LOSSES:
+                continue
+
+            # Rating difference must exceed combined RD
+            if other_data.rating - my_rating > my_rd + other_data.rating_deviation:
+                return True
+
+        return False
+
+    def _get_effort_level(self, player_id: str) -> Optional[int]:
+        """Extract effort level ordinal from player_id parenthetical tag."""
+        start = player_id.rfind('(')
+        end = player_id.rfind(')')
+        if start != -1 and end != -1 and end > start:
+            tag = player_id[start + 1:end]
+            return self.EFFORT_LEVELS.get(tag)
+        return None
+
+    def _is_inferior_effort_variant(self, player_id: str,
+                                    player_stats: Dict[str, Any]) -> bool:
+        """
+        Check if a higher-effort variant is outperformed by a lower-effort sibling.
+
+        Returns True if there exists a same-model sibling (same model_id) with:
+        - Lower effort level
+        - Higher rating
+        - RD < 150
+        - At least 3 losses
+        """
+        model_id = self._player_model_ids.get(player_id)
+        if not model_id:
+            return False
+
+        my_effort = self._get_effort_level(player_id)
+        if my_effort is None:
+            return False
+
+        my_rating = self.rating_store.get(player_id).rating
+
+        for other_id in self._models_by_model_id.get(model_id, []):
+            if other_id == player_id:
+                continue
+
+            other_effort = self._get_effort_level(other_id)
+            if other_effort is None or other_effort >= my_effort:
+                continue  # Only check lower effort siblings
+
+            if not self.rating_store.has_player(other_id):
+                continue
+
+            other_data = self.rating_store.get(other_id)
+            if other_data.rating_deviation >= self.EFFORT_VARIANT_RD_THRESHOLD:
+                continue  # Other model's rating not stable enough
+
+            if other_data.rating <= my_rating:
+                continue  # Lower effort isn't actually better
+
+            other_losses = player_stats.get(other_id, {}).get("losses", 0)
+            if other_losses < self.EFFORT_VARIANT_MIN_LOSSES:
+                continue  # Not enough games to be confident
+
+            return True  # Found a lower-effort sibling that performs better
+
+        return False
+
+    def _is_inferior_to_provider_sibling(self, player_id: str) -> bool:
+        """
+        Check if model is inferior to another model from the same provider.
+
+        Returns True if there exists a same-provider model that:
+        - Was released before this model, or within 3 months after
+        - Has a higher rating
+        - This model is NOT at least 2x cheaper than it
+        """
+        provider = self._player_providers.get(player_id)
+        if not provider:
+            return False
+
+        my_timestamp = self._publish_dates.get(player_id)
+        if my_timestamp is None:
+            return False
+
+        my_rating = self.rating_store.get(player_id).rating
+        my_cost = self._get_player_cost(player_id)
+
+        three_months = self.PROVIDER_INFERIOR_TIME_WINDOW * 30.44 * 24 * 60 * 60
+        is_reasoning = player_id in self.reasoning_ids
+
+        for other_id in self._models_by_provider.get(provider, []):
+            if other_id == player_id:
+                continue
+
+            # Don't freeze non-reasoning models based on reasoning model comparisons
+            if not is_reasoning and other_id in self.reasoning_ids:
+                continue
+
+            other_timestamp = self._publish_dates.get(other_id)
+            if other_timestamp is None:
+                continue
+
+            # Must be released before this model OR within 3 months after
+            if other_timestamp > my_timestamp + three_months:
+                continue
+
+            # Must have a rating in the store
+            if not self.rating_store.has_player(other_id):
+                continue
+
+            other_rating = self.rating_store.get(other_id).rating
+            if other_rating <= my_rating:
+                continue  # Not higher rated
+
+            # Cost exception: free models (cost=0) are always "cheap enough"
+            if my_cost == 0:
+                continue
+
+            # If both have cost data, check the 2x ratio
+            other_cost = self._get_player_cost(other_id)
+            if other_cost > 0 and my_cost * self.PROVIDER_INFERIOR_COST_RATIO <= other_cost:
+                continue  # This model is cheap enough to justify keeping
+
+            return True  # Found a superior sibling
+
+        return False
+
+    def _is_frozen(self, player_id: str, current_rd: float,
+                   player_stats: Optional[Dict[str, Any]] = None) -> bool:
         """
         Check if a model is frozen (shouldn't initiate games).
 
@@ -347,13 +729,21 @@ class MatchScheduler:
         - RD < 60 (always frozen)
         - RD < 70 and released > 6 months ago
         - RD < 80 and released > 1 year ago
-        - Recent (< 6 months) reasoning model with RD < 100 and rating < 1000
-        - Recent (< 6 months) non-reasoning model with RD < 100 and rating < 500
-        - Within year (< 12 months) any model with RD < 100 and rating < 0
+        - Recent (after Nov 2025) reasoning model with RD < 100 and rating < 1000
+        - Recent (after Nov 2025) non-reasoning model with RD < 100 and rating < 500
+        - Within year (after Apr 2025) any model with RD < 100 and rating < 0
+        - RD < 80, lost >= 3 games, and another model (any provider, also RD < 80
+          and 3+ losses, released before or within 2 months after) has a rating
+          advantage exceeding the combined RD of both models
+        - RD < 150, lost >= 3 games, and a lower-effort variant of the same model
+          (same model_id) has higher rating (also RD < 150 and 3+ losses)
+        - RD < 100, lost >= 3 games, and a higher-rated same-provider model exists
+          (released before or within 3 months after) unless this model is 2x cheaper
 
         Args:
             player_id: The player to check
             current_rd: Current rating deviation
+            player_stats: Optional cached player stats dict (to avoid repeated computation)
 
         Returns:
             True if frozen, False otherwise
@@ -376,16 +766,17 @@ class MatchScheduler:
             if current_rd < self.FROZEN_AGE_RD_THRESHOLD_1Y and age_months > self.FROZEN_AGE_MONTHS_1Y:
                 return True
 
-            # Within-year weak model freezing (< 12 months, any model type)
+            # Within-year weak model freezing (released after Apr 2025)
+            # Fixed cutoffs (not rolling windows) — weak models stay frozen permanently.
             # Freeze at RD < 100 if rating < 0
-            if age_months <= self.FROZEN_AGE_MONTHS_1Y:
+            if publish_timestamp >= self.WITHIN_YEAR_WEAK_CUTOFF:
                 current_rating = self.rating_store.get(player_id).rating
                 if (current_rd < self.WITHIN_YEAR_WEAK_RD_THRESHOLD and
                         current_rating < self.WITHIN_YEAR_WEAK_RATING_THRESHOLD):
                     return True
 
-                # More specific rules for very recent models (< 6 months)
-                if age_months <= self.FROZEN_AGE_MONTHS_6M:
+                # More specific rules for recent models (released after Nov 2025)
+                if publish_timestamp >= self.RECENT_WEAK_CUTOFF:
                     is_reasoning = player_id in self.reasoning_ids
 
                     if is_reasoning:
@@ -398,6 +789,36 @@ class MatchScheduler:
                         if (current_rd < self.RECENT_WEAK_NONREASONING_RD_THRESHOLD and
                                 current_rating < self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD):
                             return True
+
+        # Proven worse freezing
+        # RD < 80, 3+ losses, and another model is statistically significantly better
+        if current_rd < self.PROVEN_WORSE_RD_THRESHOLD:
+            if player_stats is None:
+                player_stats = self.stats_collector.get_player_stats()
+            losses = player_stats.get(player_id, {}).get("losses", 0)
+            if losses >= self.PROVEN_WORSE_MIN_LOSSES:
+                if self._is_proven_worse(player_id, player_stats):
+                    return True
+
+        # Inferior effort variant freezing
+        # RD < 150, lost >= 3 games, and a lower-effort sibling of the same model does better
+        if current_rd < self.EFFORT_VARIANT_RD_THRESHOLD:
+            if player_stats is None:
+                player_stats = self.stats_collector.get_player_stats()
+            losses = player_stats.get(player_id, {}).get("losses", 0)
+            if losses >= self.EFFORT_VARIANT_MIN_LOSSES:
+                if self._is_inferior_effort_variant(player_id, player_stats):
+                    return True
+
+        # Inferior same-provider model freezing
+        # RD < 100, lost >= 3 games, and a better same-provider model exists
+        if current_rd < self.PROVIDER_INFERIOR_RD_THRESHOLD:
+            if player_stats is None:
+                player_stats = self.stats_collector.get_player_stats()
+            losses = player_stats.get(player_id, {}).get("losses", 0)
+            if losses >= self.PROVIDER_INFERIOR_MIN_LOSSES:
+                if self._is_inferior_to_provider_sibling(player_id):
+                    return True
 
         return False
 
@@ -755,7 +1176,7 @@ class MatchScheduler:
                 current_rd = self.rating_store.get(llm_id).rating_deviation
 
                 # Check if this LLM is frozen (RD too low or old model with stable rating)
-                if self._is_frozen(llm_id, current_rd):
+                if self._is_frozen(llm_id, current_rd, player_stats):
                     continue  # Frozen models don't initiate games (but can be challenged)
 
                 # Check if this LLM has hit its low RD cap (rating is stable enough)
@@ -796,7 +1217,7 @@ class MatchScheduler:
                         opp_rd = self.rating_store.get(opp_id).rating_deviation
 
                         # Frozen models can always be challenged - no cap
-                        if not self._is_frozen(opp_id, opp_rd):
+                        if not self._is_frozen(opp_id, opp_rd, player_stats):
                             # Check low RD cap (60 <= RD < 70)
                             if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
                                 continue  # Skip - rating is stable enough
@@ -1018,8 +1439,17 @@ class MatchScheduler:
         if rating_threshold is not None:
             print(f"Stable model pairing: RD < {self.STABLE_RD_THRESHOLD} uses ±{self.STABLE_RATING_THRESHOLD} threshold (vs ±{rating_threshold})")
         print(f"Frozen: RD < {self.FROZEN_RD_THRESHOLD}, or RD < {self.FROZEN_AGE_RD_THRESHOLD_6M} + >{self.FROZEN_AGE_MONTHS_6M}mo old, or RD < {self.FROZEN_AGE_RD_THRESHOLD_1Y} + >{self.FROZEN_AGE_MONTHS_1Y}mo old")
-        print(f"Within-year weak freeze: RD < {self.WITHIN_YEAR_WEAK_RD_THRESHOLD} + rating < {self.WITHIN_YEAR_WEAK_RATING_THRESHOLD} (any model <{self.FROZEN_AGE_MONTHS_1Y}mo)")
-        print(f"Recent weak freeze (<{self.FROZEN_AGE_MONTHS_6M}mo): reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
+        print(f"Within-year weak freeze: RD < {self.WITHIN_YEAR_WEAK_RD_THRESHOLD} + rating < {self.WITHIN_YEAR_WEAK_RATING_THRESHOLD} (models after Apr 2025)")
+        print(f"Recent weak freeze (after Nov 2025): reasoning RD < {self.RECENT_WEAK_REASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_REASONING_RATING_THRESHOLD}, non-reasoning RD < {self.RECENT_WEAK_NONREASONING_RD_THRESHOLD} + rating < {self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD}")
+        print(f"Proven worse freeze: RD < {self.PROVEN_WORSE_RD_THRESHOLD} + "
+              f">={self.PROVEN_WORSE_MIN_LOSSES} losses + another model (RD < {self.PROVEN_WORSE_RD_THRESHOLD}, "
+              f">={self.PROVEN_WORSE_MIN_LOSSES} losses, within {self.PROVEN_WORSE_TIME_WINDOW}mo) "
+              f"rated higher by combined RD")
+        print(f"Effort variant freeze: RD < {self.EFFORT_VARIANT_RD_THRESHOLD} + "
+              f">={self.EFFORT_VARIANT_MIN_LOSSES} losses + lower-effort sibling of same model does better")
+        print(f"Provider inferior freeze: RD < {self.PROVIDER_INFERIOR_RD_THRESHOLD} + "
+              f">={self.PROVIDER_INFERIOR_MIN_LOSSES} losses + better same-provider model "
+              f"(within {self.PROVIDER_INFERIOR_TIME_WINDOW}mo) unless {self.PROVIDER_INFERIOR_COST_RATIO}x cheaper")
         print(f"Cost budget: ${max_cost:.2f}")
         print()
 
@@ -1035,11 +1465,18 @@ class MatchScheduler:
             "budget_exceeded": False,
         }
 
-        # Launch worker tasks
+        # Phase 1: Position benchmarks for models missing results
+        benchmarked_this_run = await self._run_position_benchmarks(llm_ids, counters, max_cost)
+
+        # Exclude models that just ran position benchmarks from game pairing.
+        # Their benchmark counts as their contribution for this run.
+        game_llm_ids = [lid for lid in llm_ids if lid not in benchmarked_this_run]
+
+        # Phase 2: Game workers
         workers = [
             self._game_worker(
                 worker_id=i,
-                llm_ids=llm_ids,
+                llm_ids=game_llm_ids,
                 anchor_ids=anchor_ids,
                 games_per_pairing=games_per_pairing,
                 scheduler_lock=scheduler_lock,

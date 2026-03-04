@@ -316,6 +316,100 @@ Your response (just the UCI move or UNCLEAR):"""
         except Exception:
             return None
 
+    async def _consume_stream(self, response) -> dict:
+        """
+        Consume an SSE stream and return a dict matching non-streaming response format.
+
+        Accumulates content and reasoning from delta chunks so the caller can
+        process the result identically to a non-streaming response.
+        """
+        content_parts = []
+        reasoning_parts = []
+        usage = None
+        model = None
+        provider = None
+        response_id = None
+        finish_reason = None
+        while True:
+            line = await response.content.readline()
+            if not line:
+                break
+            line = line.decode('utf-8').strip()
+
+            if not line.startswith('data: '):
+                continue
+
+            data_str = line[6:]
+
+            if data_str == '[DONE]':
+                break
+
+            try:
+                chunk = json.loads(data_str)
+            except json.JSONDecodeError:
+                continue
+
+            # Capture metadata
+            if response_id is None:
+                response_id = chunk.get('id')
+            if model is None:
+                model = chunk.get('model')
+            if chunk.get('provider'):
+                provider = chunk['provider']
+
+            # Check for top-level error in chunk
+            if 'error' in chunk and not chunk.get('choices'):
+                return {
+                    'id': response_id,
+                    'model': model,
+                    'provider': provider,
+                    'error': chunk['error'],
+                }
+
+            # Check for error embedded in choices
+            choices = chunk.get('choices', [])
+            if choices and isinstance(choices[0], dict) and 'error' in choices[0]:
+                return {
+                    'id': response_id,
+                    'model': model,
+                    'provider': provider,
+                    'choices': [{'error': choices[0]['error']}],
+                }
+
+            # Accumulate deltas
+            if choices:
+                delta = choices[0].get('delta', {})
+                if delta.get('content'):
+                    content_parts.append(delta['content'])
+                if delta.get('reasoning'):
+                    reasoning_parts.append(delta['reasoning'])
+                if choices[0].get('finish_reason'):
+                    finish_reason = choices[0]['finish_reason']
+
+            # Usage comes in later chunks
+            if 'usage' in chunk:
+                usage = chunk['usage']
+
+        # Build response dict matching non-streaming format
+        message = {'role': 'assistant', 'content': ''.join(content_parts)}
+        if reasoning_parts:
+            message['reasoning'] = ''.join(reasoning_parts)
+
+        result = {
+            'id': response_id,
+            'model': model,
+            'choices': [{
+                'message': message,
+                'finish_reason': finish_reason,
+            }],
+        }
+        if provider:
+            result['provider'] = provider
+        if usage:
+            result['usage'] = usage
+
+        return result
+
     async def select_move(self, board: chess.Board, is_retry: bool = False,
                           last_move_illegal: str = None) -> str:
         """
@@ -354,7 +448,7 @@ Your response (just the UCI move or UNCLEAR):"""
             "messages": [
                 {"role": "user", "content": prompt}
             ],
-            "temperature": self.temperature,
+            "stream": True,
         }
 
         # Only set max_tokens if explicitly specified (non-zero)
@@ -367,12 +461,20 @@ Your response (just the UCI move or UNCLEAR):"""
         # - reasoning=True: enable reasoning
         # - reasoning=False: explicitly disable reasoning (for thinking models run without thinking)
         # - reasoning=None: omit parameter (use OpenRouter default)
+        reasoning_enabled = False
         if self.reasoning_effort is not None:
             payload["reasoning"] = {"enabled": True, "effort": self.reasoning_effort}
+            reasoning_enabled = True
         elif self.reasoning is True:
             payload["reasoning"] = {"enabled": True}
+            reasoning_enabled = True
         elif self.reasoning is False:
             payload["reasoning"] = {"enabled": False}
+
+        # Omit temperature when reasoning is enabled — some providers (e.g. Gemini)
+        # hang indefinitely when temperature=0.0 is combined with reasoning mode.
+        if not reasoning_enabled:
+            payload["temperature"] = self.temperature
 
         # Provider routing preferences
         if self.provider_order:
@@ -385,7 +487,7 @@ Your response (just the UCI move or UNCLEAR):"""
 
         for attempt in range(max_retries):
             try:
-                request_timeout = aiohttp.ClientTimeout(total=self.timeout)
+                request_timeout = aiohttp.ClientTimeout(total=self.timeout, sock_read=120)
                 async with session.post(
                     self.OPENROUTER_API_URL,
                     headers=headers,
@@ -416,18 +518,7 @@ Your response (just the UCI move or UNCLEAR):"""
                         # Non-retryable error (4xx client errors except 429) - still an API error, not illegal move
                         raise TransientAPIError(f"OpenRouter API error {response.status}: {error_text}")
 
-                    data = await response.json()
-
-                    # Handle null JSON response
-                    if data is None:
-                        error = aiohttp.ClientResponseError(
-                            request_info=response.request_info,
-                            history=response.history,
-                            status=500,
-                            headers=response.headers
-                        )
-                        error.message = "API returned null response"
-                        raise error
+                    data = await self._consume_stream(response)
 
                     # Capture provider immediately (even before error checks, so we know which provider failed)
                     response_provider = data.get("provider")
@@ -463,6 +554,28 @@ Your response (just the UCI move or UNCLEAR):"""
                             )
                         # Non-retryable embedded error - still an API error, not an illegal move
                         raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
+
+                    # Check for top-level error in response body (HTTP 200 but error payload)
+                    if "error" in data and not data.get("choices"):
+                        error_info = data["error"]
+                        if isinstance(error_info, dict):
+                            error_msg = error_info.get("message", "Unknown error")
+                            error_code = error_info.get("code", 0)
+                            try:
+                                error_code = int(error_code) if error_code else 0
+                            except (ValueError, TypeError):
+                                error_code = 0
+                        else:
+                            error_msg = str(error_info)
+                            error_code = 0
+                        self.last_raw_response = f"[API Error {error_code}] {error_msg}"
+                        # Treat as retryable
+                        raise aiohttp.ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=error_code if error_code else 500,
+                            message=f"Top-level error {error_code}: {error_msg}"
+                        )
 
                     # Check for truncated response (short content but long reasoning)
                     # This indicates network-level truncation, worth retrying

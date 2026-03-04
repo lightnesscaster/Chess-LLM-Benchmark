@@ -30,10 +30,10 @@ from scipy.stats import binom
 # =============================================================================
 # RECOMMENDED: log(mean CPL) + consistency + survival (Best validated accuracy)
 # =============================================================================
-# LOO CV:       R² = 0.9652, RMSE = 149 rating points  (30 models, RD < 100)
-# Training fit:  R² = 0.9799, RMSE = 114 rating points
+# LOO CV:       R² = 0.9585, RMSE = 166 rating points  (35 models, RD < 100)
+# Training fit:  R² = 0.9726, RMSE = 134 rating points
 #
-# rating = 1794.14 - 260.55 * log(mean_eq_cpl + 1) + 21.48 * pct_lt10 + 2.09 * surv_40
+# rating = 1603.07 - 237.97 * log(mean_eq_cpl + 1) + 17.84 * pct_lt10 + 4.53 * surv_40
 #
 # Where:
 #   mean_eq_cpl = average centipawn loss on the 50 equal positions
@@ -84,10 +84,10 @@ def predict_rating(
         Predicted Glicko-2 rating
     """
     return (
-        1794.14
-        - 260.55 * np.log(equal_cpl + 1)
-        + 21.48 * pct_lt10
-        + 2.09 * surv_40
+        1603.07
+        - 237.97 * np.log(equal_cpl + 1)
+        + 17.84 * pct_lt10
+        + 4.53 * surv_40
     )
 
 

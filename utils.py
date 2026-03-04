@@ -1,5 +1,14 @@
 """Shared utility functions."""
 
+from typing import Optional
+
+
+def resolve_player_id(base_id: str, reasoning_effort: Optional[str] = None) -> str:
+    """Build canonical player_id, appending reasoning effort suffix if needed."""
+    if reasoning_effort and f"({reasoning_effort})" not in base_id:
+        return f"{base_id} ({reasoning_effort})"
+    return base_id
+
 
 def is_reasoning_model(player_id: str) -> bool:
     """

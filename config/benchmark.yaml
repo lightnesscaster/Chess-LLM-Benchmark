@@ -80,6 +80,11 @@ llms:
     model_name: "google/gemini-2.5-flash"
     temperature: 0.0
 
+  # gemini-3.1-flash-lite-preview
+  - player_id: "gemini-3.1-flash-lite-preview"
+    model_name: "google/gemini-3.1-flash-lite-preview"
+    temperature: 0.0
+
   # gemini-2.0-flash-001 (180)
   - player_id: "gemini-2.0-flash-001"
     model_name: "google/gemini-2.0-flash-001"
@@ -288,12 +293,24 @@ llms:
   #   reasoning_effort: high
   #   timeout: 1200
 
+  # claude-opus-4.5 (high)
+  - player_id: "claude-opus-4.5 (high)"
+    model_name: "anthropic/claude-opus-4.5"
+    temperature: 0.0
+    reasoning_effort: high
+
   # gemini-3.1-pro-preview (medium)
   - player_id: "gemini-3.1-pro-preview (medium)"
     model_name: "google/gemini-3.1-pro-preview"
     temperature: 0.0
     reasoning_effort: medium
     timeout: 1200
+
+  # gpt-5 (medium)
+  - player_id: "gpt-5 (medium)"
+    model_name: "openai/gpt-5"
+    temperature: 0.0
+    reasoning_effort: medium
 
   # gpt-5.1 (high)
   - player_id: "gpt-5.1 (high)"

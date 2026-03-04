@@ -33,9 +33,9 @@ from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
-from utils import is_reasoning_model
+from utils import is_reasoning_model, resolve_player_id
 from rating.glicko2 import Glicko2System, PlayerRating
-from rating.rating_store import RatingStore, invalidate_cache
+from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
 
 # Starting ratings based on model type and legal move rate
@@ -53,7 +53,7 @@ def load_benchmark_predictions() -> dict:
     Load position benchmark results and compute predicted ratings.
 
     Same formula as rating_store._load_benchmark_predictions():
-      rating = 1794.14 - 260.55*log(eq_cpl+1) + 21.48*pct_lt10 + 2.09*surv_40
+      rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
 
     Returns:
         Dict mapping model name to predicted rating, or empty dict if files missing.
@@ -115,10 +115,10 @@ def load_benchmark_predictions() -> dict:
             surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
 
         predicted = (
-            1794.14
-            - 260.55 * math.log(eq_cpl + 1)
-            + 21.48 * pct_lt10
-            + 2.09 * surv_40
+            1603.07
+            - 237.97 * math.log(eq_cpl + 1)
+            + 17.84 * pct_lt10
+            + 4.53 * surv_40
         )
         predictions[model_name] = predicted
 
@@ -259,8 +259,7 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
             )
 
         # Append reasoning effort to player_id if set and not already included
-        if reasoning_effort and f"({reasoning_effort})" not in player_id:
-            player_id = f"{player_id} ({reasoning_effort})"
+        player_id = resolve_player_id(player_id, reasoning_effort)
 
         if api_backend == "gemini":
             # Strip google/ prefix for direct Gemini API
@@ -347,6 +346,12 @@ async def run_benchmark(args):
     stats_collector = StatsCollector()
     stats_collector.add_results(pgn_logger.load_all_results())  # Load historical stats
 
+    # Build llm_configs for position benchmark phase
+    llm_configs = {}
+    for cfg in config.get("llms", []):
+        pid = resolve_player_id(cfg["player_id"], cfg.get("reasoning_effort"))
+        llm_configs[pid] = cfg
+
     # Create scheduler
     scheduler = MatchScheduler(
         players=all_players,
@@ -358,6 +363,7 @@ async def run_benchmark(args):
         max_moves=config.get("benchmark", {}).get("max_moves", 200),
         verbose=args.verbose,
         reasoning_ids=reasoning_ids,
+        llm_configs=llm_configs,
     )
 
     try:
@@ -593,6 +599,8 @@ async def recalculate_ratings(args):
     # Pre-initialize all non-anchor players with appropriate starting ratings
     # Priority: benchmark prediction > legal move rate heuristic > model type default
     benchmark_preds = load_benchmark_predictions()
+    # Include models with benchmark predictions even if they haven't played games yet
+    all_players |= set(benchmark_preds.keys())
     benchmark_count = 0
     low_legal_count = 0
     med_legal_count = 0
@@ -603,7 +611,7 @@ async def recalculate_ratings(args):
             # Check benchmark predictions first
             if player_id in benchmark_preds:
                 start_rating = benchmark_preds[player_id]
-                start_rd = 149.0
+                start_rd = BENCHMARK_SEED_RD
                 benchmark_count += 1
             elif player_id in player_stats:
                 # Fall back to legal move rate heuristic
@@ -886,9 +894,8 @@ async def run_manual_game(args):
             player_id = custom_name
         else:
             player_id = model_name.split("/")[-1]
-            if reasoning_effort and f"({reasoning_effort})" not in player_id:
-                player_id = f"{player_id} ({reasoning_effort})"
-            elif reasoning is False and "(no thinking)" not in player_id.lower():
+            player_id = resolve_player_id(player_id, reasoning_effort)
+            if not reasoning_effort and reasoning is False and "(no thinking)" not in player_id.lower():
                 player_id = f"{player_id} (no thinking)"
         if api_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
@@ -956,11 +963,15 @@ async def run_manual_game(args):
                 print(f"Manual game: {white.player_id} vs {black.player_id}")
             print()
 
+            # Only apply pre-moves to the first game
+            pre_moves = args.moves.split() if args.moves else None
+
             runner = GameRunner(
                 white=white,
                 black=black,
                 max_moves=args.max_moves,
                 verbose=True,
+                pre_moves=pre_moves if game_num == 0 else None,
             )
 
             try:
@@ -1243,6 +1254,12 @@ def main():
         choices=["openrouter", "gemini"],
         default="openrouter",
         help="API backend to use (default: openrouter)",
+    )
+    manual_parser.add_argument(
+        "--moves",
+        type=str,
+        default=None,
+        help="UCI moves to pre-play before starting (space-separated, for resuming crashed games)",
     )
 
     args = parser.parse_args()

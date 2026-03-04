@@ -285,6 +285,7 @@ async def run_benchmark(
 ) -> dict:
     """Run benchmark for a single player."""
     results = []
+    token_acc = {"prompt": 0, "completion": 0}
 
     is_engine = player_config.get("type") in ["stockfish", "maia", "random", "uci", "survival"]
 
@@ -393,6 +394,9 @@ async def run_benchmark(
                         return None
                 finally:
                     if shared_player is None:
+                        # Accumulate tokens before closing (Gemini: fresh player per position)
+                        token_acc["prompt"] += getattr(player, "prompt_tokens", 0)
+                        token_acc["completion"] += getattr(player, "completion_tokens", 0)
                         await player.close()
 
         try:
@@ -401,6 +405,9 @@ async def run_benchmark(
             await asyncio.gather(*tasks)
         finally:
             if shared_player is not None:
+                # Read token counts before closing
+                token_acc["prompt"] = getattr(shared_player, "prompt_tokens", 0)
+                token_acc["completion"] = getattr(shared_player, "completion_tokens", 0)
                 await shared_player.close()
 
         # Filter out skipped positions (API failures)
@@ -449,7 +456,80 @@ async def run_benchmark(
     if equal_results:
         summary["equal"] = _calc_type_summary(equal_results)
 
-    return {"summary": summary, "results": result_dicts}
+    return {"summary": summary, "results": result_dicts, "token_usage": token_acc}
+
+
+async def run_benchmark_for_scheduler(
+    player_id: str,
+    player_config: dict,
+    stockfish: chess.engine.SimpleEngine,
+    positions: list[dict],
+    depth: int = 30,
+    api_backend: str = "openrouter",
+    original_indices: Optional[list[int]] = None,
+) -> dict:
+    """
+    Run position benchmark for a single model, called from the match scheduler.
+
+    Uses a shared Stockfish instance and pre-loaded positions (caller manages lifecycle).
+    Merges results into position_benchmark/results.json.
+
+    Args:
+        player_id: The model's player ID
+        player_config: Config dict for the model (from benchmark.yaml)
+        stockfish: Shared Stockfish engine (caller opens/closes)
+        positions: Pre-loaded positions list
+        depth: Stockfish analysis depth (default 30)
+        api_backend: API backend to use ("openrouter" or "gemini")
+        original_indices: If positions is a subset, maps subset index -> original index
+                         in the full positions.json (needed for correct position_idx in results)
+
+    Returns:
+        {"success": True, "summary": dict, "token_usage": dict} on success
+        {"success": False, "error": str} on failure
+    """
+    try:
+        result = await run_benchmark(
+            player_id=player_id,
+            positions=positions,
+            stockfish=stockfish,
+            player_config=player_config,
+            depth=depth,
+            api_backend=api_backend,
+        )
+
+        # Remap position_idx to original indices if running a subset
+        if original_indices is not None:
+            for r in result["results"]:
+                subset_idx = r["position_idx"]
+                if 0 <= subset_idx < len(original_indices):
+                    r["position_idx"] = original_indices[subset_idx]
+
+        # Merge into results.json
+        results_path = Path(__file__).parent / "results.json"
+        all_results = {}
+        if results_path.exists():
+            with open(results_path) as f:
+                all_results = json.load(f)
+
+        all_results[player_id] = {
+            "summary": result["summary"],
+            "results": result["results"],
+        }
+
+        with open(results_path, "w") as f:
+            json.dump(all_results, f, indent=2)
+
+        return {
+            "success": True,
+            "summary": result["summary"],
+            "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}
 
 
 def load_player_configs():
@@ -509,6 +589,12 @@ async def main():
         default="openrouter",
         help="API backend to use (default: openrouter)",
     )
+    parser.add_argument(
+        "--type",
+        choices=["blunder", "equal"],
+        default=None,
+        help="Only test positions of this type (default: all)",
+    )
 
     args = parser.parse_args()
 
@@ -517,10 +603,19 @@ async def main():
     with open(args.positions) as f:
         data = json.load(f)
 
-    positions = data["positions"]
-    blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
-    equal_count = sum(1 for p in positions if p.get("type") == "equal")
-    print(f"Testing on {len(positions)} positions ({blunder_count} blunder, {equal_count} equal)")
+    all_positions = data["positions"]
+    # Map from filtered index -> original index (identity when no filter)
+    type_filter_idx_map = None
+    if args.type:
+        type_filter_idx_map = {new_idx: orig_idx for new_idx, (orig_idx, p)
+                               in enumerate((i, p) for i, p in enumerate(all_positions) if p.get("type") == args.type)}
+        positions = [all_positions[orig] for orig in type_filter_idx_map.values()]
+        print(f"Testing on {len(positions)} {args.type} positions")
+    else:
+        positions = all_positions
+        blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
+        equal_count = sum(1 for p in positions if p.get("type") == "equal")
+        print(f"Testing on {len(positions)} positions ({blunder_count} blunder, {equal_count} equal)")
 
     # Load player configs
     all_players = load_player_configs()
@@ -603,6 +698,11 @@ async def main():
             start = time.time()
             result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth, args.api)
             elapsed = time.time() - start
+
+            # Remap filtered indices back to original position indices
+            if type_filter_idx_map is not None:
+                for r in result["results"]:
+                    r["position_idx"] = type_filter_idx_map[r["position_idx"]]
 
             # Merge with existing results if retrying missing
             if args.retry_missing and existing_by_idx:

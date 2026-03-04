@@ -45,6 +45,11 @@ def _should_invalidate_cache() -> bool:
         return False
 
 
+# Benchmark-seeded initial rating parameters (from position benchmark RMSE=166)
+BENCHMARK_SEED_RD = 166.0
+BENCHMARK_SEED_GAMES_RD = 350.0
+
+
 class RatingStore:
     """
     Stores and manages player ratings.
@@ -111,7 +116,7 @@ class RatingStore:
         Load position benchmark results and compute predicted ratings.
 
         Uses the 3-feature formula from rating_prediction_formulas.py:
-          rating = 1794.14 - 260.55*log(eq_cpl+1) + 21.48*pct_lt10 + 2.09*surv_40
+          rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
 
         Returns:
             Dict mapping model name to predicted rating, or empty dict if files missing.
@@ -177,10 +182,10 @@ class RatingStore:
                 surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
 
             predicted = (
-                1794.14
-                - 260.55 * math.log(eq_cpl + 1)
-                + 21.48 * pct_lt10
-                + 2.09 * surv_40
+                1603.07
+                - 237.97 * math.log(eq_cpl + 1)
+                + 17.84 * pct_lt10
+                + 4.53 * surv_40
             )
             predictions[model_name] = predicted
 
@@ -188,6 +193,32 @@ class RatingStore:
             logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
 
         return predictions
+
+    def refresh_benchmark_predictions(self) -> None:
+        """
+        Reload benchmark predictions and apply to models that haven't played games yet.
+
+        This is called after a position benchmark completes during the scheduler's
+        benchmark phase. It picks up new predictions and updates any _ratings entries
+        that were created with defaults (1500/RD=350) before the benchmark ran.
+        """
+        new_predictions = self._load_benchmark_predictions()
+
+        # Apply new predictions to models that haven't played games yet
+        for player_id, predicted in new_predictions.items():
+            if player_id not in self._benchmark_predictions:
+                # New prediction — update rating if model exists but hasn't played
+                if player_id in self._ratings:
+                    existing = self._ratings[player_id]
+                    if existing.games_played == 0:
+                        self._ratings[player_id] = PlayerRating(
+                            player_id=player_id,
+                            rating=predicted,
+                            rating_deviation=BENCHMARK_SEED_RD,
+                            games_rd=BENCHMARK_SEED_GAMES_RD,
+                        )
+
+        self._benchmark_predictions = new_predictions
 
     def _init_firestore(self) -> None:
         """Initialize Firestore connection and load ratings."""
@@ -355,8 +386,8 @@ class RatingStore:
                 self._ratings[player_id] = PlayerRating(
                     player_id=player_id,
                     rating=predicted,
-                    rating_deviation=149.0,
-                    games_rd=350.0,
+                    rating_deviation=BENCHMARK_SEED_RD,
+                    games_rd=BENCHMARK_SEED_GAMES_RD,
                 )
             else:
                 self._ratings[player_id] = PlayerRating(player_id=player_id)
@@ -436,14 +467,16 @@ class RatingStore:
         Get ratings sorted by rating (descending).
 
         Args:
-            min_games: Minimum games played to include (anchors always included)
+            min_games: Minimum games played to include (anchors and benchmark-seeded models always included)
 
         Returns:
             List of PlayerRating sorted by rating
         """
         ratings = [
             r for r in self._ratings.values()
-            if r.games_played >= min_games or r.player_id in self.anchor_ids
+            if r.games_played >= min_games
+            or r.player_id in self.anchor_ids
+            or r.player_id in self._benchmark_predictions
         ]
         return sorted(ratings, key=lambda r: r.rating, reverse=True)
 

@@ -45,6 +45,7 @@ class GameRunner:
         black: Player,
         max_moves: int = 200,
         verbose: bool = False,
+        pre_moves: list = None,
     ):
         """
         Initialize the game runner.
@@ -54,11 +55,13 @@ class GameRunner:
             black: Player with black pieces
             max_moves: Maximum number of half-moves (plies) before draw
             verbose: Print moves as they happen
+            pre_moves: List of UCI move strings to pre-play before starting
         """
         self.white = white
         self.black = black
         self.max_moves = max_moves
         self.verbose = verbose
+        self.pre_moves = pre_moves
 
     def _write_live_game(self, white_id: str, black_id: str, board: chess.Board,
                           moves_played: int, last_move: str = None, status: str = "in_progress"):
@@ -115,11 +118,25 @@ class GameRunner:
         termination = "normal"
         moves_played = 0
 
+        # Pre-play moves if resuming a game
+        if self.pre_moves:
+            for uci_str in self.pre_moves:
+                move = chess.Move.from_uci(uci_str)
+                if move not in board.legal_moves:
+                    raise ValueError(f"Illegal pre-move: {uci_str} at position {board.fen()}")
+                board.push(move)
+                node = node.add_variation(move)
+                moves_played += 1
+            if self.verbose:
+                print(f"  Resumed from move {moves_played} ({len(self.pre_moves)} pre-played moves)")
+                print(f"  Position: {board.fen()}")
+                print()
+
         # Write initial game state
         self._write_live_game(
             self._get_player_id(self.white),
             self._get_player_id(self.black),
-            board, 0, status="starting"
+            board, moves_played, status="starting" if not self.pre_moves else "resumed"
         )
 
         while not board.is_game_over() and moves_played < self.max_moves:
