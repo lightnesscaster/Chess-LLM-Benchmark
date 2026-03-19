@@ -857,6 +857,120 @@ class MatchScheduler:
 
         return False
 
+    def _get_freeze_test_opponent(
+        self,
+        player_id: str,
+        valid_opponents: List[str],
+        games_per_pairing: Dict[Tuple[str, str], int],
+        anchor_set: set,
+        games_vs_anchor_per_color: int,
+        games_vs_llm_per_color: int,
+    ) -> Optional[str]:
+        """
+        Find the best opponent to test whether player_id would trigger
+        the _lost_to_much_weaker freeze rule.
+
+        Returns the strongest valid opponent rated below the freeze ceiling
+        (max peer rating - 600), so that a single loss would trigger the freeze.
+        Returns None if no such test is useful (no peers, already frozen, etc).
+        """
+        my_timestamp = self._publish_dates.get(player_id)
+        if my_timestamp is None:
+            return None
+
+        my_cost = self._get_player_cost(player_id)
+        # Free models are always exempt from lost-to-weaker freeze
+        if my_cost == 0:
+            return None
+
+        # If already lost to a freeze-triggering opponent, no need to front-load
+        if self._lost_to_much_weaker(player_id):
+            return None
+
+        three_months = self.LOST_TO_WEAKER_TIME_WINDOW * 30.44 * 24 * 60 * 60
+
+        # Find qualifying peers and compute freeze ceiling
+        max_peer_rating = None
+        for peer_id, peer_timestamp in self._publish_dates.items():
+            if peer_id == player_id:
+                continue
+            if peer_timestamp > my_timestamp + three_months:
+                continue
+            if not self.rating_store.has_player(peer_id):
+                continue
+
+            peer_cost = self._get_player_cost(peer_id)
+            # Cost exception: if player is 5x cheaper than this peer, skip peer
+            if peer_cost > 0 and my_cost * self.LOST_TO_WEAKER_COST_RATIO <= peer_cost:
+                continue
+
+            peer_rating = self.rating_store.get(peer_id).rating
+            if max_peer_rating is None or peer_rating > max_peer_rating:
+                max_peer_rating = peer_rating
+
+        if max_peer_rating is None:
+            return None
+
+        freeze_ceiling = max_peer_rating - self.LOST_TO_WEAKER_RATING_GAP
+
+        # Find the cheapest valid opponent near the freeze ceiling.
+        # Prefer opponents within 200 rating points of the ceiling (strong enough
+        # to be a meaningful test), and among those pick the cheapest to save budget.
+        FREEZE_TEST_BAND = 200
+        eligible = []
+        for opp_id in valid_opponents:
+            # Skip random-bot — it has its own scheduling phase
+            if opp_id == self.RANDOM_BOT_ID:
+                continue
+            if not self.rating_store.has_player(opp_id):
+                continue
+            opp_rating = self.rating_store.get(opp_id).rating
+            if opp_rating >= freeze_ceiling:
+                continue
+            # Use correct target based on whether opponent is an anchor
+            target = games_vs_anchor_per_color if opp_id in anchor_set else games_vs_llm_per_color
+            # Check if any color combination has games remaining
+            has_games = False
+            for w, b in [(player_id, opp_id), (opp_id, player_id)]:
+                if games_per_pairing.get((w, b), 0) < target:
+                    has_games = True
+                    break
+            if has_games:
+                opp_cost = self._get_player_cost(opp_id)
+                in_band = opp_rating >= freeze_ceiling - FREEZE_TEST_BAND
+                eligible.append((opp_id, opp_rating, opp_cost, in_band))
+
+        if not eligible:
+            return None
+
+        # Prefer opponents in the 200-point band; fall back to all if none qualify
+        in_band = [e for e in eligible if e[3]]
+        pool = in_band if in_band else eligible
+
+        # Pick cheapest (engines have cost 0, which is ideal)
+        pool.sort(key=lambda e: e[2])
+        best_opp = pool[0][0]
+
+        # If we've already completed a game against this opponent, the test is
+        # done: either we lost (caught by _lost_to_much_weaker above) or we won.
+        best_opp_rating = self.rating_store.get(best_opp).rating
+        for result in self.stats_collector.results:
+            if (result.white_id == player_id and result.black_id == best_opp) or \
+               (result.black_id == player_id and result.white_id == best_opp):
+                return None
+            # If we've already beaten an opponent rated 200+ above the freeze
+            # test opponent, the test is redundant — we've proven strength.
+            won_as_white = (result.white_id == player_id and result.winner == "white")
+            won_as_black = (result.black_id == player_id and result.winner == "black")
+            if won_as_white or won_as_black:
+                beaten_id = result.black_id if won_as_white else result.white_id
+                if self.rating_store.has_player(beaten_id):
+                    beaten_rating = self.rating_store.get(beaten_id).rating
+                    if beaten_rating >= best_opp_rating + 200:
+                        return None
+
+        return best_opp
+
     def _is_expensive_inferior(self, player_id: str) -> bool:
         """
         Check if model is outperformed by a cheaper model (any provider).
@@ -1369,6 +1483,46 @@ class MatchScheduler:
             if random_bot_games_remaining:
                 break
 
+        # Freeze-test priority: before any other scheduling, check if an unfrozen
+        # model should be tested against a weak opponent that would trigger the
+        # _lost_to_much_weaker freeze rule. This front-loads the test so budget
+        # isn't wasted on models that would get frozen after a single loss.
+        # Models with a freeze-test in flight are blocked from all other games
+        # until the test resolves.
+        freeze_test_pending = set()
+        for llm_id in llms_by_priority:
+            current_games = self._games_played.get(llm_id, 0)
+            current_rd = self._get_estimated_rd(llm_id)
+            if self._is_frozen(llm_id, current_rd, player_stats):
+                continue
+            if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
+                continue
+            cap = self._get_game_cap(llm_id)
+            if cap is not None and current_games >= cap:
+                continue
+            valid_opponents = self._get_valid_opponents(
+                llm_id, anchor_ids, llm_ids, rating_threshold, player_stats
+            )
+            if not valid_opponents:
+                continue
+            freeze_opp = self._get_freeze_test_opponent(
+                llm_id, valid_opponents, games_per_pairing,
+                anchor_set, games_vs_anchor_per_color, games_vs_llm_per_color,
+            )
+            if freeze_opp is not None:
+                # Check if already scheduled (in flight) vs needs scheduling
+                already_in_flight = (
+                    games_per_pairing.get((llm_id, freeze_opp), 0) > 0 or
+                    games_per_pairing.get((freeze_opp, llm_id), 0) > 0
+                )
+                if already_in_flight:
+                    freeze_test_pending.add(llm_id)
+                else:
+                    ft = games_vs_anchor_per_color if freeze_opp in anchor_set else games_vs_llm_per_color
+                    for w, b in [(llm_id, freeze_opp), (freeze_opp, llm_id)]:
+                        if games_per_pairing.get((w, b), 0) < ft:
+                            return (w, b)
+
         # Build phase list: random-bot first, then all other games (anchors and LLMs mixed)
         phases = []
         if random_bot_games_remaining:
@@ -1377,6 +1531,10 @@ class MatchScheduler:
 
         for phase in phases:
             for llm_id in llms_by_priority:
+                # Skip models waiting for their freeze-test game to complete
+                if llm_id in freeze_test_pending:
+                    continue
+
                 current_games = self._games_played.get(llm_id, 0)
                 current_rd = self._get_estimated_rd(llm_id)
 

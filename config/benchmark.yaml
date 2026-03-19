@@ -173,6 +173,11 @@ llms:
     model_name: "meta-llama/llama-4-maverick"
     temperature: 0.0
 
+  # mimo-v2-flash - Xiaomi, released 2025-12-10, updated 2026-02-06
+  - player_id: "mimo-v2-flash"
+    model_name: "xiaomi/mimo-v2-flash"
+    temperature: 0.0
+
   # kat-coder-pro - KwaiKat, released 2025-11-10, free
   - player_id: "kat-coder-pro"
     model_name: "kwaipilot/kat-coder-pro:free"
@@ -286,12 +291,12 @@ llms:
     model_name: "x-ai/grok-4.1-fast"
     temperature: 0.0
 
-  # gemini-3.1-pro-preview (high) — disabled: crashes with 500 on complex positions
-  # - player_id: "gemini-3.1-pro-preview (high)"
-  #   model_name: "google/gemini-3.1-pro-preview"
-  #   temperature: 0.0
-  #   reasoning_effort: high
-  #   timeout: 1200
+  # gemini-3.1-pro-preview (high)
+  - player_id: "gemini-3.1-pro-preview (high)"
+    model_name: "google/gemini-3.1-pro-preview"
+    temperature: 0.0
+    reasoning_effort: high
+    timeout: 1200
 
   # claude-opus-4.5 (high)
   - player_id: "claude-opus-4.5 (high)"

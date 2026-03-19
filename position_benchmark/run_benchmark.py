@@ -788,6 +788,16 @@ async def main():
             with open(args.output, "w") as f:
                 json.dump(all_results, f, indent=2)
 
+            # Sync to Firestore (per-model document to avoid 1 MiB limit)
+            try:
+                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
+                db = get_firestore_client()
+                db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
+                    all_results[player_id]
+                )
+            except Exception as e:
+                print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
+
     finally:
         stockfish.quit()
 

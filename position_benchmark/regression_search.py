@@ -25,49 +25,52 @@ _ALL_BENCHMARK_RATINGS = {
     # Engines (fixed ratings)
     "eubos": (2211, 30),
     "maia-1900": (1816, 30),
-    "survival-bot": (1667, 45),
+    "survival-bot": (1664, 45),
     "maia-1100": (1628, 30),
     "random-bot": (400, 30),
     # Gemini models
-    "gemini-3.1-pro-preview (medium)": (1944, 79),
-    "gemini-3-pro-preview (high)": (1884, 68),
-    "gemini-3-flash-preview (medium)": (1822, 90),
-    "gemini-3-flash-preview (high)": (1792, 129),
-    "gemini-3.1-pro-preview (high)": (1529, 165),
-    "gemini-3-pro-preview (medium)": (636, 75),
-    "gemini-2.5-pro": (397, 59),
-    "gemini-2.5-flash (no thinking)": (350, 45),
+    "gemini-3.1-pro-preview (high)": (1986, 97),
+    "gemini-3.1-pro-preview (medium)": (1918, 70),
+    "gemini-3-pro-preview (high)": (1871, 65),
+    "gemini-3-flash-preview (medium)": (1828, 85),
+    "gemini-3-flash-preview (high)": (1792, 130),
+    "gemini-3-pro-preview (medium)": (658, 70),
+    "gemini-2.5-pro": (382, 59),
+    "gemini-2.5-flash (no thinking)": (338, 45),
     "gemini-3.1-flash-lite-preview": (301, 77),
-    "gemini-2.0-flash-001": (233, 45),
+    "gemini-2.0-flash-001": (223, 45),
     # GPT models
-    "gpt-5.1 (high)": (1245, 87),
-    "gpt-5 (medium)": (1144, 137),
-    "gpt-5.2 (high)": (1002, 90),
-    "gpt-oss-120b (high)": (674, 67),
-    "gpt-5.2 (no thinking)": (592, 52),
-    "gpt-5.1-chat": (543, 45),
-    "gpt-5-chat": (249, 45),
-    "gpt-3.5-turbo-0613": (-269, 45),
+    "gpt-5.1 (high)": (1245, 86),
+    "gpt-5 (medium)": (1148, 137),
+    "gpt-5.2 (high)": (1037, 89),
+    "gpt-5.2-chat": (725, 61),
+    "gpt-oss-120b (high)": (709, 69),
+    "gpt-5.2 (no thinking)": (615, 53),
+    "gpt-5.1-chat": (537, 45),
+    "gpt-5-chat": (246, 45),
+    "gpt-3.5-turbo-0613": (-282, 45),
     "gpt-3.5-turbo": (-500, 45),
     # Grok models
-    "grok-4.1-fast": (1363, 58),
-    "grok-4-fast": (1181, 66),
-    "grok-3-mini": (16, 64),
+    "grok-4.1-fast": (1361, 56),
+    "grok-4-fast": (1178, 64),
+    "grok-3-mini": (5, 63),
     # Claude models
-    "claude-opus-4.5 (high)": (655, 113),
+    "claude-opus-4.5 (high)": (653, 113),
+    "claude-opus-4.6 (medium)": (903, 144),
+    "claude-opus-4.6 (no thinking)": (180, 100),
     # Other models
-    "kimi-k2": (-151, 45),
-    "llama-4-maverick": (-207, 45),
-    "glm-4.6 (thinking)": (-217, 78),
-    "deepseek-chat-v3-0324": (-219, 45),
-    "kimi-k2-0905": (-230, 45),
-    "deepseek-v3.2 (no thinking)": (-248, 91),
-    "mistral-medium-3": (-265, 45),
+    "kimi-k2": (-141, 45),
+    "llama-4-maverick": (-202, 45),
+    "glm-4.6 (thinking)": (-232, 77),
+    "deepseek-chat-v3-0324": (-222, 45),
+    "kimi-k2-0905": (-232, 45),
+    "deepseek-v3.2 (no thinking)": (-259, 91),
+    "mistral-medium-3": (-270, 45),
     "deepseek-v3.1-terminus (no thinking)": (-269, 45),
-    "deepseek-r1-distill-qwen-32b": (-310, 71),
-    "glm-4.6 (no thinking)": (-356, 45),
-    "deepseek-chat-v3.1 (no thinking)": (-366, 45),
-    "qwen3-235b-a22b-2507": (-440, 83),
+    "deepseek-r1-distill-qwen-32b": (-316, 71),
+    "glm-4.6 (no thinking)": (-357, 45),
+    "deepseek-chat-v3.1 (no thinking)": (-369, 45),
+    "qwen3-235b-a22b-2507": (-451, 81),
     "llama-3.3-70b-instruct": (-500, 45),
 }
 
@@ -142,10 +145,12 @@ def load_data():
 
         illegal_rate = 1.0 - equal_stats["legal_pct"] / 100.0
         surv_40 = survival_probability(illegal_rate, 40)
+        surv_50 = survival_probability(illegal_rate, 50)
 
         models.append({
             "name": model_name,
             "rating": BENCHMARK_RATINGS[model_name],
+            "rd": _ALL_BENCHMARK_RATINGS[model_name][1],
             # Basic stats
             "eq_avg_cpl": equal_stats["avg_cpl"],
             "eq_legal_pct": equal_stats["legal_pct"],
@@ -165,6 +170,7 @@ def load_data():
             "pct_lt100": pct_lt100,
             # Survival
             "surv_40": surv_40,
+            "surv_50": surv_50,
             "illegal_rate": illegal_rate,
             # Capped
             "capped_cpl": capped_cpl,
@@ -187,6 +193,20 @@ def loo_cv(X, y, model_class=LinearRegression, **model_kwargs):
         y_train = np.delete(y, i)
         model = model_class(**model_kwargs)
         model.fit(X_train, y_train)
+        predictions[i] = model.predict(X[i:i+1])[0]
+    return predictions
+
+
+def loo_cv_weighted(X, y, weights, model_class=LinearRegression, **model_kwargs):
+    """Leave-one-out cross-validation with sample weights."""
+    n = len(y)
+    predictions = np.zeros(n)
+    for i in range(n):
+        X_train = np.delete(X, i, axis=0)
+        y_train = np.delete(y, i)
+        w_train = np.delete(weights, i)
+        model = model_class(**model_kwargs)
+        model.fit(X_train, y_train, sample_weight=w_train)
         predictions[i] = model.predict(X[i:i+1])[0]
     return predictions
 
@@ -230,12 +250,17 @@ def main():
     # Build feature matrix
     feature_names = [
         "log_eq_cpl", "eq_best_pct", "eq_legal_pct", "pct_lt10", "pct_lt50",
-        "pct_lt100", "surv_40", "log_capped_cpl", "log_geo_cpl", "log_median_cpl",
-        "sqrt_eq_cpl", "inv_cpl", "eq_median_cpl", "capped_cpl", "illegal_rate",
+        "pct_lt100", "surv_40", "surv_50", "log_capped_cpl", "log_geo_cpl",
+        "log_median_cpl", "sqrt_eq_cpl", "inv_cpl", "eq_median_cpl", "capped_cpl",
+        "illegal_rate",
     ]
     features = {}
     for fname in feature_names:
         features[fname] = np.array([m[fname] for m in models])
+
+    # RD-based weights (higher weight for more certain ratings)
+    rd_weights = np.array([1.0 / m["rd"] for m in models])
+    rd_weights = rd_weights / rd_weights.mean()
 
     results = []
 
@@ -248,8 +273,8 @@ def main():
 
     single_features = [
         "log_eq_cpl", "eq_best_pct", "eq_legal_pct", "pct_lt10", "pct_lt50",
-        "pct_lt100", "surv_40", "log_capped_cpl", "log_geo_cpl", "log_median_cpl",
-        "sqrt_eq_cpl", "inv_cpl",
+        "pct_lt100", "surv_40", "surv_50", "log_capped_cpl", "log_geo_cpl",
+        "log_median_cpl", "sqrt_eq_cpl", "inv_cpl",
     ]
 
     for fname in single_features:
@@ -273,8 +298,8 @@ def main():
 
     two_feat_candidates = [
         "log_eq_cpl", "eq_best_pct", "eq_legal_pct", "pct_lt10", "pct_lt50",
-        "pct_lt100", "surv_40", "log_capped_cpl", "log_geo_cpl", "log_median_cpl",
-        "sqrt_eq_cpl",
+        "pct_lt100", "surv_40", "surv_50", "log_capped_cpl", "log_geo_cpl",
+        "log_median_cpl", "sqrt_eq_cpl",
     ]
 
     results_2f = []
@@ -299,7 +324,7 @@ def main():
 
     three_feat_candidates = [
         "log_eq_cpl", "eq_best_pct", "pct_lt10", "pct_lt50",
-        "pct_lt100", "surv_40", "log_capped_cpl", "log_geo_cpl",
+        "pct_lt100", "surv_40", "surv_50", "log_capped_cpl", "log_geo_cpl",
         "log_median_cpl", "eq_legal_pct", "sqrt_eq_cpl",
     ]
 
@@ -376,6 +401,7 @@ def main():
         ("log_eq_cpl", "pct_lt10"),
         ("log_eq_cpl", "pct_lt10", "surv_40"),
         ("log_eq_cpl", "eq_best_pct", "surv_40"),
+        ("log_eq_cpl", "eq_best_pct", "surv_50"),
         ("log_capped_cpl", "pct_lt10"),
         ("log_capped_cpl", "pct_lt10", "surv_40"),
     ]
@@ -403,8 +429,11 @@ def main():
     ridge_combos = [
         ("log_eq_cpl", "eq_best_pct", "eq_legal_pct"),
         ("log_eq_cpl", "eq_best_pct", "surv_40"),
+        ("log_eq_cpl", "eq_best_pct", "surv_50"),
         ("log_eq_cpl", "pct_lt10", "surv_40"),
+        ("log_eq_cpl", "pct_lt10", "surv_50"),
         ("log_eq_cpl", "pct_lt10", "surv_40", "eq_best_pct"),
+        ("log_eq_cpl", "pct_lt10", "surv_50", "eq_best_pct"),
         ("log_eq_cpl", "eq_best_pct", "pct_lt10", "surv_40", "eq_legal_pct"),
         ("log_capped_cpl", "pct_lt10", "surv_40", "eq_best_pct"),
     ]
@@ -423,9 +452,51 @@ def main():
         print(f"  {r['label']:<75} {r['r2']:>8.4f} {r['rmse']:>8.0f}")
 
     # =========================================================================
+    # PHASE 7: RD-weighted regression (weight by 1/RD for more certain ratings)
+    # =========================================================================
+    print("\n" + "-" * 80)
+    print("PHASE 7: RD-WEIGHTED REGRESSION (LOO CV)")
+    print("-" * 80)
+
+    results_weighted = []
+    weighted_combos = [
+        ("log_eq_cpl", "eq_best_pct", "surv_40"),
+        ("log_eq_cpl", "eq_best_pct", "surv_50"),
+        ("eq_best_pct", "surv_40"),
+        ("eq_best_pct", "surv_50"),
+        ("log_eq_cpl", "eq_best_pct"),
+        ("log_eq_cpl", "eq_best_pct", "surv_40", "pct_lt10"),
+        ("log_eq_cpl", "eq_best_pct", "surv_50", "pct_lt10"),
+    ]
+    for combo in weighted_combos:
+        X = np.column_stack([features[f] for f in combo])
+        y_pred = loo_cv_weighted(X, y, rd_weights)
+        label = "WLS: " + " + ".join(combo)
+        res = evaluate_model(y, y_pred, label)
+        results_weighted.append(res)
+
+    # Also try weighted Ridge
+    for alpha in [1.0, 10.0]:
+        for combo in [
+            ("log_eq_cpl", "eq_best_pct", "surv_40"),
+            ("log_eq_cpl", "eq_best_pct", "surv_50"),
+        ]:
+            X = np.column_stack([features[f] for f in combo])
+            y_pred = loo_cv_weighted(X, y, rd_weights, model_class=Ridge, alpha=alpha)
+            label = f"WLS+Ridge(a={alpha}): " + " + ".join(combo)
+            res = evaluate_model(y, y_pred, label)
+            results_weighted.append(res)
+
+    results_weighted.sort(key=lambda r: -r["r2"])
+    print(f"\n  {'Model':<75} {'LOO R²':>8} {'RMSE':>8} {'MAE':>8}")
+    print("  " + "-" * 100)
+    for r in results_weighted[:15]:
+        print(f"  {r['label']:<75} {r['r2']:>8.4f} {r['rmse']:>8.0f} {r['mae']:>8.0f}")
+
+    # =========================================================================
     # OVERALL BEST MODELS
     # =========================================================================
-    all_results = results + results_2f + results_3f + results_poly + results_robust + results_ridge
+    all_results = results + results_2f + results_3f + results_poly + results_robust + results_ridge + results_weighted
     all_results.sort(key=lambda r: -r["r2"])
 
     print("\n" + "=" * 80)
@@ -490,7 +561,8 @@ def main():
             alpha_match = re.search(r'a=([\d.]+)', label)
             alpha = float(alpha_match.group(1)) if alpha_match else 1.0
             model = Ridge(alpha=alpha)
-            model.fit(X_best, y)
+            sw = rd_weights if "WLS" in label else None
+            model.fit(X_best, y, sample_weight=sw)
             y_pred_full = model.predict(X_best)
             print(f"\n  Training R²: {r2_score(y, y_pred_full):.4f}")
             print(f"  Training RMSE: {np.sqrt(mean_squared_error(y, y_pred_full)):.0f}")
@@ -501,7 +573,8 @@ def main():
             print(f"    rating = {' + '.join(terms)} + {model.intercept_:.4f}")
         else:
             model = LinearRegression()
-            model.fit(X_best, y)
+            sw = rd_weights if "WLS" in label else None
+            model.fit(X_best, y, sample_weight=sw)
             y_pred_full = model.predict(X_best)
             print(f"\n  Training R²: {r2_score(y, y_pred_full):.4f}")
             print(f"  Training RMSE: {np.sqrt(mean_squared_error(y, y_pred_full)):.0f}")
@@ -512,6 +585,7 @@ def main():
             print(f"    rating = {' + '.join(terms)} + {model.intercept_:.4f}")
 
         # Show LOO predictions for the best model
+        is_weighted = "WLS" in label
         if "Poly" not in label:
             if "Huber" in label:
                 y_pred_loo = loo_cv(X_best, y, model_class=HuberRegressor, epsilon=1.35)
@@ -519,7 +593,12 @@ def main():
                 import re
                 alpha_match = re.search(r'a=([\d.]+)', label)
                 alpha = float(alpha_match.group(1)) if alpha_match else 1.0
-                y_pred_loo = loo_cv(X_best, y, model_class=Ridge, alpha=alpha)
+                if is_weighted:
+                    y_pred_loo = loo_cv_weighted(X_best, y, rd_weights, model_class=Ridge, alpha=alpha)
+                else:
+                    y_pred_loo = loo_cv(X_best, y, model_class=Ridge, alpha=alpha)
+            elif is_weighted:
+                y_pred_loo = loo_cv_weighted(X_best, y, rd_weights)
             else:
                 y_pred_loo = loo_cv(X_best, y)
         else:
@@ -548,6 +627,7 @@ def main():
         ("Polynomial", results_poly),
         ("Robust (Huber)", results_robust),
         ("Ridge", results_ridge),
+        ("RD-Weighted", results_weighted),
     ]:
         cat_sorted = sorted(cat_results, key=lambda r: -r["r2"])
         print(f"\n  {cat_name}:")
