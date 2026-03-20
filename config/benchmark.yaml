@@ -174,9 +174,14 @@ llms:
     temperature: 0.0
 
   # mimo-v2-flash - Xiaomi, released 2025-12-10, updated 2026-02-06
-  - player_id: "mimo-v2-flash"
+  - player_id: "mimo-v2-flash (no thinking)"
     model_name: "xiaomi/mimo-v2-flash"
     temperature: 0.0
+
+  # mimo-v2-flash (medium)
+  - player_id: "mimo-v2-flash (medium)"
+    model_name: "xiaomi/mimo-v2-flash"
+    reasoning_effort: medium
 
   # kat-coder-pro - KwaiKat, released 2025-11-10, free
   - player_id: "kat-coder-pro"

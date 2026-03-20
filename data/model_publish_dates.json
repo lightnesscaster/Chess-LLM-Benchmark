@@ -396,7 +396,12 @@
     "created_timestamp": 1772512673,
     "created_date": "2026-03-03"
   },
-  "mimo-v2-flash": {
+  "mimo-v2-flash (no thinking)": {
+    "model_id": "xiaomi/mimo-v2-flash",
+    "created_timestamp": 1738800000,
+    "created_date": "2026-02-06"
+  },
+  "mimo-v2-flash (medium)": {
     "model_id": "xiaomi/mimo-v2-flash",
     "created_timestamp": 1738800000,
     "created_date": "2026-02-06"
