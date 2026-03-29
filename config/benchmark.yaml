@@ -85,6 +85,11 @@ llms:
     temperature: 0.0
     reasoning_effort: minimal
 
+  - player_id: "gpt-5.4 (high)"
+    model_name: "openai/gpt-5.4"
+    temperature: 0.0
+    reasoning_effort: high
+
   # gemini-2.5-flash (no thinking) (223)
   - player_id: "gemini-2.5-flash (no thinking)"
     model_name: "google/gemini-2.5-flash"
@@ -274,12 +279,14 @@ llms:
     reasoning: true
     timeout: 1200
 
-  # gemini-2.5-pro (minimal) - reasoning is mandatory, so minimal is the lowest possible
-  - player_id: "gemini-2.5-pro (minimal)"
-    model_name: "google/gemini-2.5-pro"
-    temperature: 0.0
-    reasoning_effort: minimal
-    timeout: 1200
+  # gemini-2.5-pro (minimal) - reasoning is mandatory, minimal maps to ~6500 tokens
+  # via OpenRouter (10% of max_tokens), not 1024 as expected. Use reasoning_max_tokens
+  # for precise control.
+  # - player_id: "gemini-2.5-pro (minimal)"
+  #   model_name: "google/gemini-2.5-pro"
+  #   temperature: 0.0
+  #   reasoning_effort: minimal
+  #   timeout: 1200
 
   # gemini-3-pro-preview (high)
   - player_id: "gemini-3-pro-preview (high)"

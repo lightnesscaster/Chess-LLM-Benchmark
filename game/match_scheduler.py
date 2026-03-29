@@ -460,10 +460,30 @@ class MatchScheduler:
             self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
             return self.UNKNOWN_MODEL_DEFAULT_COST
 
-        # Estimate: ~100 LLM calls per game, ~1500 prompt tokens per call
-        # Reasoning models produce ~3000 completion tokens/call (extended thinking);
-        # non-reasoning models produce ~10
-        comp_per_call = 3000 if player_id in self.reasoning_ids else 10
+        # Use position benchmark token data if available for better estimates
+        comp_per_call = None
+        try:
+            import json
+            from pathlib import Path
+            results_path = Path(__file__).parent.parent / "position_benchmark" / "results.json"
+            if results_path.exists():
+                with open(results_path) as f:
+                    bench_data = json.load(f)
+                if player_id in bench_data:
+                    tu = bench_data[player_id].get("token_usage", {})
+                    results = bench_data[player_id].get("results", [])
+                    n_positions = len(results) if results else 50
+                    bench_comp = tu.get("completion", 0)
+                    if bench_comp > 0:
+                        comp_per_call = bench_comp / n_positions
+        except Exception:
+            pass
+
+        if comp_per_call is None:
+            # Fall back: reasoning models ~3000 tokens/call, non-reasoning ~10
+            comp_per_call = 3000 if player_id in self.reasoning_ids else 10
+
+        # ~100 LLM calls per game, ~1500 prompt tokens per call
         estimated_cost = max(0.0, (
             100 * 1500 * pricing.get("prompt", 0) +
             100 * comp_per_call * pricing.get("completion", 0)
@@ -913,43 +933,79 @@ class MatchScheduler:
 
         freeze_ceiling = max_peer_rating - self.LOST_TO_WEAKER_RATING_GAP
 
-        # Find the cheapest valid opponent near the freeze ceiling.
-        # Prefer opponents within 200 rating points of the ceiling (strong enough
-        # to be a meaningful test), and among those pick the cheapest to save budget.
+        # Find the best freeze-test opponent.
+        # Prefer in-band opponents (within 200 points of ceiling) for maximum signal,
+        # but use cheaper "filter" opponents first if the in-band option is 5x+ more
+        # expensive. Filter opponents must be rated between (player_rating - 200) and
+        # ceiling, and must not have already played 3+ games against this player.
         FREEZE_TEST_BAND = 200
-        eligible = []
+        FILTER_COST_RATIO = 5.0
+        FILTER_MAX_GAMES = 3
+
+        my_rating = self.rating_store.get(player_id).rating
+        filter_floor = my_rating - FREEZE_TEST_BAND
+
+        eligible_in_band = []
+        eligible_filter = []
+
         for opp_id in valid_opponents:
-            # Skip random-bot — it has its own scheduling phase
-            if opp_id == self.RANDOM_BOT_ID:
-                continue
             if not self.rating_store.has_player(opp_id):
                 continue
             opp_rating = self.rating_store.get(opp_id).rating
             if opp_rating >= freeze_ceiling:
                 continue
-            # Use correct target based on whether opponent is an anchor
-            target = games_vs_anchor_per_color if opp_id in anchor_set else games_vs_llm_per_color
             # Check if any color combination has games remaining
+            target = games_vs_anchor_per_color if opp_id in anchor_set else games_vs_llm_per_color
             has_games = False
             for w, b in [(player_id, opp_id), (opp_id, player_id)]:
                 if games_per_pairing.get((w, b), 0) < target:
                     has_games = True
                     break
-            if has_games:
-                opp_cost = self._get_player_cost(opp_id)
-                in_band = opp_rating >= freeze_ceiling - FREEZE_TEST_BAND
-                eligible.append((opp_id, opp_rating, opp_cost, in_band))
+            if not has_games:
+                continue
 
-        if not eligible:
+            opp_cost = self._get_player_cost(opp_id)
+            total_cost = my_cost + opp_cost
+
+            if opp_rating >= freeze_ceiling - FREEZE_TEST_BAND:
+                eligible_in_band.append((opp_id, opp_rating, total_cost))
+            elif opp_rating >= filter_floor:
+                # Count existing games against this opponent
+                games_played = 0
+                for result in self.stats_collector.results:
+                    if (result.white_id == player_id and result.black_id == opp_id) or \
+                       (result.black_id == player_id and result.white_id == opp_id):
+                        games_played += 1
+                if games_played < FILTER_MAX_GAMES:
+                    eligible_filter.append((opp_id, opp_rating, total_cost))
+
+        if not eligible_in_band and not eligible_filter:
             return None
 
-        # Prefer opponents in the 200-point band; fall back to all if none qualify
-        in_band = [e for e in eligible if e[3]]
-        pool = in_band if in_band else eligible
+        # Pick cheapest in-band opponent
+        if eligible_in_band:
+            eligible_in_band.sort(key=lambda e: e[2])
+            best_in_band = eligible_in_band[0]
+        else:
+            best_in_band = None
 
-        # Pick cheapest (engines have cost 0, which is ideal)
-        pool.sort(key=lambda e: e[2])
-        best_opp = pool[0][0]
+        # Pick cheapest filter opponent
+        if eligible_filter:
+            eligible_filter.sort(key=lambda e: e[2])
+            best_filter = eligible_filter[0]
+        else:
+            best_filter = None
+
+        # Use filter opponent if in-band is 5x+ more expensive
+        if best_in_band and best_filter:
+            if best_in_band[2] >= FILTER_COST_RATIO * best_filter[2]:
+                best_opp = best_filter[0]
+            else:
+                best_opp = best_in_band[0]
+        elif best_in_band:
+            best_opp = best_in_band[0]
+        else:
+            best_opp = best_filter[0]
 
         # If we've already completed a game against this opponent, the test is
         # done: either we lost (caught by _lost_to_much_weaker above) or we won.
