@@ -44,6 +44,8 @@ class PositionResult:
     eval_model: float  # Eval after model's move
     eval_best: float  # Eval after best move
     eval_before: float  # Eval before the position (for illegal CPL calculation)
+    prompt_tokens: int = 0  # Prompt tokens used for this position
+    completion_tokens: int = 0  # Completion tokens used for this position
 
 
 def _calculate_median(values: list[float]) -> float:
@@ -355,6 +357,7 @@ async def run_benchmark(
 
             return OpenRouterPlayer(
                 model_name=player_config.get("model_name"),
+                reasoning_max_tokens=player_config.get("reasoning_max_tokens"),
                 **common_kwargs,
             )
 
@@ -375,6 +378,9 @@ async def run_benchmark(
                 try:
                     async with semaphore:
                         result = await test_llm_on_position(player, pos, stockfish, depth)
+                        # Read per-request token counts inside semaphore to avoid race with concurrent tasks
+                        result.prompt_tokens = getattr(player, "_last_prompt_tokens", 0)
+                        result.completion_tokens = getattr(player, "_last_completion_tokens", 0)
                     result.position_idx = idx
                     results[idx] = result
                     completed[0] += 1
@@ -455,6 +461,13 @@ async def run_benchmark(
         summary["blunder"] = _calc_type_summary(blunder_results)
     if equal_results:
         summary["equal"] = _calc_type_summary(equal_results)
+
+    # Add per-position token stats to summary
+    pos_completion_tokens = [ct for r in result_dicts if (ct := r.get("completion_tokens", 0)) > 0]
+    if pos_completion_tokens:
+        summary["avg_completion_tokens"] = sum(pos_completion_tokens) / len(pos_completion_tokens)
+        summary["median_completion_tokens"] = _calculate_median(pos_completion_tokens)
+        summary["total_completion_tokens"] = sum(pos_completion_tokens)
 
     return {"summary": summary, "results": result_dicts, "token_usage": token_acc}
 
@@ -601,9 +614,9 @@ async def main():
     )
     parser.add_argument(
         "--type",
-        choices=["blunder", "equal"],
-        default=None,
-        help="Only test positions of this type (default: all)",
+        choices=["blunder", "equal", "all"],
+        default="equal",
+        help="Only test positions of this type (default: equal)",
     )
 
     args = parser.parse_args()
@@ -616,7 +629,7 @@ async def main():
     all_positions = data["positions"]
     # Map from filtered index -> original index (identity when no filter)
     type_filter_idx_map = None
-    if args.type:
+    if args.type and args.type != "all":
         type_filter_idx_map = {new_idx: orig_idx for new_idx, (orig_idx, p)
                                in enumerate((i, p) for i, p in enumerate(all_positions) if p.get("type") == args.type)}
         positions = [all_positions[orig] for orig in type_filter_idx_map.values()]

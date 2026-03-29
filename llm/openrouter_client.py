@@ -45,6 +45,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         max_tokens: int = 0,
         reasoning: Optional[bool] = None,
         reasoning_effort: Optional[str] = None,
+        reasoning_max_tokens: Optional[int] = None,
         provider_order: Optional[list] = None,
         timeout: int = 300,
     ):
@@ -60,6 +61,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
             reasoning: Reasoning mode (True=enable, False=disable, None=use API default)
             reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
+            reasoning_max_tokens: Explicit thinking token budget. Overrides effort-based
+                percentage mapping. Passed as reasoning.max_tokens to OpenRouter.
             provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
             timeout: Request timeout in seconds (default 300 = 5 minutes)
         """
@@ -76,12 +79,19 @@ class OpenRouterPlayer(BaseLLMPlayer):
             raise ValueError(
                 "Cannot set reasoning_effort when reasoning is explicitly disabled"
             )
+        if reasoning_effort is not None and reasoning_max_tokens is not None:
+            raise ValueError(
+                "Cannot set both reasoning_effort and reasoning_max_tokens"
+            )
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.reasoning = reasoning
         self.reasoning_effort = reasoning_effort
+        self.reasoning_max_tokens = reasoning_max_tokens
         self.provider_order = provider_order
         self.timeout = timeout
+        self._last_prompt_tokens = 0
+        self._last_completion_tokens = 0
         self._session: Optional[aiohttp.ClientSession] = None
         # Track the last inference provider used (from OpenRouter response)
         self.last_provider: Optional[str] = None
@@ -91,6 +101,17 @@ class OpenRouterPlayer(BaseLLMPlayer):
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
         return self._session
+
+    def _track_usage(self, data: dict) -> None:
+        """Track token usage from API response, updating both per-request and cumulative counters."""
+        if "usage" not in data:
+            return
+        usage = data["usage"]
+        self._last_prompt_tokens = usage.get("prompt_tokens", 0)
+        self._last_completion_tokens = usage.get("completion_tokens", 0)
+        self.prompt_tokens += self._last_prompt_tokens
+        self.completion_tokens += self._last_completion_tokens
+        self.total_tokens += usage.get("total_tokens", 0)
 
     def _parse_move(self, response_text: str, board: chess.Board = None) -> Optional[str]:
         """
@@ -462,7 +483,10 @@ Your response (just the UCI move or UNCLEAR):"""
         # - reasoning=False: explicitly disable reasoning (for thinking models run without thinking)
         # - reasoning=None: omit parameter (use OpenRouter default)
         reasoning_enabled = False
-        if self.reasoning_effort is not None:
+        if self.reasoning_max_tokens is not None:
+            payload["reasoning"] = {"enabled": True, "max_tokens": self.reasoning_max_tokens}
+            reasoning_enabled = True
+        elif self.reasoning_effort is not None:
             payload["reasoning"] = {"enabled": True, "effort": self.reasoning_effort}
             reasoning_enabled = True
         elif self.reasoning is True:
@@ -589,11 +613,7 @@ Your response (just the UCI move or UNCLEAR):"""
                         parsed_move = self._parse_move(content, board)
                         if parsed_move:
                             # Content is a valid move despite being short - track tokens and use it
-                            if "usage" in data:
-                                usage = data["usage"]
-                                self.prompt_tokens += usage.get("prompt_tokens", 0)
-                                self.completion_tokens += usage.get("completion_tokens", 0)
-                                self.total_tokens += usage.get("total_tokens", 0)
+                            self._track_usage(data)
                             elapsed = time.time() - move_start_time
                             self.move_times.append(elapsed)
                             self.total_move_time += elapsed
@@ -604,11 +624,7 @@ Your response (just the UCI move or UNCLEAR):"""
                         extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
                         if extracted_move:
                             # Extraction succeeded - track tokens from original response and use move
-                            if "usage" in data:
-                                usage = data["usage"]
-                                self.prompt_tokens += usage.get("prompt_tokens", 0)
-                                self.completion_tokens += usage.get("completion_tokens", 0)
-                                self.total_tokens += usage.get("total_tokens", 0)
+                            self._track_usage(data)
                             elapsed = time.time() - move_start_time
                             self.move_times.append(elapsed)
                             self.total_move_time += elapsed
@@ -646,11 +662,7 @@ Your response (just the UCI move or UNCLEAR):"""
                     ) from e
 
         # Track token usage
-        if "usage" in data:
-            usage = data["usage"]
-            self.prompt_tokens += usage.get("prompt_tokens", 0)
-            self.completion_tokens += usage.get("completion_tokens", 0)
-            self.total_tokens += usage.get("total_tokens", 0)
+        self._track_usage(data)
 
         # Extract response text
         first_choice = data.get("choices", [{}])[0] or {}

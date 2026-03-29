@@ -190,7 +190,13 @@ class GameRunner:
 
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
-                    print(f"  {moves_played}. {side_name}: {move_uci}")
+                    token_info = ""
+                    if isinstance(player, BaseLLMPlayer) and player.total_tokens > 0:
+                        last_prompt = getattr(player, '_last_prompt_tokens', 0)
+                        last_completion = getattr(player, '_last_completion_tokens', 0)
+                        if last_prompt or last_completion:
+                            token_info = f"  (tokens: {last_prompt}p/{last_completion}c)"
+                    print(f"  {moves_played}. {side_name}: {move_uci}{token_info}")
 
                 # Write live game state
                 self._write_live_game(

@@ -887,6 +887,10 @@
     "completion": 1.4e-05,
     "prompt": 1.75e-06
   },
+  "openai/gpt-5.4": {
+    "completion": 1.5e-05,
+    "prompt": 2.5e-06
+  },
   "openai/gpt-5.2-chat": {
     "completion": 1.4e-05,
     "prompt": 1.75e-06

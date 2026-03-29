@@ -29,7 +29,7 @@
     "created_timestamp": 1758240090,
     "created_date": "2025-09-18"
   },
-  "gemini-2.5-pro (medium)": {
+  "gemini-2.5-pro (default)": {
     "model_id": "google/gemini-2.5-pro",
     "created_timestamp": 1750169544,
     "created_date": "2025-06-17"
@@ -319,6 +319,11 @@
     "created_timestamp": 1762440622,
     "created_date": "2025-11-06"
   },
+  "kimi-k2.5 (no thinking)": {
+    "model_id": "moonshotai/kimi-k2.5",
+    "created_timestamp": 1769490000,
+    "created_date": "2026-01-27"
+  },
   "deepseek-v3.2 (thinking)": {
     "model_id": "deepseek/deepseek-v3.2",
     "created_timestamp": 1764594642,
@@ -358,6 +363,11 @@
     "model_id": "openai/gpt-5.2",
     "created_timestamp": 1765454400,
     "created_date": "2025-12-11"
+  },
+  "gpt-5.4 (no thinking)": {
+    "model_id": "openai/gpt-5.4",
+    "created_timestamp": 1772686800,
+    "created_date": "2026-03-05"
   },
   "kat-coder-pro": {
     "model_id": "kwaipilot/kat-coder-pro:free",

@@ -3094,7 +3094,7 @@
       "move_number": 55,
       "side_to_move": "white",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "r1bq1rk1/4bpp1/p1P2n1p/8/1p6/1B2Q3/PPP2PPP/RNB2RK1 w - - 1 15",
@@ -12321,7 +12321,7 @@
       "move_number": 30,
       "side_to_move": "black",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "1n1qkb1r/1p3ppp/1pp5/8/4n3/3pK2Q/3N3P/4RB1b b k - 0 22",
@@ -12868,7 +12868,7 @@
       "game_id": "2753ad38-cbf2-45b2-991d-f2dc2d4c2e52",
       "move_number": 104,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "maia-1100"
     },
     {
@@ -19856,7 +19856,7 @@
       "game_id": "64e6061d-60a3-4cd9-b6ae-8e0337eac82d",
       "move_number": 38,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "random-bot"
     },
     {
@@ -19962,7 +19962,7 @@
       "game_id": "64e6061d-60a3-4cd9-b6ae-8e0337eac82d",
       "move_number": 32,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "random-bot"
     },
     {
@@ -26718,7 +26718,7 @@
       "game_id": "50e1d828-dd7b-43f5-96ee-e8d81a13a2d7",
       "move_number": 37,
       "side_to_move": "white",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "random-bot"
     },
     {
@@ -27242,7 +27242,7 @@
       "move_number": 47,
       "side_to_move": "white",
       "player_id": "o3",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "r3kb1r/ppp2p1p/2n2n1p/4p3/8/N1Pq2Pb/PPp2P1P/R3K1R1 b Qkq - 1 13",
@@ -31783,7 +31783,7 @@
       "game_id": "29fcb1d8-93e7-4393-9a7b-ab0cd84454cd",
       "move_number": 9,
       "side_to_move": "white",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "random-bot"
     },
     {
@@ -34160,7 +34160,7 @@
       "game_id": "377474b1-3682-4664-91d3-35b4a5c42b74",
       "move_number": 32,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "o3"
     },
     {
@@ -38874,7 +38874,7 @@
       "move_number": 99,
       "side_to_move": "white",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "rn1qkbnr/pppb2pp/4p3/3p1p2/1P1P2Q1/P3P3/2P2PPP/RNB1KBNR b KQkq - 0 5",
@@ -39137,7 +39137,7 @@
       "game_id": "2753ad38-cbf2-45b2-991d-f2dc2d4c2e52",
       "move_number": 94,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "maia-1100"
     },
     {
@@ -39647,7 +39647,7 @@
       "game_id": "2753ad38-cbf2-45b2-991d-f2dc2d4c2e52",
       "move_number": 50,
       "side_to_move": "black",
-      "player_id": "gemini-2.5-pro (medium)",
+      "player_id": "gemini-2.5-pro (default)",
       "opponent_id": "maia-1100"
     },
     {
@@ -42001,7 +42001,7 @@
       "move_number": 89,
       "side_to_move": "white",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "r1bq1rk1/ppp2ppp/2n5/8/3N1n2/P1P5/1BPQ1PPP/R3KB1R w KQ - 4 11",
@@ -48538,7 +48538,7 @@
       "move_number": 73,
       "side_to_move": "white",
       "player_id": "maia-1100",
-      "opponent_id": "gemini-2.5-pro (medium)"
+      "opponent_id": "gemini-2.5-pro (default)"
     },
     {
       "fen": "r1bqkbnr/pppp1ppp/2n5/8/3p1B2/P5P1/1PP1PP1P/RN1QKBNR b KQkq - 2 4",

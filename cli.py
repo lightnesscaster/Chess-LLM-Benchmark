@@ -250,12 +250,17 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
         reasoning_effort = llm_cfg.get("reasoning_effort")
+        reasoning_max_tokens = llm_cfg.get("reasoning_max_tokens")
         reasoning = llm_cfg.get("reasoning")  # None = not set, True = enable, False = disable
 
         # Validate no conflicting reasoning settings
         if reasoning is False and reasoning_effort is not None:
             raise ValueError(
                 f"Model '{player_id}': reasoning=false conflicts with reasoning_effort={reasoning_effort}"
+            )
+        if reasoning_effort is not None and reasoning_max_tokens is not None:
+            raise ValueError(
+                f"Model '{player_id}': cannot set both reasoning_effort and reasoning_max_tokens"
             )
 
         # Append reasoning effort to player_id if set and not already included
@@ -282,6 +287,7 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
                 max_tokens=llm_cfg.get("max_tokens", 0),
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
+                reasoning_max_tokens=reasoning_max_tokens,
                 provider_order=llm_cfg.get("provider_order"),
                 timeout=llm_cfg.get("timeout", 600),
             )
@@ -290,7 +296,7 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
         # 1. Has reasoning_effort set, OR
         # 2. Has reasoning=True, OR
         # 3. Matches naming convention (unless reasoning is explicitly False)
-        if reasoning_effort is not None or reasoning is True:
+        if reasoning_effort is not None or reasoning_max_tokens is not None or reasoning is True:
             reasoning_ids.add(player_id)
         elif reasoning is not False and is_reasoning_model(player_id):
             reasoning_ids.add(player_id)
@@ -889,13 +895,13 @@ async def run_manual_game(args):
             )
 
     # Helper to create LLM player
-    def create_llm(model_name, reasoning=None, reasoning_effort=None, custom_name=None):
+    def create_llm(model_name, reasoning=None, reasoning_effort=None, reasoning_max_tokens=None, custom_name=None):
         if custom_name:
             player_id = custom_name
         else:
             player_id = model_name.split("/")[-1]
             player_id = resolve_player_id(player_id, reasoning_effort)
-            if not reasoning_effort and reasoning is False and "(no thinking)" not in player_id.lower():
+            if not reasoning_effort and not reasoning_max_tokens and reasoning is False and "(no thinking)" not in player_id.lower():
                 player_id = f"{player_id} (no thinking)"
         if api_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
@@ -913,6 +919,7 @@ async def run_manual_game(args):
             max_tokens=args.max_tokens,
             reasoning=reasoning,
             reasoning_effort=reasoning_effort,
+            reasoning_max_tokens=reasoning_max_tokens,
         )
 
     # Track results across games
@@ -937,23 +944,23 @@ async def run_manual_game(args):
                 if args.black_engine:
                     white = create_engine(black_engine_type)
                 else:
-                    white = create_llm(args.black_model, args.black_reasoning, args.black_reasoning_effort, args.black_name)
+                    white = create_llm(args.black_model, reasoning=args.black_reasoning, reasoning_effort=args.black_reasoning_effort, reasoning_max_tokens=args.black_reasoning_max_tokens, custom_name=args.black_name)
 
                 if args.white_engine:
                     black = create_engine(white_engine_type)
                 else:
-                    black = create_llm(args.white_model, args.white_reasoning, args.white_reasoning_effort, args.white_name)
+                    black = create_llm(args.white_model, reasoning=args.white_reasoning, reasoning_effort=args.white_reasoning_effort, reasoning_max_tokens=args.white_reasoning_max_tokens, custom_name=args.white_name)
             else:
                 # Normal: original assignments
                 if args.white_engine:
                     white = create_engine(white_engine_type)
                 else:
-                    white = create_llm(args.white_model, args.white_reasoning, args.white_reasoning_effort, args.white_name)
+                    white = create_llm(args.white_model, reasoning=args.white_reasoning, reasoning_effort=args.white_reasoning_effort, reasoning_max_tokens=args.white_reasoning_max_tokens, custom_name=args.white_name)
 
                 if args.black_engine:
                     black = create_engine(black_engine_type)
                 else:
-                    black = create_llm(args.black_model, args.black_reasoning, args.black_reasoning_effort, args.black_name)
+                    black = create_llm(args.black_model, reasoning=args.black_reasoning, reasoning_effort=args.black_reasoning_effort, reasoning_max_tokens=args.black_reasoning_max_tokens, custom_name=args.black_name)
 
             if args.games > 1:
                 print(f"\n{'='*50}")
@@ -1180,6 +1187,16 @@ def main():
         "--black-reasoning-effort",
         choices=["minimal", "low", "medium", "high"],
         help="Reasoning effort level for black (minimal, low, medium, high)",
+    )
+    manual_parser.add_argument(
+        "--white-reasoning-max-tokens",
+        type=int,
+        help="Explicit thinking token budget for white (overrides effort)",
+    )
+    manual_parser.add_argument(
+        "--black-reasoning-max-tokens",
+        type=int,
+        help="Explicit thinking token budget for black (overrides effort)",
     )
     white_reasoning_group = manual_parser.add_mutually_exclusive_group()
     white_reasoning_group.add_argument(

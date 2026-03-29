@@ -8,8 +8,8 @@ Usage:
 
 from firebase_client import get_firestore_client, RATINGS_COLLECTION, GAMES_COLLECTION, RESULTS_COLLECTION, BENCHMARK_RESULTS_COLLECTION
 
-OLD_NAME = "gemini-2.5-pro"
-NEW_NAME = "gemini-2.5-pro (medium)"
+OLD_NAME = "gemini-2.5-pro (medium)"
+NEW_NAME = "gemini-2.5-pro (default)"
 
 
 def rename_in_ratings():

@@ -35,7 +35,7 @@ _ALL_BENCHMARK_RATINGS = {
     "gemini-3-flash-preview (medium)": (1828, 85),
     "gemini-3-flash-preview (high)": (1792, 130),
     "gemini-3-pro-preview (medium)": (658, 70),
-    "gemini-2.5-pro (medium)": (382, 59),
+    "gemini-2.5-pro (default)": (382, 59),
     "gemini-2.5-flash (no thinking)": (338, 45),
     "gemini-3.1-flash-lite-preview": (301, 77),
     "gemini-2.0-flash-001": (223, 45),

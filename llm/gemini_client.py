@@ -34,6 +34,8 @@ class GeminiPlayer(BaseLLMPlayer):
         timeout: int = 300,
     ):
         super().__init__(player_id, model_name)
+        self._last_prompt_tokens = 0
+        self._last_completion_tokens = 0
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("Gemini API key required (set GEMINI_API_KEY)")
@@ -189,8 +191,10 @@ class GeminiPlayer(BaseLLMPlayer):
 
                 # Track token usage
                 if response.usage_metadata:
-                    self.prompt_tokens += response.usage_metadata.prompt_token_count or 0
-                    self.completion_tokens += response.usage_metadata.candidates_token_count or 0
+                    self._last_prompt_tokens = response.usage_metadata.prompt_token_count or 0
+                    self._last_completion_tokens = response.usage_metadata.candidates_token_count or 0
+                    self.prompt_tokens += self._last_prompt_tokens
+                    self.completion_tokens += self._last_completion_tokens
                     self.total_tokens += response.usage_metadata.total_token_count or 0
 
                 # Extract response text (response.text raises ValueError if safety-filtered)

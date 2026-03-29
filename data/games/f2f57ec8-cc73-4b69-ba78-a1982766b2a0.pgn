@@ -3,7 +3,7 @@
 [Date "2025.12.01"]
 [Round "1"]
 [White "claude-opus-4.5 (high)"]
-[Black "gemini-2.5-pro (medium)"]
+[Black "gemini-2.5-pro (default)"]
 [Result "1-0"]
 [Termination "forfeit_illegal_move"]
 
