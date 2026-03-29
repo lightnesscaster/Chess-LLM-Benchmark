@@ -2,7 +2,7 @@
 [Site "Local"]
 [Date "2025.12.03"]
 [Round "1"]
-[White "gemini-2.5-pro"]
+[White "gemini-2.5-pro (medium)"]
 [Black "gpt-5.1-chat"]
 [Result "1-0"]
 [Termination "checkmate"]

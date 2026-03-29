@@ -43601,7 +43601,7 @@
       }
     ]
   },
-  "gemini-2.5-pro": {
+  "gemini-2.5-pro (medium)": {
     "summary": {
       "total_positions": 50,
       "legal_moves": 45,
@@ -43613,7 +43613,7 @@
       "avg_cpl": 805.58,
       "avg_cpl_legal": 335.8888888888889,
       "median_cpl": 19.0,
-      "player_id": "gemini-2.5-pro",
+      "player_id": "gemini-2.5-pro (medium)",
       "positions_attempted": 50,
       "positions_skipped": 0,
       "equal": {

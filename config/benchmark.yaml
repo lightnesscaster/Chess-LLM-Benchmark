@@ -245,8 +245,8 @@ llms:
   #   timeout: 1200
   #   provider_order: ["Novita"]
 
-  # gemini-2.5-pro (mandatory reasoning)
-  - player_id: "gemini-2.5-pro"
+  # gemini-2.5-pro (medium reasoning - OpenRouter default when no effort specified)
+  - player_id: "gemini-2.5-pro (medium)"
     model_name: "google/gemini-2.5-pro"
     temperature: 0.0
     reasoning: true

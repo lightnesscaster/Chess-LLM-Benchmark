@@ -37,7 +37,7 @@ def is_reasoning_model(player_id: str) -> bool:
         "(minimal)",
         "-r1",          # DeepSeek R1 models
         "gemini-3",     # Gemini 3.x models
-        "gemini-2.5-pro",  # Gemini 2.5 Pro (reasoning by default)
+        "gemini-2.5-pro",  # Gemini 2.5 Pro (medium reasoning by default)
         "grok-4",       # Grok 4.x models
         "-thinking",    # Explicit thinking suffix
         "gpt-5-chat",   # GPT-5 chat (reasoning variant)

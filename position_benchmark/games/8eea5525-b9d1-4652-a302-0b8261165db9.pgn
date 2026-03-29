@@ -3,7 +3,7 @@
 [Date "2025.12.16"]
 [Round "1"]
 [White "random-bot"]
-[Black "gemini-2.5-pro"]
+[Black "gemini-2.5-pro (medium)"]
 [Result "1-0"]
 [Termination "forfeit_illegal_move"]
 

@@ -29,7 +29,7 @@
     "created_timestamp": 1758240090,
     "created_date": "2025-09-18"
   },
-  "gemini-2.5-pro": {
+  "gemini-2.5-pro (medium)": {
     "model_id": "google/gemini-2.5-pro",
     "created_timestamp": 1750169544,
     "created_date": "2025-06-17"

@@ -64,8 +64,8 @@
     "games_rd": 350.0,
     "unclamped_rating": 1200
   },
-  "gemini-2.5-pro": {
-    "player_id": "gemini-2.5-pro",
+  "gemini-2.5-pro (medium)": {
+    "player_id": "gemini-2.5-pro (medium)",
     "rating": -3.987927395939778,
     "rating_deviation": 347.2684849244299,
     "volatility": 0.06,

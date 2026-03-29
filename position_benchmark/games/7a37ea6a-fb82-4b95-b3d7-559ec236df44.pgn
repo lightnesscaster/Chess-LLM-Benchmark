@@ -3,7 +3,7 @@
 [Date "2025.12.01"]
 [Round "1"]
 [White "gpt-oss-120b (medium)"]
-[Black "gemini-2.5-pro"]
+[Black "gemini-2.5-pro (medium)"]
 [Result "0-1"]
 [Termination "checkmate"]
 
