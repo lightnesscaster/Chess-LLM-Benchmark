@@ -184,6 +184,63 @@ def predict_rating_simple(equal_cpl: float) -> float:
 
 
 # =============================================================================
+# REASONING TOKEN SCALING: predict higher-effort rating from lower-effort
+# =============================================================================
+# LOFO RMSE: 435 rating points (leave-one-family-out cross-validation)
+# LOFO MAE:  339 rating points
+# LOFO Median AE: 345 rating points
+#
+# predicted_high_rating = low_rating + 11.2 * (√high_tokens - √low_tokens)
+#
+# Where:
+#   low_rating   = known rating of the lower-effort variant
+#   low_tokens   = completion tokens per position (position benchmark) or per
+#                  move (game average) for the lower-effort variant
+#   high_tokens  = same metric for the higher-effort variant
+#
+# Fitted on 13 within-family pairs across 9 model families, all with RD < 100.
+# Uses fixed-effects (family intercepts) with a shared sqrt(tokens) slope.
+# Token data from position benchmark where available, game averages as fallback.
+#
+# The sqrt captures diminishing returns:
+#   1000 -> 2000 tokens: +147 rating
+#   5000 -> 10000 tokens: +328 rating
+#
+# Compared against ln(tokens), linear tokens, tokens^0.25, and quadratic log.
+# sqrt(tokens) had the best balance of LOO RMSE and simplicity (1 slope param).
+#
+# Limitations:
+# - Gemini models gain more from thinking than predicted (off by 600-800)
+# - Only useful for same-model family comparisons (not cross-model)
+# - 13 pairs is a small sample; treat predictions as rough estimates
+#
+# Data: Mar 2026, 9 families, 20 data points, Stockfish depth 30.
+
+REASONING_SCALING_BETA = 11.2  # rating points per √token
+
+
+def predict_higher_effort_rating(
+    low_rating: float, low_tokens: float, high_tokens: float
+) -> float:
+    """
+    Predict the rating of a higher-effort variant from a lower-effort variant.
+
+    Uses the sqrt scaling law: more thinking tokens improve strength, but
+    with diminishing returns captured by the square root.
+
+    Args:
+        low_rating: Known rating of the lower-effort variant
+        low_tokens: Completion tokens per position/move for lower-effort variant
+        high_tokens: Completion tokens per position/move for higher-effort variant
+
+    Returns:
+        Predicted rating of the higher-effort variant
+    """
+    import math
+    return low_rating + REASONING_SCALING_BETA * (math.sqrt(high_tokens) - math.sqrt(low_tokens))
+
+
+# =============================================================================
 # SUMMARY
 # =============================================================================
 """
@@ -258,3 +315,12 @@ if __name__ == "__main__":
     print(f"  Recommended (pos illegal):  {predict_rating(560.2, 46.0, s_pos):.0f}  (surv={s_pos:.1f}%)")
     print(f"  Recommended (game illegal): {predict_rating(560.2, 46.0, s_game):.0f}  (surv={s_game:.1f}%)")
     print(f"  Note: position benchmark overestimates legality -> large error with pos illegal rate")
+
+    # Reasoning token scaling examples
+    print("\n\nReasoning token scaling predictions:")
+    print(f"  gpt-oss-120b: low(599 tok, rating=243) -> medium(2597 tok):")
+    print(f"    Predicted: {predict_higher_effort_rating(243, 599, 2597):.0f}  (actual: 539)")
+    print(f"  gpt-5.1: no-thinking(589 tok, rating=483) -> high(8135 tok):")
+    print(f"    Predicted: {predict_higher_effort_rating(483, 589, 8135):.0f}  (actual: 1233)")
+    print(f"  Doubling from 1000 -> 2000 tokens: +{predict_higher_effort_rating(0, 1000, 2000):.0f} rating")
+    print(f"  Doubling from 5000 -> 10000 tokens: +{predict_higher_effort_rating(0, 5000, 10000):.0f} rating")
