@@ -123,7 +123,7 @@ class RatingStore:
         Load position benchmark results and compute predicted ratings.
 
         Uses the 3-feature formula from rating_prediction_formulas.py:
-          rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
+          rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
 
         Tries Firestore first (if enabled), falls back to local files.
         Results are cached at module level (benchmark data rarely changes).
@@ -194,7 +194,7 @@ class RatingStore:
 
             # Collect equal-position metrics
             eq_cpls = []
-            eq_lt10_count = 0
+            eq_best_count = 0
             eq_illegal_count = 0
             eq_total = 0
 
@@ -205,8 +205,8 @@ class RatingStore:
                 eq_total += 1
                 cpl = r.get("cpl", 0)
                 eq_cpls.append(cpl)
-                if cpl < 10:
-                    eq_lt10_count += 1
+                if r.get("is_best", False):
+                    eq_best_count += 1
                 if not r.get("is_legal", True):
                     eq_illegal_count += 1
 
@@ -214,7 +214,7 @@ class RatingStore:
                 continue
 
             eq_cpl = sum(eq_cpls) / len(eq_cpls)
-            pct_lt10 = 100.0 * eq_lt10_count / eq_total
+            best_pct = 100.0 * eq_best_count / eq_total
             p = eq_illegal_count / eq_total  # illegal rate
 
             # Survival probability: P(0 or 1 illegal in 40 moves) - pure Python binomial
@@ -226,10 +226,10 @@ class RatingStore:
                 surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
 
             predicted = (
-                1603.07
-                - 237.97 * math.log(eq_cpl + 1)
-                + 17.84 * pct_lt10
-                + 4.53 * surv_40
+                1298.57
+                - 200.43 * math.log(eq_cpl + 1)
+                + 15.39 * best_pct
+                + 5.85 * surv_40
             )
             predictions[model_name] = predicted
 
@@ -460,8 +460,8 @@ class RatingStore:
         """Manually save ratings to disk."""
         if self._use_firestore:
             self._save_all_to_firestore()
-        else:
-            self._save()
+        # Always write local file as backup
+        self._save()
 
     def is_anchor(self, player_id: str) -> bool:
         """Check if a player is an anchor with fixed rating."""

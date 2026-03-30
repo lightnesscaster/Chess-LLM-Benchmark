@@ -53,7 +53,7 @@ def load_benchmark_predictions() -> dict:
     Load position benchmark results and compute predicted ratings.
 
     Same formula as rating_store._load_benchmark_predictions():
-      rating = 1603.07 - 237.97*log(eq_cpl+1) + 17.84*pct_lt10 + 4.53*surv_40
+      rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
 
     Returns:
         Dict mapping model name to predicted rating, or empty dict if files missing.
@@ -84,7 +84,7 @@ def load_benchmark_predictions() -> dict:
             continue
 
         eq_cpls = []
-        eq_lt10_count = 0
+        eq_best_count = 0
         eq_illegal_count = 0
         eq_total = 0
 
@@ -95,8 +95,8 @@ def load_benchmark_predictions() -> dict:
             eq_total += 1
             cpl = r.get("cpl", 0)
             eq_cpls.append(cpl)
-            if cpl < 10:
-                eq_lt10_count += 1
+            if r.get("is_best", False):
+                eq_best_count += 1
             if not r.get("is_legal", True):
                 eq_illegal_count += 1
 
@@ -104,7 +104,7 @@ def load_benchmark_predictions() -> dict:
             continue
 
         eq_cpl = sum(eq_cpls) / len(eq_cpls)
-        pct_lt10 = 100.0 * eq_lt10_count / eq_total
+        best_pct = 100.0 * eq_best_count / eq_total
         p = eq_illegal_count / eq_total
 
         if p <= 0:
@@ -115,10 +115,10 @@ def load_benchmark_predictions() -> dict:
             surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
 
         predicted = (
-            1603.07
-            - 237.97 * math.log(eq_cpl + 1)
-            + 17.84 * pct_lt10
-            + 4.53 * surv_40
+            1298.57
+            - 200.43 * math.log(eq_cpl + 1)
+            + 15.39 * best_pct
+            + 5.85 * surv_40
         )
         predictions[model_name] = predicted
 
@@ -787,8 +787,27 @@ async def recalculate_ratings(args):
         rating_store.set(player, auto_save=False)
     rating_store.save()
 
+    # Compute and store frozen flags
+    from game.freeze_checker import FreezeChecker
+    reasoning_ids = set()
+    for llm_cfg in config.get("llms", []):
+        if llm_cfg.get("reasoning", False):
+            reasoning_ids.add(llm_cfg["player_id"])
+    engine_ids = set(anchors.keys()) | set(non_anchor_engines.keys())
+    freeze_checker = FreezeChecker(rating_store, stats_collector, reasoning_ids, engine_ids)
+    frozen_flags = freeze_checker.compute_frozen_flags()
+    frozen_count = 0
+    for player_id, is_frozen in frozen_flags.items():
+        player = rating_store.get(player_id)
+        player.is_frozen = is_frozen
+        rating_store.set(player, auto_save=False)
+        if is_frozen:
+            frozen_count += 1
+    rating_store.save()
+
     processed = len(valid_games)
     print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
+    print(f"Frozen models: {frozen_count}")
     print()
 
     # Show leaderboard (stats_collector already created earlier)

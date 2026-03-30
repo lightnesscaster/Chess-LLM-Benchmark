@@ -77,20 +77,43 @@ LLMs receive FEN + ASCII board and must return a single UCI move. On illegal mov
 
 ## Position Benchmark
 
-The position benchmark evaluates models on static chess positions and calculates CPL (centipawn loss). All Stockfish evaluations use **depth 30**. This applies to:
-- `run_benchmark.py` — evaluating model/engine moves
+The position benchmark evaluates models on **50 equal positions** (static chess positions) and calculates CPL (centipawn loss). The regression that predicts ratings only uses equal positions, not blunder positions. All Stockfish evaluations use **depth 30**. This applies to:
+- `run_benchmark.py` — evaluating model/engine moves (default: `--type equal`, use `--type all` for all 75)
 - `extract_blunders.py` — detecting blunders in game PGNs
 - `extract_equal_positions.py` — finding equal positions
 - `reeval_depth30.py` — bulk re-evaluation script
 
+The rating prediction formula (used in `rating/rating_store.py`):
+```
+rating = 1298.57 - 200.43 * log(eq_cpl + 1) + 15.39 * best_pct + 5.85 * surv_40
+```
+
+**Important**: Position benchmark results must be synced to Firestore (`benchmark_results` collection) for the main benchmark to use the predicted ratings. Both `run_benchmark.py` and `cli.py run` sync to Firestore, but the sync may fail silently if Firestore credentials are unavailable.
+
 Do not lower the depth below 30 without good reason.
+
+## OpenRouter Reasoning/Thinking
+
+- **Effort levels**: OpenRouter maps effort to thinking budget as a percentage of max_tokens: minimal=10%, low=20%, medium=50%, high=80%. This differs from Google's native API which uses fixed token budgets.
+- **`reasoning_max_tokens`**: For explicit control, use `reasoning_max_tokens` in config to set an exact thinking token budget (bypasses percentage mapping).
+- **Mandatory reasoning**: Some models (e.g., Gemini 2.5 Pro) cannot disable reasoning. Use `reasoning: false` to test; if it fails with a 400 error, reasoning is mandatory.
+- **Token counting**: `completion_tokens` from OpenRouter includes reasoning/thinking tokens. They are not billed separately.
+- **Effort levels don't always work**: Some models (deepseek-v3.2, kimi-k2-thinking) ignore effort levels — low/medium/high produce similar token counts. Test with a few moves before committing to a full benchmark run.
+
+## Adding New Models
+
+When adding a new model variant to `config/benchmark.yaml`:
+1. Add the model config (player_id, model_name, reasoning settings)
+2. Add pricing to `config/pricing.json`
+3. Add **all player_id variants** (no thinking, minimal, high, etc.) to `data/model_publish_dates.json` — the freeze-test logic requires publish dates to function
+4. Run the position benchmark to get a rating prediction (verify Firestore sync succeeded)
 
 ## Configuration
 
 Edit `config/benchmark.yaml` to configure:
-- `benchmark.games_vs_anchor_per_color`: Games per LLM vs each anchor
+- `benchmark.games_vs_anchor_per_color`: Games per LLM vs each anchor (per color, so total = 2x)
 - `benchmark.games_vs_llm_per_color`: Games per LLM pair
 - `benchmark.max_concurrent`: Parallel game limit
 - `benchmark.rating_threshold`: Only pair players within this rating difference
 - `engines`: Anchors with fixed ratings (types: `stockfish`, `maia`, `random`, `uci`)
-- `llms`: Models to benchmark with optional `reasoning` and `reasoning_effort` settings
+- `llms`: Models to benchmark with optional `reasoning`, `reasoning_effort`, and `reasoning_max_tokens` settings

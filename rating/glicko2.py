@@ -25,6 +25,7 @@ class PlayerRating:
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     unclamped_rating: float = None  # Legacy field, kept for backwards compatibility
     games_rd: float = 350.0          # RD tracking only game results (not benchmark seeding)
+    is_frozen: bool = False          # Whether the model is frozen (won't play more games)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -39,6 +40,7 @@ class PlayerRating:
             "draws": self.draws,
             "last_updated": self.last_updated,
             "games_rd": self.games_rd,
+            "is_frozen": self.is_frozen,
         }
         if self.unclamped_rating is not None:
             d["unclamped_rating"] = self.unclamped_rating
@@ -52,6 +54,7 @@ class PlayerRating:
             'wins': 0, 'losses': 0, 'draws': 0,
             'unclamped_rating': None,
             'games_rd': data.get('rating_deviation', 350.0),
+            'is_frozen': False,
         }
         merged = {**defaults, **data}
         # Strip unknown fields so old code can deserialize new Firestore data

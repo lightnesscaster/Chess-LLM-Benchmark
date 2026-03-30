@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from engines.base_engine import BaseEngine
 from llm.base_llm import BaseLLMPlayer
 from .game_runner import GameRunner
+from .freeze_checker import FreezeChecker
 from .models import GameResult, PlayerConfig
 from .pgn_logger import PGNLogger
 from .stats_collector import StatsCollector
@@ -210,10 +211,14 @@ class MatchScheduler:
         self._models_by_model_id: Dict[str, List[str]] = {}  # model_id -> [player_ids]
         self._load_publish_dates()
 
-        # Cost calculator for cost-aware scheduling
+        # Freeze checker (owns freeze logic and cost estimation)
+        engine_ids = {pid for pid, p in players.items() if isinstance(p, BaseEngine)}
+        self._freeze_checker = FreezeChecker(
+            rating_store, stats_collector, reasoning_ids, engine_ids
+        )
+
+        # Cost calculator for cost-aware scheduling (delegates to freeze checker for per-player costs)
         self._cost_calculator = CostCalculator()
-        self._cost_cache: Dict[str, float] = {}  # Cache estimated costs per player
-        self._cost_data_cache: Optional[Dict[str, Dict[str, Any]]] = None  # Filtered cost data
         self._pairwise_cost_cache: Optional[Dict[Tuple[str, str], float]] = None  # Pairwise game costs
 
     def _load_publish_dates(self) -> None:
@@ -314,7 +319,7 @@ class MatchScheduler:
         # Filter out frozen models
         eligible = [
             lid for lid in eligible
-            if not self._is_frozen(lid, self.rating_store.get(lid).rating_deviation)
+            if not self._freeze_checker.is_frozen(lid, self.rating_store.get(lid).rating_deviation)
         ]
 
         if not eligible:
@@ -403,93 +408,9 @@ class MatchScheduler:
 
     def invalidate_cost_cache(self) -> None:
         """Invalidate all cost caches. Call this when ratings are updated."""
-        self._cost_data_cache = None
-        self._cost_cache.clear()
+        self._freeze_checker.invalidate_cost_cache()
         self._pairwise_cost_cache = None
 
-    def _get_player_cost(self, player_id: str) -> float:
-        """
-        Get estimated cost per game for a player.
-
-        Uses historical average if available from stats_collector,
-        otherwise estimates from pricing data. Only considers games
-        against opponents within 600 rating points (DEFAULT_COST_RATING_THRESHOLD).
-
-        Args:
-            player_id: The player to get cost for
-
-        Returns:
-            Estimated cost per game in dollars (0.0 for engines/free models)
-        """
-        # Return cached value if available
-        if player_id in self._cost_cache:
-            return self._cost_cache[player_id]
-
-        # Engines have no cost
-        if player_id in self.players and isinstance(self.players[player_id], BaseEngine):
-            self._cost_cache[player_id] = 0.0
-            return 0.0
-
-        # Try to get historical cost from cached cost_data
-        # Calculate cost_data once and cache it (avoid recalculating for every player)
-        # Only include games against similarly-rated opponents for accurate cost estimate
-        if self._cost_data_cache is None:
-            filtered_results = filter_results_by_rating_diff(
-                self.stats_collector.results, self.rating_store
-            )
-            self._cost_data_cache = self._cost_calculator.calculate_player_costs(
-                filtered_results
-            )
-
-        if player_id in self._cost_data_cache:
-            avg_cost = self._cost_data_cache[player_id].get("avg_cost_per_game", 0.0)
-            if avg_cost > 0:
-                self._cost_cache[player_id] = avg_cost
-                return avg_cost
-
-        # Fall back to estimate from pricing
-        model = self._cost_calculator.get_model_for_player(player_id)
-        if not model:
-            # Unknown model - use conservative default instead of 0
-            self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
-            return self.UNKNOWN_MODEL_DEFAULT_COST
-
-        pricing = self._cost_calculator.get_pricing(model)
-        if not pricing:
-            # No pricing data - use conservative default
-            self._cost_cache[player_id] = self.UNKNOWN_MODEL_DEFAULT_COST
-            return self.UNKNOWN_MODEL_DEFAULT_COST
-
-        # Use position benchmark token data if available for better estimates
-        comp_per_call = None
-        try:
-            import json
-            from pathlib import Path
-            results_path = Path(__file__).parent.parent / "position_benchmark" / "results.json"
-            if results_path.exists():
-                with open(results_path) as f:
-                    bench_data = json.load(f)
-                if player_id in bench_data:
-                    tu = bench_data[player_id].get("token_usage", {})
-                    results = bench_data[player_id].get("results", [])
-                    n_positions = len(results) if results else 50
-                    bench_comp = tu.get("completion", 0)
-                    if bench_comp > 0:
-                        comp_per_call = bench_comp / n_positions
-        except Exception:
-            pass
-
-        if comp_per_call is None:
-            # Fall back: reasoning models ~3000 tokens/call, non-reasoning ~10
-            comp_per_call = 3000 if player_id in self.reasoning_ids else 10
-
-        # ~100 LLM calls per game, ~1500 prompt tokens per call
-        estimated_cost = max(0.0, (
-            100 * 1500 * pricing.get("prompt", 0) +
-            100 * comp_per_call * pricing.get("completion", 0)
-        ))
-        self._cost_cache[player_id] = estimated_cost
-        return estimated_cost
 
     def _calculate_game_cost(self, result: GameResult) -> float:
         """
@@ -549,7 +470,7 @@ class MatchScheduler:
             return self._pairwise_cost_cache[pair_key]
 
         # Fall back to sum of individual player costs
-        return self._get_player_cost(white_id) + self._get_player_cost(black_id)
+        return self._freeze_checker.get_player_cost(white_id) + self._freeze_checker.get_player_cost(black_id)
 
     def _build_pairwise_cost_cache(self) -> Dict[Tuple[str, str], float]:
         """
@@ -596,7 +517,7 @@ class MatchScheduler:
             Priority score (higher = more urgent to schedule)
         """
         rd = self._get_estimated_rd(player_id)
-        cost = self._get_player_cost(player_id)
+        cost = self._freeze_checker.get_player_cost(player_id)
         return rd / (1 + self.COST_SENSITIVITY * cost)
 
     def _estimate_rd_after_game(self, player_id: str, opponent_id: str, current_rd: float) -> float:
@@ -640,243 +561,6 @@ class MatchScheduler:
             rd = self._estimate_rd_after_game(player_id, opp_id, rd)
         self._estimated_rd[player_id] = rd
 
-    def _is_proven_worse(self, player_id: str,
-                         player_stats: Dict[str, Any]) -> bool:
-        """
-        Check if model is statistically significantly worse than another model.
-
-        Returns True if there exists any model (any provider) that:
-        - Was released before this model, or within 2 months after
-        - Has RD < 80 and at least 3 losses
-        - Has a rating advantage exceeding the combined RD of both models
-        """
-        my_timestamp = self._publish_dates.get(player_id)
-        if my_timestamp is None:
-            return False
-
-        my_data = self.rating_store.get(player_id)
-        my_rating = my_data.rating
-        my_rd = my_data.rating_deviation
-
-        two_months = self.PROVEN_WORSE_TIME_WINDOW * 30.44 * 24 * 60 * 60
-
-        is_reasoning = player_id in self.reasoning_ids
-
-        for other_id, other_timestamp in self._publish_dates.items():
-            if other_id == player_id:
-                continue
-
-            # Don't freeze non-reasoning models based on reasoning model comparisons
-            if not is_reasoning and other_id in self.reasoning_ids:
-                continue
-
-            # Must be released before this model OR within 2 months after
-            if other_timestamp > my_timestamp + two_months:
-                continue
-
-            if not self.rating_store.has_player(other_id):
-                continue
-
-            other_data = self.rating_store.get(other_id)
-            if other_data.rating_deviation >= self.PROVEN_WORSE_RD_THRESHOLD:
-                continue
-
-            if other_data.rating <= my_rating:
-                continue
-
-            other_losses = player_stats.get(other_id, {}).get("losses", 0)
-            if other_losses < self.PROVEN_WORSE_MIN_LOSSES:
-                continue
-
-            # Rating difference must exceed combined RD
-            if other_data.rating - my_rating > my_rd + other_data.rating_deviation:
-                return True
-
-        return False
-
-    def _get_effort_level(self, player_id: str) -> Optional[int]:
-        """Extract effort level ordinal from player_id parenthetical tag."""
-        start = player_id.rfind('(')
-        end = player_id.rfind(')')
-        if start != -1 and end != -1 and end > start:
-            tag = player_id[start + 1:end]
-            return self.EFFORT_LEVELS.get(tag)
-        return None
-
-    def _is_inferior_effort_variant(self, player_id: str,
-                                    player_stats: Dict[str, Any]) -> bool:
-        """
-        Check if a higher-effort variant is outperformed by a lower-effort sibling.
-
-        Returns True if there exists a same-model sibling (same model_id) with:
-        - Lower effort level
-        - Higher rating
-        - RD < 150
-        - At least 3 losses
-        """
-        model_id = self._player_model_ids.get(player_id)
-        if not model_id:
-            return False
-
-        my_effort = self._get_effort_level(player_id)
-        if my_effort is None:
-            return False
-
-        my_rating = self.rating_store.get(player_id).rating
-
-        for other_id in self._models_by_model_id.get(model_id, []):
-            if other_id == player_id:
-                continue
-
-            other_effort = self._get_effort_level(other_id)
-            if other_effort is None or other_effort >= my_effort:
-                continue  # Only check lower effort siblings
-
-            if not self.rating_store.has_player(other_id):
-                continue
-
-            other_data = self.rating_store.get(other_id)
-            if other_data.rating_deviation >= self.EFFORT_VARIANT_RD_THRESHOLD:
-                continue  # Other model's rating not stable enough
-
-            if other_data.rating <= my_rating:
-                continue  # Lower effort isn't actually better
-
-            other_losses = player_stats.get(other_id, {}).get("losses", 0)
-            if other_losses < self.EFFORT_VARIANT_MIN_LOSSES:
-                continue  # Not enough games to be confident
-
-            return True  # Found a lower-effort sibling that performs better
-
-        return False
-
-    def _is_inferior_to_provider_sibling(self, player_id: str) -> bool:
-        """
-        Check if model is inferior to another model from the same provider.
-
-        Returns True if there exists a same-provider model that:
-        - Was released before this model, or within 3 months after
-        - Has a higher rating
-        - This model is NOT at least 2x cheaper than it
-        """
-        provider = self._player_providers.get(player_id)
-        if not provider:
-            return False
-
-        my_timestamp = self._publish_dates.get(player_id)
-        if my_timestamp is None:
-            return False
-
-        my_rating = self.rating_store.get(player_id).rating
-        my_cost = self._get_player_cost(player_id)
-
-        three_months = self.PROVIDER_INFERIOR_TIME_WINDOW * 30.44 * 24 * 60 * 60
-        is_reasoning = player_id in self.reasoning_ids
-
-        for other_id in self._models_by_provider.get(provider, []):
-            if other_id == player_id:
-                continue
-
-            # Don't freeze non-reasoning models based on reasoning model comparisons
-            if not is_reasoning and other_id in self.reasoning_ids:
-                continue
-
-            other_timestamp = self._publish_dates.get(other_id)
-            if other_timestamp is None:
-                continue
-
-            # Must be released before this model OR within 3 months after
-            if other_timestamp > my_timestamp + three_months:
-                continue
-
-            # Must have a rating in the store
-            if not self.rating_store.has_player(other_id):
-                continue
-
-            other_rating = self.rating_store.get(other_id).rating
-            if other_rating <= my_rating:
-                continue  # Not higher rated
-
-            # Cost exception: free models (cost=0) are always "cheap enough"
-            if my_cost == 0:
-                continue
-
-            # If both have cost data, check the 2x ratio
-            other_cost = self._get_player_cost(other_id)
-            if other_cost > 0 and my_cost * self.PROVIDER_INFERIOR_COST_RATIO <= other_cost:
-                continue  # This model is cheap enough to justify keeping
-
-            return True  # Found a superior sibling
-
-        return False
-
-    def _lost_to_much_weaker(self, player_id: str) -> bool:
-        """
-        Check if model lost to a model far below its peer group.
-
-        Returns True if:
-        - Model A (player_id) lost to Model B in any game
-        - There exists a peer Model C (released before A or within 3 months after)
-          rated 600+ points above B
-        - A is NOT at least 5x cheaper than C
-        """
-        my_timestamp = self._publish_dates.get(player_id)
-        if my_timestamp is None:
-            return False
-
-        my_cost = self._get_player_cost(player_id)
-
-        three_months = self.LOST_TO_WEAKER_TIME_WINDOW * 30.44 * 24 * 60 * 60
-
-        # Collect opponent IDs this model lost to
-        lost_to = set()
-        for result in self.stats_collector.results:
-            if result.winner == "white" and result.black_id == player_id:
-                lost_to.add(result.white_id)
-            elif result.winner == "black" and result.white_id == player_id:
-                lost_to.add(result.black_id)
-
-        if not lost_to:
-            return False
-
-        # Get ratings of models we lost to
-        lost_to_ratings = {}
-        for opp_id in lost_to:
-            if self.rating_store.has_player(opp_id):
-                lost_to_ratings[opp_id] = self.rating_store.get(opp_id).rating
-
-        if not lost_to_ratings:
-            return False
-
-        lowest_loss_rating = min(lost_to_ratings.values())
-
-        # Check if any peer model C is rated 600+ points above any model we lost to
-        for peer_id, peer_timestamp in self._publish_dates.items():
-            if peer_id == player_id:
-                continue
-
-            # Peer must be released before this model or within 3 months after
-            if peer_timestamp > my_timestamp + three_months:
-                continue
-
-            if not self.rating_store.has_player(peer_id):
-                continue
-
-            peer_rating = self.rating_store.get(peer_id).rating
-            if peer_rating - lowest_loss_rating < self.LOST_TO_WEAKER_RATING_GAP:
-                continue
-
-            # Cost exception: free models are always exempt; otherwise check 5x ratio
-            if my_cost == 0:
-                continue
-            peer_cost = self._get_player_cost(peer_id)
-            if peer_cost > 0 and my_cost * self.LOST_TO_WEAKER_COST_RATIO <= peer_cost:
-                continue  # This model is cheap enough relative to this peer
-
-            return True
-
-        return False
-
     def _get_freeze_test_opponent(
         self,
         player_id: str,
@@ -898,13 +582,13 @@ class MatchScheduler:
         if my_timestamp is None:
             return None
 
-        my_cost = self._get_player_cost(player_id)
+        my_cost = self._freeze_checker.get_player_cost(player_id)
         # Free models are always exempt from lost-to-weaker freeze
         if my_cost == 0:
             return None
 
         # If already lost to a freeze-triggering opponent, no need to front-load
-        if self._lost_to_much_weaker(player_id):
+        if self._freeze_checker.lost_to_much_weaker(player_id):
             return None
 
         three_months = self.LOST_TO_WEAKER_TIME_WINDOW * 30.44 * 24 * 60 * 60
@@ -919,7 +603,7 @@ class MatchScheduler:
             if not self.rating_store.has_player(peer_id):
                 continue
 
-            peer_cost = self._get_player_cost(peer_id)
+            peer_cost = self._freeze_checker.get_player_cost(peer_id)
             # Cost exception: if player is 5x cheaper than this peer, skip peer
             if peer_cost > 0 and my_cost * self.LOST_TO_WEAKER_COST_RATIO <= peer_cost:
                 continue
@@ -964,7 +648,7 @@ class MatchScheduler:
             if not has_games:
                 continue
 
-            opp_cost = self._get_player_cost(opp_id)
+            opp_cost = self._freeze_checker.get_player_cost(opp_id)
             total_cost = my_cost + opp_cost
 
             if opp_rating >= freeze_ceiling - FREEZE_TEST_BAND:
@@ -1026,176 +710,6 @@ class MatchScheduler:
                         return None
 
         return best_opp
-
-    def _is_expensive_inferior(self, player_id: str) -> bool:
-        """
-        Check if model is outperformed by a cheaper model (any provider).
-
-        Returns True if there exists any model that:
-        - Was released before this model, or within 3 months after
-        - Has a higher rating
-        - Is at least 2x cheaper than this model
-        """
-        my_timestamp = self._publish_dates.get(player_id)
-        if my_timestamp is None:
-            return False
-
-        my_rating = self.rating_store.get(player_id).rating
-        my_cost = self._get_player_cost(player_id)
-
-        # Free models can't be "expensive inferior"
-        if my_cost == 0:
-            return False
-
-        three_months = self.EXPENSIVE_INFERIOR_TIME_WINDOW * 30.44 * 24 * 60 * 60
-        is_reasoning = player_id in self.reasoning_ids
-
-        for other_id, other_timestamp in self._publish_dates.items():
-            if other_id == player_id:
-                continue
-
-            # Don't freeze non-reasoning models based on reasoning model comparisons
-            if not is_reasoning and other_id in self.reasoning_ids:
-                continue
-
-            # Must be released before this model OR within 3 months after
-            if other_timestamp > my_timestamp + three_months:
-                continue
-
-            if not self.rating_store.has_player(other_id):
-                continue
-
-            other_rating = self.rating_store.get(other_id).rating
-            if other_rating <= my_rating:
-                continue  # Not stronger
-
-            # The other model must be at least 2x cheaper
-            other_cost = self._get_player_cost(other_id)
-            if other_cost == 0 or my_cost >= self.EXPENSIVE_INFERIOR_COST_RATIO * other_cost:
-                return True  # Found a stronger model that's at least 2x cheaper
-
-        return False
-
-    def _is_frozen(self, player_id: str, current_rd: float,
-                   player_stats: Optional[Dict[str, Any]] = None) -> bool:
-        """
-        Check if a model is frozen (shouldn't initiate games).
-
-        A model is frozen if:
-        - RD < 60 (always frozen)
-        - RD < 70 and released > 6 months ago
-        - RD < 80 and released > 1 year ago
-        - Recent (after Nov 2025) reasoning model with RD < 100 and rating < 1000
-        - Recent (after Nov 2025) non-reasoning model with RD < 100 and rating < 500
-        - Within year (after Apr 2025) any model with RD < 100 and rating < 0
-        - RD < 80, lost >= 3 games, and another model (any provider, also RD < 80
-          and 3+ losses, released before or within 2 months after) has a rating
-          advantage exceeding the combined RD of both models
-        - RD < 150, lost >= 3 games, and a lower-effort variant of the same model
-          (same model_id) has higher rating (also RD < 150 and 3+ losses)
-        - RD < 100, lost >= 3 games, and a higher-rated same-provider model exists
-          (released before or within 3 months after) unless this model is 2x cheaper
-        - RD < 150, lost >= 3 games, and a stronger model (any provider, released
-          before or within 3 months after) is at least 2x cheaper
-        - Lost to a model rated 600+ points lower (released before or within 3
-          months after), unless this model is 5x cheaper
-
-        Args:
-            player_id: The player to check
-            current_rd: Current rating deviation
-            player_stats: Optional cached player stats dict (to avoid repeated computation)
-
-        Returns:
-            True if frozen, False otherwise
-        """
-        # Always frozen below base threshold
-        if current_rd < self.FROZEN_RD_THRESHOLD:
-            return True
-
-        # Check age-based freezing if we have publish date
-        if player_id in self._publish_dates:
-            publish_timestamp = self._publish_dates[player_id]
-            now = datetime.now(timezone.utc).timestamp()
-            age_months = (now - publish_timestamp) / (30.44 * 24 * 60 * 60)  # Average month length (365.25/12)
-
-            # RD < 70 and > 6 months old
-            if current_rd < self.FROZEN_AGE_RD_THRESHOLD_6M and age_months > self.FROZEN_AGE_MONTHS_6M:
-                return True
-
-            # RD < 80 and > 1 year old
-            if current_rd < self.FROZEN_AGE_RD_THRESHOLD_1Y and age_months > self.FROZEN_AGE_MONTHS_1Y:
-                return True
-
-            # Within-year weak model freezing (released after Apr 2025)
-            # Fixed cutoffs (not rolling windows) — weak models stay frozen permanently.
-            # Freeze at RD < 100 if rating < 0
-            if publish_timestamp >= self.WITHIN_YEAR_WEAK_CUTOFF:
-                current_rating = self.rating_store.get(player_id).rating
-                if (current_rd < self.WITHIN_YEAR_WEAK_RD_THRESHOLD and
-                        current_rating < self.WITHIN_YEAR_WEAK_RATING_THRESHOLD):
-                    return True
-
-                # More specific rules for recent models (released after Nov 2025)
-                if publish_timestamp >= self.RECENT_WEAK_CUTOFF:
-                    is_reasoning = player_id in self.reasoning_ids
-
-                    if is_reasoning:
-                        # Reasoning models: freeze at RD < 100 if rating < 1000
-                        if (current_rd < self.RECENT_WEAK_REASONING_RD_THRESHOLD and
-                                current_rating < self.RECENT_WEAK_REASONING_RATING_THRESHOLD):
-                            return True
-                    else:
-                        # Non-reasoning models: freeze at RD < 100 if rating < 500
-                        if (current_rd < self.RECENT_WEAK_NONREASONING_RD_THRESHOLD and
-                                current_rating < self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD):
-                            return True
-
-        # Proven worse freezing
-        # RD < 80, 3+ losses, and another model is statistically significantly better
-        if current_rd < self.PROVEN_WORSE_RD_THRESHOLD:
-            if player_stats is None:
-                player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.PROVEN_WORSE_MIN_LOSSES:
-                if self._is_proven_worse(player_id, player_stats):
-                    return True
-
-        # Inferior effort variant freezing
-        # RD < 150, lost >= 3 games, and a lower-effort sibling of the same model does better
-        if current_rd < self.EFFORT_VARIANT_RD_THRESHOLD:
-            if player_stats is None:
-                player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.EFFORT_VARIANT_MIN_LOSSES:
-                if self._is_inferior_effort_variant(player_id, player_stats):
-                    return True
-
-        # Inferior same-provider model freezing
-        # RD < 100, lost >= 3 games, and a better same-provider model exists
-        if current_rd < self.PROVIDER_INFERIOR_RD_THRESHOLD:
-            if player_stats is None:
-                player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.PROVIDER_INFERIOR_MIN_LOSSES:
-                if self._is_inferior_to_provider_sibling(player_id):
-                    return True
-
-        # Lost to much weaker model freezing
-        # Lost to a model rated 600+ points lower (within release window), unless 5x cheaper
-        if self._lost_to_much_weaker(player_id):
-            return True
-
-        # Expensive inferior model freezing (cross-provider)
-        # RD < 150, lost >= 3 games, and a stronger model is at least 2x cheaper
-        if current_rd < self.EXPENSIVE_INFERIOR_RD_THRESHOLD:
-            if player_stats is None:
-                player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.EXPENSIVE_INFERIOR_MIN_LOSSES:
-                if self._is_expensive_inferior(player_id):
-                    return True
-
-        return False
 
     def _get_game_cap(self, player_id: str) -> Optional[int]:
         """
@@ -1549,7 +1063,7 @@ class MatchScheduler:
         for llm_id in llms_by_priority:
             current_games = self._games_played.get(llm_id, 0)
             current_rd = self._get_estimated_rd(llm_id)
-            if self._is_frozen(llm_id, current_rd, player_stats):
+            if self._freeze_checker.is_frozen(llm_id, current_rd, player_stats):
                 continue
             if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
                 continue
@@ -1595,7 +1109,7 @@ class MatchScheduler:
                 current_rd = self._get_estimated_rd(llm_id)
 
                 # Check if this LLM is frozen (RD too low or old model with stable rating)
-                if self._is_frozen(llm_id, current_rd, player_stats):
+                if self._freeze_checker.is_frozen(llm_id, current_rd, player_stats):
                     continue  # Frozen models don't initiate games (but can be challenged)
 
                 # Check if this LLM has hit its low RD cap (rating is stable enough)
@@ -1636,7 +1150,7 @@ class MatchScheduler:
                         opp_rd = self._get_estimated_rd(opp_id)
 
                         # Frozen models can always be challenged - no cap
-                        if not self._is_frozen(opp_id, opp_rd, player_stats):
+                        if not self._freeze_checker.is_frozen(opp_id, opp_rd, player_stats):
                             # Check low RD cap (60 <= RD < 70)
                             if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
                                 continue  # Skip - rating is stable enough
@@ -1652,7 +1166,7 @@ class MatchScheduler:
                     opp_rating = self.rating_store.get(opp_id).rating
                     rating_diff = abs(llm_rating - opp_rating)
                     # Calculate cost-aware score for opponent selection
-                    opp_cost = self._get_player_cost(opp_id)
+                    opp_cost = self._freeze_checker.get_player_cost(opp_id)
                     cost_penalty = min(self.OPPONENT_COST_WEIGHT * opp_cost, self.OPPONENT_COST_CAP)
                     score = rating_diff + cost_penalty
                     for white_id, black_id in [(llm_id, opp_id), (opp_id, llm_id)]:
