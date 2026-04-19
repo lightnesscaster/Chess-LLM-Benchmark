@@ -351,12 +351,27 @@ Your response (just the UCI move or UNCLEAR):"""
         provider = None
         response_id = None
         finish_reason = None
-        while True:
-            line = await response.content.readline()
-            if not line:
-                break
-            line = line.decode('utf-8').strip()
 
+        # Manually buffer bytes and split on newlines — aiohttp's readline() caps
+        # a single line at ~64KB and raises "Chunk too big" when an SSE data line
+        # (e.g. a long reasoning delta) exceeds that. iter_any() + our own split
+        # has no such limit.
+        async def _iter_lines():
+            buf = bytearray()
+            async for raw in response.content.iter_any():
+                buf.extend(raw)
+                while True:
+                    nl = buf.find(b"\n")
+                    if nl < 0:
+                        break
+                    raw_line = bytes(buf[:nl])
+                    del buf[: nl + 1]
+                    yield raw_line.decode("utf-8", errors="replace").strip()
+            if buf:
+                yield bytes(buf).decode("utf-8", errors="replace").strip()
+
+        early_return = None
+        async for line in _iter_lines():
             if not line.startswith('data: '):
                 continue
 
@@ -380,22 +395,24 @@ Your response (just the UCI move or UNCLEAR):"""
 
             # Check for top-level error in chunk
             if 'error' in chunk and not chunk.get('choices'):
-                return {
+                early_return = {
                     'id': response_id,
                     'model': model,
                     'provider': provider,
                     'error': chunk['error'],
                 }
+                break
 
             # Check for error embedded in choices
             choices = chunk.get('choices', [])
             if choices and isinstance(choices[0], dict) and 'error' in choices[0]:
-                return {
+                early_return = {
                     'id': response_id,
                     'model': model,
                     'provider': provider,
                     'choices': [{'error': choices[0]['error']}],
                 }
+                break
 
             # Accumulate deltas
             if choices:
@@ -410,6 +427,9 @@ Your response (just the UCI move or UNCLEAR):"""
             # Usage comes in later chunks
             if 'usage' in chunk:
                 usage = chunk['usage']
+
+        if early_return is not None:
+            return early_return
 
         # Build response dict matching non-streaming format
         message = {'role': 'assistant', 'content': ''.join(content_parts)}

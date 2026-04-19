@@ -49,6 +49,11 @@
     "created_timestamp": 1770249600,
     "created_date": "2026-02-05"
   },
+  "claude-opus-4.7 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.7",
+    "created_timestamp": 1776297600,
+    "created_date": "2026-04-16"
+  },
   "gpt-oss-120b (medium)": {
     "model_id": "openai/gpt-oss-120b",
     "created_timestamp": 1754414231,
@@ -259,6 +264,11 @@
     "created_timestamp": 1686614400,
     "created_date": "2023-06-13"
   },
+  "gpt-3.5-turbo-instruct": {
+    "model_id": "openai/gpt-3.5-turbo-instruct",
+    "created_timestamp": 1694995200,
+    "created_date": "2023-09-18"
+  },
   "deepseek-v3.1-terminus (no thinking)": {
     "model_id": "deepseek/deepseek-v3.1-terminus",
     "created_timestamp": 1758548275,
@@ -425,5 +435,15 @@
     "model_id": "xiaomi/mimo-v2-flash",
     "created_timestamp": 1738800000,
     "created_date": "2026-02-06"
+  },
+  "gemma-4-31b-it (no thinking)": {
+    "model_id": "google/gemma-4-31b-it",
+    "created_timestamp": 1775148486,
+    "created_date": "2026-04-02"
+  },
+  "gemma-4-31b-it (high)": {
+    "model_id": "google/gemma-4-31b-it",
+    "created_timestamp": 1775148486,
+    "created_date": "2026-04-02"
   }
 }

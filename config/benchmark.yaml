@@ -167,6 +167,12 @@ llms:
     model_name: "openai/gpt-3.5-turbo-0613"
     temperature: 0.0
 
+  # gpt-3.5-turbo-instruct - OpenAI, released 2023-09-18 (text-completion model, uses PGN prompt)
+  - player_id: "gpt-3.5-turbo-instruct"
+    model_name: "openai/gpt-3.5-turbo-instruct"
+    temperature: 0.0
+    api: completion
+
   # deepseek-chat-v3.1 (no thinking) (-453)
   - player_id: "deepseek-chat-v3.1 (no thinking)"
     model_name: "deepseek/deepseek-chat-v3.1"
@@ -203,6 +209,18 @@ llms:
   - player_id: "mimo-v2-flash (medium)"
     model_name: "xiaomi/mimo-v2-flash"
     reasoning_effort: medium
+
+  # gemma-4-31b-it (no thinking) - hybrid reasoning model, disabled here
+  - player_id: "gemma-4-31b-it (no thinking)"
+    model_name: "google/gemma-4-31b-it"
+    temperature: 0.0
+    reasoning: false
+
+  # gemma-4-31b-it (high)
+  - player_id: "gemma-4-31b-it (high)"
+    model_name: "google/gemma-4-31b-it"
+    temperature: 0.0
+    reasoning_effort: high
 
   # kat-coder-pro - KwaiKat, released 2025-11-10, free
   - player_id: "kat-coder-pro"
@@ -356,6 +374,13 @@ llms:
     model_name: "anthropic/claude-opus-4.6"
     temperature: 0.0
     reasoning_effort: medium
+
+  # claude-opus-4.7 (no thinking) - Anthropic, released 2026-04-16
+  - player_id: "claude-opus-4.7 (no thinking)"
+    model_name: "anthropic/claude-opus-4.7"
+    temperature: 0.0
+    reasoning: false
+
 
   # gemini-3.1-pro-preview (medium)
   - player_id: "gemini-3.1-pro-preview (medium)"

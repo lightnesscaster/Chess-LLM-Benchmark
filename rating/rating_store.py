@@ -52,6 +52,30 @@ def _should_invalidate_cache() -> bool:
 BENCHMARK_SEED_RD = 166.0
 BENCHMARK_SEED_GAMES_RD = 350.0
 
+# Canonical effort-level ordering for reasoning variants. This is the single
+# source of truth — freeze_checker.FreezeChecker.EFFORT_LEVELS aliases this.
+# Used to seed a higher-effort variant with the rating of a stronger lower-effort
+# sibling when that exceeds the position-benchmark prediction.
+# Note: "thinking" and "high" share level 4 intentionally (legacy naming). One
+# consequence is that a "(thinking)" variant will not reseed from a "(high)"
+# sibling or vice versa — only from strictly lower-effort siblings.
+_EFFORT_LEVELS = {
+    "no thinking": 0,
+    "minimal": 1,
+    "low": 2,
+    "medium": 3,
+    "thinking": 4,
+    "high": 4,
+}
+
+
+def _extract_effort(player_id: str) -> Optional[int]:
+    start = player_id.rfind("(")
+    end = player_id.rfind(")")
+    if start != -1 and end != -1 and end > start:
+        return _EFFORT_LEVELS.get(player_id[start + 1:end])
+    return None
+
 # Module-level cache for benchmark predictions (rarely changes)
 _benchmark_predictions_cache: Optional[Dict[str, float]] = None
 _benchmark_predictions_cache_time: float = 0
@@ -95,10 +119,95 @@ class RatingStore:
         # Load benchmark predictions for seeding new players
         self._benchmark_predictions = self._load_benchmark_predictions()
 
+        # Load model_id → [player_ids...] mapping for effort-variant seeding
+        self._player_model_ids: Dict[str, str] = {}
+        self._models_by_model_id: Dict[str, list] = {}
+        self._load_model_id_mapping()
+
+        # Snapshot of previous-pass ratings (used during multi-pass recalculate
+        # so seeding on pass N can see end-of-pass-(N-1) sibling ratings).
+        self._previous_pass_ratings: Dict[str, PlayerRating] = {}
+
         if self._use_firestore:
             self._init_firestore()
         else:
             self._load()
+
+    def _load_model_id_mapping(self) -> None:
+        """Load player_id → model_id and model_id → [player_ids] from publish dates."""
+        path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return
+        for player_id, info in data.items():
+            model_id = info.get("model_id", "")
+            if model_id:
+                self._player_model_ids[player_id] = model_id
+                self._models_by_model_id.setdefault(model_id, []).append(player_id)
+
+    def _lower_effort_max_rating(self, player_id: str) -> Optional[float]:
+        """
+        Return the highest rating among same-model siblings with strictly lower
+        effort level, or None if no such sibling has a rating yet. Considers
+        both live ratings and the previous-pass snapshot (for multi-pass
+        recalculate).
+        """
+        my_model_id = self._player_model_ids.get(player_id)
+        if not my_model_id:
+            return None
+        my_effort = _extract_effort(player_id)
+        if my_effort is None:
+            return None
+        best: Optional[float] = None
+        for sibling_id in self._models_by_model_id.get(my_model_id, []):
+            if sibling_id == player_id:
+                continue
+            sib_effort = _extract_effort(sibling_id)
+            if sib_effort is None or sib_effort >= my_effort:
+                continue
+            for source in (self._ratings, self._previous_pass_ratings):
+                sib = source.get(sibling_id)
+                if sib is None:
+                    continue
+                if best is None or sib.rating > best:
+                    best = sib.rating
+        return best
+
+    def snapshot_for_pass(self, preserve_ids: Set[str]) -> None:
+        """
+        Save current ratings as the previous-pass snapshot, then reset non-
+        anchor ratings so they can be re-seeded with updated sibling info.
+
+        Args:
+            preserve_ids: player IDs whose ratings should NOT be reset
+                (e.g. anchor IDs and configured non-anchor engine IDs).
+        """
+        self._previous_pass_ratings = {
+            pid: PlayerRating(
+                player_id=p.player_id,
+                rating=p.rating,
+                rating_deviation=p.rating_deviation,
+                volatility=p.volatility,
+                games_played=p.games_played,
+                wins=p.wins,
+                losses=p.losses,
+                draws=p.draws,
+                unclamped_rating=p.unclamped_rating,
+                games_rd=p.games_rd,
+            )
+            for pid, p in self._ratings.items()
+        }
+        self._ratings = {pid: p for pid, p in self._ratings.items() if pid in preserve_ids}
+
+    def clear_pass_snapshot(self) -> None:
+        """
+        Discard the previous-pass snapshot. Call after a multi-pass recalculate
+        finishes so later `get()` calls (e.g. from a long-lived web-app store)
+        don't seed from stale end-of-recalculate data.
+        """
+        self._previous_pass_ratings = {}
 
     def _should_use_firestore(self) -> bool:
         """Check if we should use Firestore."""
@@ -259,9 +368,11 @@ class RatingStore:
                 if player_id in self._ratings:
                     existing = self._ratings[player_id]
                     if existing.games_played == 0:
+                        sibling = self._lower_effort_max_rating(player_id)
+                        seed = max(predicted, sibling) if sibling is not None else predicted
                         self._ratings[player_id] = PlayerRating(
                             player_id=player_id,
-                            rating=predicted,
+                            rating=seed,
                             rating_deviation=BENCHMARK_SEED_RD,
                             games_rd=BENCHMARK_SEED_GAMES_RD,
                         )
@@ -429,11 +540,17 @@ class RatingStore:
             PlayerRating object
         """
         if player_id not in self._ratings:
-            if player_id in self._benchmark_predictions:
-                predicted = self._benchmark_predictions[player_id]
+            predicted = self._benchmark_predictions.get(player_id)
+            sibling = self._lower_effort_max_rating(player_id)
+            if predicted is not None or sibling is not None:
+                # Seed with whichever is higher: position-benchmark prediction or
+                # the best-rated same-model lower-effort sibling (reasoning almost
+                # always helps, so a higher-effort variant should not start below
+                # a stronger lower-effort sibling).
+                seed = max(v for v in (predicted, sibling) if v is not None)
                 self._ratings[player_id] = PlayerRating(
                     player_id=player_id,
-                    rating=predicted,
+                    rating=seed,
                     rating_deviation=BENCHMARK_SEED_RD,
                     games_rd=BENCHMARK_SEED_GAMES_RD,
                 )

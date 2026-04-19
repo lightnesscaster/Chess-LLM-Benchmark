@@ -119,6 +119,10 @@
     "completion": 2.5e-05,
     "prompt": 5e-06
   },
+  "anthropic/claude-opus-4.7": {
+    "completion": 2.5e-05,
+    "prompt": 5e-06
+  },
   "anthropic/claude-sonnet-4": {
     "completion": 1.5e-05,
     "prompt": 3e-06
@@ -382,6 +386,10 @@
   "google/gemma-3n-e4b-it:free": {
     "completion": 0.0,
     "prompt": 0.0
+  },
+  "google/gemma-4-31b-it": {
+    "completion": 4e-07,
+    "prompt": 1.4e-07
   },
   "gryphe/mythomax-l2-13b": {
     "completion": 6e-08,

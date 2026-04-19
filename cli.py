@@ -28,6 +28,7 @@ from engines.random_engine import RandomEngine
 from engines.survival_engine import SurvivalEngine
 from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
+from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
@@ -276,6 +277,15 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
                 temperature=llm_cfg.get("temperature", 0.0),
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
+                timeout=llm_cfg.get("timeout", 600),
+            )
+        elif llm_cfg.get("api") == "completion":
+            players[player_id] = OpenRouterCompletionPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                max_tokens=llm_cfg.get("max_tokens", 10),
                 timeout=llm_cfg.get("timeout", 600),
             )
         else:
@@ -677,9 +687,17 @@ async def recalculate_ratings(args):
     random.shuffle(anchor_games)
     random.shuffle(llm_games)
 
-    # Multi-pass convergence settings
-    max_passes = 1
+    # Multi-pass convergence settings. Between passes we snapshot ratings and
+    # reset non-anchor/non-configured-engine ratings so new pass re-seeds with
+    # updated cross-variant info (lower-effort sibling ratings). This lets a
+    # higher-effort variant seeded before its lower-effort sibling pick up the
+    # sibling's stronger rating on subsequent passes.
+    max_passes = 3
     convergence_threshold = 30.0  # Stop when no rating changes by more than this
+
+    # IDs that should NOT be reset between passes (fixed anchors + configured
+    # starting engines).
+    preserve_ids = set(anchors.keys()) | set(non_anchor_engines.keys())
 
     print(f"Processing {len(valid_games)} games in rating periods (batch size: {BATCH_SIZE})")
     print(f"  Anchor games: {len(anchor_games)} (calibration phase)")
@@ -729,8 +747,16 @@ async def recalculate_ratings(args):
             process_batch(batch)
 
     # Multi-pass convergence loop
+    previous_pass_end: Dict[str, float] = {}
     for pass_num in range(1, max_passes + 1):
-        # Store ratings and RDs at start of pass to check convergence
+        # On pass >1, snapshot current ratings (= previous pass end) and wipe
+        # non-anchor/non-engine ratings so seeding re-runs with updated
+        # lower-effort sibling info.
+        if pass_num > 1:
+            previous_pass_end = {pid: rating_store.get(pid).rating for pid in all_players}
+            rating_store.snapshot_for_pass(preserve_ids)
+
+        # Store ratings and RDs at start of pass (post-reset/reseed)
         pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
         pass_start_rds = {pid: rating_store.get(pid).rating_deviation for pid in all_players}
 
@@ -738,31 +764,38 @@ async def recalculate_ratings(args):
         run_rating_periods()
         rating_store.save()
 
-        # Check convergence (only consider stable models: >= 10 games and RD <= 80)
+        # Check convergence: compare end of this pass to end of previous pass
+        # (not to pass-start, since pass-start is a freshly-seeded state after
+        # reset). Pass 1 has no previous pass, so always considered unconverged.
         MIN_GAMES_FOR_CONVERGENCE = 10
-        MAX_RD_FOR_CONVERGENCE = 80  # High RD models are still uncertain, don't block convergence
+        MAX_RD_FOR_CONVERGENCE = 80
         max_change = 0.0
         max_change_player = None
         max_change_details = {}
         for pid in all_players:
-            if not rating_store.is_anchor(pid):
-                player = rating_store.get(pid)
-                games_played = actual_game_counts.get(pid, 0)
-                if games_played < MIN_GAMES_FOR_CONVERGENCE:
-                    continue  # Skip low-game models for convergence check
-                if player.rating_deviation > MAX_RD_FOR_CONVERGENCE:
-                    continue  # Skip high-RD models - still uncertain, expected to swing
+            if rating_store.is_anchor(pid):
+                continue
+            player = rating_store.get(pid)
+            games_played = actual_game_counts.get(pid, 0)
+            if games_played < MIN_GAMES_FOR_CONVERGENCE:
+                continue
+            if player.rating_deviation > MAX_RD_FOR_CONVERGENCE:
+                continue
+            if pass_num == 1:
+                # No previous pass to compare against — treat as unconverged.
                 old_rating = pass_start_ratings[pid]
-                new_rating = player.rating
-                change = abs(new_rating - old_rating)
-                if change > max_change:
-                    max_change = change
-                    max_change_player = pid
-                    max_change_details = {
-                        'old': old_rating,
-                        'new': new_rating,
-                        'rd': player.rating_deviation,
-                    }
+            else:
+                old_rating = previous_pass_end.get(pid, pass_start_ratings[pid])
+            new_rating = player.rating
+            change = abs(new_rating - old_rating)
+            if change > max_change:
+                max_change = change
+                max_change_player = pid
+                max_change_details = {
+                    'old': old_rating,
+                    'new': new_rating,
+                    'rd': player.rating_deviation,
+                }
 
         if args.verbose and max_change_player:
             start_rd = pass_start_rds[max_change_player]
@@ -775,6 +808,10 @@ async def recalculate_ratings(args):
         if pass_num > 1 and max_change < convergence_threshold:
             print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
             break
+
+    # Discard the inter-pass snapshot so it can't leak into later `get()`
+    # seeding (e.g. from a long-lived web-app RatingStore instance).
+    rating_store.clear_pass_snapshot()
 
     # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
     for pid in all_players:
@@ -913,6 +950,22 @@ async def run_manual_game(args):
                 skill_level=args.stockfish_skill,
             )
 
+    # Look up api flag from benchmark.yaml (e.g. "completion" for text-completion models)
+    _llm_api_by_model: dict = {}
+    try:
+        import yaml as _yaml
+        _cfg_path = Path(__file__).parent / "config" / "benchmark.yaml"
+        if _cfg_path.exists():
+            with open(_cfg_path) as _f:
+                _cfg = _yaml.safe_load(_f) or {}
+            for _entry in _cfg.get("llms", []) or []:
+                _mn = _entry.get("model_name")
+                _api = _entry.get("api")
+                if _mn and _api:
+                    _llm_api_by_model[_mn] = _api
+    except Exception:
+        pass
+
     # Helper to create LLM player
     def create_llm(model_name, reasoning=None, reasoning_effort=None, reasoning_max_tokens=None, custom_name=None):
         if custom_name:
@@ -930,6 +983,12 @@ async def run_manual_game(args):
                 api_key=api_key,
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
+            )
+        if _llm_api_by_model.get(model_name) == "completion":
+            return OpenRouterCompletionPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
             )
         return OpenRouterPlayer(
             player_id=player_id,

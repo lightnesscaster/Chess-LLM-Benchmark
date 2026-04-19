@@ -20,6 +20,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
+from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
@@ -139,6 +140,17 @@ async def test_llm_on_position(
     blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
 
     board = chess.Board(fen)
+    # For completion-style players, replay move history so board.move_stack is populated
+    # (these players prompt with PGN and need the game's move sequence).
+    if isinstance(player, OpenRouterCompletionPlayer) and move_history:
+        replay = chess.Board()
+        try:
+            for uci_move in move_history:
+                replay.push(chess.Move.from_uci(uci_move))
+            if replay.fen() == fen:
+                board = replay
+        except (ValueError, chess.InvalidMoveError):
+            pass
     perspective = board.turn
 
     # Build prompt and get model's move
@@ -355,9 +367,19 @@ async def run_benchmark(
                     **common_kwargs,
                 )
 
+            if player_config.get("api") == "completion":
+                # OpenRouterCompletionPlayer doesn't accept reasoning_* kwargs
+                return OpenRouterCompletionPlayer(
+                    player_id=common_kwargs["player_id"],
+                    model_name=player_config.get("model_name"),
+                    temperature=common_kwargs["temperature"],
+                    timeout=common_kwargs["timeout"],
+                )
+
             return OpenRouterPlayer(
                 model_name=player_config.get("model_name"),
                 reasoning_max_tokens=player_config.get("reasoning_max_tokens"),
+                max_tokens=player_config.get("max_tokens", 0),
                 **common_kwargs,
             )
 
@@ -706,32 +728,46 @@ async def main():
 
             if args.retry_missing and player_id in all_results:
                 existing = all_results[player_id].get("results", [])
+                # Stored position_idx is in all_positions coordinates (after any
+                # type_filter remap). Key existing_by_idx by that so we can merge
+                # new subset results back in.
                 existing_by_idx = {r["position_idx"]: r for r in existing}
-                missing_indices = sorted(set(range(len(positions))) - set(existing_by_idx.keys()))
 
-                if not missing_indices:
+                def _filtered_to_all(fi: int) -> int:
+                    return type_filter_idx_map[fi] if type_filter_idx_map else fi
+
+                missing_filtered = [fi for fi in range(len(positions))
+                                    if _filtered_to_all(fi) not in existing_by_idx]
+
+                if not missing_filtered:
                     print(f"  All {len(positions)} positions already have results, skipping")
                     continue
 
-                # Build mapping from subset index (0..N-1) -> original position index
-                retry_idx_map = {subset_idx: orig_idx for subset_idx, orig_idx in enumerate(missing_indices)}
-                positions_to_test = [positions[i] for i in missing_indices]
+                # Map subset index (the index within positions_to_test, 0..N-1)
+                # directly to all_positions index. Used below to rewrite result
+                # position_idx in one step, bypassing the type_filter_idx_map remap.
+                retry_idx_map = {si: _filtered_to_all(fi) for si, fi in enumerate(missing_filtered)}
+                positions_to_test = [positions[fi] for fi in missing_filtered]
                 print(f"  Retrying {len(positions_to_test)} missing positions (have {len(existing_by_idx)} existing)")
 
             start = time.time()
             result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth, args.api)
             elapsed = time.time() - start
 
-            # Remap filtered indices back to original position indices
-            if type_filter_idx_map is not None:
+            # Remap filtered indices back to original position indices.
+            # With --retry-missing, retry_idx_map maps subset index directly to
+            # all_positions index, so skip the type_filter step to avoid a double
+            # remap.
+            if args.retry_missing and player_id in all_results:
+                for r in result["results"]:
+                    r["position_idx"] = retry_idx_map[r["position_idx"]]
+            elif type_filter_idx_map is not None:
                 for r in result["results"]:
                     r["position_idx"] = type_filter_idx_map[r["position_idx"]]
 
             # Merge with existing results if retrying missing
             if args.retry_missing and existing_by_idx:
-                # Remap subset indices back to original position indices
                 for r in result["results"]:
-                    r["position_idx"] = retry_idx_map[r["position_idx"]]
                     existing_by_idx[r["position_idx"]] = r
                 merged_results = [existing_by_idx[i] for i in sorted(existing_by_idx.keys())]
 

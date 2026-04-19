@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-from rating.rating_store import RatingStore
+from rating.rating_store import RatingStore, _EFFORT_LEVELS as _RS_EFFORT_LEVELS
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
 from game.stats_collector import StatsCollector
 
@@ -53,14 +53,11 @@ class FreezeChecker:
     # Effort variant freezing
     EFFORT_VARIANT_RD_THRESHOLD = 150
     EFFORT_VARIANT_MIN_LOSSES = 3
-    EFFORT_LEVELS = {
-        "no thinking": 0,
-        "minimal": 1,
-        "low": 2,
-        "medium": 3,
-        "thinking": 4,
-        "high": 4,
-    }
+    # Canonical effort-level ordering lives in rating_store. We alias it here
+    # so there's one source of truth — rating_store uses the same table for
+    # sibling-rating seeding; drift between the two would cause inconsistent
+    # behavior (e.g. different effort orderings in freeze vs seed decisions).
+    EFFORT_LEVELS = _RS_EFFORT_LEVELS
 
     # Provider inferior freezing
     PROVIDER_INFERIOR_RD_THRESHOLD = 100
