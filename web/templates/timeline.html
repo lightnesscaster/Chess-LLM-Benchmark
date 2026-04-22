@@ -67,7 +67,13 @@
 
     #timeline-chart {
         width: 100% !important;
-        height: 1600px;
+        height: 720px;
+    }
+
+    @media (max-width: 900px) {
+        #timeline-chart {
+            height: 520px;
+        }
     }
 
     /* Ensure Plotly chart fills container */
@@ -92,7 +98,7 @@
     .timeline-actions {
         display: flex;
         justify-content: center;
-        margin-top: 3rem;
+        margin-top: 1.5rem;
         margin-bottom: 2rem;
     }
 
@@ -175,6 +181,7 @@
 <div class="timeline-header">
     <div class="timeline-title">
         <h2>LLM Chess Ratings Over Time</h2>
+        <p>Each dot is a model at its release date. The red line tracks the strongest model ever released at any given point.</p>
     </div>
 </div>
 

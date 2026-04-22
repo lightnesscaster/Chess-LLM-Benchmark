@@ -169,14 +169,16 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         is_reasoning = is_reasoning_model(entry["player_id"])
         symbols.append("diamond" if is_reasoning else "circle")
 
-        # Hover text
-        reasoning_label = " (reasoning)" if is_reasoning else ""
+        # Hover card
+        reasoning_label = "Reasoning" if is_reasoning else "Non-reasoning"
+        release_fmt = date.strftime("%b %Y")
         hover_texts.append(
-            f"<b>{entry['player_id']}</b>{reasoning_label}<br>"
-            f"Rating: {entry['rating']}<br>"
-            f"Released: {entry.get('publish_date', 'Unknown')}<br>"
-            f"Provider: {provider.title()}<br>"
-            f"Games: {entry.get('games_played', 'N/A')}"
+            f"<b style='font-size:14px'>{entry['player_id']}</b><br>"
+            f"<span style='color:#e94560;font-size:13px'><b>{entry['rating']}</b></span>"
+            f" <span style='color:#a0a0a0'>rating</span><br>"
+            f"<span style='color:#a0a0a0'>{provider.title()} · {reasoning_label}</span><br>"
+            f"<span style='color:#a0a0a0'>Released {release_fmt} · "
+            f"{entry.get('games_played', 'N/A')} games</span>"
         )
 
     # Calculate frontier (champion) line
@@ -209,15 +211,63 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
     # Create figure
     fig = go.Figure()
 
-    # Add frontier line first (so it's behind scatter points)
+    # Soft translucent fill under the champion line — gives the frontier
+    # visual weight without drawing attention away from the points.
+    if frontier_dates:
+        fig.add_trace(go.Scatter(
+            x=frontier_dates,
+            y=frontier_ratings,
+            mode="lines",
+            line=dict(color="rgba(233, 69, 96, 0)", shape="hv"),
+            fill="tozeroy",
+            fillcolor="rgba(233, 69, 96, 0.08)",
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+
+    # Champion (frontier) line on top of the fill
     fig.add_trace(go.Scatter(
         x=frontier_dates,
         y=frontier_ratings,
         mode="lines",
         name="Champion Line",
-        line=dict(color="#e94560", width=4, shape="hv"),  # step line
+        line=dict(color="#e94560", width=3.5, shape="hv"),
         hoverinfo="skip",
     ))
+
+    # Champion halo — drawn BEFORE provider markers so the halo sits behind
+    # the colored dot, leaving the provider color visible at the center.
+    champion_set = set(frontier_players)
+    champion_dates = [d for d, p in zip(dates, player_ids) if p in champion_set]
+    champion_ratings = [r for r, p in zip(ratings, player_ids) if p in champion_set]
+
+    if champion_dates:
+        fig.add_trace(go.Scatter(
+            x=champion_dates,
+            y=champion_ratings,
+            mode="markers",
+            marker=dict(
+                size=32,
+                color="rgba(233, 69, 96, 0.18)",
+                symbol="circle",
+                line=dict(width=0),
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+        fig.add_trace(go.Scatter(
+            x=champion_dates,
+            y=champion_ratings,
+            mode="markers",
+            marker=dict(
+                size=24,
+                color="rgba(0,0,0,0)",
+                symbol="circle",
+                line=dict(width=2.5, color="#e94560"),
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
 
     # Add scatter points grouped by provider for legend
     providers_seen = set()
@@ -238,11 +288,11 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             mode="markers",
             name=provider.replace("-", " ").title(),
             marker=dict(
-                size=16,
+                size=14,
                 color=PROVIDER_COLORS[provider],
-                opacity=0.85,
+                opacity=0.9,
                 symbol=provider_symbols,
-                line=dict(width=1.5, color="rgba(255,255,255,0.8)"),
+                line=dict(width=1.5, color="rgba(22, 33, 62, 0.9)"),
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=provider_hovers,
@@ -262,93 +312,134 @@ def create_timeline_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
             mode="markers",
             name="Other",
             marker=dict(
-                size=16,
+                size=14,
                 color=DEFAULT_COLOR,
+                opacity=0.9,
                 symbol=other_symbols,
-                line=dict(width=1.5, color="white"),
+                line=dict(width=1.5, color="rgba(22, 33, 62, 0.9)"),
             ),
             hovertemplate="%{customdata}<extra></extra>",
             customdata=other_hovers,
         ))
 
-    # Highlight champion models with larger markers
-    champion_set = set(frontier_players)
-    champion_dates = [d for d, p in zip(dates, player_ids) if p in champion_set]
-    champion_ratings = [r for r, p in zip(ratings, player_ids) if p in champion_set]
-    champion_hovers = [h for h, p in zip(hover_texts, player_ids) if p in champion_set]
+    # Calculate x-axis range. Start at GPT-4 release; extend the end past
+    # the latest release (or today) so recent models aren't clipped.
+    x_start = datetime(2023, 3, 1)
+    now = datetime.now()
+    latest_release = max(
+        (datetime.fromtimestamp(e["publish_timestamp"]) for e in models_with_dates),
+        default=now,
+    )
+    x_end = max(now, latest_release) + (now - datetime(2023, 3, 1)) * 0.03
 
-    if champion_dates:
-        fig.add_trace(go.Scatter(
-            x=champion_dates,
-            y=champion_ratings,
-            mode="markers",
-            name="Champions",
-            marker=dict(
-                size=26,
-                color="rgba(233, 69, 96, 0.25)",
-                symbol="circle",
-                line=dict(width=3, color="#e94560"),
-            ),
-            hoverinfo="skip",  # Don't show hover for highlight markers
-            showlegend=False,
+    # Compute y-axis range with a little headroom above top rating.
+    max_rating = max(ratings) if ratings else 2000
+    y_top = max(2200, int(max_rating * 1.10 / 100) * 100 + 100)
+    y_bottom = -500
+
+    # Skill tiers anchored to Lichess classical. Labels sit at the right
+    # edge; low-opacity horizontal lines separate the tiers.
+    tier_breaks = [
+        (500,  "Novice"),
+        (1000, "Beginner"),
+        (1500, "Intermediate"),
+        (1800, "Advanced"),
+        (2100, "Expert"),
+    ]
+    tier_shapes = []
+    tier_annotations = []
+    for y_val, label in tier_breaks:
+        if y_val < y_bottom or y_val > y_top:
+            continue
+        tier_shapes.append(dict(
+            type="line",
+            xref="x", yref="y",
+            x0=x_start, x1=x_end,
+            y0=y_val, y1=y_val,
+            line=dict(color="rgba(160, 160, 160, 0.15)", width=1, dash="dot"),
+            layer="below",
+        ))
+        tier_annotations.append(dict(
+            x=x_end, y=y_val,
+            xref="x", yref="y",
+            xanchor="right", yanchor="bottom",
+            text=f"<i>{label}</i>",
+            showarrow=False,
+            font=dict(size=11, color="rgba(200, 200, 200, 0.45)"),
+            xshift=-6, yshift=2,
         ))
 
-    # Calculate x-axis range (start from GPT-4 release in March 2023)
-    x_start = datetime(2023, 3, 1)  # Start from March 2023 (GPT-4 release)
-    x_end = datetime(2025, 12, 31)  # End Dec 2025
-
-    # Update layout - clean, minimal design
+    # Clean, minimal layout
     fig.update_layout(
         xaxis=dict(
-            title=dict(text="Release Date", font=dict(size=16, color="#a0a0a0"), standoff=15),
-            gridcolor="rgba(74, 90, 122, 0.3)",
+            title=dict(text="Release Date", font=dict(size=14, color="#a0a0a0"), standoff=12),
+            gridcolor="rgba(74, 90, 122, 0.2)",
             griddash="dot",
             showgrid=True,
             tickformat="%b %Y",
-            tickfont=dict(size=14),
+            tickfont=dict(size=13, color="#c8c8d0"),
             range=[x_start, x_end],
         ),
         yaxis=dict(
-            title=dict(text="Lichess Classical Rating", font=dict(size=16, color="#a0a0a0"), standoff=10),
-            gridcolor="rgba(74, 90, 122, 0.3)",
+            title=dict(text="Rating (Lichess classical)", font=dict(size=14, color="#a0a0a0"), standoff=8),
+            gridcolor="rgba(74, 90, 122, 0.2)",
             griddash="dot",
             showgrid=True,
-            tickfont=dict(size=14),
+            tickfont=dict(size=13, color="#c8c8d0"),
             zeroline=True,
-            zerolinecolor="rgba(74, 90, 122, 0.6)",
+            zerolinecolor="rgba(74, 90, 122, 0.5)",
             zerolinewidth=1,
-            range=[-500, None],  # Start y-axis at -500
+            range=[y_bottom, y_top],
         ),
         template="plotly_dark",
         paper_bgcolor="#16213e",
         plot_bgcolor="#16213e",
-        showlegend=False,  # Hide legend - we use HTML legend below
+        showlegend=False,
         hovermode="closest",
-        dragmode="pan",  # Enable pan by default
-        margin=dict(t=20, b=55, l=70, r=15),
+        hoverlabel=dict(
+            bgcolor="rgba(22, 33, 62, 0.95)",
+            bordercolor="#e94560",
+            font=dict(size=12, color="#eaeaea"),
+        ),
+        dragmode="pan",
+        margin=dict(t=30, b=55, l=70, r=25),
         autosize=True,
+        shapes=tier_shapes,
+        annotations=tier_annotations,
     )
 
-    # Add annotation for current champion (top-rated model)
+    # Annotate the current top model. Auto-flip label to the LEFT of the
+    # marker when the point is close to the right edge, so it never clips.
     if models_with_dates:
         top_model = max(models_with_dates, key=lambda x: x["rating"])
         top_date = datetime.fromtimestamp(top_model["publish_timestamp"])
+        x_span = (x_end - x_start).total_seconds()
+        right_fraction = (top_date - x_start).total_seconds() / x_span if x_span > 0 else 0.5
+        # If marker is in the right third, anchor label to its left; else right.
+        anchor_left = right_fraction > 0.65
+        ax = -80 if anchor_left else 80
+        ay = -45
         fig.add_annotation(
             x=top_date,
             y=top_model["rating"],
-            text=f"<b>{top_model['player_id']}</b>",
+            text=(
+                f"<b>{top_model['player_id']}</b><br>"
+                f"<span style='color:#e94560'>{top_model['rating']}</span>"
+                f" <span style='color:#a0a0a0'>· {top_date.strftime('%b %Y')}</span>"
+            ),
             showarrow=True,
             arrowhead=0,
             arrowsize=1,
             arrowwidth=2,
             arrowcolor="#e94560",
-            ax=-50,
-            ay=-35,
-            font=dict(size=13, color="#eaeaea"),
-            bgcolor="rgba(22, 33, 62, 0.9)",
+            ax=ax,
+            ay=ay,
+            font=dict(size=12, color="#eaeaea"),
+            bgcolor="rgba(22, 33, 62, 0.95)",
             bordercolor="#e94560",
-            borderwidth=1,
-            borderpad=6,
+            borderwidth=1.5,
+            borderpad=8,
+            align="left",
         )
 
     return fig
