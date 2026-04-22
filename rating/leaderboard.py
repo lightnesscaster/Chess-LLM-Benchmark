@@ -14,16 +14,38 @@ from .cost_calculator import CostCalculator, filter_results_by_rating_diff
 from game.stats_collector import StatsCollector
 from game.models import GameResult
 
-# Load model publish dates
+# Load model publish dates. Reloads when the JSON file's mtime changes so
+# long-running processes (e.g. the Flask web server) pick up new entries
+# without a restart.
 _PUBLISH_DATES_PATH = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
 _publish_dates: Dict[str, Dict[str, Any]] = {}
-try:
-    with open(_PUBLISH_DATES_PATH) as f:
-        _publish_dates = json.load(f)
-except FileNotFoundError:
-    logging.warning(f"Model publish dates file not found: {_PUBLISH_DATES_PATH}")
-except json.JSONDecodeError as e:
-    logging.error(f"Invalid JSON in model publish dates file: {e}")
+_publish_dates_mtime: float = 0.0
+
+
+def _get_publish_dates() -> Dict[str, Dict[str, Any]]:
+    global _publish_dates, _publish_dates_mtime
+    try:
+        mtime = _PUBLISH_DATES_PATH.stat().st_mtime
+    except FileNotFoundError:
+        if _publish_dates_mtime != 0.0:
+            logging.warning(f"Model publish dates file not found: {_PUBLISH_DATES_PATH}")
+            _publish_dates = {}
+            _publish_dates_mtime = 0.0
+        return _publish_dates
+
+    if mtime == _publish_dates_mtime:
+        return _publish_dates
+
+    try:
+        with open(_PUBLISH_DATES_PATH) as f:
+            _publish_dates = json.load(f)
+        _publish_dates_mtime = mtime
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON in model publish dates file: {e}")
+    return _publish_dates
+
+
+_get_publish_dates()
 
 
 class Leaderboard:
@@ -78,6 +100,7 @@ class Leaderboard:
         """
         ratings = self.rating_store.get_sorted_ratings(min_games=min_games)
         player_stats = self.stats.get_player_stats() if self.stats else {}
+        publish_dates = _get_publish_dates()
 
         leaderboard = []
         for i, rating in enumerate(ratings, 1):
@@ -102,8 +125,8 @@ class Leaderboard:
             }
 
             # Add publish date if available
-            if rating.player_id in _publish_dates:
-                date_info = _publish_dates[rating.player_id]
+            if rating.player_id in publish_dates:
+                date_info = publish_dates[rating.player_id]
                 # Format as MM/YY from YYYY-MM-DD
                 date_str = date_info.get("created_date", "")
                 if date_str and len(date_str) == 10:  # YYYY-MM-DD is always 10 chars
