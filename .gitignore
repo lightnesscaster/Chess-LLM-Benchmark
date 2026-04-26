@@ -37,3 +37,14 @@ position_benchmark/lichess_*.json
 position_benchmark/game_blunders*.json
 position_benchmark/gemini_good_positions.json
 position_benchmark/results_*.json
+
+# Generated analysis caches
+data/*_cache/
+
+# Position benchmark experiment artifacts
+position_benchmark/common_reached_*.json
+position_benchmark/nonopening_*.csv
+position_benchmark/nonopening_*.json
+position_benchmark/positions_multipv_*.json
+position_benchmark/regan_lite_*.json
+position_benchmark/residual_panel_*.json
