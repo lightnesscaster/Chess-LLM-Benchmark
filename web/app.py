@@ -47,24 +47,29 @@ _games_lock = threading.Lock()
 _games_refreshing = False
 _GAMES_CACHE_TTL = 86400  # 24 hours
 
+# Data paths
+DATA_DIR = Path(__file__).parent.parent / "data"
+CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
+PRICING_PATH = Path(__file__).parent.parent / "config" / "pricing.json"
+PUBLISH_DATES_PATH = DATA_DIR / "model_publish_dates.json"
+RATINGS_PATH = DATA_DIR / "ratings.json"
+
 
 def _should_invalidate_cache(cache_time: float) -> bool:
-    """Check if cache should be invalidated based on signal file."""
+    """Check if cache should be invalidated based on data/config changes."""
     try:
-        if not _CACHE_INVALIDATE_FILE.exists():
-            return False
-        file_mtime = _CACHE_INVALIDATE_FILE.stat().st_mtime
-        return file_mtime > cache_time
+        paths = (
+            _CACHE_INVALIDATE_FILE,
+            CONFIG_PATH,
+            PRICING_PATH,
+            PUBLISH_DATES_PATH,
+        )
+        return any(path.exists() and path.stat().st_mtime > cache_time for path in paths)
     except OSError:
         return False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Data paths
-DATA_DIR = Path(__file__).parent.parent / "data"
-CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
-RATINGS_PATH = DATA_DIR / "ratings.json"
 
 def get_anchors_from_config() -> dict:
     """Load anchor IDs and ratings from config file.

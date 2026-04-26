@@ -74,20 +74,39 @@ class Leaderboard:
 
     @property
     def cost_data(self) -> Dict[str, Dict[str, Any]]:
-        """Lazily calculate cost data (only for games against similarly-rated opponents)."""
+        """Lazily calculate cost data for display.
+
+        Prefer games against similarly-rated opponents, but fall back to any
+        exact recorded game cost for new models whose only games are outside
+        that rating band.
+        """
         if self._cost_data is None:
             if self.results:
-                # Filter to only include games where opponents are within rating threshold
+                calculator = CostCalculator()
+
+                # Prefer games where opponents are within the rating threshold.
                 filtered_results = filter_results_by_rating_diff(
                     self.results, self.rating_store
                 )
-                calculator = CostCalculator()
-                self._cost_data = calculator.calculate_player_costs(
+                cost_data = calculator.calculate_player_costs(
                     filtered_results,
                     use_budget_overrides=False,
                     subtract_excluded_prompt_overhead=True,
                     include_uncosted_players=False,
                 )
+
+                # If the rating-band filter removes every costed game for a
+                # model, still show the exact cost from the games we do have.
+                fallback_cost_data = calculator.calculate_player_costs(
+                    self.results,
+                    use_budget_overrides=False,
+                    subtract_excluded_prompt_overhead=True,
+                    include_uncosted_players=False,
+                )
+                for player_id, stats in fallback_cost_data.items():
+                    cost_data.setdefault(player_id, stats)
+
+                self._cost_data = cost_data
             else:
                 self._cost_data = {}
         return self._cost_data
