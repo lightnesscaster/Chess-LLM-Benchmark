@@ -271,6 +271,14 @@
     "completion": 1.2e-06,
     "prompt": 4e-07
   },
+  "deepseek/deepseek-v4-flash": {
+    "completion": 2.8e-07,
+    "prompt": 1.4e-07
+  },
+  "deepseek/deepseek-v4-pro": {
+    "completion": 8.7e-07,
+    "prompt": 4.35e-07
+  },
   "eleutherai/llemma_7b": {
     "completion": 1.2e-06,
     "prompt": 8e-07

@@ -344,6 +344,16 @@
     "created_timestamp": 1764594642,
     "created_date": "2025-12-01"
   },
+  "deepseek-v4-pro (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
   "qwen3-235b-a22b-thinking-2507": {
     "model_id": "qwen/qwen3-235b-a22b-thinking-2507",
     "created_timestamp": 1753449557,

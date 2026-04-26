@@ -153,6 +153,20 @@ llms:
     temperature: 0.0
     timeout: 1200
 
+  # deepseek-v4-pro (no thinking)
+  - player_id: "deepseek-v4-pro (no thinking)"
+    model_name: "deepseek/deepseek-v4-pro"
+    temperature: 0.0
+    reasoning: false
+    timeout: 1200
+
+  # deepseek-v4-flash (no thinking)
+  - player_id: "deepseek-v4-flash (no thinking)"
+    model_name: "deepseek/deepseek-v4-flash"
+    temperature: 0.0
+    reasoning: false
+    timeout: 1200
+
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
