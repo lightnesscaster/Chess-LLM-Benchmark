@@ -33,7 +33,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
     """
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-    VALID_REASONING_EFFORTS = {"minimal", "low", "medium", "high"}
+    VALID_REASONING_EFFORTS = {"minimal", "low", "medium", "high", "xhigh"}
     REASONING_EXTRACTION_MODEL = "deepseek/deepseek-v3.2-exp"
 
     def __init__(
@@ -59,7 +59,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             temperature: Sampling temperature (0.0 for deterministic)
             max_tokens: Maximum tokens in response
             reasoning: Reasoning mode (True=enable, False=disable, None=use API default)
-            reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
+            reasoning_effort: Reasoning effort level (minimal, low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
             reasoning_max_tokens: Explicit thinking token budget. Overrides effort-based
                 percentage mapping. Passed as reasoning.max_tokens to OpenRouter.

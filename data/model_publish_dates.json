@@ -349,7 +349,57 @@
     "created_timestamp": 1776988800,
     "created_date": "2026-04-24"
   },
+  "deepseek-v4-pro (minimal)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (low)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (medium)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (high)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (xhigh)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
   "deepseek-v4-flash (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (minimal)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (low)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (medium)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (high)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (xhigh)": {
     "model_id": "deepseek/deepseek-v4-flash",
     "created_timestamp": 1776988800,
     "created_date": "2026-04-24"
