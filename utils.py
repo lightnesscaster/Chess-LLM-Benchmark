@@ -1,11 +1,29 @@
 """Shared utility functions."""
 
+import re
 from typing import Optional
+
+
+REASONING_SUFFIXES = {
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "thinking",
+    "no thinking",
+}
+
+REASONING_SUFFIX_RE = re.compile(
+    r"\((?:" + "|".join(re.escape(suffix) for suffix in sorted(REASONING_SUFFIXES, key=len, reverse=True)) + r")\)\s*$",
+    re.IGNORECASE,
+)
 
 
 def resolve_player_id(base_id: str, reasoning_effort: Optional[str] = None) -> str:
     """Build canonical player_id, appending reasoning effort suffix if needed."""
-    if reasoning_effort and f"({reasoning_effort})" not in base_id:
+    if reasoning_effort and not REASONING_SUFFIX_RE.search(base_id):
         return f"{base_id} ({reasoning_effort})"
     return base_id
 

@@ -47,6 +47,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         reasoning_effort: Optional[str] = None,
         reasoning_max_tokens: Optional[int] = None,
         provider_order: Optional[list] = None,
+        provider_ignore: Optional[list] = None,
         timeout: int = 300,
     ):
         """
@@ -64,6 +65,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             reasoning_max_tokens: Explicit thinking token budget. Overrides effort-based
                 percentage mapping. Passed as reasoning.max_tokens to OpenRouter.
             provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
+            provider_ignore: List of provider names to exclude (e.g., ["deepinfra"])
             timeout: Request timeout in seconds (default 300 = 5 minutes)
         """
         super().__init__(player_id, model_name)
@@ -89,6 +91,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
         self.reasoning_effort = reasoning_effort
         self.reasoning_max_tokens = reasoning_max_tokens
         self.provider_order = provider_order
+        self.provider_ignore = provider_ignore
         self.timeout = timeout
         self._last_prompt_tokens = 0
         self._last_completion_tokens = 0
@@ -521,8 +524,13 @@ Your response (just the UCI move or UNCLEAR):"""
             payload["temperature"] = self.temperature
 
         # Provider routing preferences
+        provider_routing = {}
         if self.provider_order:
-            payload["provider"] = {"order": self.provider_order}
+            provider_routing["order"] = self.provider_order
+        if self.provider_ignore:
+            provider_routing["ignore"] = self.provider_ignore
+        if provider_routing:
+            payload["provider"] = provider_routing
 
         # Retry logic for transient network and HTTP errors
         max_retries = 7

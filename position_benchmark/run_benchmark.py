@@ -417,6 +417,8 @@ async def run_benchmark(
                     player_id=common_kwargs["player_id"],
                     model_name=player_config.get("model_name"),
                     temperature=common_kwargs["temperature"],
+                    provider_order=player_config.get("provider_order"),
+                    provider_ignore=player_config.get("provider_ignore"),
                     timeout=common_kwargs["timeout"],
                 )
 
@@ -424,6 +426,8 @@ async def run_benchmark(
                 model_name=player_config.get("model_name"),
                 reasoning_max_tokens=player_config.get("reasoning_max_tokens"),
                 max_tokens=player_config.get("max_tokens", 0),
+                provider_order=player_config.get("provider_order"),
+                provider_ignore=player_config.get("provider_ignore"),
                 **common_kwargs,
             )
 

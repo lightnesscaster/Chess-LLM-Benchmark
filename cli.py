@@ -306,6 +306,8 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
                 api_key=api_key,
                 temperature=llm_cfg.get("temperature", 0.0),
                 max_tokens=llm_cfg.get("max_tokens", 10),
+                provider_order=llm_cfg.get("provider_order"),
+                provider_ignore=llm_cfg.get("provider_ignore"),
                 timeout=llm_cfg.get("timeout", 600),
             )
         else:
@@ -319,6 +321,7 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
                 reasoning_effort=reasoning_effort,
                 reasoning_max_tokens=reasoning_max_tokens,
                 provider_order=llm_cfg.get("provider_order"),
+                provider_ignore=llm_cfg.get("provider_ignore"),
                 timeout=llm_cfg.get("timeout", 600),
             )
 

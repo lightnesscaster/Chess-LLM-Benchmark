@@ -81,6 +81,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         api_key: Optional[str] = None,
         temperature: float = 0.0,
         max_tokens: int = 8,
+        provider_order: Optional[list] = None,
+        provider_ignore: Optional[list] = None,
         timeout: int = 300,
         **_unused,
     ):
@@ -90,6 +92,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             raise ValueError("OpenRouter API key required")
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.provider_order = provider_order
+        self.provider_ignore = provider_ignore
         self.timeout = timeout
         self._last_prompt_tokens = 0
         self._last_completion_tokens = 0
@@ -209,6 +213,13 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
                 "stop": ["\n"],
                 "logit_bias": bias,
             }
+            provider_routing = {}
+            if self.provider_order:
+                provider_routing["order"] = self.provider_order
+            if self.provider_ignore:
+                provider_routing["ignore"] = self.provider_ignore
+            if provider_routing:
+                payload["provider"] = provider_routing
             data = await self._post_with_retries(session, headers, payload)
             self._track_usage(data)
             completion_text = ""
