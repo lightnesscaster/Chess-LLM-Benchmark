@@ -104,6 +104,7 @@ class MatchScheduler:
         "medium": 3,
         "thinking": 4,
         "high": 4,
+        "max": 5,
         "xhigh": 5,
     }
 

@@ -32,6 +32,7 @@ def is_reasoning_model(player_id: str) -> bool:
 
     reasoning_indicators = [
         "(thinking)",
+        "(max)",
         "(xhigh)",
         "(high)",
         "(medium)",

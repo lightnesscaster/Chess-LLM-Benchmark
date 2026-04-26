@@ -280,52 +280,18 @@ llms:
 
   # --- Reasoning models ---
 
-  - player_id: "deepseek-v4-pro (minimal)"
-    model_name: "deepseek/deepseek-v4-pro"
-    temperature: 0.0
-    reasoning_effort: minimal
-    timeout: 1200
-
-  - player_id: "deepseek-v4-pro (low)"
-    model_name: "deepseek/deepseek-v4-pro"
-    temperature: 0.0
-    reasoning_effort: low
-    timeout: 1200
-
-  - player_id: "deepseek-v4-pro (medium)"
-    model_name: "deepseek/deepseek-v4-pro"
-    temperature: 0.0
-    reasoning_effort: medium
-    timeout: 1200
-
+  # DeepSeek V4 supports non-thinking, high, and max reasoning.
+  # OpenRouter's xhigh effort maps to DeepSeek's max effort.
   - player_id: "deepseek-v4-pro (high)"
     model_name: "deepseek/deepseek-v4-pro"
     temperature: 0.0
     reasoning_effort: high
     timeout: 1200
 
-  - player_id: "deepseek-v4-pro (xhigh)"
+  - player_id: "deepseek-v4-pro (max)"
     model_name: "deepseek/deepseek-v4-pro"
     temperature: 0.0
     reasoning_effort: xhigh
-    timeout: 1200
-
-  - player_id: "deepseek-v4-flash (minimal)"
-    model_name: "deepseek/deepseek-v4-flash"
-    temperature: 0.0
-    reasoning_effort: minimal
-    timeout: 1200
-
-  - player_id: "deepseek-v4-flash (low)"
-    model_name: "deepseek/deepseek-v4-flash"
-    temperature: 0.0
-    reasoning_effort: low
-    timeout: 1200
-
-  - player_id: "deepseek-v4-flash (medium)"
-    model_name: "deepseek/deepseek-v4-flash"
-    temperature: 0.0
-    reasoning_effort: medium
     timeout: 1200
 
   - player_id: "deepseek-v4-flash (high)"
@@ -334,7 +300,7 @@ llms:
     reasoning_effort: high
     timeout: 1200
 
-  - player_id: "deepseek-v4-flash (xhigh)"
+  - player_id: "deepseek-v4-flash (max)"
     model_name: "deepseek/deepseek-v4-flash"
     temperature: 0.0
     reasoning_effort: xhigh

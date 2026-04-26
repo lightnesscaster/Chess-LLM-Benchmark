@@ -171,7 +171,7 @@ class CostCalculator:
 
         # Strip common suffixes and try again
         # e.g., "gpt-5.1 (high)" -> "gpt-5.1", "claude-opus-4 (no thinking)" -> "claude-opus-4"
-        base_id = re.sub(r'\s*\((xhigh|high|medium|low|minimal|thinking|no thinking)\)\s*$', '', player_id)
+        base_id = re.sub(r'\s*\((max|xhigh|high|medium|low|minimal|thinking|no thinking)\)\s*$', '', player_id)
         if base_id != player_id:
             return self.get_model_for_player(base_id, _depth + 1)
 
