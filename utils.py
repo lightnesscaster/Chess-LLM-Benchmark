@@ -32,8 +32,10 @@ def is_reasoning_model(player_id: str) -> bool:
 
     reasoning_indicators = [
         "(thinking)",
+        "(xhigh)",
         "(high)",
         "(medium)",
+        "(low)",
         "(minimal)",
         "-r1",          # DeepSeek R1 models
         "gemini-3",     # Gemini 3.x models

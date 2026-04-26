@@ -136,6 +136,11 @@ class FreezeChecker:
             self._cost_cache[player_id] = 0.0
             return 0.0
 
+        override = self._cost_calculator.get_budget_cost_override(player_id)
+        if override is not None:
+            self._cost_cache[player_id] = override
+            return override
+
         # Historical cost
         if self._cost_data_cache is None:
             filtered_results = filter_results_by_rating_diff(

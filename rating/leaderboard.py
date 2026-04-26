@@ -82,7 +82,12 @@ class Leaderboard:
                     self.results, self.rating_store
                 )
                 calculator = CostCalculator()
-                self._cost_data = calculator.calculate_player_costs(filtered_results)
+                self._cost_data = calculator.calculate_player_costs(
+                    filtered_results,
+                    use_budget_overrides=False,
+                    subtract_excluded_prompt_overhead=True,
+                    include_uncosted_players=False,
+                )
             else:
                 self._cost_data = {}
         return self._cost_data

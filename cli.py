@@ -30,6 +30,7 @@ from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
+from llm.codex_subagent_client import CodexSubagentPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
@@ -248,6 +249,9 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
     reasoning_ids = set()
 
     for llm_cfg in config.get("llms", []):
+        if api_backend == "codex" and llm_cfg.get("api") != "codex":
+            continue
+
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
         reasoning_effort = llm_cfg.get("reasoning_effort")
@@ -267,7 +271,23 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
         # Append reasoning effort to player_id if set and not already included
         player_id = resolve_player_id(player_id, reasoning_effort)
 
-        if api_backend == "gemini":
+        if llm_cfg.get("api") == "codex":
+            players[player_id] = CodexSubagentPlayer(
+                player_id=player_id,
+                model_name=llm_cfg.get("codex_model_name") or model_name,
+                reasoning_effort=reasoning_effort or llm_cfg.get("codex_reasoning_effort", "medium"),
+                codex_command=llm_cfg.get("codex_command", "codex"),
+                timeout=llm_cfg.get("timeout", 600),
+                max_retries=llm_cfg.get("codex_max_retries", 2),
+                max_concurrent=llm_cfg.get("codex_max_concurrent"),
+                sandbox=llm_cfg.get("codex_sandbox", "read-only"),
+                ignore_rules=llm_cfg.get("codex_ignore_rules", True),
+                ephemeral=llm_cfg.get("codex_ephemeral", True),
+                include_legal_moves=llm_cfg.get("codex_include_legal_moves", False),
+                extra_args=llm_cfg.get("codex_extra_args"),
+                working_dir=llm_cfg.get("codex_working_dir"),
+            )
+        elif api_backend == "gemini":
             # Strip google/ prefix for direct Gemini API
             gemini_model = model_name.removeprefix("google/")
             players[player_id] = GeminiPlayer(
@@ -326,6 +346,8 @@ async def run_benchmark(args):
         if not api_key:
             print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
             return 1
+    elif api_backend == "codex":
+        api_key = None
     else:
         api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
         if not api_key:
@@ -881,6 +903,8 @@ async def run_manual_game(args):
         if not api_key:
             print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
             return 1
+    elif api_backend == "codex":
+        api_key = None
     else:
         api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
         if not api_key:
@@ -983,6 +1007,12 @@ async def run_manual_game(args):
                 api_key=api_key,
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
+            )
+        if api_backend == "codex":
+            return CodexSubagentPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                reasoning_effort=reasoning_effort or "medium",
             )
         if _llm_api_by_model.get(model_name) == "completion":
             return OpenRouterCompletionPlayer(
@@ -1136,6 +1166,9 @@ async def run_manual_game(args):
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(description="Chess LLM Benchmark")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -1163,9 +1196,9 @@ def main():
     )
     run_parser.add_argument(
         "--api",
-        choices=["openrouter", "gemini"],
+        choices=["openrouter", "gemini", "codex"],
         default="openrouter",
-        help="API backend to use (default: openrouter)",
+        help="API backend to use (default: openrouter; codex runs only llms with api: codex)",
     )
 
     # Leaderboard command
@@ -1258,13 +1291,13 @@ def main():
     )
     manual_parser.add_argument(
         "--white-reasoning-effort",
-        choices=["minimal", "low", "medium", "high"],
-        help="Reasoning effort level for white (minimal, low, medium, high)",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Reasoning effort level for white (minimal, low, medium, high, xhigh)",
     )
     manual_parser.add_argument(
         "--black-reasoning-effort",
-        choices=["minimal", "low", "medium", "high"],
-        help="Reasoning effort level for black (minimal, low, medium, high)",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Reasoning effort level for black (minimal, low, medium, high, xhigh)",
     )
     manual_parser.add_argument(
         "--white-reasoning-max-tokens",
@@ -1346,7 +1379,7 @@ def main():
     )
     manual_parser.add_argument(
         "--api",
-        choices=["openrouter", "gemini"],
+        choices=["openrouter", "gemini", "codex"],
         default="openrouter",
         help="API backend to use (default: openrouter)",
     )

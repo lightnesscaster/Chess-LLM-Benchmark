@@ -104,6 +104,7 @@ class MatchScheduler:
         "medium": 3,
         "thinking": 4,
         "high": 4,
+        "xhigh": 5,
     }
 
     # Inferior same-provider model freezing
@@ -270,12 +271,32 @@ class MatchScheduler:
             return False
         return True
 
+    @staticmethod
+    def _format_player_list(player_ids: List[str], limit: int = 12) -> str:
+        """Format a bounded player list for scheduler logs."""
+        if len(player_ids) <= limit:
+            return ", ".join(player_ids)
+        shown = ", ".join(player_ids[:limit])
+        return f"{shown}, ... ({len(player_ids) - limit} more)"
+
+    @staticmethod
+    def _format_rating_snapshot(rating: PlayerRating) -> str:
+        """Format rating state for skip logs."""
+        return (
+            f"rating={rating.rating:.0f}, RD={rating.rating_deviation:.0f}, "
+            f"games={rating.games_played}, W-L-D={rating.wins}-{rating.losses}-{rating.draws}"
+        )
+
     def _estimate_benchmark_cost(self, player_id: str) -> float:
         """
         Estimate cost of running position benchmark for a model.
 
         50 equal positions, ~1500 prompt tokens each, ~10-200 completion tokens.
         """
+        override = self._cost_calculator.get_budget_cost_override(player_id)
+        if override is not None:
+            return override
+
         model = self._cost_calculator.get_model_for_player(player_id)
         if not model:
             return 0.0
@@ -307,25 +328,55 @@ class MatchScheduler:
 
         benchmarked = set()
 
-        # Find models needing benchmarks
-        eligible = [lid for lid in llm_ids if self._needs_position_benchmark(lid)]
+        already_benchmarked = []
+        missing_config = []
+        frozen = []
+        eligible = []
+
+        for llm_id in llm_ids:
+            if isinstance(self.players.get(llm_id), BaseEngine):
+                continue
+            if llm_id in self._benchmark_completed:
+                already_benchmarked.append(llm_id)
+                continue
+            if llm_id not in self._llm_configs:
+                missing_config.append(llm_id)
+                continue
+
+            rating = self.rating_store.get(llm_id)
+            if self._freeze_checker.is_frozen(llm_id, rating.rating_deviation):
+                frozen.append((llm_id, self._format_rating_snapshot(rating)))
+                continue
+
+            eligible.append(llm_id)
+
+        print(
+            "Phase 1: Position benchmark precheck: "
+            f"{len(eligible)} queued, "
+            f"{len(already_benchmarked)} already done, "
+            f"{len(frozen)} frozen, "
+            f"{len(missing_config)} missing config"
+        )
+
+        if self.verbose and already_benchmarked:
+            print(f"  Already benchmarked: {self._format_player_list(already_benchmarked)}")
+        for llm_id, snapshot in frozen:
+            print(f"  Skipping position benchmark for {llm_id}: frozen ({snapshot})")
+        if missing_config:
+            print(
+                "  Skipping position benchmark for missing config: "
+                f"{self._format_player_list(missing_config)}"
+            )
 
         if not eligible:
-            return benchmarked
-
-        # Sort by priority (highest RD / lowest cost first)
-        eligible.sort(key=lambda lid: self._calculate_priority(lid), reverse=True)
-
-        # Filter out frozen models
-        eligible = [
-            lid for lid in eligible
-            if not self._freeze_checker.is_frozen(lid, self.rating_store.get(lid).rating_deviation)
-        ]
-
-        if not eligible:
+            print("  No position benchmarks to run.")
+            print()
             return benchmarked
 
         print(f"Phase 1: Position benchmarks for {len(eligible)} model(s)")
+
+        # Sort by priority (highest RD / lowest cost first)
+        eligible.sort(key=lambda lid: self._calculate_priority(lid), reverse=True)
 
         # Load positions and open Stockfish once
         positions_path = Path(__file__).parent.parent / "position_benchmark" / "positions.json"
@@ -376,7 +427,11 @@ class MatchScheduler:
                         "prompt_tokens": token_usage.get("prompt", 0),
                         "completion_tokens": token_usage.get("completion", 0),
                     }
-                    actual_cost = self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
+                    override = self._cost_calculator.get_budget_cost_override(llm_id)
+                    if override is not None:
+                        actual_cost = override
+                    else:
+                        actual_cost = self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
 
                     counters["total_cost"] += actual_cost
                     self._benchmark_completed.add(llm_id)
@@ -412,6 +467,21 @@ class MatchScheduler:
         self._pairwise_cost_cache = None
 
 
+    def _calculate_player_game_cost(self, player_id: str, tokens: Optional[dict]) -> float:
+        """Calculate benchmark budget cost for one player's side of a game."""
+        if not tokens:
+            return 0.0
+
+        override = self._cost_calculator.get_budget_cost_override(player_id)
+        if override is not None:
+            return override
+
+        cost = self._cost_calculator.calculate_game_cost(
+            tokens,
+            self._cost_calculator.get_model_for_player(player_id) or "",
+        )
+        return cost or 0.0
+
     def _calculate_game_cost(self, result: GameResult) -> float:
         """
         Calculate the cost of a completed game from token usage.
@@ -422,29 +492,20 @@ class MatchScheduler:
         Returns:
             Total cost in dollars for both players
         """
-        total_cost = 0.0
+        return (
+            self._calculate_player_game_cost(result.white_id, result.tokens_white)
+            + self._calculate_player_game_cost(result.black_id, result.tokens_black)
+        )
 
-        # Calculate white player cost
-        if result.tokens_white:
-            white_cost = self._cost_calculator.calculate_game_cost(
-                result.tokens_white,
-                self._cost_calculator.get_model_for_player(result.white_id) or ""
-            )
-            if white_cost:
-                total_cost += white_cost
+    def _estimate_player_cost_detail(self, player_id: str) -> Tuple[float, str]:
+        """Estimate one player's budget cost and describe the source."""
+        override = self._cost_calculator.get_budget_cost_override(player_id)
+        if override is not None:
+            return override, f"{player_id}: config budget_cost_per_game"
 
-        # Calculate black player cost
-        if result.tokens_black:
-            black_cost = self._cost_calculator.calculate_game_cost(
-                result.tokens_black,
-                self._cost_calculator.get_model_for_player(result.black_id) or ""
-            )
-            if black_cost:
-                total_cost += black_cost
+        return self._freeze_checker.get_player_cost(player_id), f"{player_id}: historical/pricing estimate"
 
-        return total_cost
-
-    def _estimate_game_cost(self, white_id: str, black_id: str) -> float:
+    def _estimate_game_cost_detail(self, white_id: str, black_id: str) -> Tuple[float, str]:
         """
         Estimate cost for a game between two players before it starts.
 
@@ -458,8 +519,15 @@ class MatchScheduler:
             black_id: Black player ID
 
         Returns:
-            Estimated cost in dollars for the game
+            Estimated cost in dollars for the game, plus source description
         """
+        white_override = self._cost_calculator.get_budget_cost_override(white_id)
+        black_override = self._cost_calculator.get_budget_cost_override(black_id)
+        if white_override is not None or black_override is not None:
+            white_cost, white_source = self._estimate_player_cost_detail(white_id)
+            black_cost, black_source = self._estimate_player_cost_detail(black_id)
+            return white_cost + black_cost, f"{white_source}; {black_source}"
+
         # Build pairwise cost cache if needed
         if self._pairwise_cost_cache is None:
             self._pairwise_cost_cache = self._build_pairwise_cost_cache()
@@ -467,10 +535,17 @@ class MatchScheduler:
         # Try pairwise cost first (order-independent key)
         pair_key = tuple(sorted([white_id, black_id]))
         if pair_key in self._pairwise_cost_cache:
-            return self._pairwise_cost_cache[pair_key]
+            return self._pairwise_cost_cache[pair_key], "historical pair average"
 
         # Fall back to sum of individual player costs
-        return self._freeze_checker.get_player_cost(white_id) + self._freeze_checker.get_player_cost(black_id)
+        white_cost, white_source = self._estimate_player_cost_detail(white_id)
+        black_cost, black_source = self._estimate_player_cost_detail(black_id)
+        return white_cost + black_cost, f"{white_source}; {black_source}"
+
+    def _estimate_game_cost(self, white_id: str, black_id: str) -> float:
+        """Estimate cost for a game between two players before it starts."""
+        estimated_cost, _ = self._estimate_game_cost_detail(white_id, black_id)
+        return estimated_cost
 
     def _build_pairwise_cost_cache(self) -> Dict[Tuple[str, str], float]:
         """
@@ -1223,14 +1298,19 @@ class MatchScheduler:
                 white_id, black_id = pairing
 
                 # Estimate cost BEFORE reserving to check budget
-                estimated_cost = self._estimate_game_cost(white_id, black_id)
+                estimated_cost, estimate_source = self._estimate_game_cost_detail(white_id, black_id)
                 effective_cost = counters["total_cost"] + counters["pending_cost"] + estimated_cost
 
                 # Pre-flight budget check: don't start game if it would exceed budget
                 if effective_cost >= max_cost:
                     counters["budget_exceeded"] = True
                     if self.verbose:
-                        print(f"  Budget would be exceeded: ${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending + ${estimated_cost:.2f} new >= ${max_cost:.2f}")
+                        print(
+                            f"  Budget would be exceeded by {white_id} vs {black_id}: "
+                            f"${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending "
+                            f"+ ${estimated_cost:.2f} new >= ${max_cost:.2f} "
+                            f"({estimate_source})"
+                        )
                     return  # Don't start this game
 
                 # Reserve everything atomically: pairing slot, game counts, counter, cost estimate

@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
+from llm.codex_subagent_client import CodexSubagentPlayer
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
@@ -45,6 +46,10 @@ class PositionResult:
     eval_model: float  # Eval after model's move
     eval_best: float  # Eval after best move
     eval_before: float  # Eval before the position (for illegal CPL calculation)
+    move_rank: Optional[int] = None
+    top3: bool = False
+    top5: bool = False
+    reciprocal_rank: float = 0.0
     prompt_tokens: int = 0  # Prompt tokens used for this position
     completion_tokens: int = 0  # Completion tokens used for this position
 
@@ -126,6 +131,28 @@ def eval_to_cp(info: chess.engine.InfoDict, perspective: chess.Color) -> float:
     return cp if cp is not None else 0.0
 
 
+def annotate_result_with_multipv(position: dict, result: PositionResult) -> PositionResult:
+    """Attach rank-style metadata when the position has MultiPV annotations."""
+    multipv = position.get("multipv") or []
+    if not multipv:
+        return result
+
+    move_rank = None
+    for rank, candidate in enumerate(multipv, start=1):
+        if candidate.get("move") == result.model_move:
+            move_rank = rank
+            break
+
+    if move_rank is None:
+        move_rank = len(multipv) + 1
+
+    result.move_rank = move_rank
+    result.top3 = move_rank <= 3
+    result.top5 = move_rank <= 5
+    result.reciprocal_rank = 1.0 / move_rank
+    return result
+
+
 async def test_llm_on_position(
     player: "BaseLLMPlayer",
     position: dict,
@@ -134,7 +161,8 @@ async def test_llm_on_position(
 ) -> PositionResult:
     """Test an LLM on a single position."""
     fen = position["fen"]
-    move_history = position["move_history"]
+    move_history = position.get("move_history") or []
+    move_history_san = position.get("move_history_san") or move_history
     side = position["side_to_move"].capitalize()
     best_move_uci = position["best_move"]
     blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
@@ -154,7 +182,7 @@ async def test_llm_on_position(
     perspective = board.turn
 
     # Build prompt and get model's move
-    prompt = build_position_prompt(fen, move_history, side)
+    prompt = build_position_prompt(fen, move_history_san, side)
 
     # Calculate illegal move CPL: half the swing to losing (eval_before + 5000)
     # This represents "half a game loss" since 2 illegals = forfeit
@@ -176,7 +204,7 @@ async def test_llm_on_position(
         model_move_san = board.san(move)
         is_legal = True
     except (ValueError, chess.InvalidMoveError):
-        return PositionResult(
+        return annotate_result_with_multipv(position, PositionResult(
             position_idx=0,
             fen=fen,
             model_move=model_move_uci,
@@ -191,7 +219,7 @@ async def test_llm_on_position(
             eval_model=-5000,
             eval_best=eval_before,
             eval_before=eval_before,
-        )
+        ))
 
     # Evaluate model's move
     board.push(move)
@@ -205,7 +233,7 @@ async def test_llm_on_position(
     # Calculate CPL
     cpl = max(0, eval_best - eval_model)
 
-    return PositionResult(
+    return annotate_result_with_multipv(position, PositionResult(
         position_idx=0,
         fen=fen,
         model_move=model_move_uci,
@@ -220,7 +248,7 @@ async def test_llm_on_position(
         eval_model=eval_model,
         eval_best=eval_best,
         eval_before=eval_before,
-    )
+    ))
 
 
 def test_engine_on_position(
@@ -246,7 +274,7 @@ def test_engine_on_position(
         model_move_san = board.san(move)
         is_legal = True
     except Exception as e:
-        return PositionResult(
+        return annotate_result_with_multipv(position, PositionResult(
             position_idx=0,
             fen=fen,
             model_move="",
@@ -261,7 +289,7 @@ def test_engine_on_position(
             eval_model=-10000,
             eval_best=eval_before,
             eval_before=eval_before,
-        )
+        ))
 
     # Evaluate engine's move
     board.push(move)
@@ -271,7 +299,7 @@ def test_engine_on_position(
 
     cpl = max(0, eval_before - eval_model)
 
-    return PositionResult(
+    return annotate_result_with_multipv(position, PositionResult(
         position_idx=0,
         fen=fen,
         model_move=model_move_uci,
@@ -286,7 +314,7 @@ def test_engine_on_position(
         eval_model=eval_model,
         eval_best=eval_before,
         eval_before=eval_before,
-    )
+    ))
 
 
 async def run_benchmark(
@@ -357,6 +385,22 @@ async def run_benchmark(
                 "timeout": player_config.get("timeout", 600),
             }
 
+            if player_config.get("api") == "codex" or api_backend == "codex":
+                return CodexSubagentPlayer(
+                    player_id=common_kwargs["player_id"],
+                    model_name=player_config.get("codex_model_name") or player_config.get("model_name"),
+                    reasoning_effort=common_kwargs["reasoning_effort"] or player_config.get("codex_reasoning_effort", "medium"),
+                    timeout=common_kwargs["timeout"],
+                    max_retries=player_config.get("codex_max_retries", 2),
+                    max_concurrent=player_config.get("codex_max_concurrent"),
+                    sandbox=player_config.get("codex_sandbox", "read-only"),
+                    ignore_rules=player_config.get("codex_ignore_rules", True),
+                    ephemeral=player_config.get("codex_ephemeral", True),
+                    include_legal_moves=player_config.get("codex_include_legal_moves", False),
+                    extra_args=player_config.get("codex_extra_args"),
+                    working_dir=player_config.get("codex_working_dir"),
+                )
+
             if api_backend == "gemini":
                 # Strip provider prefix for direct Gemini API
                 model_name = player_config.get("model_name", "")
@@ -386,12 +430,16 @@ async def run_benchmark(
         # Gemini preview/reasoning models have been more reliable in this
         # benchmark when requests are serialized and use a fresh client per
         # position, instead of sharing one mutable player across tasks.
-        max_concurrent = 1 if api_backend == "gemini" else 10
+        if player_config.get("api") == "codex" or api_backend == "codex":
+            max_concurrent = player_config.get("codex_position_max_concurrent", 1)
+        else:
+            max_concurrent = 1 if api_backend == "gemini" else 10
         semaphore = asyncio.Semaphore(max_concurrent)
         completed = [0]  # Use list to allow modification in nested function
         results = [None] * len(positions)  # Pre-allocate to maintain order
 
-        shared_player = None if api_backend == "gemini" else create_llm_player()
+        fresh_player_per_position = api_backend == "gemini" or player_config.get("api") == "codex" or api_backend == "codex"
+        shared_player = None if fresh_player_per_position else create_llm_player()
 
         async def test_with_semaphore(idx: int, pos: dict):
             max_api_retries = 3
@@ -422,7 +470,7 @@ async def run_benchmark(
                         return None
                 finally:
                     if shared_player is None:
-                        # Accumulate tokens before closing (Gemini: fresh player per position)
+                        # Accumulate tokens before closing (fresh player per position)
                         token_acc["prompt"] += getattr(player, "prompt_tokens", 0)
                         token_acc["completion"] += getattr(player, "completion_tokens", 0)
                         await player.close()
@@ -456,7 +504,7 @@ async def run_benchmark(
         all_cpls = [r.cpl for r in subset_results]
         legal_cpls = [r.cpl for r in legal]
         n = len(subset_results)
-        return {
+        summary = {
             "total_positions": n,
             "legal_moves": len(legal),
             "legal_pct": len(legal) / n * 100 if n else 0,
@@ -468,6 +516,12 @@ async def run_benchmark(
             "avg_cpl_legal": sum(legal_cpls) / len(legal_cpls) if legal_cpls else 10000,
             "median_cpl": _calculate_median(all_cpls),
         }
+        rankable = [r for r in subset_results if r.move_rank is not None]
+        if rankable:
+            summary["top3_pct"] = sum(1 for r in rankable if r.top3) / len(rankable) * 100
+            summary["top5_pct"] = sum(1 for r in rankable if r.top5) / len(rankable) * 100
+            summary["avg_reciprocal_rank"] = sum(r.reciprocal_rank for r in rankable) / len(rankable)
+        return summary
 
     # Overall summary
     summary = _calc_type_summary(results)
@@ -630,7 +684,7 @@ async def main():
     )
     parser.add_argument(
         "--api",
-        choices=["openrouter", "gemini"],
+        choices=["openrouter", "gemini", "codex"],
         default="openrouter",
         help="API backend to use (default: openrouter)",
     )
@@ -640,8 +694,15 @@ async def main():
         default="equal",
         help="Only test positions of this type (default: equal)",
     )
+    parser.add_argument(
+        "--sync-firestore",
+        action="store_true",
+        help="Sync results to Firestore even when using a custom output file.",
+    )
 
     args = parser.parse_args()
+    default_output = Path("position_benchmark/results.json").resolve()
+    should_sync_firestore = args.sync_firestore or args.output.resolve() == default_output
 
     # Load positions
     print(f"Loading positions from {args.positions}...")
@@ -837,15 +898,16 @@ async def main():
             with open(args.output, "w") as f:
                 json.dump(all_results, f, indent=2)
 
-            # Sync to Firestore (per-model document to avoid 1 MiB limit)
-            try:
-                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
-                db = get_firestore_client()
-                db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
-                    all_results[player_id]
-                )
-            except Exception as e:
-                print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
+            if should_sync_firestore:
+                # Sync to Firestore (per-model document to avoid 1 MiB limit)
+                try:
+                    from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
+                    db = get_firestore_client()
+                    db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
+                        all_results[player_id]
+                    )
+                except Exception as e:
+                    print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
 
     finally:
         stockfish.quit()

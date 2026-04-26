@@ -80,6 +80,11 @@ llms:
     temperature: 0.0
     reasoning: false
 
+  - player_id: "gpt-5.5 (no thinking)"
+    model_name: "openai/gpt-5.5"
+    temperature: 0.0
+    reasoning: false
+
   - player_id: "gpt-5.4 (minimal)"
     model_name: "openai/gpt-5.4"
     temperature: 0.0
@@ -89,6 +94,38 @@ llms:
     model_name: "openai/gpt-5.4"
     temperature: 0.0
     reasoning_effort: high
+
+  - player_id: "gpt-5.5 (low)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.5 (medium)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.5 (high)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.5 (xhigh)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
 
   # gemini-2.5-flash (no thinking) (223)
   - player_id: "gemini-2.5-flash (no thinking)"
@@ -306,17 +343,16 @@ llms:
   #   reasoning_effort: minimal
   #   timeout: 1200
 
-  # gemini-3-pro-preview (high)
-  - player_id: "gemini-3-pro-preview (high)"
-    model_name: "google/gemini-3-pro-preview"
-    temperature: 0.0
-    reasoning_effort: high
-
-  # gemini-3-pro-preview (medium)
-  - player_id: "gemini-3-pro-preview (medium)"
-    model_name: "google/gemini-3-pro-preview"
-    temperature: 0.0
-    reasoning_effort: medium
+  # gemini-3-pro-preview is deprecated and no longer has OpenRouter endpoints.
+  # - player_id: "gemini-3-pro-preview (high)"
+  #   model_name: "google/gemini-3-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: high
+  #
+  # - player_id: "gemini-3-pro-preview (medium)"
+  #   model_name: "google/gemini-3-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: medium
 
   # gemini-3-flash-preview (reasoning model)
   - player_id: "gemini-3-flash-preview (high)"
