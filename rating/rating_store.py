@@ -384,23 +384,30 @@ class RatingStore:
         """
         new_predictions = self._load_benchmark_predictions(force_refresh=True)
 
-        # Apply new predictions to models that haven't played games yet
-        for player_id, predicted in new_predictions.items():
-            if player_id not in self._benchmark_predictions:
-                # New prediction — update rating if model exists but hasn't played
-                if player_id in self._ratings:
-                    existing = self._ratings[player_id]
-                    if existing.games_played == 0:
-                        sibling = self._lower_effort_max_rating(player_id)
-                        seed = max(predicted, sibling) if sibling is not None else predicted
-                        self._ratings[player_id] = PlayerRating(
-                            player_id=player_id,
-                            rating=seed,
-                            rating_deviation=BENCHMARK_SEED_RD,
-                            games_rd=BENCHMARK_SEED_GAMES_RD,
-                        )
-
         self._benchmark_predictions = new_predictions
+        self._apply_benchmark_seeds_to_zero_game_players()
+
+    def _apply_benchmark_seeds_to_zero_game_players(self) -> None:
+        """Seed zero-game benchmark models from the current prediction table."""
+        for player_id, predicted in self._benchmark_predictions.items():
+            existing = self._ratings.get(player_id)
+            if existing is None or existing.games_played != 0 or player_id in self.anchor_ids:
+                continue
+
+            sibling = self._lower_effort_max_rating(player_id)
+            seed = max(predicted, sibling) if sibling is not None else predicted
+            self._ratings[player_id] = PlayerRating(
+                player_id=player_id,
+                rating=seed,
+                rating_deviation=BENCHMARK_SEED_RD,
+                volatility=existing.volatility if existing else 0.06,
+                games_played=0,
+                wins=0,
+                losses=0,
+                draws=0,
+                unclamped_rating=seed,
+                games_rd=BENCHMARK_SEED_GAMES_RD,
+            )
 
     def _init_firestore(self) -> None:
         """Initialize Firestore connection and load ratings."""
@@ -434,6 +441,7 @@ class RatingStore:
                 )
                 for pid, pr in _firestore_cache.items()
             }
+            self._apply_benchmark_seeds_to_zero_game_players()
             return
 
         try:
@@ -447,10 +455,26 @@ class RatingStore:
                 new_cache[data["player_id"]] = player_rating
                 self._ratings[data["player_id"]] = player_rating
 
+            self._apply_benchmark_seeds_to_zero_game_players()
+
             # Update the cache on success
-            _firestore_cache = new_cache
+            _firestore_cache = {
+                pid: PlayerRating(
+                    player_id=pr.player_id,
+                    rating=pr.rating,
+                    rating_deviation=pr.rating_deviation,
+                    volatility=pr.volatility,
+                    games_played=pr.games_played,
+                    wins=pr.wins,
+                    losses=pr.losses,
+                    draws=pr.draws,
+                    unclamped_rating=pr.unclamped_rating,
+                    games_rd=pr.games_rd,
+                )
+                for pid, pr in self._ratings.items()
+            }
             _firestore_cache_time = time.time()
-            logger.info(f"Loaded {len(new_cache)} ratings from Firestore")
+            logger.info(f"Loaded {len(_firestore_cache)} ratings from Firestore")
 
         except Exception as e:
             error_name = type(e).__name__
@@ -474,6 +498,7 @@ class RatingStore:
                     )
                     for pid, pr in _firestore_cache.items()
                 }
+                self._apply_benchmark_seeds_to_zero_game_players()
                 # Update cache time to prevent repeated fetch attempts
                 _firestore_cache_time = time.time()
             else:
@@ -541,6 +566,7 @@ class RatingStore:
             for player_id, rating_data in data.items():
                 player_rating = PlayerRating.from_dict(rating_data)
                 self._ratings[player_id] = player_rating
+            self._apply_benchmark_seeds_to_zero_game_players()
 
     def _save(self) -> None:
         """Save ratings to local file."""
