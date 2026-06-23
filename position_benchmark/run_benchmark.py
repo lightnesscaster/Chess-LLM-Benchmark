@@ -27,6 +27,8 @@ from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
+from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current
+from rating.cost_calculator import CostCalculator
 
 
 @dataclass
@@ -64,6 +66,28 @@ def _calculate_median(values: list[float]) -> float:
         return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
     else:
         return sorted_vals[n // 2]
+
+
+def stamp_current_benchmark_rows(rows: list[dict], depth: int) -> None:
+    """Mark result rows produced by the current history-replay benchmark path."""
+    for row in rows:
+        row["position_benchmark_version"] = CURRENT_BENCHMARK_VERSION
+        row["prompt_history_replay"] = True
+        row["stockfish_depth"] = depth
+
+
+def stamp_benchmark_summary(summary: dict, rows: list[dict], depth: int) -> None:
+    """Attach summary-level freshness metadata without hiding mixed legacy rows."""
+    current_rows = sum(1 for row in rows if result_row_is_current(row, min_stockfish_depth=depth))
+    summary["stockfish_depth"] = depth
+    summary["current_result_rows"] = current_rows
+    summary["legacy_or_mixed_result_rows"] = len(rows) - current_rows
+    if rows and current_rows == len(rows):
+        summary["position_benchmark_version"] = CURRENT_BENCHMARK_VERSION
+        summary["prompt_history_replay"] = True
+    else:
+        summary["position_benchmark_version"] = "mixed-or-legacy"
+        summary["prompt_history_replay"] = False
 
 
 def build_position_prompt(fen: str, move_history: list[str], side_to_move: str) -> str:
@@ -153,6 +177,51 @@ def annotate_result_with_multipv(position: dict, result: PositionResult) -> Posi
     return result
 
 
+def replay_position_board(position: dict) -> chess.Board:
+    """
+    Build a board for the position, preserving move history when available.
+
+    The normal game runner passes a board with move_stack populated, so chat
+    prompts include move history and the opponent's last move. Position
+    benchmark positions are stored as FEN plus history; replay that history when
+    it reaches the same piece/turn/castling/en-passant state as the target FEN.
+    Histories in older artifacts may be SAN while newer ones are UCI.
+    """
+    target = chess.Board(position["fen"])
+
+    histories = []
+    raw_history = position.get("move_history") or []
+    san_history = position.get("move_history_san") or []
+    if raw_history:
+        histories.append(raw_history)
+    if san_history and san_history != raw_history:
+        histories.append(san_history)
+
+    target_key = " ".join(target.fen().split()[:4])
+    for history in histories:
+        replay = chess.Board()
+        try:
+            for move_text in history:
+                text = str(move_text).strip()
+                try:
+                    move = chess.Move.from_uci(text)
+                    if move not in replay.legal_moves:
+                        raise ValueError("UCI move is not legal in replay position")
+                except (ValueError, chess.InvalidMoveError):
+                    move = replay.parse_san(text)
+                replay.push(move)
+        except (ValueError, chess.InvalidMoveError, chess.IllegalMoveError, chess.AmbiguousMoveError):
+            continue
+
+        replay_key = " ".join(replay.fen().split()[:4])
+        if replay_key == target_key:
+            replay.halfmove_clock = target.halfmove_clock
+            replay.fullmove_number = target.fullmove_number
+            return replay
+
+    return target
+
+
 async def test_llm_on_position(
     player: "BaseLLMPlayer",
     position: dict,
@@ -161,28 +230,11 @@ async def test_llm_on_position(
 ) -> PositionResult:
     """Test an LLM on a single position."""
     fen = position["fen"]
-    move_history = position.get("move_history") or []
-    move_history_san = position.get("move_history_san") or move_history
-    side = position["side_to_move"].capitalize()
     best_move_uci = position["best_move"]
     blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
 
-    board = chess.Board(fen)
-    # For completion-style players, replay move history so board.move_stack is populated
-    # (these players prompt with PGN and need the game's move sequence).
-    if isinstance(player, OpenRouterCompletionPlayer) and move_history:
-        replay = chess.Board()
-        try:
-            for uci_move in move_history:
-                replay.push(chess.Move.from_uci(uci_move))
-            if replay.fen() == fen:
-                board = replay
-        except (ValueError, chess.InvalidMoveError):
-            pass
+    board = replay_position_board(position)
     perspective = board.turn
-
-    # Build prompt and get model's move
-    prompt = build_position_prompt(fen, move_history_san, side)
 
     # Calculate illegal move CPL: half the swing to losing (eval_before + 5000)
     # This represents "half a game loss" since 2 illegals = forfeit
@@ -481,8 +533,15 @@ async def run_benchmark(
 
         try:
             # Launch all tasks
-            tasks = [test_with_semaphore(i, pos) for i, pos in enumerate(positions)]
-            await asyncio.gather(*tasks)
+            tasks = [asyncio.create_task(test_with_semaphore(i, pos)) for i, pos in enumerate(positions)]
+            try:
+                await asyncio.gather(*tasks)
+            except asyncio.CancelledError:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                completed_count = sum(1 for r in results if r is not None)
+                print(f"\n  Cancelled; saving {completed_count}/{len(positions)} completed positions")
         finally:
             if shared_player is not None:
                 # Read token counts before closing
@@ -498,6 +557,7 @@ async def run_benchmark(
 
     # Calculate summary stats
     result_dicts = [asdict(r) for r in results]
+    stamp_current_benchmark_rows(result_dicts, depth)
 
     # Build index -> position type mapping for per-type breakdowns
     pos_type_by_idx = {i: p.get("type") for i, p in enumerate(positions)}
@@ -530,6 +590,7 @@ async def run_benchmark(
     # Overall summary
     summary = _calc_type_summary(results)
     summary["player_id"] = player_id
+    stamp_benchmark_summary(summary, result_dicts, depth)
     summary["positions_attempted"] = len(positions)
     summary["positions_skipped"] = len(positions) - len(results)
 
@@ -656,6 +717,164 @@ def load_player_configs():
     return players
 
 
+def build_ad_hoc_player_config(args: argparse.Namespace) -> dict | None:
+    """Build a one-off LLM config from CLI args, without editing benchmark.yaml."""
+    if not args.model_name:
+        return None
+    if not args.player_id:
+        raise ValueError("--player-id is required when using --model-name")
+
+    config: dict = {
+        "player_id": args.player_id,
+        "model_name": args.model_name,
+        "temperature": args.temperature,
+    }
+    if args.reasoning_effort:
+        config["reasoning_effort"] = args.reasoning_effort
+    if args.no_reasoning:
+        config["reasoning"] = False
+    if args.timeout is not None:
+        config["timeout"] = args.timeout
+    return config
+
+
+def config_is_engine(player_config: dict) -> bool:
+    """Return whether a player config is an engine rather than an API-backed LLM."""
+    return player_config.get("type") in ["stockfish", "maia", "random", "uci", "survival"]
+
+
+def config_uses_reasoning(player_config: dict) -> bool:
+    """Infer whether a position benchmark call should use reasoning cost estimates."""
+    if player_config.get("reasoning") is False:
+        return False
+    return bool(
+        player_config.get("reasoning") is True
+        or player_config.get("reasoning_effort")
+        or player_config.get("reasoning_max_tokens")
+    )
+
+
+def planned_position_count(
+    player_id: str,
+    *,
+    selected_count: int,
+    type_filter_idx_map: dict[int, int],
+    all_results: dict,
+    retry_missing: bool,
+) -> int:
+    """Return how many selected positions would be run for one player."""
+    if not retry_missing or player_id not in all_results:
+        return selected_count
+
+    existing = all_results[player_id].get("results", [])
+    existing_by_idx = {
+        row.get("position_idx")
+        for row in existing
+        if isinstance(row.get("position_idx"), int)
+    }
+    return sum(
+        1
+        for filtered_idx in range(selected_count)
+        if type_filter_idx_map[filtered_idx] not in existing_by_idx
+    )
+
+
+def estimate_selected_benchmark_cost(
+    players_to_test: dict[str, dict],
+    *,
+    selected_count: int,
+    type_filter_idx_map: dict[int, int],
+    all_results: dict,
+    retry_missing: bool,
+    cost_calculator: CostCalculator,
+) -> tuple[float, list[str]]:
+    """Estimate planned API cost for selected non-engine position benchmarks."""
+    known_cost = 0.0
+    unknown_players: list[str] = []
+
+    for player_id, config in players_to_test.items():
+        if config_is_engine(config):
+            continue
+
+        num_positions = planned_position_count(
+            player_id,
+            selected_count=selected_count,
+            type_filter_idx_map=type_filter_idx_map,
+            all_results=all_results,
+            retry_missing=retry_missing,
+        )
+        if num_positions == 0:
+            continue
+
+        cost = cost_calculator.estimate_position_benchmark_cost(
+            player_id,
+            model_name=config.get("model_name"),
+            num_positions=num_positions,
+            reasoning=config_uses_reasoning(config),
+            use_budget_overrides=True,
+        )
+        if cost is None:
+            unknown_players.append(player_id)
+        else:
+            known_cost += cost
+
+    return known_cost, unknown_players
+
+
+def estimate_player_benchmark_cost(
+    player_id: str,
+    config: dict,
+    *,
+    num_positions: int,
+    cost_calculator: CostCalculator,
+) -> float | None:
+    """Estimate cost for one selected player and position count."""
+    if config_is_engine(config):
+        return 0.0
+    return cost_calculator.estimate_position_benchmark_cost(
+        player_id,
+        model_name=config.get("model_name"),
+        num_positions=num_positions,
+        reasoning=config_uses_reasoning(config),
+        use_budget_overrides=True,
+    )
+
+
+def calculate_actual_benchmark_cost(
+    player_id: str,
+    config: dict,
+    token_usage: dict,
+    *,
+    num_positions: int,
+    cost_calculator: CostCalculator,
+) -> float | None:
+    """Calculate token-priced cost for one completed position benchmark run."""
+    if config_is_engine(config):
+        return 0.0
+
+    override_cost = cost_calculator.estimate_position_benchmark_cost(
+        player_id,
+        model_name=config.get("model_name"),
+        num_positions=num_positions,
+        reasoning=config_uses_reasoning(config),
+        use_budget_overrides=True,
+    )
+    if cost_calculator.get_budget_cost_override(player_id) is not None:
+        return override_cost
+
+    model_name = config.get("model_name") or cost_calculator.get_model_for_player(player_id)
+    if not model_name:
+        return None
+
+    return cost_calculator.calculate_game_cost(
+        {
+            "prompt_tokens": int(token_usage.get("prompt", 0) or 0),
+            "completion_tokens": int(token_usage.get("completion", 0) or 0),
+        },
+        model_name,
+    )
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Run position benchmark")
     parser.add_argument(
@@ -682,6 +901,35 @@ async def main():
         help="Specific players to test (default: all cheap + engines)",
     )
     parser.add_argument(
+        "--player-id",
+        help="Ad-hoc player id to use with --model-name, without editing config/benchmark.yaml",
+    )
+    parser.add_argument(
+        "--model-name",
+        help="Ad-hoc model name to use with --player-id, without editing config/benchmark.yaml",
+    )
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Reasoning effort for an ad-hoc LLM player",
+    )
+    parser.add_argument(
+        "--no-reasoning",
+        action="store_true",
+        help="Disable reasoning for an ad-hoc LLM player",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Temperature for an ad-hoc LLM player",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        help="Timeout in seconds for an ad-hoc LLM player",
+    )
+    parser.add_argument(
         "--retry-missing",
         action="store_true",
         help="Only run positions missing from existing results (skipped or errored)",
@@ -699,9 +947,30 @@ async def main():
         help="Only test positions of this type (default: equal)",
     )
     parser.add_argument(
+        "--limit",
+        type=int,
+        help="Only test the first N positions after filtering (useful for cheap smoke tests)",
+    )
+    parser.add_argument(
+        "--position-indices",
+        nargs="+",
+        type=int,
+        help="Specific original positions.json indices to test",
+    )
+    parser.add_argument(
         "--sync-firestore",
         action="store_true",
         help="Sync results to Firestore even when using a custom output file.",
+    )
+    parser.add_argument(
+        "--max-estimated-cost",
+        type=float,
+        help="Abort before API calls if estimated known cost exceeds this dollar amount",
+    )
+    parser.add_argument(
+        "--allow-unknown-cost",
+        action="store_true",
+        help="Allow API calls with unknown cost when --max-estimated-cost is set",
     )
 
     args = parser.parse_args()
@@ -714,25 +983,45 @@ async def main():
         data = json.load(f)
 
     all_positions = data["positions"]
-    # Map from filtered index -> original index (identity when no filter)
-    type_filter_idx_map = None
-    if args.type and args.type != "all":
-        type_filter_idx_map = {new_idx: orig_idx for new_idx, (orig_idx, p)
-                               in enumerate((i, p) for i, p in enumerate(all_positions) if p.get("type") == args.type)}
-        positions = [all_positions[orig] for orig in type_filter_idx_map.values()]
-        print(f"Testing on {len(positions)} {args.type} positions")
-    else:
-        positions = all_positions
-        blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
-        equal_count = sum(1 for p in positions if p.get("type") == "equal")
-        print(f"Testing on {len(positions)} positions ({blunder_count} blunder, {equal_count} equal)")
+    selected_orig_indices = [
+        idx
+        for idx, position in enumerate(all_positions)
+        if not args.type or args.type == "all" or position.get("type") == args.type
+    ]
+    if args.position_indices:
+        requested = set(args.position_indices)
+        selected_orig_indices = [idx for idx in selected_orig_indices if idx in requested]
+    if args.limit is not None:
+        if args.limit < 0:
+            raise ValueError("--limit must be non-negative")
+        selected_orig_indices = selected_orig_indices[: args.limit]
+
+    type_filter_idx_map = {new_idx: orig_idx for new_idx, orig_idx in enumerate(selected_orig_indices)}
+    positions = [all_positions[orig_idx] for orig_idx in selected_orig_indices]
+    blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
+    equal_count = sum(1 for p in positions if p.get("type") == "equal")
+    print(
+        f"Testing on {len(positions)} selected positions "
+        f"({blunder_count} blunder, {equal_count} equal)"
+    )
 
     # Load player configs
     all_players = load_player_configs()
+    ad_hoc_config = build_ad_hoc_player_config(args)
+    if ad_hoc_config:
+        all_players[ad_hoc_config["player_id"]] = ad_hoc_config
+        if not args.players:
+            args.players = [ad_hoc_config["player_id"]]
 
     # Determine which players to test
     if args.players:
-        players_to_test = {p: all_players[p] for p in args.players if p in all_players}
+        missing_players = [p for p in args.players if p not in all_players]
+        if missing_players:
+            raise ValueError(
+                f"Unknown player(s): {', '.join(missing_players)}. "
+                "Use --player-id and --model-name for an ad-hoc model."
+            )
+        players_to_test = {p: all_players[p] for p in args.players}
     else:
         # Default: engines + cheap LLMs from benchmark.yaml
         # These are models that are known to be cheap (< $0.03/game)
@@ -770,16 +1059,44 @@ async def main():
     for p in players_to_test:
         print(f"  - {p}")
 
-    # Initialize Stockfish for evaluation
-    print("\nStarting Stockfish...")
-    stockfish = chess.engine.SimpleEngine.popen_uci("stockfish")
-
     # Load existing results to merge with (don't overwrite)
     all_results = {}
     if Path(args.output).exists():
         with open(args.output) as f:
             all_results = json.load(f)
         print(f"Loaded {len(all_results)} existing results from {args.output}")
+
+    cost_calculator = CostCalculator()
+    estimated_cost, unknown_cost_players = estimate_selected_benchmark_cost(
+        players_to_test,
+        selected_count=len(positions),
+        type_filter_idx_map=type_filter_idx_map,
+        all_results=all_results,
+        retry_missing=args.retry_missing,
+        cost_calculator=cost_calculator,
+    )
+    if estimated_cost or unknown_cost_players:
+        unknown_suffix = (
+            f"; unknown for {', '.join(unknown_cost_players)}"
+            if unknown_cost_players
+            else ""
+        )
+        print(f"Estimated API cost for selected positions: ${estimated_cost:.4f}{unknown_suffix}")
+    if args.max_estimated_cost is not None:
+        if estimated_cost > args.max_estimated_cost:
+            raise SystemExit(
+                f"Estimated API cost ${estimated_cost:.4f} exceeds "
+                f"--max-estimated-cost ${args.max_estimated_cost:.4f}"
+            )
+        if unknown_cost_players and not args.allow_unknown_cost:
+            raise SystemExit(
+                "Unknown API cost for "
+                f"{', '.join(unknown_cost_players)}; pass --allow-unknown-cost to continue"
+            )
+
+    # Initialize Stockfish for evaluation after budget preflight passes.
+    print("\nStarting Stockfish...")
+    stockfish = chess.engine.SimpleEngine.popen_uci("stockfish")
 
     try:
         for player_id, config in players_to_test.items():
@@ -799,7 +1116,7 @@ async def main():
                 existing_by_idx = {r["position_idx"]: r for r in existing}
 
                 def _filtered_to_all(fi: int) -> int:
-                    return type_filter_idx_map[fi] if type_filter_idx_map else fi
+                    return type_filter_idx_map[fi]
 
                 missing_filtered = [fi for fi in range(len(positions))
                                     if _filtered_to_all(fi) not in existing_by_idx]
@@ -818,6 +1135,19 @@ async def main():
             start = time.time()
             result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth, args.api)
             elapsed = time.time() - start
+            run_estimated_cost = estimate_player_benchmark_cost(
+                player_id,
+                config,
+                num_positions=len(positions_to_test),
+                cost_calculator=cost_calculator,
+            )
+            run_actual_cost = calculate_actual_benchmark_cost(
+                player_id,
+                config,
+                result.get("token_usage", {}),
+                num_positions=len(result.get("results", [])),
+                cost_calculator=cost_calculator,
+            )
 
             # Remap filtered indices back to original position indices.
             # With --retry-missing, retry_idx_map maps subset index directly to
@@ -826,7 +1156,7 @@ async def main():
             if args.retry_missing and player_id in all_results:
                 for r in result["results"]:
                     r["position_idx"] = retry_idx_map[r["position_idx"]]
-            elif type_filter_idx_map is not None:
+            else:
                 for r in result["results"]:
                     r["position_idx"] = type_filter_idx_map[r["position_idx"]]
 
@@ -837,7 +1167,7 @@ async def main():
                 merged_results = [existing_by_idx[i] for i in sorted(existing_by_idx.keys())]
 
                 # Recalculate summary on merged results
-                pos_type_by_idx = {i: p.get("type") for i, p in enumerate(positions)}
+                pos_type_by_idx = {i: p.get("type") for i, p in enumerate(all_positions)}
 
                 @dataclass
                 class _R:
@@ -870,6 +1200,7 @@ async def main():
 
                 summary = _calc(wrapped)
                 summary["player_id"] = player_id
+                stamp_benchmark_summary(summary, merged_results, args.depth)
                 summary["positions_attempted"] = len(positions)
                 summary["positions_skipped"] = len(positions) - len(merged_results)
 
@@ -880,14 +1211,28 @@ async def main():
                 if equal_r:
                     summary["equal"] = _calc(equal_r)
 
-                result = {"summary": summary, "results": merged_results}
+                result = {
+                    "summary": summary,
+                    "results": merged_results,
+                    "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
+                }
 
             summary = result["summary"]
+            if run_estimated_cost is not None:
+                summary["run_estimated_api_cost"] = run_estimated_cost
+            if run_actual_cost is not None:
+                summary["run_actual_api_cost"] = run_actual_cost
+            summary["run_prompt_tokens"] = result.get("token_usage", {}).get("prompt", 0)
+            summary["run_completion_tokens"] = result.get("token_usage", {}).get("completion", 0)
             print(f"\nSummary for {player_id}:")
             print(f"  Legal moves: {summary['legal_moves']}/{summary['total_positions']} ({summary['legal_pct']:.1f}%)")
             print(f"  Best moves: {summary['best_moves']} ({summary['best_pct']:.1f}%)")
             print(f"  Avoided blunders: {summary['avoided_blunders']} ({summary['avoided_pct']:.1f}%)")
             print(f"  Avg CPL: {summary['avg_cpl']:.1f}")
+            if run_estimated_cost is not None or run_actual_cost is not None:
+                estimated_text = "unknown" if run_estimated_cost is None else f"${run_estimated_cost:.4f}"
+                actual_text = "unknown" if run_actual_cost is None else f"${run_actual_cost:.4f}"
+                print(f"  API cost: estimated {estimated_text}, actual {actual_text}")
             if summary.get("positions_skipped"):
                 print(f"  Skipped: {summary['positions_skipped']}")
             for ptype in ["blunder", "equal"]:

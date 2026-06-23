@@ -4,13 +4,16 @@ Rating storage and persistence.
 
 import json
 import logging
-import math
 import os
 import time
 from pathlib import Path
 from typing import Dict, Optional, Set
 
 from .glicko2 import PlayerRating, Glicko2System
+from position_benchmark.predictions import (
+    benchmark_result_readiness,
+    predict_rating_from_model_data_with_supplement,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +236,8 @@ class RatingStore:
         """
         Load position benchmark results and compute predicted ratings.
 
-        Uses the 3-feature formula from rating_prediction_formulas.py:
+        Uses current history-replay equal-position benchmark rows, optionally
+        capped by a fresh game-like supplemental panel when available:
           rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
 
         Tries Firestore first (if enabled), falls back to local files.
@@ -253,6 +257,9 @@ class RatingStore:
 
         results_data = None
         positions_data = None
+        game_like_results_data = None
+        game_like_positions_data = None
+        stability_results_data = None
 
         # Try Firestore first (per-model documents to avoid 1 MiB limit)
         if self._use_firestore:
@@ -292,60 +299,74 @@ class RatingStore:
             logger.warning(f"Failed to load positions data: {e}")
             return {}
 
-        # Build position type lookup
-        pos_type = {}
-        for i, p in enumerate(positions_data.get("positions", [])):
-            pos_type[i] = p.get("type", "")
+        positions = positions_data.get("positions", [])
+
+        game_like_results_path = base / "game_like_results.json"
+        game_like_positions_path = base / "nonopening_screening_positions.json"
+        stability_results_path = base / "stability_probe_results.json"
+        if game_like_results_path.exists() and game_like_positions_path.exists():
+            try:
+                with open(game_like_results_path) as f:
+                    game_like_results_data = json.load(f)
+                with open(game_like_positions_path) as f:
+                    game_like_positions_data = json.load(f)
+                logger.info(
+                    f"Loaded supplemental game-like benchmark results "
+                    f"({len(game_like_results_data)} models)"
+                )
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"Failed to load supplemental game-like benchmark results: {e}")
+                game_like_results_data = None
+                game_like_positions_data = None
+        if stability_results_path.exists():
+            try:
+                with open(stability_results_path) as f:
+                    stability_results_data = json.load(f)
+                logger.info(
+                    f"Loaded supplemental stability probe results "
+                    f"({len(stability_results_data)} models)"
+                )
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"Failed to load supplemental stability probe results: {e}")
+                stability_results_data = None
+
+        game_like_positions = (
+            game_like_positions_data.get("positions", [])
+            if isinstance(game_like_positions_data, dict)
+            else None
+        )
 
         predictions = {}
+        skipped_reasons: Dict[str, int] = {}
         for model_name, model_data in results_data.items():
-            model_results = model_data.get("results", [])
-            if not model_results:
+            readiness = benchmark_result_readiness(model_data, positions)
+            if not readiness.is_ready:
+                skipped_reasons[readiness.reason] = skipped_reasons.get(readiness.reason, 0) + 1
                 continue
 
-            # Collect equal-position metrics
-            eq_cpls = []
-            eq_best_count = 0
-            eq_illegal_count = 0
-            eq_total = 0
-
-            for r in model_results:
-                idx = r.get("position_idx", -1)
-                if pos_type.get(idx) != "equal":
-                    continue
-                eq_total += 1
-                cpl = r.get("cpl", 0)
-                eq_cpls.append(cpl)
-                if r.get("is_best", False):
-                    eq_best_count += 1
-                if not r.get("is_legal", True):
-                    eq_illegal_count += 1
-
-            if eq_total == 0:
-                continue
-
-            eq_cpl = sum(eq_cpls) / len(eq_cpls)
-            best_pct = 100.0 * eq_best_count / eq_total
-            p = eq_illegal_count / eq_total  # illegal rate
-
-            # Survival probability: P(0 or 1 illegal in 40 moves) - pure Python binomial
-            if p <= 0:
-                surv_40 = 100.0
-            elif p >= 1:
-                surv_40 = 0.0
-            else:
-                surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
-
-            predicted = (
-                1298.57
-                - 200.43 * math.log(eq_cpl + 1)
-                + 15.39 * best_pct
-                + 5.85 * surv_40
+            predicted = predict_rating_from_model_data_with_supplement(
+                model_data,
+                positions,
+                game_like_model_data=(
+                    game_like_results_data.get(model_name)
+                    if isinstance(game_like_results_data, dict)
+                    else None
+                ),
+                game_like_positions=game_like_positions,
+                stability_probe_model_data=(
+                    stability_results_data.get(model_name)
+                    if isinstance(stability_results_data, dict)
+                    else None
+                ),
+                require_ready=True,
             )
-            predictions[model_name] = predicted
+            if predicted is not None:
+                predictions[model_name] = predicted
 
         if predictions:
             logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
+        if skipped_reasons:
+            logger.info(f"Skipped stale/incomplete benchmark predictions: {skipped_reasons}")
 
         # Cache at module level
         _benchmark_predictions_cache = dict(predictions)

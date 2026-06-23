@@ -224,6 +224,49 @@ class CostCalculator:
 
         return prompt_cost + completion_cost
 
+    def estimate_position_benchmark_cost(
+        self,
+        player_id: str,
+        *,
+        model_name: Optional[str] = None,
+        num_positions: int = 50,
+        reasoning: bool = False,
+        prompt_tokens_per_position: int = 1500,
+        completion_tokens_per_position: Optional[int] = None,
+        full_benchmark_positions: int = 50,
+        use_budget_overrides: bool = True,
+    ) -> Optional[float]:
+        """
+        Estimate position-benchmark spend before making API calls.
+
+        Existing benchmark budget overrides are treated as full equal-suite costs
+        and scaled when estimating a smaller chunk.
+        """
+        if num_positions <= 0:
+            return 0.0
+
+        if use_budget_overrides:
+            override = self.get_budget_cost_override(player_id)
+            if override is not None:
+                return override * num_positions / max(1, full_benchmark_positions)
+
+        model = model_name or self.get_model_for_player(player_id)
+        if not model:
+            return None
+
+        pricing = self.get_pricing(model)
+        if not pricing:
+            return None
+
+        completion_est = completion_tokens_per_position
+        if completion_est is None:
+            completion_est = 200 if reasoning else 10
+
+        return (
+            num_positions * prompt_tokens_per_position * pricing.get("prompt", 0.0)
+            + num_positions * completion_est * pricing.get("completion", 0.0)
+        )
+
     def calculate_player_costs(
         self,
         results: List[GameResult],

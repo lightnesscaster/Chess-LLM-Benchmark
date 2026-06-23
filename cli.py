@@ -12,7 +12,6 @@ import argparse
 import asyncio
 import json
 import logging
-import math
 import os
 import random
 import sys
@@ -39,6 +38,7 @@ from utils import is_reasoning_model, resolve_player_id
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
+from position_benchmark.predictions import predict_rating_from_model_data_with_supplement
 
 # Starting ratings based on model type and legal move rate
 REASONING_START_RATING = 1200
@@ -54,7 +54,9 @@ def load_benchmark_predictions() -> dict:
     """
     Load position benchmark results and compute predicted ratings.
 
-    Same formula as rating_store._load_benchmark_predictions():
+    Same production predictor as rating_store._load_benchmark_predictions():
+    current history-replay equal-position rows, optionally capped by a fresh
+    game-like supplemental panel when available.
       rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
 
     Returns:
@@ -63,6 +65,9 @@ def load_benchmark_predictions() -> dict:
     base = Path(__file__).parent / "position_benchmark"
     results_path = base / "results.json"
     positions_path = base / "positions.json"
+    game_like_results_path = base / "game_like_results.json"
+    game_like_positions_path = base / "nonopening_screening_positions.json"
+    stability_results_path = base / "stability_probe_results.json"
 
     if not results_path.exists() or not positions_path.exists():
         return {}
@@ -75,54 +80,47 @@ def load_benchmark_predictions() -> dict:
     except (json.JSONDecodeError, OSError):
         return {}
 
-    pos_type = {}
-    for i, p in enumerate(positions_data.get("positions", [])):
-        pos_type[i] = p.get("type", "")
+    positions = positions_data.get("positions", [])
+    game_like_results_data = None
+    game_like_positions = None
+    stability_results_data = None
+    if game_like_results_path.exists() and game_like_positions_path.exists():
+        try:
+            with open(game_like_results_path) as f:
+                game_like_results_data = json.load(f)
+            with open(game_like_positions_path) as f:
+                game_like_positions_data = json.load(f)
+            game_like_positions = game_like_positions_data.get("positions", [])
+        except (json.JSONDecodeError, OSError):
+            game_like_results_data = None
+            game_like_positions = None
+    if stability_results_path.exists():
+        try:
+            with open(stability_results_path) as f:
+                stability_results_data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            stability_results_data = None
 
     predictions = {}
     for model_name, model_data in results_data.items():
-        model_results = model_data.get("results", [])
-        if not model_results:
-            continue
-
-        eq_cpls = []
-        eq_best_count = 0
-        eq_illegal_count = 0
-        eq_total = 0
-
-        for r in model_results:
-            idx = r.get("position_idx", -1)
-            if pos_type.get(idx) != "equal":
-                continue
-            eq_total += 1
-            cpl = r.get("cpl", 0)
-            eq_cpls.append(cpl)
-            if r.get("is_best", False):
-                eq_best_count += 1
-            if not r.get("is_legal", True):
-                eq_illegal_count += 1
-
-        if eq_total == 0:
-            continue
-
-        eq_cpl = sum(eq_cpls) / len(eq_cpls)
-        best_pct = 100.0 * eq_best_count / eq_total
-        p = eq_illegal_count / eq_total
-
-        if p <= 0:
-            surv_40 = 100.0
-        elif p >= 1:
-            surv_40 = 0.0
-        else:
-            surv_40 = 100.0 * ((1 - p) ** 40 + 40 * p * (1 - p) ** 39)
-
-        predicted = (
-            1298.57
-            - 200.43 * math.log(eq_cpl + 1)
-            + 15.39 * best_pct
-            + 5.85 * surv_40
+        predicted = predict_rating_from_model_data_with_supplement(
+            model_data,
+            positions,
+            game_like_model_data=(
+                game_like_results_data.get(model_name)
+                if isinstance(game_like_results_data, dict)
+                else None
+            ),
+            game_like_positions=game_like_positions,
+            stability_probe_model_data=(
+                stability_results_data.get(model_name)
+                if isinstance(stability_results_data, dict)
+                else None
+            ),
+            require_ready=True,
         )
-        predictions[model_name] = predicted
+        if predicted is not None:
+            predictions[model_name] = predicted
 
     return predictions
 
@@ -691,7 +689,7 @@ async def recalculate_ratings(args):
     if args.verbose:
         print(f"Initialized ratings:")
         if benchmark_count:
-            print(f"  {benchmark_count} models from benchmark predictions (RD=149)")
+            print(f"  {benchmark_count} models from benchmark predictions (RD={BENCHMARK_SEED_RD:.0f})")
         if low_legal_count:
             print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
         if med_legal_count:

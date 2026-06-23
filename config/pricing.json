@@ -1347,6 +1347,10 @@
     "completion": 5e-07,
     "prompt": 2e-07
   },
+  "x-ai/grok-4.3": {
+    "completion": 2.5e-06,
+    "prompt": 1.25e-06
+  },
   "x-ai/grok-code-fast-1": {
     "completion": 1.5e-06,
     "prompt": 2e-07

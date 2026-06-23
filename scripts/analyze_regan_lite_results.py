@@ -487,7 +487,7 @@ def build_feature_matrices(
         bucket_loss[:, bucket_col] = values
 
     aggregate_cols: list[list[float]] = []
-    for row in rows:
+    for row_i, row in enumerate(rows):
         items = [row["results_by_idx"][idx] for idx in position_indices if idx in row["results_by_idx"]]
         cpls = np.asarray([min(float(item.get("cpl") or 0.0), cap_cpl) for item in items], dtype=float)
         legal_arr = np.asarray([1.0 if item.get("is_legal", True) else 0.0 for item in items], dtype=float)

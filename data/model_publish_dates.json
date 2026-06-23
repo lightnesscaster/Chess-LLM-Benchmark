@@ -314,6 +314,16 @@
     "created_timestamp": 1763587502,
     "created_date": "2025-11-19"
   },
+  "grok-4.3 (medium)": {
+    "model_id": "x-ai/grok-4.3",
+    "created_timestamp": 1777591821,
+    "created_date": "2026-04-30"
+  },
+  "grok-4.3 (high)": {
+    "model_id": "x-ai/grok-4.3",
+    "created_timestamp": 1777591821,
+    "created_date": "2026-04-30"
+  },
   "claude-haiku-4.5 (thinking)": {
     "model_id": "anthropic/claude-haiku-4.5",
     "created_timestamp": 1760547638,

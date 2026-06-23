@@ -158,6 +158,8 @@ llms:
     model_name: "deepseek/deepseek-v4-pro"
     temperature: 0.0
     reasoning: false
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
     timeout: 1200
 
   # deepseek-v4-flash (no thinking)
@@ -288,12 +290,16 @@ llms:
     model_name: "deepseek/deepseek-v4-pro"
     temperature: 0.0
     reasoning_effort: high
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
     timeout: 1200
 
   - player_id: "deepseek-v4-pro (max)"
     model_name: "deepseek/deepseek-v4-pro"
     temperature: 0.0
     reasoning_effort: xhigh
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
     timeout: 1200
 
   - player_id: "deepseek-v4-flash (high)"
@@ -432,12 +438,26 @@ llms:
     model_name: "x-ai/grok-4.1-fast"
     temperature: 0.0
 
-  # gemini-3.1-pro-preview (high)
-  - player_id: "gemini-3.1-pro-preview (high)"
-    model_name: "google/gemini-3.1-pro-preview"
+  # grok-4.3 (medium) - xAI, released 2026-04-30
+  - player_id: "grok-4.3 (medium)"
+    model_name: "x-ai/grok-4.3"
+    temperature: 0.0
+    reasoning_effort: medium
+    timeout: 1200
+
+  # grok-4.3 (high) - xAI, released 2026-04-30
+  - player_id: "grok-4.3 (high)"
+    model_name: "x-ai/grok-4.3"
     temperature: 0.0
     reasoning_effort: high
     timeout: 1200
+
+  # gemini-3.1-pro-preview (high) - disabled temporarily due to frozen games
+  # - player_id: "gemini-3.1-pro-preview (high)"
+  #   model_name: "google/gemini-3.1-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: high
+  #   timeout: 1200
 
   # claude-opus-4.5 (high)
   - player_id: "claude-opus-4.5 (high)"

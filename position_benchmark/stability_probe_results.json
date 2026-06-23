@@ -1,0 +1,83 @@
+{
+  "gemini-2.5-flash (no thinking)": {
+    "summary": {
+      "attempted_positions": 16,
+      "model_legal_moves": 58,
+      "model_illegal_attempts": 7,
+      "model_attempts": 65,
+      "model_legal_pct": 89.23076923076923,
+      "illegal_attempts_per_model_move": 0.1206896551724138,
+      "model_forfeits": 2,
+      "model_forfeit_pct": 12.5,
+      "api_errors": 0,
+      "probe_plies_played": 114,
+      "avg_probe_plies_played": 7.125,
+      "model_scored_moves": 58,
+      "model_avg_cpl": 240.08620689655172,
+      "model_median_cpl": 53.0,
+      "model_p90_cpl": 179.0,
+      "model_300cp_blunders": 2,
+      "model_300cp_blunder_pct": 3.4482758620689653,
+      "model_1000cp_catastrophes": 2,
+      "model_1000cp_catastrophe_pct": 3.4482758620689653,
+      "player_id": "gemini-2.5-flash (no thinking)",
+      "positions_file": "position_benchmark/nonopening_screening_positions.json",
+      "probe_plies": 8,
+      "score_depth": 10
+    }
+  },
+  "gemini-3.1-flash-lite-preview": {
+    "summary": {
+      "attempted_positions": 16,
+      "model_legal_moves": 46,
+      "model_illegal_attempts": 12,
+      "model_attempts": 58,
+      "model_legal_pct": 79.3103448275862,
+      "illegal_attempts_per_model_move": 0.2608695652173913,
+      "model_forfeits": 6,
+      "model_forfeit_pct": 37.5,
+      "api_errors": 0,
+      "probe_plies_played": 92,
+      "avg_probe_plies_played": 5.75,
+      "model_scored_moves": 46,
+      "model_avg_cpl": 287.82608695652175,
+      "model_median_cpl": 32.0,
+      "model_p90_cpl": 228.0,
+      "model_300cp_blunders": 3,
+      "model_300cp_blunder_pct": 6.521739130434782,
+      "model_1000cp_catastrophes": 1,
+      "model_1000cp_catastrophe_pct": 2.1739130434782608,
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "positions_file": "position_benchmark/nonopening_screening_positions.json",
+      "probe_plies": 8,
+      "score_depth": 10
+    }
+  },
+  "gpt-5.1 (no thinking)": {
+    "summary": {
+      "attempted_positions": 8,
+      "model_legal_moves": 31,
+      "model_illegal_attempts": 2,
+      "model_attempts": 33,
+      "model_legal_pct": 93.93939393939394,
+      "illegal_attempts_per_model_move": 0.06451612903225806,
+      "model_forfeits": 0,
+      "model_forfeit_pct": 0.0,
+      "api_errors": 0,
+      "probe_plies_played": 61,
+      "avg_probe_plies_played": 7.625,
+      "model_scored_moves": 31,
+      "model_avg_cpl": 1337.741935483871,
+      "model_median_cpl": 18.0,
+      "model_p90_cpl": 8986.0,
+      "model_300cp_blunders": 9,
+      "model_300cp_blunder_pct": 29.032258064516128,
+      "model_1000cp_catastrophes": 6,
+      "model_1000cp_catastrophe_pct": 19.35483870967742,
+      "player_id": "gpt-5.1 (no thinking)",
+      "positions_file": "position_benchmark/nonopening_screening_positions.json",
+      "probe_plies": 8,
+      "score_depth": 10
+    }
+  }
+}

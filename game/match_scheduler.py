@@ -294,20 +294,11 @@ class MatchScheduler:
 
         50 equal positions, ~1500 prompt tokens each, ~10-200 completion tokens.
         """
-        override = self._cost_calculator.get_budget_cost_override(player_id)
-        if override is not None:
-            return override
-
-        model = self._cost_calculator.get_model_for_player(player_id)
-        if not model:
-            return 0.0
-        pricing = self._cost_calculator.get_pricing(model)
-        if not pricing:
-            return 0.0
-
-        comp_est = 200 if player_id in self.reasoning_ids else 10
-
-        return 50 * 1500 * pricing.get("prompt", 0) + 50 * comp_est * pricing.get("completion", 0)
+        return self._cost_calculator.estimate_position_benchmark_cost(
+            player_id,
+            num_positions=50,
+            reasoning=player_id in self.reasoning_ids,
+        ) or 0.0
 
     async def _run_position_benchmarks(
         self,
