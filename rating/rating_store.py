@@ -14,6 +14,15 @@ from position_benchmark.predictions import (
     benchmark_result_readiness,
     predict_rating_from_model_data_with_supplement,
 )
+from position_benchmark.layout import (
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -259,6 +268,8 @@ class RatingStore:
         positions_data = None
         game_like_results_data = None
         game_like_positions_data = None
+        blunder_results_data = None
+        blunder_positions_data = None
         stability_results_data = None
 
         # Try Firestore first (per-model documents to avoid 1 MiB limit)
@@ -276,9 +287,8 @@ class RatingStore:
                 logger.warning(f"Failed to load benchmark results from Firestore: {e}")
 
         # Fall back to local file for results
-        base = Path(__file__).parent.parent / "position_benchmark"
         if results_data is None:
-            results_path = base / "results.json"
+            results_path = CORE_RESULTS_PATH
             if not results_path.exists():
                 return {}
             try:
@@ -289,7 +299,7 @@ class RatingStore:
                 return {}
 
         # Positions file is static and always local
-        positions_path = base / "positions.json"
+        positions_path = CORE_POSITIONS_PATH
         if not positions_path.exists():
             return {}
         try:
@@ -301,9 +311,25 @@ class RatingStore:
 
         positions = positions_data.get("positions", [])
 
-        game_like_results_path = base / "game_like_results.json"
-        game_like_positions_path = base / "nonopening_screening_positions.json"
-        stability_results_path = base / "stability_probe_results.json"
+        blunder_results_path = BLUNDER_RESULTS_PATH
+        blunder_positions_path = BLUNDER_POSITIONS_PATH
+        game_like_results_path = GAME_LIKE_RESULTS_PATH
+        game_like_positions_path = GAME_LIKE_POSITIONS_PATH
+        stability_results_path = STABILITY_RESULTS_PATH
+        if blunder_results_path.exists() and blunder_positions_path.exists():
+            try:
+                with open(blunder_results_path) as f:
+                    blunder_results_data = json.load(f)
+                with open(blunder_positions_path) as f:
+                    blunder_positions_data = json.load(f)
+                logger.info(
+                    f"Loaded optional blunder benchmark results "
+                    f"({len(blunder_results_data)} models)"
+                )
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"Failed to load optional blunder benchmark results: {e}")
+                blunder_results_data = None
+                blunder_positions_data = None
         if game_like_results_path.exists() and game_like_positions_path.exists():
             try:
                 with open(game_like_results_path) as f:
@@ -335,6 +361,11 @@ class RatingStore:
             if isinstance(game_like_positions_data, dict)
             else None
         )
+        blunder_positions = (
+            blunder_positions_data.get("positions", [])
+            if isinstance(blunder_positions_data, dict)
+            else None
+        )
 
         predictions = {}
         skipped_reasons: Dict[str, int] = {}
@@ -347,6 +378,12 @@ class RatingStore:
             predicted = predict_rating_from_model_data_with_supplement(
                 model_data,
                 positions,
+                blunder_model_data=(
+                    blunder_results_data.get(model_name)
+                    if isinstance(blunder_results_data, dict)
+                    else None
+                ),
+                blunder_positions=blunder_positions,
                 game_like_model_data=(
                     game_like_results_data.get(model_name)
                     if isinstance(game_like_results_data, dict)

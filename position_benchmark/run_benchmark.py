@@ -1,8 +1,8 @@
-"""
-Run position benchmark on models.
+"""Run the history-replayed position benchmark on model configurations.
 
-Tests models on blunder and equal positions, measures CPL (centipawn loss).
-Uses unified positions.json containing both position types.
+The production core is the 50 equal positions at Stockfish depth 30. Blunder
+positions are an optional historical downside panel. See
+``position_benchmark/README.md`` for the canonical methodology and call counts.
 """
 
 import asyncio
@@ -28,6 +28,7 @@ from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current
+from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH, RESULT_SCHEMA_VERSION
 from rating.cost_calculator import CostCalculator
 
 
@@ -134,6 +135,24 @@ Your task:
 Output format:
 - Only the move in UCI, e.g.:
 b1c3"""
+
+
+def validate_position_input(data: dict, *, allow_legacy_input: bool = False) -> None:
+    """Reject inactive legacy registries and malformed production core panels."""
+    metadata = data.get("metadata", {})
+    if metadata.get("active_production_input") is False and not allow_legacy_input:
+        replacement = metadata.get("replacement", "the canonical panel in benchmark_manifest.json")
+        raise ValueError(
+            "Refusing inactive legacy position input. "
+            f"Use {replacement}, or pass --allow-legacy-input for deliberate historical work."
+        )
+
+    positions = data.get("positions", [])
+    if metadata.get("panel") == "core-equal":
+        if len(positions) != 50 or any(
+            position.get("type") != "equal" for position in positions
+        ):
+            raise ValueError("Production core panel must contain exactly 50 equal positions")
 
 
 def eval_to_cp(info: chess.engine.InfoDict, perspective: chess.Color) -> float:
@@ -557,6 +576,15 @@ async def run_benchmark(
 
     # Calculate summary stats
     result_dicts = [asdict(r) for r in results]
+    for row in result_dicts:
+        position = positions[row["position_idx"]]
+        if position.get("position_id"):
+            row["position_id"] = position["position_id"]
+            row["result_schema_version"] = RESULT_SCHEMA_VERSION
+        if position.get("panel"):
+            row["panel"] = position["panel"]
+        if position.get("legacy_position_idx") is not None:
+            row["legacy_position_idx"] = position["legacy_position_idx"]
     stamp_current_benchmark_rows(result_dicts, depth)
 
     # Build index -> position type mapping for per-type breakdowns
@@ -590,6 +618,10 @@ async def run_benchmark(
     # Overall summary
     summary = _calc_type_summary(results)
     summary["player_id"] = player_id
+    summary["result_schema_version"] = RESULT_SCHEMA_VERSION
+    panels = {position.get("panel") for position in positions if position.get("panel")}
+    if len(panels) == 1:
+        summary["panel"] = panels.pop()
     stamp_benchmark_summary(summary, result_dicts, depth)
     summary["positions_attempted"] = len(positions)
     summary["positions_skipped"] = len(positions) - len(results)
@@ -626,7 +658,7 @@ async def run_benchmark_for_scheduler(
     Run position benchmark for a single model, called from the match scheduler.
 
     Uses a shared Stockfish instance and pre-loaded positions (caller manages lifecycle).
-    Merges results into position_benchmark/results.json.
+    Merges results into the canonical core results file.
 
     Args:
         player_id: The model's player ID
@@ -635,8 +667,8 @@ async def run_benchmark_for_scheduler(
         positions: Pre-loaded positions list
         depth: Stockfish analysis depth (default 30)
         api_backend: API backend to use ("openrouter" or "gemini")
-        original_indices: If positions is a subset, maps subset index -> original index
-                         in the full positions.json (needed for correct position_idx in results)
+        original_indices: Legacy compatibility mapping for callers using the old
+                         combined position registry.
 
     Returns:
         {"success": True, "summary": dict, "token_usage": dict} on success
@@ -659,8 +691,8 @@ async def run_benchmark_for_scheduler(
                 if 0 <= subset_idx < len(original_indices):
                     r["position_idx"] = original_indices[subset_idx]
 
-        # Merge into results.json
-        results_path = Path(__file__).parent / "results.json"
+        # Merge into the canonical core results file.
+        results_path = CORE_RESULTS_PATH
         all_results = {}
         if results_path.exists():
             with open(results_path) as f:
@@ -880,14 +912,14 @@ async def main():
     parser.add_argument(
         "--positions",
         type=Path,
-        default=Path("position_benchmark/positions.json"),
-        help="Path to positions JSON (unified format)",
+        default=CORE_POSITIONS_PATH,
+        help="Panel positions JSON (default: required 50-position production core)",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("position_benchmark/results.json"),
-        help="Output results file",
+        default=CORE_RESULTS_PATH,
+        help="Panel results JSON (default: canonical core results)",
     )
     parser.add_argument(
         "--depth",
@@ -943,8 +975,8 @@ async def main():
     parser.add_argument(
         "--type",
         choices=["blunder", "equal", "all"],
-        default="equal",
-        help="Only test positions of this type (default: equal)",
+        default="all",
+        help="Legacy mixed-file filter; canonical panel files are already single-purpose",
     )
     parser.add_argument(
         "--limit",
@@ -955,7 +987,7 @@ async def main():
         "--position-indices",
         nargs="+",
         type=int,
-        help="Specific original positions.json indices to test",
+        help="Specific panel-local position indices to test",
     )
     parser.add_argument(
         "--sync-firestore",
@@ -972,9 +1004,14 @@ async def main():
         action="store_true",
         help="Allow API calls with unknown cost when --max-estimated-cost is set",
     )
+    parser.add_argument(
+        "--allow-legacy-input",
+        action="store_true",
+        help="Allow an explicitly inactive legacy positions file for historical analysis",
+    )
 
     args = parser.parse_args()
-    default_output = Path("position_benchmark/results.json").resolve()
+    default_output = CORE_RESULTS_PATH.resolve()
     should_sync_firestore = args.sync_firestore or args.output.resolve() == default_output
 
     # Load positions
@@ -982,7 +1019,12 @@ async def main():
     with open(args.positions) as f:
         data = json.load(f)
 
+    try:
+        validate_position_input(data, allow_legacy_input=args.allow_legacy_input)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     all_positions = data["positions"]
+    panel_metadata = data.get("metadata", {})
     selected_orig_indices = [
         idx
         for idx, position in enumerate(all_positions)
@@ -998,12 +1040,16 @@ async def main():
 
     type_filter_idx_map = {new_idx: orig_idx for new_idx, orig_idx in enumerate(selected_orig_indices)}
     positions = [all_positions[orig_idx] for orig_idx in selected_orig_indices]
+    if not positions:
+        raise ValueError("No positions selected; check the panel file and filters")
     blunder_count = sum(1 for p in positions if p.get("type") == "blunder")
     equal_count = sum(1 for p in positions if p.get("type") == "equal")
     print(
         f"Testing on {len(positions)} selected positions "
         f"({blunder_count} blunder, {equal_count} equal)"
     )
+    if panel_metadata.get("panel") == "core-equal":
+        print("Production core: exactly 50 equal positions; optional panels are excluded.")
 
     # Load player configs
     all_players = load_player_configs()

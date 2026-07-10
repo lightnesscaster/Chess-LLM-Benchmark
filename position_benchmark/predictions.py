@@ -1,4 +1,8 @@
-"""Shared rating prediction helpers for position benchmark results."""
+"""Production position-benchmark readiness and rating prediction helpers.
+
+Keep these rules synchronized with ``position_benchmark/README.md``, the canonical
+methodology and validation record.
+"""
 
 from __future__ import annotations
 
@@ -65,6 +69,38 @@ class StabilityProbeMetrics:
     avg_cpl: float | None
     p90_cpl: float | None
     catastrophe_pct: float
+
+
+def resolve_result_position_index(
+    row: dict[str, Any],
+    positions: list[dict[str, Any]],
+) -> int | None:
+    """Resolve a result row to a panel-local index, including legacy rows.
+
+    New rows use a stable ``position_id`` and a panel-local ``position_idx``.
+    Historical rows may only contain an index into the old combined 75-position
+    registry. FEN validation disambiguates overlapping local and legacy indices.
+    """
+    position_id = row.get("position_id")
+    if position_id:
+        for index, position in enumerate(positions):
+            if position.get("position_id") == position_id:
+                return index
+
+    row_index = row.get("position_idx")
+    if not isinstance(row_index, int):
+        return None
+
+    row_fen = row.get("fen")
+    if 0 <= row_index < len(positions):
+        local_position = positions[row_index]
+        if not row_fen or row_fen == local_position.get("fen"):
+            return row_index
+
+    for index, position in enumerate(positions):
+        if position.get("legacy_position_idx") == row_index:
+            return index
+    return None
 
 
 def result_row_is_current(
@@ -170,8 +206,8 @@ def collect_equal_position_coverage(
     mismatched_fen = 0
 
     for row in model_results:
-        idx = row.get("position_idx", -1)
-        if not isinstance(idx, int) or idx not in expected_indices:
+        idx = resolve_result_position_index(row, positions)
+        if idx is None or idx not in expected_indices:
             continue
 
         result_fen = row.get("fen")
@@ -218,8 +254,8 @@ def collect_equal_position_metrics(
     seen_indices: set[int] = set()
 
     for result in model_results:
-        idx = result.get("position_idx", -1)
-        if not isinstance(idx, int) or idx < 0 or idx >= len(positions):
+        idx = resolve_result_position_index(result, positions)
+        if idx is None or idx < 0 or idx >= len(positions):
             continue
 
         position = positions[idx]
@@ -419,6 +455,8 @@ def predict_rating_from_model_data_with_supplement(
     model_data: dict[str, Any],
     positions: list[dict[str, Any]],
     *,
+    blunder_model_data: dict[str, Any] | None = None,
+    blunder_positions: list[dict[str, Any]] | None = None,
     game_like_model_data: dict[str, Any] | None = None,
     game_like_positions: list[dict[str, Any]] | None = None,
     stability_probe_model_data: dict[str, Any] | None = None,
@@ -441,27 +479,38 @@ def predict_rating_from_model_data_with_supplement(
     )
     if equal_prediction is None:
         return None
-    blunder_readiness = benchmark_result_readiness(
-        model_data,
-        positions,
-        min_equal_positions=min_blunder_positions,
-        min_stockfish_depth=min_stockfish_depth,
-        position_type="blunder",
-    )
-    if blunder_readiness.is_ready:
-        blunder_prediction = predict_rating_from_model_data(
-            model_data,
-            positions,
-            require_ready=False,
+    # New layouts store the optional blunder panel separately. Fall back to
+    # embedded blunder rows only for the legacy combined 75-position registry.
+    selected_blunder_data = blunder_model_data
+    selected_blunder_positions = blunder_positions
+    if selected_blunder_data is None and any(
+        position.get("type") == "blunder" for position in positions
+    ):
+        selected_blunder_data = model_data
+        selected_blunder_positions = positions
+
+    if selected_blunder_data is not None and selected_blunder_positions is not None:
+        blunder_readiness = benchmark_result_readiness(
+            selected_blunder_data,
+            selected_blunder_positions,
             min_equal_positions=min_blunder_positions,
             min_stockfish_depth=min_stockfish_depth,
-            cpl_cap=game_like_cpl_cap,
             position_type="blunder",
         )
-        equal_prediction = combine_equal_and_game_like_predictions(
-            equal_prediction,
-            blunder_prediction,
-        )
+        if blunder_readiness.is_ready:
+            blunder_prediction = predict_rating_from_model_data(
+                selected_blunder_data,
+                selected_blunder_positions,
+                require_ready=False,
+                min_equal_positions=min_blunder_positions,
+                min_stockfish_depth=min_stockfish_depth,
+                cpl_cap=game_like_cpl_cap,
+                position_type="blunder",
+            )
+            equal_prediction = combine_equal_and_game_like_predictions(
+                equal_prediction,
+                blunder_prediction,
+            )
 
     if game_like_model_data is not None and game_like_positions is not None:
         if require_ready:

@@ -28,6 +28,15 @@ from position_benchmark.predictions import (
     stability_probe_prediction_cap,
     stability_probe_readiness,
 )
+from position_benchmark.layout import (  # noqa: E402
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
 
 
 ANCHOR_IDS = {"random-bot", "eubos", "maia-1900", "maia-1100", "survival-bot"}
@@ -213,8 +222,8 @@ def print_group(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
-    parser.add_argument("--results", type=Path, default=Path("position_benchmark/results.json"))
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/positions.json"))
+    parser.add_argument("--results", type=Path, default=CORE_RESULTS_PATH)
+    parser.add_argument("--positions", type=Path, default=CORE_POSITIONS_PATH)
     parser.add_argument("--max-rd", type=float, default=100.0)
     parser.add_argument("--target-floor", type=float, default=1000.0)
     parser.add_argument("--target-max-error", type=float, default=200.0)
@@ -238,6 +247,17 @@ def main() -> None:
     parser.add_argument("--min-blunder-positions", type=int, default=DEFAULT_MIN_BLUNDER_POSITIONS)
     parser.add_argument("--min-stockfish-depth", type=int, default=DEFAULT_MIN_STOCKFISH_DEPTH)
     parser.add_argument(
+        "--blunder-results",
+        type=Path,
+        default=BLUNDER_RESULTS_PATH,
+        help="Optional historical blunder-panel results",
+    )
+    parser.add_argument(
+        "--blunder-positions",
+        type=Path,
+        default=BLUNDER_POSITIONS_PATH,
+    )
+    parser.add_argument(
         "--overlay-results",
         type=Path,
         nargs="*",
@@ -247,18 +267,20 @@ def main() -> None:
     parser.add_argument(
         "--game-like-results",
         type=Path,
+        default=GAME_LIKE_RESULTS_PATH,
         help="Optional fresh supplemental game-like results file used as a downside cap",
     )
     parser.add_argument(
         "--game-like-positions",
         type=Path,
-        default=Path("position_benchmark/nonopening_screening_positions.json"),
+        default=GAME_LIKE_POSITIONS_PATH,
         help="Positions file for --game-like-results",
     )
     parser.add_argument("--min-game-like-positions", type=int, default=DEFAULT_MIN_GAME_LIKE_POSITIONS)
     parser.add_argument(
         "--stability-results",
         type=Path,
+        default=STABILITY_RESULTS_PATH,
         help="Optional scored continuation-probe summaries used as a weak-play downside cap",
     )
     parser.add_argument("--min-stability-positions", type=int, default=DEFAULT_MIN_STABILITY_POSITIONS)
@@ -269,10 +291,20 @@ def main() -> None:
     results, overlay_players = overlay_results_with_touched(load_json(args.results), args.overlay_results)
     positions_data = load_json(args.positions)
     positions = positions_data["positions"] if isinstance(positions_data, dict) else positions_data
+    blunder_results = None
+    blunder_positions = None
     game_like_results = None
     game_like_positions = None
     stability_results = None
-    if args.game_like_results:
+    if args.blunder_results.exists() and args.blunder_positions.exists():
+        blunder_results = load_json(args.blunder_results)
+        blunder_positions_data = load_json(args.blunder_positions)
+        blunder_positions = (
+            blunder_positions_data["positions"]
+            if isinstance(blunder_positions_data, dict)
+            else blunder_positions_data
+        )
+    if args.game_like_results.exists():
         game_like_results = load_json(args.game_like_results)
         game_like_positions_data = load_json(args.game_like_positions)
         game_like_positions = (
@@ -280,7 +312,7 @@ def main() -> None:
             if isinstance(game_like_positions_data, dict)
             else game_like_positions_data
         )
-    if args.stability_results:
+    if args.stability_results.exists():
         stability_results = load_json(args.stability_results)
 
     rows: list[dict[str, Any]] = []
@@ -310,17 +342,24 @@ def main() -> None:
             continue
         predicted = predict_rating(metrics.equal_cpl, metrics.best_pct, metrics.legal_pct)
         blunder_predicted = None
-        blunder_readiness = benchmark_result_readiness(
-            model_data,
-            positions,
-            min_equal_positions=args.min_blunder_positions,
-            min_stockfish_depth=args.min_stockfish_depth,
-            position_type="blunder",
+        blunder_data = (
+            blunder_results.get(player_id)
+            if isinstance(blunder_results, dict)
+            else None
         )
-        if blunder_readiness.is_ready:
+        blunder_readiness = None
+        if blunder_data is not None and blunder_positions is not None:
+            blunder_readiness = benchmark_result_readiness(
+                blunder_data,
+                blunder_positions,
+                min_equal_positions=args.min_blunder_positions,
+                min_stockfish_depth=args.min_stockfish_depth,
+                position_type="blunder",
+            )
+        if blunder_readiness is not None and blunder_readiness.is_ready:
             blunder_metrics = collect_equal_position_metrics(
-                model_data.get("results", []),
-                positions,
+                blunder_data.get("results", []),
+                blunder_positions,
                 cpl_cap=DEFAULT_GAME_LIKE_CPL_CAP,
                 position_type="blunder",
             )

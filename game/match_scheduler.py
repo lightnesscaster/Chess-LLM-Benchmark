@@ -25,6 +25,7 @@ from .stats_collector import StatsCollector
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
+from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH
 
 
 Player = Union[BaseEngine, BaseLLMPlayer]
@@ -249,7 +250,7 @@ class MatchScheduler:
 
     def _load_existing_benchmark_results(self) -> set:
         """Load player IDs that already have position benchmark results."""
-        results_path = Path(__file__).parent.parent / "position_benchmark" / "results.json"
+        results_path = CORE_RESULTS_PATH
         try:
             if results_path.exists():
                 with open(results_path) as f:
@@ -371,19 +372,16 @@ class MatchScheduler:
         eligible.sort(key=lambda lid: self._calculate_priority(lid), reverse=True)
 
         # Load positions and open Stockfish once
-        positions_path = Path(__file__).parent.parent / "position_benchmark" / "positions.json"
+        positions_path = CORE_POSITIONS_PATH
         if not positions_path.exists():
             print(f"  Warning: {positions_path} not found, skipping position benchmarks")
             return benchmarked
 
         with open(positions_path) as f:
             positions_data = json.load(f)
-        all_positions = positions_data["positions"]
-        # Only run equal positions — blunder positions don't contribute to rating prediction.
-        # Track original indices so results.json entries have correct position_idx values
-        # (needed by _load_benchmark_predictions which looks up pos_type by index).
-        equal_indices = [i for i, p in enumerate(all_positions) if p.get("type") == "equal"]
-        positions = [all_positions[i] for i in equal_indices]
+        positions = positions_data["positions"]
+        if len(positions) != 50 or any(p.get("type") != "equal" for p in positions):
+            raise ValueError("Canonical position benchmark core must contain exactly 50 equal positions")
 
         stockfish = None
         try:
@@ -406,7 +404,7 @@ class MatchScheduler:
                     stockfish=stockfish,
                     positions=positions,
                     depth=30,
-                    original_indices=equal_indices,
+                    original_indices=None,
                 )
 
                 if result["success"]:

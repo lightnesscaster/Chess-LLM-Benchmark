@@ -44,7 +44,11 @@ def opening_key(position: dict[str, Any], plies: int) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=Path("position_benchmark/regan_lite_positions.json"))
-    parser.add_argument("--output", type=Path, default=Path("position_benchmark/nonopening_screening_positions.json"))
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("position_benchmark/candidates/generated_game_like_screening.json"),
+    )
     parser.add_argument("--targets", default=None)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--max-same-opening", type=int, default=2)

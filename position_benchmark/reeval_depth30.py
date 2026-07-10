@@ -362,7 +362,9 @@ def main():
         print("=" * 60)
 
         position_files = [
-            base / "positions.json",
+            base / "panels" / "core_equal_50.json",
+            base / "panels" / "game_like_48.json",
+            base / "panels" / "optional_blunder_25.json",
             base / "lichess_puzzles.json",
         ]
         for pf in position_files:
@@ -383,9 +385,15 @@ def main():
         all_unique_fens = set()
         result_files_to_process = []
 
-        results_path = base / "results.json"
-        if results_path.exists():
-            result_files_to_process.append((results_path, base / "positions.json"))
+        panel_result_files = [
+            (base / "results" / "core.json", base / "panels" / "core_equal_50.json"),
+            (base / "results" / "game_like.json", base / "panels" / "game_like_48.json"),
+            (base / "results" / "optional_blunder.json", base / "panels" / "optional_blunder_25.json"),
+        ]
+        for results_path, positions_path in panel_result_files:
+            if not results_path.exists():
+                continue
+            result_files_to_process.append((results_path, positions_path))
             with open(results_path) as f:
                 d = json.load(f)
             for mdata in d.values():

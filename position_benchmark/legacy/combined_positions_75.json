@@ -1,6 +1,9 @@
 {
   "metadata": {
-    "description": "Position benchmark: top 50 equal + top 25 blunder positions (filtered by correlation with rating)",
+    "description": "Legacy numeric-index registry: selected 25 blunder + 50 equal positions",
+    "status": "legacy-index-registry",
+    "active_production_input": false,
+    "replacement": "position_benchmark/panels/core_equal_50.json",
     "blunder_count": 25,
     "equal_count": 50,
     "total_count": 75

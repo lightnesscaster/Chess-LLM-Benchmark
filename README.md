@@ -16,6 +16,11 @@ Author can be contacted at dfj2106@columbia.edu
 
 More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
 
+The separate position benchmark used to predict/seed ratings is documented in the
+[canonical position benchmark specification](position_benchmark/README.md). That
+specification records the finalized June 2026 methodology, validation results,
+optional downside checks, and the exact GPT-5.5 limitation.
+
 ## Installation
 
 ```bash
@@ -180,6 +185,15 @@ llms:
 │   ├── leaderboard.py     # Leaderboard formatting
 │   ├── fide_estimate.py   # FIDE rating estimation
 │   └── cost_calculator.py # API cost calculation
+├── position_benchmark/     # Position-based rating predictor and canonical spec
+│   ├── README.md          # Production methodology and frozen validation record
+│   ├── benchmark_manifest.json # Active panel/result registry
+│   ├── panels/            # Required core and explicitly optional position sets
+│   ├── results/           # Results separated by panel
+│   ├── candidates/        # Non-production source pools
+│   ├── legacy/            # Archived mixed/index-based artifacts
+│   ├── run_benchmark.py   # History-replayed position runner
+│   └── predictions.py     # Readiness rules, formula, and downside caps
 ├── web/                   # Web interface
 │   ├── app.py             # Flask application
 │   ├── timeline_chart.py  # Rating timeline visualization

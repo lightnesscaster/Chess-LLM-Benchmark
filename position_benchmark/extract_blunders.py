@@ -172,7 +172,7 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("position_benchmark/blunders.json"),
+        default=Path("position_benchmark/candidates/blunder_1000_depth16.json"),
         help="Output JSON file",
     )
     parser.add_argument(

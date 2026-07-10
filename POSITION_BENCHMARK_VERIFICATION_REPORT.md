@@ -1,5 +1,10 @@
 # Position Benchmark Verification Report
 
+> **Historical report:** This December 2025 report covers superseded artifacts and
+> paths. It is retained for provenance, not as the production contract. See
+> [position_benchmark/README.md](position_benchmark/README.md) and
+> [benchmark_manifest.json](position_benchmark/benchmark_manifest.json).
+
 **Date**: 2025-12-18
 **Verified By**: Claude Code (Automated Review)
 **Status**: PASSED - All checks successful

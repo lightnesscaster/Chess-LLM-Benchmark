@@ -1,5 +1,9 @@
-"""
-Rating prediction formulas from position benchmark data.
+"""Historical formula derivation and alternative position-benchmark models.
+
+The production implementation is ``position_benchmark/predictions.py`` and the
+canonical methodology is ``position_benchmark/README.md``. This module preserves
+the March 2026 core-formula analysis and experimental alternatives; it does not
+define readiness, history replay, or supplemental downside caps.
 
 These formulas predict Glicko-2 rating from position benchmark metrics.
 Derived from 37 models (RD < 100) tested on 50 equal positions at
@@ -268,7 +272,8 @@ Key insights (depth 30):
 - Blunder positions add noise and are excluded from all features
 
 All evaluations use Stockfish depth 30.
-Data source: results.json — 50 equal positions, 37 models with RD < 100.
+Historical data source: the pre-migration combined results file — 50 equal
+positions, 37 models with RD < 100. The active equivalent is results/core.json.
 """
 
 

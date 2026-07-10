@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from position_benchmark.run_benchmark import eval_to_cp  # noqa: E402
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current  # noqa: E402
+from position_benchmark.layout import CORE_POSITIONS_PATH  # noqa: E402
 
 
 def load_json(path: Path) -> Any:
@@ -231,7 +232,7 @@ def recalculate_summary(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_results", type=Path, nargs="+")
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/positions.json"))
+    parser.add_argument("--positions", type=Path, default=CORE_POSITIONS_PATH)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--stockfish-path", default="stockfish")
     parser.add_argument("--depth", type=int, default=30)

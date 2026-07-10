@@ -8,6 +8,11 @@ import chess
 
 from position_benchmark.predictions import (
     CURRENT_BENCHMARK_VERSION,
+    DEFAULT_MIN_BLUNDER_POSITIONS,
+    DEFAULT_MIN_EQUAL_POSITIONS,
+    DEFAULT_MIN_GAME_LIKE_POSITIONS,
+    DEFAULT_MIN_STABILITY_POSITIONS,
+    DEFAULT_MIN_STOCKFISH_DEPTH,
     benchmark_result_readiness,
     collect_equal_position_coverage,
     collect_equal_position_metrics,
@@ -17,7 +22,24 @@ from position_benchmark.predictions import (
     predict_rating_from_results,
     stability_probe_prediction_cap,
 )
-from position_benchmark.run_benchmark import build_ad_hoc_player_config, replay_position_board, test_llm_on_position
+from position_benchmark.layout import (
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    LEGACY_COMBINED_POSITIONS_PATH,
+    MANIFEST_PATH,
+    STABILITY_RESULTS_PATH,
+    repo_relative,
+)
+from position_benchmark.run_benchmark import (
+    build_ad_hoc_player_config,
+    replay_position_board,
+    test_llm_on_position,
+    validate_position_input,
+)
 from position_benchmark.run_benchmark import calculate_actual_benchmark_cost, estimate_selected_benchmark_cost
 from rating.cost_calculator import CostCalculator
 from scripts.analyze_puzzle_predictions import UNAVAILABLE_PLAYER_IDS
@@ -25,10 +47,146 @@ from scripts.audit_position_benchmark_readiness import AD_HOC_PLAYER_HINTS, insp
 from scripts.promote_position_benchmark_overlays import merge_overlays, refresh_summary
 from scripts.reevaluate_position_result_overlays import filter_results
 from scripts.reevaluate_position_result_overlays import recalculate_summary
-from scripts.run_stability_probe import pre_moves_from_position, summarize_player
+from scripts.run_stability_probe import (
+    DEFAULT_POSITION_LIMIT,
+    DEFAULT_PROBE_PLIES,
+    DEFAULT_SCORE_DEPTH,
+    pre_moves_from_position,
+    summarize_player,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class ProductionContractTests(unittest.TestCase):
+    def test_canonical_panel_sizes_and_defaults_match_saved_artifacts(self) -> None:
+        positions_data = json.loads(CORE_POSITIONS_PATH.read_text())
+        positions = positions_data["positions"]
+        blunder_positions = json.loads(BLUNDER_POSITIONS_PATH.read_text())["positions"]
+        game_like_data = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())
+        manifest = json.loads(MANIFEST_PATH.read_text())
+
+        self.assertEqual(CURRENT_BENCHMARK_VERSION, "history-replay-v2")
+        self.assertEqual(DEFAULT_MIN_EQUAL_POSITIONS, 50)
+        self.assertEqual(DEFAULT_MIN_BLUNDER_POSITIONS, 25)
+        self.assertEqual(DEFAULT_MIN_GAME_LIKE_POSITIONS, 48)
+        self.assertEqual(DEFAULT_MIN_STABILITY_POSITIONS, 8)
+        self.assertEqual(DEFAULT_MIN_STOCKFISH_DEPTH, 30)
+        self.assertEqual(len(positions), 50)
+        self.assertTrue(all(p.get("type") == "equal" for p in positions))
+        self.assertEqual(len(blunder_positions), 25)
+        self.assertTrue(all(p.get("type") == "blunder" for p in blunder_positions))
+        self.assertEqual(len(game_like_data["positions"]), 48)
+        for position in [p for p in positions if p.get("type") == "equal"]:
+            board = replay_position_board(position)
+            self.assertGreater(len(board.move_stack), 0)
+            self.assertEqual(
+                " ".join(board.fen().split()[:4]),
+                " ".join(position["fen"].split()[:4]),
+            )
+        for position in game_like_data["positions"]:
+            board = replay_position_board(position)
+            self.assertGreater(len(board.move_stack), 0)
+            self.assertEqual(
+                " ".join(board.fen().split()[:4]),
+                " ".join(position["fen"].split()[:4]),
+            )
+        self.assertEqual(DEFAULT_POSITION_LIMIT, 8)
+        self.assertEqual(DEFAULT_PROBE_PLIES, 8)
+        self.assertEqual(DEFAULT_SCORE_DEPTH, 10)
+        self.assertEqual(manifest["panels"]["core"]["position_count"], 50)
+        self.assertEqual(manifest["panels"]["blunder"]["status"], "optional-historical")
+
+    def test_manifest_paths_match_runtime_paths(self) -> None:
+        manifest = json.loads(MANIFEST_PATH.read_text())
+
+        self.assertEqual(manifest["panels"]["core"]["positions"], repo_relative(CORE_POSITIONS_PATH))
+        self.assertEqual(manifest["panels"]["core"]["results"], repo_relative(CORE_RESULTS_PATH))
+        self.assertEqual(
+            manifest["panels"]["game_like"]["positions"],
+            repo_relative(GAME_LIKE_POSITIONS_PATH),
+        )
+        self.assertEqual(
+            manifest["panels"]["game_like"]["results"],
+            repo_relative(GAME_LIKE_RESULTS_PATH),
+        )
+        self.assertEqual(
+            manifest["panels"]["blunder"]["positions"],
+            repo_relative(BLUNDER_POSITIONS_PATH),
+        )
+        self.assertEqual(
+            manifest["panels"]["blunder"]["results"],
+            repo_relative(BLUNDER_RESULTS_PATH),
+        )
+        self.assertEqual(
+            manifest["panels"]["continuation_stability"]["results"],
+            repo_relative(STABILITY_RESULTS_PATH),
+        )
+
+    def test_legacy_combined_panel_requires_explicit_override(self) -> None:
+        legacy_data = json.loads(LEGACY_COMBINED_POSITIONS_PATH.read_text())
+
+        with self.assertRaisesRegex(ValueError, "inactive legacy position input"):
+            validate_position_input(legacy_data)
+
+        validate_position_input(legacy_data, allow_legacy_input=True)
+
+    def test_frozen_june_validation_snapshot_is_self_consistent(self) -> None:
+        snapshot = json.loads(
+            (ROOT / "position_benchmark" / "validation" / "2026-06-23.json").read_text()
+        )
+
+        self.assertEqual(snapshot["benchmark_version"], CURRENT_BENCHMARK_VERSION)
+        self.assertEqual(snapshot["core"]["positions"], DEFAULT_MIN_EQUAL_POSITIONS)
+        self.assertEqual(snapshot["core"]["stockfish_depth"], DEFAULT_MIN_STOCKFISH_DEPTH)
+        for row in snapshot["gpt_5_5"]:
+            self.assertAlmostEqual(
+                row["actual_rating"] - row["predicted_rating"],
+                row["error"],
+                places=5,
+            )
+
+    def test_core_migration_preserves_every_model_prediction(self) -> None:
+        legacy_positions = json.loads(LEGACY_COMBINED_POSITIONS_PATH.read_text())["positions"]
+        legacy_results = json.loads(
+            (ROOT / "position_benchmark" / "legacy" / "combined_results_75.json").read_text()
+        )
+        core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+        core_results = json.loads(CORE_RESULTS_PATH.read_text())
+
+        self.assertEqual(set(legacy_results), set(core_results))
+        for player_id, legacy_data in legacy_results.items():
+            legacy_prediction = predict_rating_from_results(
+                legacy_data["results"],
+                legacy_positions,
+            )
+            migrated_prediction = predict_rating_from_results(
+                core_results[player_id]["results"],
+                core_positions,
+            )
+            self.assertAlmostEqual(legacy_prediction, migrated_prediction, places=9)
+
+    def test_legacy_combined_indices_resolve_against_new_core(self) -> None:
+        core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+        legacy_rows = [
+            {
+                "position_idx": position["legacy_position_idx"],
+                "fen": position["fen"],
+                "model_move": position["best_move"],
+                "best_move": position["best_move"],
+                "cpl": 0,
+                "is_legal": True,
+                "position_benchmark_version": CURRENT_BENCHMARK_VERSION,
+                "prompt_history_replay": True,
+                "stockfish_depth": 30,
+            }
+            for position in core_positions
+        ]
+
+        readiness = benchmark_result_readiness({"results": legacy_rows}, core_positions)
+
+        self.assertTrue(readiness.is_ready, readiness.reason)
 
 
 class CostEstimateTests(unittest.TestCase):
@@ -149,7 +307,7 @@ class CostEstimateTests(unittest.TestCase):
 
 class PositionReplayTests(unittest.TestCase):
     def test_replays_san_history_from_blunder_positions(self) -> None:
-        with (ROOT / "position_benchmark" / "positions.json").open() as f:
+        with BLUNDER_POSITIONS_PATH.open() as f:
             positions = json.load(f)["positions"]
 
         position = positions[0]
@@ -162,7 +320,7 @@ class PositionReplayTests(unittest.TestCase):
         )
 
     def test_replays_uci_history_from_equal_positions(self) -> None:
-        with (ROOT / "position_benchmark" / "positions.json").open() as f:
+        with CORE_POSITIONS_PATH.open() as f:
             positions = json.load(f)["positions"]
 
         position = next(p for p in positions if p.get("type") == "equal")
@@ -197,7 +355,7 @@ class FakeIllegalPlayer:
 
 class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
     async def test_illegal_llm_move_uses_position_fen(self) -> None:
-        with (ROOT / "position_benchmark" / "positions.json").open() as f:
+        with CORE_POSITIONS_PATH.open() as f:
             positions = json.load(f)["positions"]
 
         position = next(p for p in positions if p.get("type") == "equal")
@@ -667,7 +825,7 @@ class AvailabilityHintTests(unittest.TestCase):
 
 class StabilityProbeTests(unittest.TestCase):
     def test_pre_moves_reconstruct_nonopening_position(self) -> None:
-        with (ROOT / "position_benchmark" / "nonopening_screening_positions.json").open() as f:
+        with GAME_LIKE_POSITIONS_PATH.open() as f:
             position = json.load(f)["positions"][0]
 
         board = chess.Board()

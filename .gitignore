@@ -48,3 +48,4 @@ position_benchmark/nonopening_*.json
 position_benchmark/positions_multipv_*.json
 position_benchmark/regan_lite_*.json
 position_benchmark/residual_panel_*.json
+position_benchmark/candidates/generated_*.json

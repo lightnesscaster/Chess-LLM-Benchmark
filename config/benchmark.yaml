@@ -127,6 +127,102 @@ llms:
     temperature: 0.0
     reasoning_effort: xhigh
 
+  - player_id: "gpt-5.6-sol (low)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-sol (medium)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-sol (high)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-sol (xhigh)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-5.6-terra (low)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-terra (medium)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-terra (high)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-terra (xhigh)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-5.6-luna (low)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-luna (medium)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-luna (high)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-luna (xhigh)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
   # gemini-2.5-flash (no thinking) (223)
   - player_id: "gemini-2.5-flash (no thinking)"
     model_name: "google/gemini-2.5-flash"

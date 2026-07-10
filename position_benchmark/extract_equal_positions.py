@@ -168,8 +168,8 @@ def extract_equal_positions(
 
 def main():
     games_dir = Path("position_benchmark/games")
-    existing_file = Path("position_benchmark/blunders.json")
-    output_file = Path("position_benchmark/equal_positions.json")
+    existing_file = Path("position_benchmark/candidates/blunder_1000_depth16.json")
+    output_file = Path("position_benchmark/candidates/equal_100_depth16.json")
 
     extract_equal_positions(
         games_dir=games_dir,

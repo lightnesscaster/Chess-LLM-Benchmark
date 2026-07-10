@@ -463,7 +463,7 @@ def main() -> None:
     parser.add_argument("--positions", type=Path, required=True)
     parser.add_argument("--results", type=Path, nargs="+", required=True)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
-    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results.json"))
+    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results/core.json"))
     parser.add_argument("--output-positions", type=Path, default=Path("position_benchmark/selected_screening_panel.json"))
     parser.add_argument("--output-report", type=Path, default=Path("position_benchmark/selected_screening_panel_report.json"))
     parser.add_argument("--panel-size", type=int, default=8)

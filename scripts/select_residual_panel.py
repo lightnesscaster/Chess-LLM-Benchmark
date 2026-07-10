@@ -3,7 +3,7 @@
 
 This script uses only local artifacts:
 - `data/ratings.json`
-- `position_benchmark/results.json`
+- `position_benchmark/results/core.json`
 - `position_benchmark/games/_results.json`
 - `position_benchmark/games/*.pgn`
 
@@ -634,7 +634,7 @@ def build_position(candidate: dict[str, Any], feature_name: str, rank: int) -> d
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
-    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results.json"))
+    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results/core.json"))
     parser.add_argument("--games-dir", type=Path, default=Path("position_benchmark/games"))
     parser.add_argument("--games-results", type=Path, default=Path("position_benchmark/games/_results.json"))
     parser.add_argument("--output-positions", type=Path, default=Path("position_benchmark/residual_panel_8.json"))

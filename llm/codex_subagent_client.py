@@ -27,6 +27,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
     """Chess player that shells out to `codex exec` for each move."""
 
     VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+    NON_TOOL_ITEM_TYPES = {"agent_message", "reasoning"}
     _GLOBAL_SEMAPHORE: Optional[asyncio.Semaphore] = None
     _GLOBAL_LIMIT: Optional[int] = None
 
@@ -123,6 +124,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             "-c",
             f"model_reasoning_effort={self.reasoning_effort}",
             "--json",
+            "--ignore-user-config",
+            "--skip-git-repo-check",
         ]
         if self.ignore_rules:
             cmd.append("--ignore-rules")
@@ -172,28 +175,35 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             output_file.close()
 
             try:
-                cmd = self._command(output_path, prompt)
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    cwd=self.working_dir,
-                    stdin=subprocess.DEVNULL,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                )
-                stdout_bytes, _ = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.timeout,
-                )
+                with tempfile.TemporaryDirectory(prefix="codex_chess_workspace_") as isolated_dir:
+                    cmd = self._command(output_path, prompt)
+                    process = await asyncio.create_subprocess_exec(
+                        *cmd,
+                        cwd=self.working_dir or isolated_dir,
+                        stdin=subprocess.DEVNULL,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                    )
+                    stdout_bytes, _ = await asyncio.wait_for(
+                        process.communicate(),
+                        timeout=self.timeout,
+                    )
                 stdout = stdout_bytes.decode("utf-8", errors="replace")
                 usage = self._parse_usage(stdout)
                 response_text = self._read_response(output_path, stdout)
 
-                if process.returncode == 0:
+                disallowed_items = self._disallowed_item_types(stdout)
+                if disallowed_items:
+                    last_error = RuntimeError(
+                        "Codex used disallowed tools or emitted unexpected items: "
+                        + ", ".join(disallowed_items)
+                    )
+                elif process.returncode == 0:
                     return response_text, usage
-
-                last_error = RuntimeError(
-                    f"codex exec exited {process.returncode}: {stdout[-1000:]}"
-                )
+                else:
+                    last_error = RuntimeError(
+                        f"codex exec exited {process.returncode}: {stdout[-1000:]}"
+                    )
             except asyncio.TimeoutError as exc:
                 last_error = exc
                 if "process" in locals() and process.returncode is None:
@@ -209,6 +219,25 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                 await asyncio.sleep(2 * (attempt + 1))
 
         raise TransientAPIError(f"Codex subagent call failed: {last_error}")
+
+    def _disallowed_item_types(self, stdout: str) -> list[str]:
+        """Return JSONL item types that could affect a tool-free chess answer."""
+        disallowed = set()
+        for line in stdout.splitlines():
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            if not str(event.get("type", "")).startswith("item."):
+                continue
+
+            item = event.get("item") or {}
+            item_type = item.get("type")
+            if item_type and item_type not in self.NON_TOOL_ITEM_TYPES:
+                disallowed.add(str(item_type))
+
+        return sorted(disallowed)
 
     def _read_response(self, output_path: str, stdout: str) -> str:
         path = Path(output_path)

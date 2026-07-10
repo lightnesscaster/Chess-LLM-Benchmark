@@ -22,6 +22,15 @@ from position_benchmark.predictions import (  # noqa: E402
     predict_rating,
     predict_rating_from_model_data_with_supplement,
 )
+from position_benchmark.layout import (  # noqa: E402
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
 from rating.cost_calculator import CostCalculator  # noqa: E402
 from utils import resolve_player_id  # noqa: E402
 
@@ -407,8 +416,8 @@ def print_audit(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
-    parser.add_argument("--results", type=Path, default=Path("position_benchmark/results.json"))
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/positions.json"))
+    parser.add_argument("--results", type=Path, default=CORE_RESULTS_PATH)
+    parser.add_argument("--positions", type=Path, default=CORE_POSITIONS_PATH)
     parser.add_argument("--config", type=Path, default=Path("config/benchmark.yaml"))
     parser.add_argument("--max-rd", type=float, default=100.0)
     parser.add_argument("--target-floor", type=float, default=1000.0)
@@ -419,20 +428,31 @@ def main() -> None:
     parser.add_argument("--show-all", action="store_true")
     parser.add_argument("--overlay-results", type=Path, nargs="*", default=[])
     parser.add_argument(
+        "--blunder-results",
+        type=Path,
+        default=BLUNDER_RESULTS_PATH,
+        help="Optional historical blunder-panel results",
+    )
+    parser.add_argument(
+        "--blunder-positions",
+        type=Path,
+        default=BLUNDER_POSITIONS_PATH,
+    )
+    parser.add_argument(
         "--game-like-results",
         type=Path,
-        default=Path("position_benchmark/game_like_results.json"),
+        default=GAME_LIKE_RESULTS_PATH,
         help="Optional supplemental game-like results file used by the production predictor",
     )
     parser.add_argument(
         "--game-like-positions",
         type=Path,
-        default=Path("position_benchmark/nonopening_screening_positions.json"),
+        default=GAME_LIKE_POSITIONS_PATH,
     )
     parser.add_argument(
         "--stability-results",
         type=Path,
-        default=Path("position_benchmark/stability_probe_results.json"),
+        default=STABILITY_RESULTS_PATH,
         help="Optional scored continuation-probe summaries used by the production predictor",
     )
     parser.add_argument(
@@ -447,9 +467,19 @@ def main() -> None:
     results, overlay_players = overlay_results(base_results, args.overlay_results)
     positions_data = load_json(args.positions)
     positions = positions_data["positions"] if isinstance(positions_data, dict) else positions_data
+    blunder_results = None
+    blunder_positions = None
     game_like_results = None
     game_like_positions = None
     stability_results = None
+    if args.blunder_results.exists() and args.blunder_positions.exists():
+        blunder_results = load_json(args.blunder_results)
+        blunder_positions_data = load_json(args.blunder_positions)
+        blunder_positions = (
+            blunder_positions_data["positions"]
+            if isinstance(blunder_positions_data, dict)
+            else blunder_positions_data
+        )
     if args.game_like_results.exists() and args.game_like_positions.exists():
         game_like_results = load_json(args.game_like_results)
         game_like_positions_data = load_json(args.game_like_positions)
@@ -488,6 +518,12 @@ def main() -> None:
             predicted = predict_rating_from_model_data_with_supplement(
                 player_data,
                 positions,
+                blunder_model_data=(
+                    blunder_results.get(player_id)
+                    if isinstance(blunder_results, dict)
+                    else None
+                ),
+                blunder_positions=blunder_positions,
                 game_like_model_data=(
                     game_like_results.get(player_id)
                     if isinstance(game_like_results, dict)

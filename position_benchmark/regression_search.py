@@ -92,7 +92,7 @@ def survival_probability(illegal_rate, game_length=40):
 def load_data():
     """Load position benchmark results and extract equal-position features."""
     base_path = Path(__file__).parent
-    with open(base_path / "results.json") as f:
+    with open(base_path / "legacy" / "combined_results_75.json") as f:
         data = json.load(f)
 
     models = []

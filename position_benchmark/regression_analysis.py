@@ -6,7 +6,7 @@ Fits various regression models to understand relationships between:
 - Legal move percentage and CPL
 - Performance on blunder vs equal positions
 
-Reads from unified results.json with per-type summary breakdowns.
+Reads from the archived unified result file with per-type summary breakdowns.
 """
 
 import json
@@ -86,7 +86,7 @@ def load_results():
     """Load unified benchmark results file."""
     base_path = Path(__file__).parent
 
-    with open(base_path / "results.json") as f:
+    with open(base_path / "legacy" / "combined_results_75.json") as f:
         data = json.load(f)
 
     return data

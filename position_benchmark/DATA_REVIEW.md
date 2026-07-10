@@ -1,5 +1,10 @@
 # Position Benchmark Data Consistency Review
 
+> **Historical format review:** This file describes an older 100-equal/100-blunder
+> dataset and does not define the production benchmark. For the finalized 50-position
+> history-replayed core, optional downside checks, and June 2026 validation results,
+> see the [canonical specification](README.md).
+
 **Review Date:** 2025-12-19
 **Files Reviewed:**
 - `/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/equal_results.json`

@@ -17,6 +17,7 @@ from position_benchmark.predictions import (  # noqa: E402
     benchmark_result_readiness,
     result_row_is_current,
 )
+from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH  # noqa: E402
 from scripts.reevaluate_position_result_overlays import recalculate_summary  # noqa: E402
 
 
@@ -95,8 +96,8 @@ def refresh_summary(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("overlay_results", type=Path, nargs="+")
-    parser.add_argument("--base", type=Path, default=Path("position_benchmark/results.json"))
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/positions.json"))
+    parser.add_argument("--base", type=Path, default=CORE_RESULTS_PATH)
+    parser.add_argument("--positions", type=Path, default=CORE_POSITIONS_PATH)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--min-equal-positions", type=int, default=50)
     parser.add_argument("--min-stockfish-depth", type=int, default=30)

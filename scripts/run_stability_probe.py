@@ -28,7 +28,13 @@ from position_benchmark.run_benchmark import (  # noqa: E402
     load_player_configs,
     replay_position_board,
 )
+from position_benchmark.layout import GAME_LIKE_POSITIONS_PATH, STABILITY_RESULTS_PATH  # noqa: E402
 from rating.cost_calculator import CostCalculator  # noqa: E402
+
+
+DEFAULT_POSITION_LIMIT = 8
+DEFAULT_PROBE_PLIES = 8
+DEFAULT_SCORE_DEPTH = 10
 
 
 def load_json(path: Path) -> Any:
@@ -358,13 +364,13 @@ async def run_probe_for_player(
 
 async def main_async() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/nonopening_screening_positions.json"))
-    parser.add_argument("--output", type=Path, default=Path("position_benchmark/stability_probe_results.json"))
+    parser.add_argument("--positions", type=Path, default=GAME_LIKE_POSITIONS_PATH)
+    parser.add_argument("--output", type=Path, default=STABILITY_RESULTS_PATH)
     parser.add_argument("--players", nargs="+", required=True)
     parser.add_argument("--position-indices", nargs="+", type=int)
-    parser.add_argument("--limit", type=int, default=6)
-    parser.add_argument("--probe-plies", type=int, default=8)
-    parser.add_argument("--score-depth", type=int, default=0)
+    parser.add_argument("--limit", type=int, default=DEFAULT_POSITION_LIMIT)
+    parser.add_argument("--probe-plies", type=int, default=DEFAULT_PROBE_PLIES)
+    parser.add_argument("--score-depth", type=int, default=DEFAULT_SCORE_DEPTH)
     parser.add_argument("--stockfish-path", default="stockfish")
     parser.add_argument("--api", choices=["openrouter", "gemini", "codex"], default="openrouter")
     parser.add_argument(

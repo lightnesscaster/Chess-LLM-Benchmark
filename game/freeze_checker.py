@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional
 from rating.rating_store import RatingStore, _EFFORT_LEVELS as _RS_EFFORT_LEVELS
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
 from game.stats_collector import StatsCollector
+from position_benchmark.layout import CORE_RESULTS_PATH
 
 
 class FreezeChecker:
@@ -170,7 +171,7 @@ class FreezeChecker:
         # Position benchmark token data
         comp_per_call = None
         try:
-            results_path = Path(__file__).parent.parent / "position_benchmark" / "results.json"
+            results_path = CORE_RESULTS_PATH
             if results_path.exists():
                 with open(results_path) as f:
                     bench_data = json.load(f)

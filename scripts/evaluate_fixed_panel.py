@@ -168,7 +168,7 @@ def main() -> None:
     parser.add_argument("--positions", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
-    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results.json"))
+    parser.add_argument("--benchmark-results", type=Path, default=Path("position_benchmark/results/core.json"))
     parser.add_argument("--max-rd", type=float, default=100.0)
     parser.add_argument("--include-anchors", action="store_true")
     parser.add_argument("--extra-model", action="append", default=[])

@@ -1,4 +1,7 @@
 ================================================================================
+HISTORICAL DATA VERIFICATION - NOT THE PRODUCTION BENCHMARK SPECIFICATION
+Canonical specification: position_benchmark/README.md
+
 POSITION BENCHMARK DATA VERIFICATION - QUICK SUMMARY
 ================================================================================
 Date: 2025-12-18

@@ -1,4 +1,9 @@
 # Position Benchmark Data Integrity Report
+
+> **Historical integrity report:** This report concerns an earlier data artifact and
+> is retained for provenance. Its counts and conclusions are not the current
+> production contract. See the [canonical specification](README.md).
+
 Generated: 2025-12-19
 
 ## Summary

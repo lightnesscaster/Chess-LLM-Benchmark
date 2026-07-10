@@ -39,6 +39,15 @@ from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
 from position_benchmark.predictions import predict_rating_from_model_data_with_supplement
+from position_benchmark.layout import (
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
 
 # Starting ratings based on model type and legal move rate
 REASONING_START_RATING = 1200
@@ -62,12 +71,13 @@ def load_benchmark_predictions() -> dict:
     Returns:
         Dict mapping model name to predicted rating, or empty dict if files missing.
     """
-    base = Path(__file__).parent / "position_benchmark"
-    results_path = base / "results.json"
-    positions_path = base / "positions.json"
-    game_like_results_path = base / "game_like_results.json"
-    game_like_positions_path = base / "nonopening_screening_positions.json"
-    stability_results_path = base / "stability_probe_results.json"
+    results_path = CORE_RESULTS_PATH
+    positions_path = CORE_POSITIONS_PATH
+    blunder_results_path = BLUNDER_RESULTS_PATH
+    blunder_positions_path = BLUNDER_POSITIONS_PATH
+    game_like_results_path = GAME_LIKE_RESULTS_PATH
+    game_like_positions_path = GAME_LIKE_POSITIONS_PATH
+    stability_results_path = STABILITY_RESULTS_PATH
 
     if not results_path.exists() or not positions_path.exists():
         return {}
@@ -81,9 +91,21 @@ def load_benchmark_predictions() -> dict:
         return {}
 
     positions = positions_data.get("positions", [])
+    blunder_results_data = None
+    blunder_positions = None
     game_like_results_data = None
     game_like_positions = None
     stability_results_data = None
+    if blunder_results_path.exists() and blunder_positions_path.exists():
+        try:
+            with open(blunder_results_path) as f:
+                blunder_results_data = json.load(f)
+            with open(blunder_positions_path) as f:
+                blunder_positions_data = json.load(f)
+            blunder_positions = blunder_positions_data.get("positions", [])
+        except (json.JSONDecodeError, OSError):
+            blunder_results_data = None
+            blunder_positions = None
     if game_like_results_path.exists() and game_like_positions_path.exists():
         try:
             with open(game_like_results_path) as f:
@@ -106,6 +128,12 @@ def load_benchmark_predictions() -> dict:
         predicted = predict_rating_from_model_data_with_supplement(
             model_data,
             positions,
+            blunder_model_data=(
+                blunder_results_data.get(model_name)
+                if isinstance(blunder_results_data, dict)
+                else None
+            ),
+            blunder_positions=blunder_positions,
             game_like_model_data=(
                 game_like_results_data.get(model_name)
                 if isinstance(game_like_results_data, dict)

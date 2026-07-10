@@ -646,8 +646,8 @@ def print_worst_errors(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/positions.json"))
-    parser.add_argument("--results", type=Path, default=Path("position_benchmark/results.json"))
+    parser.add_argument("--positions", type=Path, default=Path("position_benchmark/panels/core_equal_50.json"))
+    parser.add_argument("--results", type=Path, default=Path("position_benchmark/results/core.json"))
     parser.add_argument("--results-glob", default=None)
     parser.add_argument("--ratings", type=Path, default=Path("data/ratings.json"))
     parser.add_argument("--max-rd", type=float, default=100.0)

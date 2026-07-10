@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyze how well blunder vs equal positions predict chess game-play ratings."""
+"""Historical analysis of the legacy combined blunder/equal benchmark."""
 
 import json
 import math
@@ -8,9 +8,9 @@ from pathlib import Path
 
 # ── Load data ──────────────────────────────────────────────────────────────
 base = Path(__file__).parent
-with open(base / "results.json") as f:
+with open(base / "legacy" / "combined_results_75.json") as f:
     results = json.load(f)
-with open(base / "positions.json") as f:
+with open(base / "legacy" / "combined_positions_75.json") as f:
     positions_data = json.load(f)
 
 # Build position type lookup
