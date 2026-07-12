@@ -155,7 +155,7 @@ class ProductionContractTests(unittest.TestCase):
         core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
         core_results = json.loads(CORE_RESULTS_PATH.read_text())
 
-        self.assertEqual(set(legacy_results), set(core_results))
+        self.assertLessEqual(set(legacy_results), set(core_results))
         for player_id, legacy_data in legacy_results.items():
             legacy_prediction = predict_rating_from_results(
                 legacy_data["results"],

@@ -454,6 +454,66 @@
     "created_timestamp": 1776988800,
     "created_date": "2026-04-24"
   },
+  "gpt-5.6-sol (low)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (medium)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (high)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (xhigh)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (low)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (medium)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (high)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (xhigh)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (low)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (medium)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (high)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (xhigh)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
   "kat-coder-pro": {
     "model_id": "kwaipilot/kat-coder-pro:free",
     "created_timestamp": 1762732800,
