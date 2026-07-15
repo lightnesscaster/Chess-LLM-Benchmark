@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from position_benchmark.run_benchmark import eval_to_cp  # noqa: E402
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current  # noqa: E402
 from position_benchmark.layout import CORE_POSITIONS_PATH  # noqa: E402
+from position_benchmark.retry_protocol import attach_conditional_retry_summary  # noqa: E402
+from position_benchmark.token_accounting import refresh_result_token_usage  # noqa: E402
 
 
 def load_json(path: Path) -> Any:
@@ -56,10 +58,7 @@ def merge_result_files(paths: list[Path]) -> dict[str, Any]:
                     rows_by_idx[idx] = deepcopy(row)
             target["results"] = [rows_by_idx[idx] for idx in sorted(rows_by_idx)]
 
-            usage = player_data.get("token_usage") or {}
-            target_usage = target.setdefault("token_usage", {"prompt": 0, "completion": 0})
-            target_usage["prompt"] = target_usage.get("prompt", 0) + usage.get("prompt", 0)
-            target_usage["completion"] = target_usage.get("completion", 0) + usage.get("completion", 0)
+            refresh_result_token_usage(target)
 
             source_summary = player_data.get("summary") or {}
             target_summary = target.setdefault("summary", {})
@@ -99,8 +98,8 @@ def filter_results(
         filtered[player_id] = {
             "summary": deepcopy(player_data.get("summary", {})),
             "results": rows,
-            "token_usage": deepcopy(player_data.get("token_usage", {})),
         }
+        refresh_result_token_usage(filtered[player_id])
     return filtered
 
 
@@ -218,6 +217,7 @@ def recalculate_summary(
 
     summary = summarize(results)
     summary["player_id"] = player_id
+    attach_conditional_retry_summary(summary, results)
     for type_name in ("blunder", "equal"):
         type_rows = [
             row

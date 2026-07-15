@@ -1248,8 +1248,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 13952,
-      "completion": 416
+      "prompt": 13092,
+      "completion": 384
     }
   },
   "gemini-3.1-flash-lite-preview": {

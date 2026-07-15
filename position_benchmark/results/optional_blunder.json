@@ -1400,8 +1400,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 19222,
-      "completion": 147
+      "prompt": 0,
+      "completion": 0
     }
   },
   "gpt-3.5-turbo": {
@@ -4877,8 +4877,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 19272,
-      "completion": 200
+      "prompt": 0,
+      "completion": 0
     }
   },
   "gemini-3-pro-preview (high)": {
@@ -5931,8 +5931,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 19272,
-      "completion": 200
+      "prompt": 0,
+      "completion": 0
     }
   },
   "gemini-3-pro-preview (medium)": {
@@ -6985,8 +6985,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 19046,
-      "completion": 17019
+      "prompt": 0,
+      "completion": 0
     }
   },
   "gemini-3-flash-preview (medium)": {
@@ -7514,8 +7514,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 19222,
-      "completion": 88542
+      "prompt": 0,
+      "completion": 0
     }
   },
   "gemini-3-flash-preview (high)": {
@@ -8794,8 +8794,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 160932,
-      "completion": 593712
+      "prompt": 45659,
+      "completion": 75291
     }
   },
   "mimo-v2-flash (no thinking)": {
@@ -9323,8 +9323,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 21015,
-      "completion": 377
+      "prompt": 0,
+      "completion": 0
     }
   },
   "mimo-v2-flash (medium)": {
@@ -9852,8 +9852,8 @@
       }
     ],
     "token_usage": {
-      "prompt": 20865,
-      "completion": 706589
+      "prompt": 0,
+      "completion": 0
     }
   }
 }

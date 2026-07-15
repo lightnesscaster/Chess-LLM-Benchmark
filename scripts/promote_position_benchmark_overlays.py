@@ -18,6 +18,7 @@ from position_benchmark.predictions import (  # noqa: E402
     result_row_is_current,
 )
 from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH  # noqa: E402
+from position_benchmark.token_accounting import refresh_result_token_usage  # noqa: E402
 from scripts.reevaluate_position_result_overlays import recalculate_summary  # noqa: E402
 
 
@@ -50,11 +51,9 @@ def merge_overlays(
                     rows_by_idx[idx] = deepcopy(row)
             target["results"] = [rows_by_idx[idx] for idx in sorted(rows_by_idx)]
 
-            usage = player_data.get("token_usage") or {}
-            if usage:
-                target_usage = target.setdefault("token_usage", {"prompt": 0, "completion": 0})
-                target_usage["prompt"] = target_usage.get("prompt", 0) + usage.get("prompt", 0)
-                target_usage["completion"] = target_usage.get("completion", 0) + usage.get("completion", 0)
+            # Rows are replaced by position index. Adding whole-file totals
+            # double-counts overlays that refresh an existing position.
+            refresh_result_token_usage(target)
 
     return merged, touched
 

@@ -108,6 +108,7 @@ class RatingStore:
         anchor_ids: Set[str] = None,
         ghost_ids: Set[str] = None,
         use_firestore: bool = None,
+        benchmark_seed_rd: float = BENCHMARK_SEED_RD,
     ):
         """
         Initialize the rating store.
@@ -119,10 +120,14 @@ class RatingStore:
                       affect opponents' ratings/RD (but their own rating updates)
             use_firestore: If True, use Firestore. If None, auto-detect based on
                           FIREBASE_ENABLED env var or presence of firebase-key.json
+            benchmark_seed_rd: Initial RD for position-benchmark seeds. The
+                               production default remains BENCHMARK_SEED_RD;
+                               alternate values are for isolated validation runs.
         """
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
         self.ghost_ids = ghost_ids or set()
+        self._benchmark_seed_rd = benchmark_seed_rd
         self._ratings: Dict[str, PlayerRating] = {}
 
         # Determine storage backend (must be set before _load_benchmark_predictions)
@@ -436,7 +441,7 @@ class RatingStore:
             self._ratings[player_id] = PlayerRating(
                 player_id=player_id,
                 rating=seed,
-                rating_deviation=BENCHMARK_SEED_RD,
+                rating_deviation=self._benchmark_seed_rd,
                 volatility=existing.volatility if existing else 0.06,
                 games_played=0,
                 wins=0,
@@ -637,7 +642,7 @@ class RatingStore:
                 self._ratings[player_id] = PlayerRating(
                     player_id=player_id,
                     rating=seed,
-                    rating_deviation=BENCHMARK_SEED_RD,
+                    rating_deviation=self._benchmark_seed_rd,
                     games_rd=BENCHMARK_SEED_GAMES_RD,
                 )
             else:

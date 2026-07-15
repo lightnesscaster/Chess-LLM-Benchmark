@@ -42,6 +42,14 @@ class GameResult(BaseModel):
     moves: int                  # Total half-moves (plies)
     illegal_moves_white: int
     illegal_moves_black: int
+    retry_attempts_white: int = 0
+    retry_attempts_black: int = 0
+    retry_recoveries_white: int = 0
+    retry_recoveries_black: int = 0
+    retry_failures_white: int = 0
+    retry_failures_black: int = 0
+    retry_unknown_white: int = 0
+    retry_unknown_black: int = 0
     total_moves_white: int      # Moves attempted by white
     total_moves_black: int      # Moves attempted by black
     pgn_path: str

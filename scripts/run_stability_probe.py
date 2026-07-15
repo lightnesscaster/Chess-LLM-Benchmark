@@ -29,12 +29,19 @@ from position_benchmark.run_benchmark import (  # noqa: E402
     replay_position_board,
 )
 from position_benchmark.layout import GAME_LIKE_POSITIONS_PATH, STABILITY_RESULTS_PATH  # noqa: E402
+from position_benchmark.retry_protocol import (  # noqa: E402
+    CONDITIONAL_RETRY_PROTOCOL_VERSION,
+    derive_two_strike_retry_metrics,
+)
 from rating.cost_calculator import CostCalculator  # noqa: E402
 
 
 DEFAULT_POSITION_LIMIT = 8
 DEFAULT_PROBE_PLIES = 8
 DEFAULT_SCORE_DEPTH = 10
+STABILITY_PROBE_VERSION = "stratified-v2"
+STABILITY_SELECTION_POLICY = "category-round-robin-v1"
+EXPLICIT_SELECTION_VERSION = "explicit-selection-v1"
 
 
 def load_json(path: Path) -> Any:
@@ -49,12 +56,42 @@ def selected_positions(
     limit: int | None,
 ) -> list[tuple[int, dict[str, Any]]]:
     indexed = list(enumerate(positions))
-    if position_indices:
+    if position_indices is not None:
         requested = set(position_indices)
         indexed = [(idx, pos) for idx, pos in indexed if idx in requested]
-    if limit is not None:
-        indexed = indexed[:limit]
-    return indexed
+        return indexed[:limit] if limit is not None else indexed
+
+    if limit is None or limit >= len(indexed):
+        return indexed
+
+    buckets: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for item in indexed:
+        position = item[1]
+        bucket = str(
+            position.get("regan_bucket")
+            or position.get("screening_bucket")
+            or position.get("category")
+            or "uncategorized"
+        )
+        buckets.setdefault(bucket, []).append(item)
+
+    # The active game-like panel is stored in category blocks. Round-robin
+    # sampling prevents a short default probe from selecting only the first
+    # block while preserving deterministic, reproducible position choices.
+    selected: list[tuple[int, dict[str, Any]]] = []
+    offset = 0
+    while len(selected) < limit:
+        added = False
+        for bucket_positions in buckets.values():
+            if offset < len(bucket_positions):
+                selected.append(bucket_positions[offset])
+                added = True
+                if len(selected) == limit:
+                    break
+        if not added:
+            break
+        offset += 1
+    return selected
 
 
 def pre_moves_from_position(position: dict[str, Any]) -> list[str]:
@@ -119,6 +156,63 @@ def score_model_moves_from_pgn(
                 }
             )
     return scores
+
+
+def _pgn_move_count(pgn: str) -> int:
+    """Return the number of legal plies saved in a continuation PGN."""
+    try:
+        game = chess.pgn.read_game(io.StringIO(pgn or ""))
+    except (ValueError, TypeError):
+        return 0
+    return sum(1 for _ in game.mainline_moves()) if game is not None else 0
+
+
+def derive_retry_metrics(row: dict[str, Any]) -> dict[str, int]:
+    """Derive the one eligible production retry outcome from a probe row.
+
+    The game policy gives a player a retry after its first illegal move in a
+    game. A later second strike forfeits immediately and is not another retry
+    opportunity. A legal PGN ply at the first illegal event's move number proves
+    that the retry recovered; two illegal events at that same move number prove
+    that it failed. Provider errors without a saved legal ply remain unknown.
+    """
+    details = row.get("illegal_move_details") or []
+    illegal_attempts = row.get("model_illegal_attempts")
+    if illegal_attempts is None:
+        illegal_attempts = len(details)
+    metrics = derive_two_strike_retry_metrics(
+        illegal_attempts=int(illegal_attempts or 0),
+        illegal_events=details,
+        saved_legal_plies=_pgn_move_count(str(row.get("pgn") or "")),
+    )
+    return {
+        "model_retry_attempts": int(metrics["retry_attempts"]),
+        "model_retry_recoveries": int(metrics["retry_recoveries"]),
+        "model_retry_failures": int(metrics["retry_failures"]),
+        "model_retry_unknown": int(metrics["retry_unknown"]),
+    }
+
+
+def retry_evidence_is_available(row: dict[str, Any]) -> bool:
+    """Return whether a row can support exact retry-outcome reconstruction."""
+    illegal_attempts = int(row.get("model_illegal_attempts", 0) or 0)
+    return illegal_attempts == 0 or bool(row.get("illegal_move_details"))
+
+
+def annotate_retry_metrics(row: dict[str, Any]) -> None:
+    """Stamp one continuation row with deterministic production-retry evidence."""
+    if not retry_evidence_is_available(row):
+        row.pop("conditional_retry_protocol_version", None)
+        for key in (
+            "model_retry_attempts",
+            "model_retry_recoveries",
+            "model_retry_failures",
+            "model_retry_unknown",
+        ):
+            row.pop(key, None)
+        return
+    row.update(derive_retry_metrics(row))
+    row["conditional_retry_protocol_version"] = CONDITIONAL_RETRY_PROTOCOL_VERSION
 
 
 def create_llm_player(
@@ -195,8 +289,16 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     blunder_moves = sum(1 for cpl in move_cpls if cpl >= 300)
     catastrophe_moves = sum(1 for cpl in move_cpls if cpl >= 1000)
+    retry_source_rows = [row for row in rows if retry_evidence_is_available(row)]
+    retry_rows = [derive_retry_metrics(row) for row in retry_source_rows]
+    incomplete_retry_games = len(rows) - len(retry_source_rows)
+    retry_attempts = sum(row["model_retry_attempts"] for row in retry_rows)
+    retry_recoveries = sum(row["model_retry_recoveries"] for row in retry_rows)
+    retry_failures = sum(row["model_retry_failures"] for row in retry_rows)
+    retry_unknown = sum(row["model_retry_unknown"] for row in retry_rows)
+    known_retry_outcomes = retry_recoveries + retry_failures
 
-    return {
+    summary = {
         "attempted_positions": attempted,
         "model_legal_moves": model_legal,
         "model_illegal_attempts": model_illegal,
@@ -216,7 +318,49 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "model_300cp_blunder_pct": 100.0 * blunder_moves / len(move_cpls) if move_cpls else None,
         "model_1000cp_catastrophes": catastrophe_moves,
         "model_1000cp_catastrophe_pct": 100.0 * catastrophe_moves / len(move_cpls) if move_cpls else None,
+        "model_retry_attempts": retry_attempts,
+        "model_retry_recoveries": retry_recoveries,
+        "model_retry_failures": retry_failures,
+        "model_retry_unknown": retry_unknown,
+        "model_retry_recovery_pct": (
+            100.0 * retry_recoveries / known_retry_outcomes
+            if known_retry_outcomes
+            else None
+        ),
     }
+    if rows and incomplete_retry_games == 0:
+        summary["conditional_retry_protocol_version"] = (
+            CONDITIONAL_RETRY_PROTOCOL_VERSION
+        )
+    summary["conditional_retry"] = {
+        "protocol_version": CONDITIONAL_RETRY_PROTOCOL_VERSION,
+        "source": "continuation-game-events",
+        "measured_games": len(retry_source_rows),
+        "incomplete_evidence_games": incomplete_retry_games,
+        "retry_attempts": retry_attempts,
+        "retry_recoveries": retry_recoveries,
+        "retry_failures": retry_failures,
+        "retry_unknown": retry_unknown,
+        "known_outcomes": known_retry_outcomes,
+        "recovery_pct": summary["model_retry_recovery_pct"],
+    }
+    return summary
+
+
+def backfill_retry_metrics(results: dict[str, Any]) -> tuple[int, int]:
+    """Backfill saved row/summary retry evidence without making model calls."""
+    updated_players = 0
+    updated_rows = 0
+    for player_data in results.values():
+        rows = player_data.get("results") or []
+        if not rows:
+            continue
+        for row in rows:
+            annotate_retry_metrics(row)
+            updated_rows += 1
+        player_data.setdefault("summary", {}).update(summarize_player(rows))
+        updated_players += 1
+    return updated_players, updated_rows
 
 
 def estimate_cost(
@@ -312,8 +456,7 @@ async def run_probe_for_player(
                     stockfish=stockfish,
                     depth=score_depth,
                 )
-            rows.append(
-                {
+            row = {
                     "position_idx": position_idx,
                     "position_id": position.get("position_id"),
                     "fen": position.get("fen"),
@@ -340,7 +483,8 @@ async def run_probe_for_player(
                     "model_move_scores": model_move_scores,
                     "pgn": pgn,
                 }
-            )
+            annotate_retry_metrics(row)
+            rows.append(row)
             score_suffix = ""
             if model_move_scores:
                 avg_cpl = sum(float(score["cpl"]) for score in model_move_scores) / len(model_move_scores)
@@ -366,7 +510,7 @@ async def main_async() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--positions", type=Path, default=GAME_LIKE_POSITIONS_PATH)
     parser.add_argument("--output", type=Path, default=STABILITY_RESULTS_PATH)
-    parser.add_argument("--players", nargs="+", required=True)
+    parser.add_argument("--players", nargs="+")
     parser.add_argument("--position-indices", nargs="+", type=int)
     parser.add_argument("--limit", type=int, default=DEFAULT_POSITION_LIMIT)
     parser.add_argument("--probe-plies", type=int, default=DEFAULT_PROBE_PLIES)
@@ -383,7 +527,27 @@ async def main_async() -> None:
     parser.add_argument("--max-estimated-cost", type=float)
     parser.add_argument("--allow-unknown-cost", action="store_true")
     parser.add_argument("--verbose-games", action="store_true")
+    parser.add_argument(
+        "--backfill-retry-metrics",
+        action="store_true",
+        help="Backfill retry outcomes in --output without engines or model calls",
+    )
     args = parser.parse_args()
+
+    if args.backfill_retry_metrics:
+        if not args.output.exists():
+            raise SystemExit(f"No continuation results found at {args.output}")
+        output = load_json(args.output)
+        updated_players, updated_rows = backfill_retry_metrics(output)
+        args.output.write_text(json.dumps(output, indent=2) + "\n")
+        print(
+            f"Backfilled retry metrics for {updated_rows} rows across "
+            f"{updated_players} players in {args.output}"
+        )
+        return
+
+    if not args.players:
+        raise SystemExit("--players is required unless --backfill-retry-metrics is used")
 
     positions_data = load_json(args.positions)
     positions = positions_data["positions"] if isinstance(positions_data, dict) else positions_data
@@ -455,6 +619,19 @@ async def main_async() -> None:
             output[player_id]["summary"]["positions_file"] = str(args.positions)
             output[player_id]["summary"]["probe_plies"] = args.probe_plies
             output[player_id]["summary"]["score_depth"] = args.score_depth
+            output[player_id]["summary"]["stability_probe_version"] = (
+                STABILITY_PROBE_VERSION
+                if args.position_indices is None
+                else EXPLICIT_SELECTION_VERSION
+            )
+            output[player_id]["summary"]["position_selection_policy"] = (
+                STABILITY_SELECTION_POLICY
+                if args.position_indices is None
+                else "explicit-indices"
+            )
+            output[player_id]["summary"]["selected_position_indices"] = [
+                position_idx for position_idx, _ in indexed_positions
+            ]
             args.output.write_text(json.dumps(output, indent=2))
             print(f"Saved partial results to {args.output}", flush=True)
     finally:

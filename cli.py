@@ -491,6 +491,28 @@ async def recalculate_ratings(args):
     """Recalculate ratings from stored game results."""
     from datetime import datetime
 
+    validation_output = getattr(args, "validation_output", None)
+    validation_seed_rd = getattr(args, "validation_seed_rd", None)
+    validation_mode = validation_output is not None or validation_seed_rd is not None
+    if validation_mode and (validation_output is None or validation_seed_rd is None):
+        print("Error: --validation-output and --validation-seed-rd must be used together")
+        return 1
+    if validation_seed_rd is not None and validation_seed_rd <= 0:
+        print("Error: --validation-seed-rd must be positive")
+        return 1
+
+    ratings_path = Path(validation_output or "data/ratings.json")
+    production_ratings_path = (Path.cwd() / "data/ratings.json").resolve()
+    if validation_mode and ratings_path.resolve() == production_ratings_path:
+        print("Error: validation mode refuses to overwrite production data/ratings.json")
+        return 1
+    benchmark_seed_rd = validation_seed_rd or BENCHMARK_SEED_RD
+    if validation_mode:
+        print(
+            f"Validation-only recalculation: benchmark seed RD={benchmark_seed_rd:.0f}, "
+            f"local output={ratings_path}"
+        )
+
     # Load config for anchors
     try:
         config = load_config(args.config)
@@ -561,7 +583,13 @@ async def recalculate_ratings(args):
         print(f"Found {len(results)} game results")
 
     # Initialize rating store with anchors and ghosts
-    rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()), ghost_ids=ghost_ids)
+    rating_store = RatingStore(
+        path=str(ratings_path),
+        anchor_ids=set(anchors.keys()),
+        ghost_ids=ghost_ids,
+        use_firestore=False if validation_mode else None,
+        benchmark_seed_rd=benchmark_seed_rd,
+    )
 
     # Always reset when recalculating to avoid double-counting
     rating_store.reset()
@@ -678,7 +706,7 @@ async def recalculate_ratings(args):
             # Check benchmark predictions first
             if player_id in benchmark_preds:
                 start_rating = benchmark_preds[player_id]
-                start_rd = BENCHMARK_SEED_RD
+                start_rd = benchmark_seed_rd
                 benchmark_count += 1
             elif player_id in player_stats:
                 # Fall back to legal move rate heuristic
@@ -717,7 +745,7 @@ async def recalculate_ratings(args):
     if args.verbose:
         print(f"Initialized ratings:")
         if benchmark_count:
-            print(f"  {benchmark_count} models from benchmark predictions (RD={BENCHMARK_SEED_RD:.0f})")
+            print(f"  {benchmark_count} models from benchmark predictions (RD={benchmark_seed_rd:.0f})")
         if low_legal_count:
             print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
         if med_legal_count:
@@ -903,7 +931,10 @@ async def recalculate_ratings(args):
     print(leaderboard.format_table(min_games=1))
 
     # Invalidate web cache so leaderboard refreshes
-    invalidate_remote_cache()
+    if not validation_mode:
+        invalidate_remote_cache()
+    else:
+        print(f"Validation ratings saved locally to {ratings_path}; production ratings were unchanged.")
 
     return 0
 
@@ -1256,6 +1287,16 @@ def main():
         "--verbose", "-v",
         action="store_true",
         help="Show each game as it's processed",
+    )
+    recalc_parser.add_argument(
+        "--validation-output",
+        type=Path,
+        help="Write an isolated local validation result instead of production ratings",
+    )
+    recalc_parser.add_argument(
+        "--validation-seed-rd",
+        type=float,
+        help="Benchmark seed RD for --validation-output (production remains 166)",
     )
 
     # Manual game command

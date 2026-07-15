@@ -23,12 +23,18 @@ from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
 from llm.codex_subagent_client import CodexSubagentPlayer
+from llm.base_llm import request_llm_move
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current
 from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH, RESULT_SCHEMA_VERSION
+from position_benchmark.token_accounting import sum_result_row_tokens
+from position_benchmark.retry_protocol import (
+    CONDITIONAL_RETRY_PROTOCOL_VERSION,
+    attach_conditional_retry_summary,
+)
 from rating.cost_calculator import CostCalculator
 
 
@@ -55,6 +61,15 @@ class PositionResult:
     reciprocal_rank: float = 0.0
     prompt_tokens: int = 0  # Prompt tokens used for this position
     completion_tokens: int = 0  # Completion tokens used for this position
+    conditional_retry_protocol_version: Optional[str] = None
+    retry_attempted: bool = False
+    retry_move: Optional[str] = None
+    retry_move_san: Optional[str] = None
+    retry_is_legal: Optional[bool] = None
+    initial_prompt_tokens: int = 0
+    initial_completion_tokens: int = 0
+    retry_prompt_tokens: int = 0
+    retry_completion_tokens: int = 0
 
 
 def _calculate_median(values: list[float]) -> float:
@@ -241,6 +256,48 @@ def replay_position_board(position: dict) -> chess.Board:
     return target
 
 
+def _total_token_usage(player: "BaseLLMPlayer") -> tuple[int, int]:
+    """Read cumulative usage from one position-isolated player."""
+    return (
+        int(getattr(player, "prompt_tokens", 0) or 0),
+        int(getattr(player, "completion_tokens", 0) or 0),
+    )
+
+
+def _call_token_delta(
+    player: "BaseLLMPlayer",
+    before: tuple[int, int],
+) -> tuple[int, int]:
+    """Return all provider tokens consumed by one select-move invocation."""
+    after = _total_token_usage(player)
+    prompt_delta = after[0] - before[0]
+    completion_delta = after[1] - before[1]
+    if prompt_delta >= 0 and completion_delta >= 0:
+        return prompt_delta, completion_delta
+    return (
+        int(getattr(player, "_last_prompt_tokens", 0) or 0),
+        int(getattr(player, "_last_completion_tokens", 0) or 0),
+    )
+
+
+def _validate_llm_move(
+    board: chess.Board,
+    response: Optional[str],
+) -> tuple[str, Optional[chess.Move], str]:
+    """Apply the game runner's stripping, UCI normalization, and legality rules."""
+    move_text = response.strip() if response else ""
+    if not move_text:
+        return "", None, ""
+
+    try:
+        move = chess.Move.from_uci(move_text.lower())
+        if move not in board.legal_moves:
+            return move_text, None, ""
+        return move.uci(), move, board.san(move)
+    except (ValueError, chess.InvalidMoveError):
+        return move_text, None, ""
+
+
 async def test_llm_on_position(
     player: "BaseLLMPlayer",
     position: dict,
@@ -260,21 +317,38 @@ async def test_llm_on_position(
     eval_before = position["eval_before"]
     illegal_cpl = eval_before + 5000
 
-    # Let TransientAPIError propagate — API failures are not illegal moves
-    model_move_uci = await player.select_move(board, is_retry=False)
+    # Let TransientAPIError propagate: provider failures are not illegal moves.
+    # Empty/invalid model responses, however, follow the production game retry
+    # path and count as first-attempt illegals.
+    initial_usage_before = _total_token_usage(player)
+    initial_response = await request_llm_move(
+        player,
+        board,
+        is_retry=False,
+        last_move_illegal=None,
+    )
+    initial_prompt_tokens, initial_completion_tokens = _call_token_delta(
+        player,
+        initial_usage_before,
+    )
+    model_move_uci, move, model_move_san = _validate_llm_move(board, initial_response)
 
-    # Empty response means the API returned no content (truncation, etc.)
-    if not model_move_uci or not model_move_uci.strip():
-        raise TransientAPIError("Model returned empty response")
-
-    # Check if move is legal
-    try:
-        move = chess.Move.from_uci(model_move_uci)
-        if move not in board.legal_moves:
-            raise ValueError("Illegal move")
-        model_move_san = board.san(move)
-        is_legal = True
-    except (ValueError, chess.InvalidMoveError):
+    if move is None:
+        retry_usage_before = _total_token_usage(player)
+        retry_response = await request_llm_move(
+            player,
+            board,
+            is_retry=True,
+            last_move_illegal=model_move_uci or "invalid",
+        )
+        retry_prompt_tokens, retry_completion_tokens = _call_token_delta(
+            player,
+            retry_usage_before,
+        )
+        retry_move_uci, retry_move, retry_move_san = _validate_llm_move(
+            board,
+            retry_response,
+        )
         return annotate_result_with_multipv(position, PositionResult(
             position_idx=0,
             fen=fen,
@@ -290,6 +364,17 @@ async def test_llm_on_position(
             eval_model=-5000,
             eval_best=eval_before,
             eval_before=eval_before,
+            prompt_tokens=initial_prompt_tokens + retry_prompt_tokens,
+            completion_tokens=initial_completion_tokens + retry_completion_tokens,
+            conditional_retry_protocol_version=CONDITIONAL_RETRY_PROTOCOL_VERSION,
+            retry_attempted=True,
+            retry_move=retry_move_uci,
+            retry_move_san=retry_move_san,
+            retry_is_legal=retry_move is not None,
+            initial_prompt_tokens=initial_prompt_tokens,
+            initial_completion_tokens=initial_completion_tokens,
+            retry_prompt_tokens=retry_prompt_tokens,
+            retry_completion_tokens=retry_completion_tokens,
         ))
 
     # Evaluate model's move
@@ -319,6 +404,11 @@ async def test_llm_on_position(
         eval_model=eval_model,
         eval_best=eval_best,
         eval_before=eval_before,
+        prompt_tokens=initial_prompt_tokens,
+        completion_tokens=initial_completion_tokens,
+        conditional_retry_protocol_version=CONDITIONAL_RETRY_PROTOCOL_VERSION,
+        initial_prompt_tokens=initial_prompt_tokens,
+        initial_completion_tokens=initial_completion_tokens,
     ))
 
 
@@ -399,6 +489,7 @@ async def run_benchmark(
     """Run benchmark for a single player."""
     results = []
     token_acc = {"prompt": 0, "completion": 0}
+    model_call_acc = [0]
 
     is_engine = player_config.get("type") in ["stockfish", "maia", "random", "uci", "survival"]
 
@@ -502,9 +593,9 @@ async def run_benchmark(
                 **common_kwargs,
             )
 
-        # Gemini preview/reasoning models have been more reliable in this
-        # benchmark when requests are serialized and use a fresh client per
-        # position, instead of sharing one mutable player across tasks.
+        # Each position owns its player so initial/retry token deltas and debug
+        # state cannot race across concurrent tasks. The semaphore still bounds
+        # provider concurrency.
         if player_config.get("api") == "codex" or api_backend == "codex":
             max_concurrent = player_config.get("codex_position_max_concurrent", 1)
         else:
@@ -513,8 +604,7 @@ async def run_benchmark(
         completed = [0]  # Use list to allow modification in nested function
         results = [None] * len(positions)  # Pre-allocate to maintain order
 
-        fresh_player_per_position = api_backend == "gemini" or player_config.get("api") == "codex" or api_backend == "codex"
-        shared_player = None if fresh_player_per_position else create_llm_player()
+        shared_player = None
 
         async def test_with_semaphore(idx: int, pos: dict):
             max_api_retries = 3
@@ -523,13 +613,15 @@ async def run_benchmark(
                 try:
                     async with semaphore:
                         result = await test_llm_on_position(player, pos, stockfish, depth)
-                        # Read per-request token counts inside semaphore to avoid race with concurrent tasks
-                        result.prompt_tokens = getattr(player, "_last_prompt_tokens", 0)
-                        result.completion_tokens = getattr(player, "_last_completion_tokens", 0)
                     result.position_idx = idx
                     results[idx] = result
                     completed[0] += 1
-                    status = "illegal" if not result.is_legal else f"CPL: {result.cpl:.0f}"
+                    if result.is_legal:
+                        status = f"CPL: {result.cpl:.0f}"
+                    elif result.retry_is_legal:
+                        status = "illegal (retry recovered)"
+                    else:
+                        status = "illegal (retry failed)"
                     if result.is_best:
                         status += " (best!)"
                     print(f"  [{completed[0]}/{len(positions)}] {status}")
@@ -548,6 +640,7 @@ async def run_benchmark(
                         # Accumulate tokens before closing (fresh player per position)
                         token_acc["prompt"] += getattr(player, "prompt_tokens", 0)
                         token_acc["completion"] += getattr(player, "completion_tokens", 0)
+                        model_call_acc[0] += len(getattr(player, "move_times", []))
                         await player.close()
 
         try:
@@ -623,6 +716,7 @@ async def run_benchmark(
     if len(panels) == 1:
         summary["panel"] = panels.pop()
     stamp_benchmark_summary(summary, result_dicts, depth)
+    attach_conditional_retry_summary(summary, result_dicts)
     summary["positions_attempted"] = len(positions)
     summary["positions_skipped"] = len(positions) - len(results)
 
@@ -642,7 +736,15 @@ async def run_benchmark(
         summary["median_completion_tokens"] = _calculate_median(pos_completion_tokens)
         summary["total_completion_tokens"] = sum(pos_completion_tokens)
 
-    return {"summary": summary, "results": result_dicts, "token_usage": token_acc}
+    return {
+        "summary": summary,
+        "results": result_dicts,
+        # Canonical totals describe the rows retained in this artifact.
+        "token_usage": sum_result_row_tokens(result_dicts),
+        # Run totals may be higher because they include failed/retried calls.
+        "run_token_usage": token_acc,
+        "run_model_calls": model_call_acc[0],
+    }
 
 
 async def run_benchmark_for_scheduler(
@@ -701,6 +803,9 @@ async def run_benchmark_for_scheduler(
         all_results[player_id] = {
             "summary": result["summary"],
             "results": result["results"],
+            "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
+            "run_token_usage": result.get("run_token_usage", {"prompt": 0, "completion": 0}),
+            "run_model_calls": result.get("run_model_calls", 0),
         }
 
         with open(results_path, "w") as f:
@@ -719,7 +824,15 @@ async def run_benchmark_for_scheduler(
         return {
             "success": True,
             "summary": result["summary"],
-            "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
+            # The scheduler uses this to charge the run budget, including retries.
+            "token_usage": result.get(
+                "run_token_usage",
+                result.get("token_usage", {"prompt": 0, "completion": 0}),
+            ),
+            "canonical_token_usage": result.get(
+                "token_usage", {"prompt": 0, "completion": 0}
+            ),
+            "model_calls": result.get("run_model_calls", 0),
         }
 
     except Exception as e:
@@ -793,9 +906,10 @@ def planned_position_count(
     type_filter_idx_map: dict[int, int],
     all_results: dict,
     retry_missing: bool,
+    refresh_retry_evidence: bool = False,
 ) -> int:
     """Return how many selected positions would be run for one player."""
-    if not retry_missing or player_id not in all_results:
+    if (not retry_missing and not refresh_retry_evidence) or player_id not in all_results:
         return selected_count
 
     existing = all_results[player_id].get("results", [])
@@ -803,6 +917,11 @@ def planned_position_count(
         row.get("position_idx")
         for row in existing
         if isinstance(row.get("position_idx"), int)
+        and (
+            not refresh_retry_evidence
+            or row.get("conditional_retry_protocol_version")
+            == CONDITIONAL_RETRY_PROTOCOL_VERSION
+        )
     }
     return sum(
         1
@@ -819,6 +938,7 @@ def estimate_selected_benchmark_cost(
     all_results: dict,
     retry_missing: bool,
     cost_calculator: CostCalculator,
+    refresh_retry_evidence: bool = False,
 ) -> tuple[float, list[str]]:
     """Estimate planned API cost for selected non-engine position benchmarks."""
     known_cost = 0.0
@@ -834,6 +954,7 @@ def estimate_selected_benchmark_cost(
             type_filter_idx_map=type_filter_idx_map,
             all_results=all_results,
             retry_missing=retry_missing,
+            refresh_retry_evidence=refresh_retry_evidence,
         )
         if num_positions == 0:
             continue
@@ -879,6 +1000,7 @@ def calculate_actual_benchmark_cost(
     *,
     num_positions: int,
     cost_calculator: CostCalculator,
+    num_model_calls: int | None = None,
 ) -> float | None:
     """Calculate token-priced cost for one completed position benchmark run."""
     if config_is_engine(config):
@@ -887,7 +1009,7 @@ def calculate_actual_benchmark_cost(
     override_cost = cost_calculator.estimate_position_benchmark_cost(
         player_id,
         model_name=config.get("model_name"),
-        num_positions=num_positions,
+        num_positions=num_model_calls if num_model_calls is not None else num_positions,
         reasoning=config_uses_reasoning(config),
         use_budget_overrides=True,
     )
@@ -967,6 +1089,14 @@ async def main():
         help="Only run positions missing from existing results (skipped or errored)",
     )
     parser.add_argument(
+        "--refresh-retry-evidence",
+        action="store_true",
+        help=(
+            "Only rerun selected positions whose existing row lacks current "
+            "conditional-retry evidence"
+        ),
+    )
+    parser.add_argument(
         "--api",
         choices=["openrouter", "gemini", "codex"],
         default="openrouter",
@@ -997,7 +1127,10 @@ async def main():
     parser.add_argument(
         "--max-estimated-cost",
         type=float,
-        help="Abort before API calls if estimated known cost exceeds this dollar amount",
+        help=(
+            "Abort before API calls if the worst-case estimate, including one "
+            "conditional retry per selected position, exceeds this dollar amount"
+        ),
     )
     parser.add_argument(
         "--allow-unknown-cost",
@@ -1011,6 +1144,8 @@ async def main():
     )
 
     args = parser.parse_args()
+    if args.retry_missing and args.refresh_retry_evidence:
+        raise ValueError("Use only one of --retry-missing and --refresh-retry-evidence")
     default_output = CORE_RESULTS_PATH.resolve()
     should_sync_firestore = args.sync_firestore or args.output.resolve() == default_output
 
@@ -1120,18 +1255,25 @@ async def main():
         all_results=all_results,
         retry_missing=args.retry_missing,
         cost_calculator=cost_calculator,
+        refresh_retry_evidence=args.refresh_retry_evidence,
     )
+    retry_upper_bound_cost = estimated_cost * 2
     if estimated_cost or unknown_cost_players:
         unknown_suffix = (
             f"; unknown for {', '.join(unknown_cost_players)}"
             if unknown_cost_players
             else ""
         )
-        print(f"Estimated API cost for selected positions: ${estimated_cost:.4f}{unknown_suffix}")
+        print(
+            "Estimated API cost for selected positions: "
+            f"${estimated_cost:.4f} base; "
+            f"${retry_upper_bound_cost:.4f} conditional-retry upper bound"
+            f"{unknown_suffix}"
+        )
     if args.max_estimated_cost is not None:
-        if estimated_cost > args.max_estimated_cost:
+        if retry_upper_bound_cost > args.max_estimated_cost:
             raise SystemExit(
-                f"Estimated API cost ${estimated_cost:.4f} exceeds "
+                f"Worst-case estimated API cost ${retry_upper_bound_cost:.4f} exceeds "
                 f"--max-estimated-cost ${args.max_estimated_cost:.4f}"
             )
         if unknown_cost_players and not args.allow_unknown_cost:
@@ -1154,21 +1296,37 @@ async def main():
             positions_to_test = positions
             existing_by_idx = {}
 
-            if args.retry_missing and player_id in all_results:
+            incremental_mode = args.retry_missing or args.refresh_retry_evidence
+            if incremental_mode and player_id in all_results:
                 existing = all_results[player_id].get("results", [])
                 # Stored position_idx is in all_positions coordinates (after any
                 # type_filter remap). Key existing_by_idx by that so we can merge
                 # new subset results back in.
                 existing_by_idx = {r["position_idx"]: r for r in existing}
+                satisfied_indices = {
+                    idx
+                    for idx, row in existing_by_idx.items()
+                    if not args.refresh_retry_evidence
+                    or row.get("conditional_retry_protocol_version")
+                    == CONDITIONAL_RETRY_PROTOCOL_VERSION
+                }
 
                 def _filtered_to_all(fi: int) -> int:
                     return type_filter_idx_map[fi]
 
                 missing_filtered = [fi for fi in range(len(positions))
-                                    if _filtered_to_all(fi) not in existing_by_idx]
+                                    if _filtered_to_all(fi) not in satisfied_indices]
 
                 if not missing_filtered:
-                    print(f"  All {len(positions)} positions already have results, skipping")
+                    completed_label = (
+                        "current retry evidence"
+                        if args.refresh_retry_evidence
+                        else "results"
+                    )
+                    print(
+                        f"  All {len(positions)} positions already have "
+                        f"{completed_label}, skipping"
+                    )
                     continue
 
                 # Map subset index (the index within positions_to_test, 0..N-1)
@@ -1176,7 +1334,11 @@ async def main():
                 # position_idx in one step, bypassing the type_filter_idx_map remap.
                 retry_idx_map = {si: _filtered_to_all(fi) for si, fi in enumerate(missing_filtered)}
                 positions_to_test = [positions[fi] for fi in missing_filtered]
-                print(f"  Retrying {len(positions_to_test)} missing positions (have {len(existing_by_idx)} existing)")
+                reason = "missing retry measurements" if args.refresh_retry_evidence else "missing positions"
+                print(
+                    f"  Retrying {len(positions_to_test)} {reason} "
+                    f"(have {len(existing_by_idx)} existing rows)"
+                )
 
             start = time.time()
             result = await run_benchmark(player_id, positions_to_test, stockfish, config, args.depth, args.api)
@@ -1187,27 +1349,29 @@ async def main():
                 num_positions=len(positions_to_test),
                 cost_calculator=cost_calculator,
             )
+            run_token_usage = result.get("run_token_usage", result.get("token_usage", {}))
+            run_model_calls = int(result.get("run_model_calls", 0) or 0)
             run_actual_cost = calculate_actual_benchmark_cost(
                 player_id,
                 config,
-                result.get("token_usage", {}),
+                run_token_usage,
                 num_positions=len(result.get("results", [])),
                 cost_calculator=cost_calculator,
+                num_model_calls=run_model_calls or None,
             )
 
             # Remap filtered indices back to original position indices.
-            # With --retry-missing, retry_idx_map maps subset index directly to
-            # all_positions index, so skip the type_filter step to avoid a double
-            # remap.
-            if args.retry_missing and player_id in all_results:
+            # In either incremental mode, retry_idx_map maps subset index directly
+            # to all_positions index, so skip the type-filter remap.
+            if incremental_mode and player_id in all_results:
                 for r in result["results"]:
                     r["position_idx"] = retry_idx_map[r["position_idx"]]
             else:
                 for r in result["results"]:
                     r["position_idx"] = type_filter_idx_map[r["position_idx"]]
 
-            # Merge with existing results if retrying missing
-            if args.retry_missing and existing_by_idx:
+            # Merge refreshed/missing rows with existing results.
+            if incremental_mode and existing_by_idx:
                 for r in result["results"]:
                     existing_by_idx[r["position_idx"]] = r
                 merged_results = [existing_by_idx[i] for i in sorted(existing_by_idx.keys())]
@@ -1246,9 +1410,14 @@ async def main():
 
                 summary = _calc(wrapped)
                 summary["player_id"] = player_id
+                summary["result_schema_version"] = RESULT_SCHEMA_VERSION
                 stamp_benchmark_summary(summary, merged_results, args.depth)
-                summary["positions_attempted"] = len(positions)
-                summary["positions_skipped"] = len(positions) - len(merged_results)
+                attach_conditional_retry_summary(summary, merged_results)
+                summary["positions_attempted"] = len(all_positions)
+                summary["positions_skipped"] = max(
+                    0,
+                    len(all_positions) - len(merged_results),
+                )
 
                 blunder_r = [r for r in wrapped if pos_type_by_idx.get(r.position_idx) == "blunder"]
                 equal_r = [r for r in wrapped if pos_type_by_idx.get(r.position_idx) == "equal"]
@@ -1260,23 +1429,37 @@ async def main():
                 result = {
                     "summary": summary,
                     "results": merged_results,
-                    "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
+                    "token_usage": sum_result_row_tokens(merged_results),
+                    "run_token_usage": run_token_usage,
+                    "run_model_calls": run_model_calls,
                 }
 
             summary = result["summary"]
             if run_estimated_cost is not None:
                 summary["run_estimated_api_cost"] = run_estimated_cost
+                summary["run_estimated_base_api_cost"] = run_estimated_cost
+                summary["run_estimated_retry_upper_bound_api_cost"] = run_estimated_cost * 2
             if run_actual_cost is not None:
                 summary["run_actual_api_cost"] = run_actual_cost
-            summary["run_prompt_tokens"] = result.get("token_usage", {}).get("prompt", 0)
-            summary["run_completion_tokens"] = result.get("token_usage", {}).get("completion", 0)
+            summary["run_prompt_tokens"] = run_token_usage.get("prompt", 0)
+            summary["run_completion_tokens"] = run_token_usage.get("completion", 0)
+            summary["run_model_calls"] = run_model_calls
             print(f"\nSummary for {player_id}:")
             print(f"  Legal moves: {summary['legal_moves']}/{summary['total_positions']} ({summary['legal_pct']:.1f}%)")
             print(f"  Best moves: {summary['best_moves']} ({summary['best_pct']:.1f}%)")
             print(f"  Avoided blunders: {summary['avoided_blunders']} ({summary['avoided_pct']:.1f}%)")
             print(f"  Avg CPL: {summary['avg_cpl']:.1f}")
+            retry_summary = summary.get("conditional_retry")
+            if retry_summary:
+                recovery = retry_summary.get("recovery_pct")
+                recovery_text = "n/a" if recovery is None else f"{recovery:.1f}%"
+                print(
+                    "  Conditional retries: "
+                    f"{retry_summary['retry_recoveries']}/"
+                    f"{retry_summary['retry_attempts']} recovered ({recovery_text})"
+                )
             if run_estimated_cost is not None or run_actual_cost is not None:
-                estimated_text = "unknown" if run_estimated_cost is None else f"${run_estimated_cost:.4f}"
+                estimated_text = "unknown" if run_estimated_cost is None else f"${run_estimated_cost:.4f} base"
                 actual_text = "unknown" if run_actual_cost is None else f"${run_actual_cost:.4f}"
                 print(f"  API cost: estimated {estimated_text}, actual {actual_text}")
             if summary.get("positions_skipped"):

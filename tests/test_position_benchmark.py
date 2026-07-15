@@ -7,6 +7,8 @@ from pathlib import Path
 import chess
 
 from position_benchmark.predictions import (
+    CURRENT_STABILITY_SELECTION_POLICY,
+    CURRENT_STABILITY_PROBE_VERSION,
     CURRENT_BENCHMARK_VERSION,
     DEFAULT_MIN_BLUNDER_POSITIONS,
     DEFAULT_MIN_EQUAL_POSITIONS,
@@ -14,13 +16,18 @@ from position_benchmark.predictions import (
     DEFAULT_MIN_STABILITY_POSITIONS,
     DEFAULT_MIN_STOCKFISH_DEPTH,
     benchmark_result_readiness,
+    combine_legality_metrics,
     collect_equal_position_coverage,
     collect_equal_position_metrics,
+    collect_stability_probe_metrics,
     combine_equal_and_game_like_predictions,
     predict_rating_from_model_data,
     predict_rating_from_model_data_with_supplement,
     predict_rating_from_results,
     stability_probe_prediction_cap,
+    stability_probe_readiness,
+    survival_probability,
+    two_strike_survival_probability,
 )
 from position_benchmark.layout import (
     BLUNDER_POSITIONS_PATH,
@@ -29,6 +36,8 @@ from position_benchmark.layout import (
     CORE_RESULTS_PATH,
     GAME_LIKE_POSITIONS_PATH,
     GAME_LIKE_RESULTS_PATH,
+    LEGALITY_STRESS_POSITIONS_PATH,
+    LEGALITY_STRESS_RESULTS_PATH,
     LEGACY_COMBINED_POSITIONS_PATH,
     MANIFEST_PATH,
     STABILITY_RESULTS_PATH,
@@ -37,11 +46,18 @@ from position_benchmark.layout import (
 from position_benchmark.run_benchmark import (
     build_ad_hoc_player_config,
     replay_position_board,
-    test_llm_on_position,
+    test_llm_on_position as run_llm_on_position,
     validate_position_input,
 )
 from position_benchmark.run_benchmark import calculate_actual_benchmark_cost, estimate_selected_benchmark_cost
+from position_benchmark.run_benchmark import planned_position_count
+from position_benchmark.retry_protocol import (
+    CONDITIONAL_RETRY_PROTOCOL_VERSION,
+    conditional_retry_summary,
+)
+from position_benchmark.token_accounting import sum_result_row_tokens
 from rating.cost_calculator import CostCalculator
+from rating.rating_store import RatingStore
 from scripts.analyze_puzzle_predictions import UNAVAILABLE_PLAYER_IDS
 from scripts.audit_position_benchmark_readiness import AD_HOC_PLAYER_HINTS, inspect_player_results
 from scripts.promote_position_benchmark_overlays import merge_overlays, refresh_summary
@@ -51,15 +67,120 @@ from scripts.run_stability_probe import (
     DEFAULT_POSITION_LIMIT,
     DEFAULT_PROBE_PLIES,
     DEFAULT_SCORE_DEPTH,
+    STABILITY_PROBE_VERSION,
+    backfill_retry_metrics,
+    derive_retry_metrics,
     pre_moves_from_position,
+    selected_positions,
     summarize_player,
 )
+from scripts.merge_stability_probe_shards import merge_shards
+from scripts.select_legality_stress_panel import select_panel
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ProductionContractTests(unittest.TestCase):
+    def test_legality_stress_candidate_is_selected_without_gpt56_leakage(self) -> None:
+        positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+        results = json.loads(CORE_RESULTS_PATH.read_text())
+        live_audit = json.loads(
+            (
+                ROOT
+                / "position_benchmark"
+                / "validation"
+                / "2026-07-14-gpt56-game-retry-audit.json"
+            ).read_text()
+        )
+
+        panel = select_panel(
+            positions,
+            results,
+            holdout_prefix="gpt-5.6-",
+            min_family_illegal_rate=0.25,
+            live_audit=live_audit,
+        )
+        metadata = panel["metadata"]
+
+        self.assertEqual(len(panel["positions"]), 6)
+        self.assertFalse(metadata["selection_uses_holdout"])
+        self.assertTrue(
+            all(
+                not player_id.startswith("gpt-5.6-")
+                for player_id in metadata["selection_models"]
+            )
+        )
+        self.assertEqual(
+            [position["position_id"] for position in panel["positions"]],
+            [
+                "core-equal-015",
+                "core-equal-019",
+                "core-equal-026",
+                "core-equal-044",
+                "core-equal-036",
+                "core-equal-024",
+            ],
+        )
+        validation = metadata["held_out_validation"]
+        self.assertAlmostEqual(validation["selected_illegal_pct"], 9.7222222222)
+        self.assertGreater(validation["illegal_incidence_lift"], 2.7)
+        self.assertGreater(validation["stress_vs_live_spearman"], 0.7)
+
+    def test_legality_stress_pilot_is_isolated_and_protocol_stamped(self) -> None:
+        manifest = json.loads(MANIFEST_PATH.read_text())
+        panel = manifest["panels"]["legality_stress_candidate"]
+        results = json.loads(LEGALITY_STRESS_RESULTS_PATH.read_text())
+
+        self.assertEqual(panel["status"], "research-candidate")
+        self.assertEqual(panel["production_effect"], "none")
+        self.assertEqual(panel["positions"], repo_relative(LEGALITY_STRESS_POSITIONS_PATH))
+        self.assertEqual(panel["results"], repo_relative(LEGALITY_STRESS_RESULTS_PATH))
+        self.assertEqual(
+            set(results),
+            {
+                "gpt-5.6-luna (medium)",
+                "gpt-5.6-terra (low)",
+                "gpt-5.6-sol (high)",
+            },
+        )
+
+        retry_attempts = 0
+        retry_recoveries = 0
+        for model_data in results.values():
+            rows = model_data["results"]
+            self.assertEqual(len(rows), 6)
+            self.assertTrue(all(row["panel"] == "legality-stress" for row in rows))
+            self.assertTrue(all(row["prompt_history_replay"] for row in rows))
+            self.assertTrue(all(row["stockfish_depth"] == 30 for row in rows))
+            self.assertTrue(
+                all(
+                    row["conditional_retry_protocol_version"]
+                    == CONDITIONAL_RETRY_PROTOCOL_VERSION
+                    for row in rows
+                )
+            )
+            retry = model_data["summary"]["conditional_retry"]
+            retry_attempts += retry["retry_attempts"]
+            retry_recoveries += retry["retry_recoveries"]
+
+        self.assertEqual(retry_attempts, 2)
+        self.assertEqual(retry_recoveries, 2)
+
+    def test_validation_rating_store_can_use_higher_rd_without_changing_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = RatingStore(
+                path=str(Path(tmpdir) / "ratings.json"),
+                use_firestore=False,
+                benchmark_seed_rd=300.0,
+            )
+            store._benchmark_predictions = {"validation-model": 1234.0}
+
+            seeded = store.get("validation-model")
+
+        self.assertEqual(seeded.rating, 1234.0)
+        self.assertEqual(seeded.rating_deviation, 300.0)
+
     def test_canonical_panel_sizes_and_defaults_match_saved_artifacts(self) -> None:
         positions_data = json.loads(CORE_POSITIONS_PATH.read_text())
         positions = positions_data["positions"]
@@ -95,7 +216,26 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(DEFAULT_POSITION_LIMIT, 8)
         self.assertEqual(DEFAULT_PROBE_PLIES, 8)
         self.assertEqual(DEFAULT_SCORE_DEPTH, 10)
+        self.assertEqual(STABILITY_PROBE_VERSION, CURRENT_STABILITY_PROBE_VERSION)
         self.assertEqual(manifest["panels"]["core"]["position_count"], 50)
+        self.assertEqual(
+            manifest["conditional_retry_protocol_version"],
+            CONDITIONAL_RETRY_PROTOCOL_VERSION,
+        )
+        self.assertEqual(
+            manifest["panels"]["core"]["model_call_count"],
+            {
+                "base_first_attempt_calls": 50,
+                "conditional_retry_calls_min": 0,
+                "conditional_retry_calls_max": 50,
+                "total_calls_min": 50,
+                "total_calls_max": 100,
+            },
+        )
+        self.assertEqual(
+            manifest["panels"]["game_like"]["model_call_count"]["total_calls_max"],
+            96,
+        )
         self.assertEqual(manifest["panels"]["blunder"]["status"], "optional-historical")
 
     def test_manifest_paths_match_runtime_paths(self) -> None:
@@ -190,6 +330,41 @@ class ProductionContractTests(unittest.TestCase):
 
 
 class CostEstimateTests(unittest.TestCase):
+    def test_refresh_retry_evidence_selects_only_unmeasured_rows(self) -> None:
+        all_results = {
+            "model-a": {
+                "results": [
+                    {
+                        "position_idx": 0,
+                        "conditional_retry_protocol_version": (
+                            CONDITIONAL_RETRY_PROTOCOL_VERSION
+                        ),
+                    },
+                    {"position_idx": 1},
+                ]
+            }
+        }
+        index_map = {0: 0, 1: 1, 2: 2}
+
+        refresh_count = planned_position_count(
+            "model-a",
+            selected_count=3,
+            type_filter_idx_map=index_map,
+            all_results=all_results,
+            retry_missing=False,
+            refresh_retry_evidence=True,
+        )
+        missing_count = planned_position_count(
+            "model-a",
+            selected_count=3,
+            type_filter_idx_map=index_map,
+            all_results=all_results,
+            retry_missing=True,
+        )
+
+        self.assertEqual(refresh_count, 2)
+        self.assertEqual(missing_count, 1)
+
     def test_estimates_position_benchmark_cost_from_pricing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             pricing_path = Path(tmpdir) / "pricing.json"
@@ -300,9 +475,10 @@ class CostEstimateTests(unittest.TestCase):
                 {"prompt": 999999, "completion": 999999},
                 num_positions=5,
                 cost_calculator=calculator,
+                num_model_calls=7,
             )
 
-            self.assertAlmostEqual(cost, 0.1)
+            self.assertAlmostEqual(cost, 0.14)
 
 
 class PositionReplayTests(unittest.TestCase):
@@ -348,9 +524,31 @@ class PositionReplayTests(unittest.TestCase):
         self.assertEqual(config["timeout"], 1200)
 
 
-class FakeIllegalPlayer:
-    async def select_move(self, *_args, **_kwargs) -> str:
-        return "a1a1"
+class FakeSequencePlayer:
+    def __init__(
+        self,
+        responses: list[str],
+        usage: list[tuple[int, int]] | None = None,
+    ) -> None:
+        self.responses = list(responses)
+        self.usage = list(usage or [(0, 0)] * len(responses))
+        self.calls: list[dict] = []
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+
+    async def select_move(self, _board, **kwargs) -> str:
+        self.calls.append(kwargs)
+        self._last_prompt_tokens, self._last_completion_tokens = self.usage.pop(0)
+        self.prompt_tokens += self._last_prompt_tokens
+        self.completion_tokens += self._last_completion_tokens
+        return self.responses.pop(0)
+
+
+class FakeAnalysisEngine:
+    def analyse(self, board, _limit) -> dict:
+        return {
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        }
 
 
 class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
@@ -359,15 +557,130 @@ class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
             positions = json.load(f)["positions"]
 
         position = next(p for p in positions if p.get("type") == "equal")
-        result = await test_llm_on_position(FakeIllegalPlayer(), position, engine=None, depth=1)
+        player = FakeSequencePlayer(["a1a1", "a1a1"])
+        result = await run_llm_on_position(player, position, engine=None, depth=1)
 
         self.assertEqual(result.fen, position["fen"])
         self.assertFalse(result.is_legal)
         self.assertEqual(result.model_move, "a1a1")
         self.assertEqual(result.cpl, position["eval_before"] + 5000)
+        self.assertTrue(result.retry_attempted)
+        self.assertFalse(result.retry_is_legal)
+        self.assertEqual(len(player.calls), 2)
+
+    async def test_illegal_first_move_uses_exact_production_retry_arguments(self) -> None:
+        with CORE_POSITIONS_PATH.open() as f:
+            position = json.load(f)["positions"][0]
+        player = FakeSequencePlayer(
+            ["  NOT-A-MOVE  ", position["best_move"]],
+            usage=[(100, 10), (120, 12)],
+        )
+
+        result = await run_llm_on_position(player, position, engine=None, depth=1)
+
+        self.assertFalse(result.is_legal)
+        self.assertEqual(result.model_move, "NOT-A-MOVE")
+        self.assertTrue(result.retry_attempted)
+        self.assertTrue(result.retry_is_legal)
+        self.assertEqual(result.retry_move, position["best_move"])
+        self.assertEqual(
+            player.calls,
+            [
+                {"is_retry": False, "last_move_illegal": None},
+                {"is_retry": True, "last_move_illegal": "NOT-A-MOVE"},
+            ],
+        )
+        self.assertEqual(result.prompt_tokens, 220)
+        self.assertEqual(result.completion_tokens, 22)
+        self.assertEqual(result.initial_prompt_tokens, 100)
+        self.assertEqual(result.retry_prompt_tokens, 120)
+        self.assertEqual(
+            result.conditional_retry_protocol_version,
+            CONDITIONAL_RETRY_PROTOCOL_VERSION,
+        )
+
+    async def test_legal_first_move_does_not_add_retry_call(self) -> None:
+        with CORE_POSITIONS_PATH.open() as f:
+            position = json.load(f)["positions"][0]
+        player = FakeSequencePlayer([position["best_move"]], usage=[(100, 10)])
+
+        result = await run_llm_on_position(
+            player,
+            position,
+            engine=FakeAnalysisEngine(),
+            depth=1,
+        )
+
+        self.assertTrue(result.is_legal)
+        self.assertFalse(result.retry_attempted)
+        self.assertIsNone(result.retry_is_legal)
+        self.assertEqual(len(player.calls), 1)
+        self.assertEqual(result.prompt_tokens, 100)
+        self.assertEqual(result.completion_tokens, 10)
+
+    async def test_empty_first_response_retries_as_invalid_like_game_runner(self) -> None:
+        with CORE_POSITIONS_PATH.open() as f:
+            position = json.load(f)["positions"][0]
+        player = FakeSequencePlayer(["", position["best_move"]])
+
+        result = await run_llm_on_position(player, position, engine=None, depth=1)
+
+        self.assertFalse(result.is_legal)
+        self.assertTrue(result.retry_is_legal)
+        self.assertEqual(player.calls[1]["last_move_illegal"], "invalid")
+
+    def test_conditional_retry_summary_preserves_first_attempt_metrics(self) -> None:
+        rows = [
+            {
+                "is_legal": True,
+                "conditional_retry_protocol_version": CONDITIONAL_RETRY_PROTOCOL_VERSION,
+                "retry_attempted": False,
+                "retry_is_legal": None,
+            },
+            {
+                "is_legal": False,
+                "conditional_retry_protocol_version": CONDITIONAL_RETRY_PROTOCOL_VERSION,
+                "retry_attempted": True,
+                "retry_is_legal": True,
+            },
+            {
+                "is_legal": False,
+                "conditional_retry_protocol_version": CONDITIONAL_RETRY_PROTOCOL_VERSION,
+                "retry_attempted": True,
+                "retry_is_legal": False,
+            },
+            {"is_legal": False},
+        ]
+
+        summary = conditional_retry_summary(rows)
+
+        self.assertIsNotNone(summary)
+        self.assertEqual(summary["measured_positions"], 3)
+        self.assertEqual(summary["initial_illegal_moves"], 2)
+        self.assertEqual(summary["retry_attempts"], 2)
+        self.assertEqual(summary["retry_recoveries"], 1)
+        self.assertEqual(summary["retry_failures"], 1)
+        self.assertEqual(summary["initial_illegals_without_retry"], 0)
+        self.assertEqual(summary["recovery_pct"], 50.0)
+        self.assertAlmostEqual(summary["post_retry_legal_pct"], 200 / 3)
+        self.assertEqual(summary["total_model_calls"], 5)
 
 
 class PredictionMetricTests(unittest.TestCase):
+    def test_two_strike_survival_matches_runner_policy(self) -> None:
+        self.assertAlmostEqual(
+            two_strike_survival_probability(98.0, 0.0),
+            survival_probability(98.0),
+        )
+        self.assertAlmostEqual(
+            two_strike_survival_probability(98.0, 100.0),
+            100.0 * 0.98**40,
+        )
+        self.assertGreater(
+            two_strike_survival_probability(98.0, 10.0),
+            two_strike_survival_probability(98.0, 90.0),
+        )
+
     def test_recomputes_best_move_from_current_position(self) -> None:
         positions = [
             {
@@ -701,6 +1014,8 @@ class PredictionMetricTests(unittest.TestCase):
         }
         incomplete_stability = {
             "summary": {
+                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
                 "attempted_positions": 4,
                 "model_scored_moves": 12,
                 "model_forfeit_pct": 50.0,
@@ -750,7 +1065,12 @@ class PredictionMetricTests(unittest.TestCase):
         }
         stability = {
             "summary": {
+                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
                 "attempted_positions": 8,
+                "model_legal_moves": 24,
+                "model_attempts": 24,
+                "model_legal_pct": 100.0,
                 "model_scored_moves": 24,
                 "model_forfeit_pct": 25.0,
                 "model_1000cp_catastrophe_pct": 12.5,
@@ -795,7 +1115,10 @@ class PredictionMetricTests(unittest.TestCase):
         }
         stability = {
             "summary": {
+                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
                 "attempted_positions": 8,
+                "model_legal_moves": 0,
                 "model_attempts": 16,
                 "model_scored_moves": 0,
                 "model_forfeits": 8,
@@ -824,6 +1147,182 @@ class AvailabilityHintTests(unittest.TestCase):
 
 
 class StabilityProbeTests(unittest.TestCase):
+    def test_derives_continuation_retry_outcomes_from_events_and_pgn(self) -> None:
+        three_ply_pgn = '[Result "*"]\n\n1. e4 e5 2. Nf3 *\n'
+        recovery = {
+            "illegal_move_details": [{"move_number": 2}],
+            "pgn": three_ply_pgn,
+            "termination": "max_moves",
+        }
+        failed_same_ply = {
+            "illegal_move_details": [
+                {"move_number": 4},
+                {"move_number": 4},
+            ],
+            "pgn": three_ply_pgn,
+            "termination": "forfeit_illegal_move",
+        }
+        recovered_then_later_second_strike = {
+            "illegal_move_details": [
+                {"move_number": 2},
+                {"move_number": 4},
+            ],
+            "pgn": three_ply_pgn,
+            "termination": "forfeit_illegal_move",
+        }
+        unknown_api_outcome = {
+            "illegal_move_details": [{"move_number": 4}],
+            "pgn": three_ply_pgn,
+            "termination": "api_error",
+        }
+
+        self.assertEqual(
+            derive_retry_metrics(recovery),
+            {
+                "model_retry_attempts": 1,
+                "model_retry_recoveries": 1,
+                "model_retry_failures": 0,
+                "model_retry_unknown": 0,
+            },
+        )
+        self.assertEqual(derive_retry_metrics(failed_same_ply)["model_retry_failures"], 1)
+        self.assertEqual(
+            derive_retry_metrics(recovered_then_later_second_strike)[
+                "model_retry_recoveries"
+            ],
+            1,
+        )
+        self.assertEqual(derive_retry_metrics(unknown_api_outcome)["model_retry_unknown"], 1)
+
+    def test_backfills_continuation_rows_and_summary_without_model_calls(self) -> None:
+        row = {
+            "model_legal_moves": 2,
+            "model_illegal_attempts": 1,
+            "model_forfeited": False,
+            "termination": "max_moves",
+            "probe_plies_played": 4,
+            "model_move_scores": [],
+            "illegal_move_details": [{"move_number": 2}],
+            "pgn": '[Result "*"]\n\n1. e4 e5 *\n',
+        }
+        results = {"model-a": {"summary": {"player_id": "model-a"}, "results": [row]}}
+
+        players, rows = backfill_retry_metrics(results)
+
+        self.assertEqual((players, rows), (1, 1))
+        self.assertEqual(row["model_retry_recoveries"], 1)
+        self.assertEqual(
+            row["conditional_retry_protocol_version"],
+            CONDITIONAL_RETRY_PROTOCOL_VERSION,
+        )
+        retry = results["model-a"]["summary"]["conditional_retry"]
+        self.assertEqual(retry["retry_attempts"], 1)
+        self.assertEqual(retry["recovery_pct"], 100.0)
+
+    def test_stability_shard_merge_replaces_only_validated_players(self) -> None:
+        indices = [0, 12, 24, 36, 1, 13, 25, 37]
+        record = {
+            "summary": {
+                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                "selected_position_indices": indices,
+                "attempted_positions": 8,
+                "model_legal_moves": 32,
+                "model_attempts": 32,
+                "model_scored_moves": 32,
+                "model_forfeits": 0,
+                "score_depth": 10,
+            },
+            "results": [{"position_idx": index} for index in indices],
+        }
+
+        merged, players = merge_shards(
+            {"existing-model": {"summary": {}}},
+            [{"new-model": record}],
+            expected_indices=indices,
+        )
+
+        self.assertEqual(players, ["new-model"])
+        self.assertIn("existing-model", merged)
+        self.assertEqual(merged["new-model"], record)
+
+    def test_default_selection_is_stratified_across_game_like_categories(self) -> None:
+        positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
+
+        selected = selected_positions(positions, position_indices=None, limit=8)
+
+        self.assertEqual([index for index, _ in selected], [0, 12, 24, 36, 1, 13, 25, 37])
+        buckets = [position["regan_bucket"] for _, position in selected]
+        self.assertEqual(
+            {bucket: buckets.count(bucket) for bucket in set(buckets)},
+            {
+                "advantage_conversion": 2,
+                "defense": 2,
+                "quiet_equal": 2,
+                "tactical_equal": 2,
+            },
+        )
+
+    def test_explicit_selection_preserves_requested_panel_order(self) -> None:
+        positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
+
+        selected = selected_positions(positions, position_indices=[37, 2, 25], limit=2)
+
+        self.assertEqual([index for index, _ in selected], [2, 25])
+
+    def test_outdated_position_selection_is_not_prediction_ready(self) -> None:
+        readiness = stability_probe_readiness(
+            {
+                "summary": {
+                    "attempted_positions": 8,
+                    "model_scored_moves": 32,
+                    "model_attempts": 32,
+                    "score_depth": 10,
+                }
+            }
+        )
+
+        self.assertFalse(readiness.is_ready)
+        self.assertEqual(readiness.reason, "outdated stability position selection")
+
+    def test_combined_legality_uses_worst_fresh_panel_and_reports_pool(self) -> None:
+        positions = [
+            {"type": "equal", "fen": f"fen-{index}", "best_move": "a1b1"}
+            for index in range(10)
+        ]
+        primary_rows = [
+            {"position_idx": index, "fen": position["fen"], "is_legal": index < 9, "cpl": 0}
+            for index, position in enumerate(positions)
+        ]
+        game_rows = [
+            {"position_idx": index, "fen": position["fen"], "is_legal": True, "cpl": 0}
+            for index, position in enumerate(positions)
+        ]
+        stability = collect_stability_probe_metrics(
+            {
+                "summary": {
+                    "attempted_positions": 8,
+                    "model_scored_moves": 24,
+                    "model_legal_moves": 18,
+                    "model_attempts": 20,
+                    "model_legal_pct": 90.0,
+                    "model_forfeit_pct": 0.0,
+                    "model_1000cp_catastrophe_pct": 0.0,
+                }
+            }
+        )
+        primary = collect_equal_position_metrics(primary_rows, positions)
+        game_like = collect_equal_position_metrics(game_rows, positions)
+
+        self.assertIsNotNone(primary)
+        self.assertIsNotNone(game_like)
+        self.assertIsNotNone(stability)
+        combined = combine_legality_metrics(primary, game_like, stability)
+
+        self.assertEqual(combined.panel_legal_pcts, (90.0, 100.0, 90.0))
+        self.assertEqual(combined.conservative_legal_pct, 90.0)
+        self.assertAlmostEqual(combined.pooled_legal_pct, 37 / 40 * 100)
+
     def test_pre_moves_reconstruct_nonopening_position(self) -> None:
         with GAME_LIKE_POSITIONS_PATH.open() as f:
             position = json.load(f)["positions"][0]
@@ -873,14 +1372,31 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertAlmostEqual(summary["model_avg_cpl"], 525.0)
         self.assertEqual(summary["model_300cp_blunders"], 2)
         self.assertAlmostEqual(summary["model_300cp_blunder_pct"], 100 * 2 / 3)
+        self.assertEqual(summary["conditional_retry"]["incomplete_evidence_games"], 1)
+        self.assertNotIn("conditional_retry_protocol_version", summary)
 
 
 class OverlayReevaluationTests(unittest.TestCase):
+    def test_row_token_totals_are_canonical(self) -> None:
+        rows = [
+            {"prompt_tokens": 10, "completion_tokens": 2},
+            {"prompt_tokens": 20, "completion_tokens": 3},
+            {},
+        ]
+
+        self.assertEqual(
+            sum_result_row_tokens(rows),
+            {"prompt": 30, "completion": 5},
+        )
+
     def test_filter_results_limits_players_and_positions(self) -> None:
         results = {
             "model-a": {
                 "summary": {"prompt_history_replay": True},
-                "results": [{"position_idx": 1}, {"position_idx": 2}],
+                "results": [
+                    {"position_idx": 1, "prompt_tokens": 10, "completion_tokens": 1},
+                    {"position_idx": 2, "prompt_tokens": 20, "completion_tokens": 2},
+                ],
                 "token_usage": {"prompt": 10, "completion": 1},
             },
             "model-b": {
@@ -893,8 +1409,38 @@ class OverlayReevaluationTests(unittest.TestCase):
         filtered = filter_results(results, players={"model-a"}, position_indices={2})
 
         self.assertEqual(list(filtered), ["model-a"])
-        self.assertEqual(filtered["model-a"]["results"], [{"position_idx": 2}])
+        self.assertEqual(
+            filtered["model-a"]["results"],
+            [{"position_idx": 2, "prompt_tokens": 20, "completion_tokens": 2}],
+        )
         self.assertEqual(filtered["model-a"]["summary"]["prompt_history_replay"], True)
+        self.assertEqual(filtered["model-a"]["token_usage"], {"prompt": 20, "completion": 2})
+
+    def test_overlay_replacement_does_not_double_token_usage(self) -> None:
+        base = {
+            "model-a": {
+                "summary": {},
+                "results": [
+                    {"position_idx": 0, "prompt_tokens": 10, "completion_tokens": 1},
+                ],
+                "token_usage": {"prompt": 10, "completion": 1},
+            }
+        }
+        overlay = {
+            "model-a": {
+                "summary": {},
+                "results": [
+                    {"position_idx": 0, "prompt_tokens": 10, "completion_tokens": 1},
+                ],
+                "token_usage": {"prompt": 10, "completion": 1},
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            overlay_path = Path(tmpdir) / "overlay.json"
+            overlay_path.write_text(json.dumps(overlay))
+            merged, _ = merge_overlays(base, [overlay_path])
+
+        self.assertEqual(merged["model-a"]["token_usage"], {"prompt": 10, "completion": 1})
 
     def test_partial_current_overlay_does_not_promote_legacy_equal_rows(self) -> None:
         positions = [

@@ -19,7 +19,9 @@ Each position must:
 - be presented with its recorded move history replayed onto the board;
 - use the normal chess prompt and the same model/provider surface being rated;
 - be scored against Stockfish at depth 30;
-- record exact-best, centipawn loss (CPL), and first-attempt legality; and
+- record exact-best, centipawn loss (CPL), and first-attempt legality;
+- after an illegal first answer, issue the production illegal-move retry and
+  record whether the second answer is legal; and
 - be stamped `position_benchmark_version: history-replay-v2`,
   `prompt_history_replay: true`, and `stockfish_depth: 30` or greater.
 
@@ -28,10 +30,25 @@ move stack and does not reproduce the context a model receives during a game.
 Legacy rows without the freshness markers remain useful for research, but they are
 not production-ready evidence.
 
-The core workload is **50 model calls per model configuration**. For 12 model
-configurations, such as three GPT model variants at four reasoning levels, the core
-is 600 calls. The optional panels below are additional work and must not be included
-in that count unless they are explicitly requested.
+The core workload has **50 required first-attempt calls per model configuration**,
+plus exactly one conditional retry call for each illegal first answer. It therefore
+uses 50–100 total calls per configuration. For 12 configurations, the base is 600
+calls and the exact total is `600 + the number of first-attempt illegals` (at most
+1200). The optional panels below are additional work and must not be included in
+that count unless they are explicitly requested.
+
+The retry call uses the same player method and arguments as a production game:
+the unchanged history-replayed board, `is_retry=True`, and
+`last_move_illegal=<first response or "invalid">`. Rows are stamped
+`conditional_retry_protocol_version: production-game-retry-v1`. Canonical CPL,
+best-move, and legality fields continue to describe the first answer; retry fields
+are additional evidence and do not currently change the production rating formula.
+Summary `conditional_retry` metrics are calculated only over stamped rows, so old
+results remain readable without being mistaken for measured recovery evidence.
+Per-row `prompt_tokens` and `completion_tokens` include both chess prompts, while
+the `initial_*` and `retry_*` fields retain the split. CLI cost output labels the
+50-call estimate as the base and also reports/enforces a conservative 100-call
+upper bound; recorded actual cost uses the calls and tokens that really occurred.
 
 ## Artifact layout
 
@@ -41,7 +58,7 @@ in that count unless they are explicitly requested.
 | --- | --- | --- | --- |
 | Rating-prediction core | `panels/core_equal_50.json` | `results/core.json` | Required |
 | Non-opening game-like | `panels/game_like_48.json` | `results/game_like.json` | Optional downside only |
-| Continuation stability | First 8+ game-like positions | `results/stability.json` | Optional downside only |
+| Continuation stability | 8 stratified game-like positions | `results/stability.json` | Optional downside only |
 | Historical blunders | `panels/optional_blunder_25.json` | `results/optional_blunder.json` | Optional historical |
 
 Every selected position has a stable `position_id` and a panel-local
@@ -63,11 +80,25 @@ For the 50 equal positions, calculate:
 - `legal %`: percentage legal on the first attempt.
 
 Let `p = 1 - legal_pct / 100`. The probability of surviving 40 model turns with
-at most one illegal response is:
+at most one first-attempt illegal is:
 
 ```text
 S40 = 100 * ((1 - p)^40 + 40 * p * (1 - p)^39)
 ```
+
+This current production proxy implicitly assumes the retry always succeeds. Under
+the actual two-strikes-per-game runner, if `q` is the probability that the one
+eligible retry also fails, exact survival is:
+
+```text
+S40(p, q) = 100 * ((1 - p)^40 + 40*p*(1 - p)^39*(1 - q))
+```
+
+The per-turn expression `(1 - p*q)^40` would apply only if every later illegal
+first answer received a fresh retry. Production does not do that: after a recovered
+first strike, a later second illegal response forfeits immediately. The validated
+rating coefficients still use the original `q=0` proxy; the research metric must
+not replace it until retry evidence and coefficients are validated together.
 
 The base rating prediction is:
 
@@ -101,6 +132,14 @@ equal, 12 advantage-conversion, and 12 defensive positions. It uses the same rat
 formula, history replay, and depth-30 freshness requirements. CPL is capped at 5000
 for this supplemental estimate.
 
+Its legality input is deliberately panel-aware. Calculate first-attempt legality
+for the fresh core and game-like panels, plus move-attempt legality from a fresh
+continuation probe when available. The pooled rate is reported as a diagnostic,
+but the game-like prediction uses the lowest eligible panel rate. A simple pooled
+average is not used for scoring because strong legality in one context could hide
+a severe failure in another. Supplemental legality can therefore lower the
+game-like estimate but can never make it more optimistic.
+
 The game-like prediction replaces the current estimate only when it is **more than
 150 Elo lower**:
 
@@ -109,14 +148,24 @@ if game_like_prediction + 150 < current_prediction:
     current_prediction = game_like_prediction
 ```
 
-Its workload is 48 additional model calls per configuration.
+Its workload is 48 additional first-attempt calls per configuration, plus one retry
+for every illegal first answer (48–96 total calls).
 
 ### Continuation-stability probe
 
-The stability probe starts from representative non-opening positions and lets the
-model play one side for eight plies against the seeded random engine. It exercises
-the real illegal-move retry and forfeit path. The finalized validation used
-Stockfish depth 10 to score the model's moves.
+The stability probe starts from eight representative non-opening positions and
+lets the model play one side for eight plies against the seeded random engine. The
+default selector deterministically takes two positions from each game-like bucket
+in round-robin order: advantage conversion, defense, quiet/equal, and tactical/
+equal. With the current ordered panel, those indices are `0, 12, 24, 36, 1, 13,
+25, 37`. It exercises the real illegal-move retry and forfeit path. Stockfish depth
+10 scores the model's moves.
+
+Eligible summaries must be stamped `stability_probe_version: stratified-v2`.
+Earlier summaries selected positions 0 through 7, all from the advantage-conversion
+block, and are retained only as historical research evidence. They cannot affect a
+current production prediction; affected models need an eight-start rerun under the
+stratified policy.
 
 A probe is eligible when it has at least eight attempted starting positions and at
 least 24 scored/model-attempted moves, unless repeated forfeits already provide
@@ -136,6 +185,17 @@ As with the game-like panel, the cap is applied only when it is more than 150 El
 below the current estimate. Eight starting positions require up to 32 ordinary
 model turns, plus any illegal-move retries.
 
+Continuation rows explicitly record the outcome of the first production retry in
+each probe game as recovery, failure, or unknown provider outcome. A later second
+illegal strike is an immediate forfeit under the game policy and is not counted as
+another retry opportunity. Saved rows can be deterministically backfilled without
+model calls because their illegal-event ply numbers and PGNs establish whether the
+retry produced a legal move:
+
+```bash
+python scripts/run_stability_probe.py --backfill-retry-metrics
+```
+
 ### Historical blunder panel
 
 `panels/optional_blunder_25.json` contains 25 curated blunder positions. The
@@ -145,7 +205,8 @@ analysis found that blunder positions added almost no useful predictive value, s
 they should not be run by default or described as part of the production call count.
 
 Their presence is retained for backward compatibility and research. Running them
-adds 25 model calls per configuration.
+adds 25 first-attempt calls per configuration; the shared runner also records a
+conditional retry after any illegal first answer.
 
 During the stable-ID migration, 361 old optional-blunder result rows were excluded
 because their stored FEN did not match their claimed numeric index. Thirteen model
@@ -155,6 +216,40 @@ pass the 25-position readiness check and therefore cannot affect production rati
 The predictor evaluates available caps in this order: historical blunder panel,
 game-like panel, then continuation stability. Each comparison uses the estimate
 remaining after the preceding check.
+
+### Experimental legality-stress candidate
+
+`candidates/legality_stress_6.json` is a six-position subset of the core selected
+using 14 pre-GPT-5.6 configurations across nine model families. Selection averaged
+illegal rates equally across families and used a predeclared 25% threshold; GPT-5.6
+was held out completely. On the 12 held-out GPT-5.6 configurations it raised
+first-attempt illegal incidence from 3.50% on the full core to 9.72%, a 2.78x lift,
+while its model-level illegal rate correlated 0.730 with live-game first-attempt
+illegality versus 0.628 for the full core.
+
+This is an efficient research panel for collecting retry and high-risk legality
+evidence, not a replacement core and not production rating evidence. It requires
+six base calls plus failure-dependent retries per configuration. Its frozen
+selection metadata and held-out diagnostics are embedded in the candidate JSON.
+
+The initial three-configuration discriminator batch was run with:
+
+```bash
+python position_benchmark/run_benchmark.py \
+  --positions position_benchmark/candidates/legality_stress_6.json \
+  --output position_benchmark/results/legality_stress.json \
+  --players "gpt-5.6-luna (medium)" "gpt-5.6-terra (low)" "gpt-5.6-sol (high)" \
+  --depth 30 \
+  --api codex
+```
+
+This is 18 first-attempt calls plus conditional retries. The output is deliberately
+separate from production core results and has no production rating effect.
+It produced two initial illegals, both recovered on retry. The same three models
+had also produced two illegals on these six positions in their original core runs,
+although neither failure repeated at the same model-position pair. See
+`validation/2026-07-14-legality-stress-pilot.md` for the repeatability analysis and
+the limits on interpreting this small stress sample.
 
 ## June 2026 validation record
 
@@ -166,7 +261,8 @@ history-replayed core and the downside-only checks:
 | Fully refreshed validation rows | 12 | 148.0 | 217.1 | 0 of 6 outside +/-200 Elo |
 | Reliable historical/readiness audit | 43 | 164.5 | 235.1 | 0 of 6 outside +/-200 Elo |
 
-The stability cap corrected three known optimistic estimates:
+The original, pre-stratification stability cap corrected three known optimistic
+estimates in the frozen June snapshot:
 
 | Model | Before cap | After cap | Actual at validation |
 | --- | ---: | ---: | ---: |
@@ -228,16 +324,40 @@ python position_benchmark/run_benchmark.py \
   --api codex
 ```
 
-Run the optional finalized continuation probe with:
+Existing rows predate conditional retry measurement. To refresh only selected rows
+that lack the current retry-protocol stamp, add `--refresh-retry-evidence`. This
+reruns the first attempt because a retry outcome is meaningful only when observed
+conditionally after a fresh illegal answer; it does not manufacture a retry from a
+stored historical illegal move. `--retry-missing` retains its narrower meaning of
+filling absent position rows.
+
+Run the optional continuation probe with:
 
 ```bash
 python scripts/run_stability_probe.py \
   --players "PLAYER_ID" \
-  --limit 8 \
   --probe-plies 8 \
   --score-depth 10 \
   --api codex
 ```
+
+The default `--limit 8` invokes the stratified selector. `--position-indices` is
+an explicit research override and is recorded as such in the result summary.
+
+For non-production validation, ratings can be recalculated from the same benchmark
+means with a looser seed RD. This command is intentionally guarded: both options
+are required, rating writes are forced to the specified local file, and
+`data/ratings.json` is rejected as an output target. Game results may still be
+read from the configured production store.
+
+```bash
+python cli.py recalculate \
+  --validation-seed-rd 300 \
+  --validation-output /tmp/chess-ratings-rd300.json
+```
+
+This counterfactual reduces, but does not eliminate, circularity because its prior
+mean still comes from the position benchmark. Production remains fixed at RD 166.
 
 Audit freshness, coverage, prediction error, and any available supplemental caps:
 

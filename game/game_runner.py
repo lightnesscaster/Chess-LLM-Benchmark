@@ -19,7 +19,7 @@ import chess
 import chess.pgn
 
 from engines.base_engine import BaseEngine
-from llm import BaseLLMPlayer, TransientAPIError
+from llm import BaseLLMPlayer, TransientAPIError, request_llm_move
 from .models import GameResult
 
 # Live game file for following along
@@ -111,6 +111,9 @@ class GameRunner:
 
         # Track illegal moves per player for this game
         illegal_count = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_attempts = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_recoveries = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_failures = {chess.WHITE: 0, chess.BLACK: 0}
         total_moves = {chess.WHITE: 0, chess.BLACK: 0}
         illegal_move_details = []  # List of dicts with debugging info
 
@@ -146,7 +149,15 @@ class GameRunner:
             # Get move with illegal retry policy
             try:
                 move_result = await self._get_move_with_retry(
-                    player, board, side, illegal_count, illegal_move_details, moves_played
+                    player,
+                    board,
+                    side,
+                    illegal_count,
+                    illegal_move_details,
+                    moves_played,
+                    retry_attempts,
+                    retry_recoveries,
+                    retry_failures,
                 )
             except TransientAPIError as e:
                 # Network error after retries - end as draw, not a forfeit
@@ -261,6 +272,22 @@ class GameRunner:
             moves=moves_played,
             illegal_moves_white=illegal_count[chess.WHITE],
             illegal_moves_black=illegal_count[chess.BLACK],
+            retry_attempts_white=retry_attempts[chess.WHITE],
+            retry_attempts_black=retry_attempts[chess.BLACK],
+            retry_recoveries_white=retry_recoveries[chess.WHITE],
+            retry_recoveries_black=retry_recoveries[chess.BLACK],
+            retry_failures_white=retry_failures[chess.WHITE],
+            retry_failures_black=retry_failures[chess.BLACK],
+            retry_unknown_white=(
+                retry_attempts[chess.WHITE]
+                - retry_recoveries[chess.WHITE]
+                - retry_failures[chess.WHITE]
+            ),
+            retry_unknown_black=(
+                retry_attempts[chess.BLACK]
+                - retry_recoveries[chess.BLACK]
+                - retry_failures[chess.BLACK]
+            ),
             total_moves_white=total_moves[chess.WHITE],
             total_moves_black=total_moves[chess.BLACK],
             pgn_path="",  # Will be set by logger
@@ -282,6 +309,9 @@ class GameRunner:
         illegal_count: dict,
         illegal_move_details: list,
         move_number: int,
+        retry_attempts: dict,
+        retry_recoveries: dict,
+        retry_failures: dict,
     ) -> Optional[Tuple[str, bool]]:
         """
         Get a move from the player with illegal move retry policy.
@@ -305,6 +335,8 @@ class GameRunner:
 
         for attempt in range(max_attempts):
             is_retry = attempt > 0
+            if is_retry:
+                retry_attempts[side] += 1
 
             # Get move from player (may raise TransientAPIError)
             move_uci = await self._ask_player_for_move(
@@ -316,10 +348,14 @@ class GameRunner:
                 is_legal, validated_move = self._validate_move(board, move_uci)
 
                 if is_legal:
+                    if is_retry:
+                        retry_recoveries[side] += 1
                     return (validated_move, is_retry)
 
             # Move was illegal
             illegal_count[side] += 1
+            if is_retry:
+                retry_failures[side] += 1
             last_illegal_move = move_uci or "invalid"
 
             if self.verbose:
@@ -375,12 +411,13 @@ class GameRunner:
                 return move.uci()
             else:
                 # LLMs return UCI string
-                move_uci = await player.select_move(
+                move_uci = await request_llm_move(
+                    player,
                     board,
                     is_retry=is_retry,
                     last_move_illegal=last_illegal_move,
                 )
-                return move_uci.strip() if move_uci else None
+                return move_uci
 
         except TransientAPIError:
             # Let transient API errors propagate - these aren't illegal moves

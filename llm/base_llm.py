@@ -3,6 +3,8 @@ Base class for LLM player wrappers.
 """
 
 import abc
+from typing import Optional
+
 import chess
 
 
@@ -98,3 +100,19 @@ class BaseLLMPlayer(abc.ABC):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
         return False
+
+
+async def request_llm_move(
+    player: BaseLLMPlayer,
+    board: chess.Board,
+    *,
+    is_retry: bool,
+    last_move_illegal: Optional[str],
+) -> Optional[str]:
+    """Request a move using the production game prompt context and normalization."""
+    move_uci = await player.select_move(
+        board,
+        is_retry=is_retry,
+        last_move_illegal=last_move_illegal,
+    )
+    return move_uci.strip() if move_uci else None

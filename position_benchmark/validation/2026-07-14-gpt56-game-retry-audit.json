@@ -1,0 +1,2358 @@
+{
+  "generated_at": "2026-07-15T03:52:28.006406+00:00",
+  "protocol_version": "production-game-retry-v1",
+  "policy": "second illegal response by a player anywhere in one game forfeits",
+  "source_games": 6281,
+  "selected_games": 112,
+  "player_prefixes": [
+    "gpt-5.6-"
+  ],
+  "players": {
+    "gpt-5.6-luna (high)": {
+      "games": 8,
+      "legal_moves": 236,
+      "illegal_forfeits": 1,
+      "illegal_responses": 3,
+      "retry_attempts": 2,
+      "retry_recoveries": 2,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 1,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 2,
+      "first_attempt_illegals": 3,
+      "first_attempt_turns": 237,
+      "first_attempt_illegal_pct": 1.2658227848101267,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-luna (low)": {
+      "games": 8,
+      "legal_moves": 187,
+      "illegal_forfeits": 3,
+      "illegal_responses": 10,
+      "retry_attempts": 7,
+      "retry_recoveries": 6,
+      "retry_failures": 1,
+      "retry_unknown": 0,
+      "later_second_strikes": 2,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 7,
+      "first_attempt_illegals": 9,
+      "first_attempt_turns": 190,
+      "first_attempt_illegal_pct": 4.7368421052631575,
+      "retry_recovery_pct": 85.71428571428571,
+      "retry_failure_pct": 14.285714285714286
+    },
+    "gpt-5.6-luna (medium)": {
+      "games": 16,
+      "legal_moves": 370,
+      "illegal_forfeits": 11,
+      "illegal_responses": 25,
+      "retry_attempts": 14,
+      "retry_recoveries": 13,
+      "retry_failures": 1,
+      "retry_unknown": 0,
+      "later_second_strikes": 10,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 14,
+      "first_attempt_illegals": 24,
+      "first_attempt_turns": 381,
+      "first_attempt_illegal_pct": 6.299212598425197,
+      "retry_recovery_pct": 92.85714285714286,
+      "retry_failure_pct": 7.142857142857143
+    },
+    "gpt-5.6-luna (xhigh)": {
+      "games": 8,
+      "legal_moves": 213,
+      "illegal_forfeits": 0,
+      "illegal_responses": 3,
+      "retry_attempts": 3,
+      "retry_recoveries": 3,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 0,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 3,
+      "first_attempt_illegals": 3,
+      "first_attempt_turns": 213,
+      "first_attempt_illegal_pct": 1.408450704225352,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-sol (high)": {
+      "games": 8,
+      "legal_moves": 311,
+      "illegal_forfeits": 0,
+      "illegal_responses": 3,
+      "retry_attempts": 3,
+      "retry_recoveries": 3,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 0,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 3,
+      "first_attempt_illegals": 3,
+      "first_attempt_turns": 311,
+      "first_attempt_illegal_pct": 0.9646302250803859,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-sol (low)": {
+      "games": 8,
+      "legal_moves": 358,
+      "illegal_forfeits": 0,
+      "illegal_responses": 5,
+      "retry_attempts": 5,
+      "retry_recoveries": 5,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 0,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 5,
+      "first_attempt_illegals": 5,
+      "first_attempt_turns": 358,
+      "first_attempt_illegal_pct": 1.3966480446927374,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-sol (medium)": {
+      "games": 8,
+      "legal_moves": 343,
+      "illegal_forfeits": 0,
+      "illegal_responses": 4,
+      "retry_attempts": 4,
+      "retry_recoveries": 4,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 0,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 4,
+      "first_attempt_illegals": 4,
+      "first_attempt_turns": 343,
+      "first_attempt_illegal_pct": 1.1661807580174928,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-sol (xhigh)": {
+      "games": 8,
+      "legal_moves": 359,
+      "illegal_forfeits": 0,
+      "illegal_responses": 1,
+      "retry_attempts": 1,
+      "retry_recoveries": 1,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 0,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 1,
+      "first_attempt_illegals": 1,
+      "first_attempt_turns": 359,
+      "first_attempt_illegal_pct": 0.2785515320334262,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-terra (high)": {
+      "games": 8,
+      "legal_moves": 284,
+      "illegal_forfeits": 2,
+      "illegal_responses": 6,
+      "retry_attempts": 4,
+      "retry_recoveries": 4,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 2,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 4,
+      "first_attempt_illegals": 6,
+      "first_attempt_turns": 286,
+      "first_attempt_illegal_pct": 2.097902097902098,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-terra (low)": {
+      "games": 16,
+      "legal_moves": 474,
+      "illegal_forfeits": 8,
+      "illegal_responses": 19,
+      "retry_attempts": 11,
+      "retry_recoveries": 11,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 8,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 11,
+      "first_attempt_illegals": 19,
+      "first_attempt_turns": 482,
+      "first_attempt_illegal_pct": 3.9419087136929463,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-terra (medium)": {
+      "games": 8,
+      "legal_moves": 414,
+      "illegal_forfeits": 3,
+      "illegal_responses": 10,
+      "retry_attempts": 7,
+      "retry_recoveries": 7,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 3,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 7,
+      "first_attempt_illegals": 10,
+      "first_attempt_turns": 417,
+      "first_attempt_illegal_pct": 2.3980815347721824,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    },
+    "gpt-5.6-terra (xhigh)": {
+      "games": 8,
+      "legal_moves": 422,
+      "illegal_forfeits": 1,
+      "illegal_responses": 6,
+      "retry_attempts": 5,
+      "retry_recoveries": 5,
+      "retry_failures": 0,
+      "retry_unknown": 0,
+      "later_second_strikes": 1,
+      "incomplete_evidence_games": 0,
+      "known_retry_outcomes": 5,
+      "first_attempt_illegals": 6,
+      "first_attempt_turns": 423,
+      "first_attempt_illegal_pct": 1.4184397163120568,
+      "retry_recovery_pct": 100.0,
+      "retry_failure_pct": 0.0
+    }
+  },
+  "game_evidence": [
+    {
+      "game_id": "073ea1f5-832c-4ea5-8234-473209dca6a0",
+      "white_id": "gpt-5.5 (low)",
+      "black_id": "gpt-5.6-sol (low)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T04:47:10.947075+00:00",
+      "moves": 94,
+      "black": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "0d40080e-4156-484c-8384-84710aabdc53",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "gpt-5.5 (medium)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T04:37:13.821479+00:00",
+      "moves": 38,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "13b04d0e-fcf4-411f-976a-8ec13bc6402d",
+      "white_id": "gpt-5.6-sol (xhigh)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T17:42:37.777076+00:00",
+      "moves": 39,
+      "white": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "195a0499-5441-4fea-9f1a-0a6275af5664",
+      "white_id": "gpt-5.5 (medium)",
+      "black_id": "gpt-5.6-terra (medium)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-12T05:30:23.988748+00:00",
+      "moves": 136,
+      "black": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "1a1157b0-e0db-4514-b18c-aaa948da7fcd",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-luna (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T18:06:06.955609+00:00",
+      "moves": 47,
+      "black": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "1f48f633-d221-44e0-a257-6599ea56e8ae",
+      "white_id": "gpt-5.6-luna (high)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T18:45:34.199551+00:00",
+      "moves": 40,
+      "white": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "1fc85ef1-09f8-4143-9f46-ad0edb7dc714",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-sol (low)",
+      "winner": "draw",
+      "termination": "max_moves",
+      "created_at": "2026-07-12T05:40:36.395342+00:00",
+      "moves": 200,
+      "black": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "21cf8455-74ec-4af4-8af3-6e9b57bc0c0d",
+      "white_id": "gpt-5.6-luna (xhigh)",
+      "black_id": "gpt-5.5 (xhigh)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T19:11:21.956768+00:00",
+      "moves": 59,
+      "white": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "234212d9-1e9a-4c05-9469-3b555b347025",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-terra (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T18:34:56.100795+00:00",
+      "moves": 100,
+      "black": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "2377c962-3fef-4f01-9f3c-c807a440decb",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "gpt-5.5 (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T02:12:14.840906+00:00",
+      "moves": 34,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "272eb40f-d7ae-43b2-8687-9e9b2d4c7cbe",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "gpt-5.5 (xhigh)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:42:04.159227+00:00",
+      "moves": 51,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "2a843a88-4974-4408-a99d-caf1e3d77b31",
+      "white_id": "gpt-5.6-sol (low)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:20:01.621719+00:00",
+      "moves": 101,
+      "white": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "2c00e79f-fc19-4d18-b05e-535241961805",
+      "white_id": "gpt-5.6-luna (xhigh)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T07:02:22.018517+00:00",
+      "moves": 39,
+      "white": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "2c08a79d-a98b-4f5c-a6c6-061e8a220396",
+      "white_id": "gpt-5.5 (xhigh)",
+      "black_id": "gpt-5.6-terra (xhigh)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T17:32:45.958826+00:00",
+      "moves": 134,
+      "black": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "2f026e5e-8155-44e7-8a0f-2f9b22b87827",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-terra (xhigh)",
+      "winner": "draw",
+      "termination": "max_moves",
+      "created_at": "2026-07-13T07:37:39.638699+00:00",
+      "moves": 200,
+      "black": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "33c3ce4f-0314-44c2-bf0e-2f5a560ac1e5",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-terra (xhigh)",
+      "winner": "draw",
+      "termination": "stalemate",
+      "created_at": "2026-07-12T17:59:36.023824+00:00",
+      "moves": 93,
+      "black": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "3419f7c2-d1f0-4d98-9cdf-bdcf2a1fdee7",
+      "white_id": "gpt-5.5 (high)",
+      "black_id": "gpt-5.6-terra (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:30:10.601844+00:00",
+      "moves": 60,
+      "black": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "38a7a78e-2b94-4fad-99d0-bfde5bbf0a36",
+      "white_id": "gpt-5.5 (high)",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:16:01.479737+00:00",
+      "moves": 52,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "3ae50308-dfc3-4844-a112-bcfb8ea9d21e",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-terra (medium)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T17:36:10.499231+00:00",
+      "moves": 55,
+      "black": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "3e0e6d5c-1d90-468b-9e63-41fa300fd70d",
+      "white_id": "gpt-5.6-terra (xhigh)",
+      "black_id": "gpt-5.5 (xhigh)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T06:16:48.075793+00:00",
+      "moves": 30,
+      "white": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "3ea7c4ea-9856-4050-82b7-949cdacea437",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-luna (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T04:05:58.416831+00:00",
+      "moves": 35,
+      "black": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "3fbf1f18-2b8c-47c0-9934-27fac6869f7d",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-sol (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T05:11:06.541187+00:00",
+      "moves": 53,
+      "black": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "42e96c5c-11d7-49c0-9691-2982cd589e4f",
+      "white_id": "gpt-5.6-terra (xhigh)",
+      "black_id": "maia-1100",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-12T04:32:54.872612+00:00",
+      "moves": 112,
+      "white": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "4313c0d7-03dc-47a1-aee4-8f090952ff98",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "gpt-5.5 (low)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:17:12.566649+00:00",
+      "moves": 26,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "4600f275-b92e-45e9-b25b-0512def25625",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-luna (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T19:03:28.679941+00:00",
+      "moves": 47,
+      "black": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "466518bb-35a3-430d-a952-c836e1a741d0",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T04:25:53.872342+00:00",
+      "moves": 46,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 0,
+        "retry_failures": 1,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "47c251f9-6f87-4662-881f-0dd695b3e94e",
+      "white_id": "gpt-5.5 (xhigh)",
+      "black_id": "gpt-5.6-luna (xhigh)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T00:06:08.380021+00:00",
+      "moves": 44,
+      "black": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "4a6669c5-f71f-488c-9560-5bca1cf5323c",
+      "white_id": "gpt-5.6-sol (low)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T05:05:16.962467+00:00",
+      "moves": 78,
+      "white": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "4cd1f93c-19c9-4cf3-a7cd-35aced3dbffb",
+      "white_id": "gpt-5.6-sol (low)",
+      "black_id": "gpt-5.5 (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:24:28.731874+00:00",
+      "moves": 125,
+      "white": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "5178e25f-0c3e-42c3-af6d-a4e6f329f1b0",
+      "white_id": "gpt-5.6-sol (medium)",
+      "black_id": "maia-1100",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-12T05:36:40.702322+00:00",
+      "moves": 148,
+      "white": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "517b695a-92df-4d64-b58d-deaed959af04",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-sol (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T18:52:58.478229+00:00",
+      "moves": 116,
+      "black": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "52aed558-05b3-424c-8dbb-9c7135596c21",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T06:12:38.340309+00:00",
+      "moves": 50,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "5355aca5-0d07-4591-aa1f-c0a0bc45502a",
+      "white_id": "gpt-5.5 (high)",
+      "black_id": "gpt-5.6-luna (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:24:13.049943+00:00",
+      "moves": 44,
+      "black": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "5b22568d-6afa-427a-8009-e99462306756",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-sol (medium)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-12T05:48:31.666370+00:00",
+      "moves": 78,
+      "black": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "5c47b480-6946-429b-afda-8403dbe64ec8",
+      "white_id": "gpt-5.6-terra (high)",
+      "black_id": "random-bot",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T06:03:48.823212+00:00",
+      "moves": 102,
+      "white": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "5d0ebbae-0519-41e2-85d2-153ac227058f",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-sol (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T16:09:57.959783+00:00",
+      "moves": 50,
+      "black": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "5e6e8c09-e859-4b16-8511-cf25aae242aa",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-terra (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:10:12.976188+00:00",
+      "moves": 44,
+      "black": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "5e7675d0-6f8d-42c1-a4be-9782618e26ae",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-luna (xhigh)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T07:17:37.502148+00:00",
+      "moves": 41,
+      "black": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "5f7e0ad4-cd41-46ab-a20a-87c5a64102f1",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-sol (high)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-12T17:32:16.775732+00:00",
+      "moves": 106,
+      "black": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "621659fc-f5e2-44f0-b55c-072de53c64bb",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-luna (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T01:38:54.996364+00:00",
+      "moves": 32,
+      "black": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "62383aa5-21ab-41a6-ae19-b34884a58821",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "gpt-5.5 (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:20:57.131289+00:00",
+      "moves": 67,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "639afd82-e6d0-472e-92f3-1a6a168a10b3",
+      "white_id": "gpt-5.6-terra (xhigh)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-13T02:15:33.182750+00:00",
+      "moves": 99,
+      "white": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "6776eec1-10e2-4d21-8ac3-a21ef57096e9",
+      "white_id": "gpt-5.6-sol (high)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-12T05:47:13.015462+00:00",
+      "moves": 113,
+      "white": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "69a60652-d166-4dca-9f10-5b39cc08b968",
+      "white_id": "gpt-5.6-sol (high)",
+      "black_id": "maia-1100",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:52:49.606345+00:00",
+      "moves": 41,
+      "white": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "6b43c753-4f20-4087-9f2f-e1cee864fdf9",
+      "white_id": "gpt-5.5 (medium)",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T04:43:18.564245+00:00",
+      "moves": 29,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "72e89228-9a5f-49a6-9cc0-99f8799060fc",
+      "white_id": "gpt-5.6-sol (xhigh)",
+      "black_id": "maia-1100",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-12T16:17:16.147278+00:00",
+      "moves": 104,
+      "white": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "73644679-8774-427d-8705-06c2d6199475",
+      "white_id": "gpt-5.6-luna (high)",
+      "black_id": "gpt-5.5 (high)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T06:09:53.026056+00:00",
+      "moves": 71,
+      "white": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "763d97d2-5f02-48c4-bcde-cd584784e67e",
+      "white_id": "gpt-5.6-terra (medium)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T23:41:43.788072+00:00",
+      "moves": 152,
+      "white": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "77d3cf97-e1dc-4178-b4e6-ee82f291faef",
+      "white_id": "gpt-5.5 (medium)",
+      "black_id": "gpt-5.6-sol (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:25:11.118439+00:00",
+      "moves": 122,
+      "black": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "7a0bc102-b5e7-4453-954c-da0e039e8145",
+      "white_id": "gpt-5.6-terra (xhigh)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T18:20:16.263541+00:00",
+      "moves": 75,
+      "white": {
+        "player_id": "gpt-5.6-terra (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "7cc803e6-c9f3-4f54-a338-2ad226ef6309",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:05:40.099967+00:00",
+      "moves": 57,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "7f903ceb-a594-4c5b-b5ce-a5cfc19b19f3",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:14:22.484329+00:00",
+      "moves": 20,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "84ef3ada-5d31-4b4d-8ee1-b40476a9078d",
+      "white_id": "gpt-5.6-terra (high)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:00:42.610397+00:00",
+      "moves": 40,
+      "white": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "857e71fb-f3d8-4f9d-9c01-ad5a2e0fa76a",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "random-bot",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T16:15:14.919259+00:00",
+      "moves": 38,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "85eedc46-e646-4d86-89a5-a96ae51301d3",
+      "white_id": "gpt-5.5 (xhigh)",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T02:23:41.219414+00:00",
+      "moves": 31,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "87649f1c-7241-40d6-9b24-27981173fe7d",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-luna (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T00:12:20.414269+00:00",
+      "moves": 24,
+      "black": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "8a6638b5-3dbc-4086-b9d3-9e1977b77316",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-sol (xhigh)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-12T17:31:12.376899+00:00",
+      "moves": 195,
+      "black": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "8e64d86e-785d-4b3b-8ed8-01bc4b7e429e",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T18:08:37.729768+00:00",
+      "moves": 24,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "8f752e35-8e7d-4318-8f4a-c6048b3b33fc",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-sol (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T23:40:50.203177+00:00",
+      "moves": 50,
+      "black": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "90fc8a94-70c8-458e-9161-ce48092690f3",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:12:03.345587+00:00",
+      "moves": 33,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "915450ad-b818-49f6-89f7-2ca8167e9b89",
+      "white_id": "gpt-5.6-terra (high)",
+      "black_id": "gpt-5.5 (high)",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-12T05:14:18.272512+00:00",
+      "moves": 145,
+      "white": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "967f02e8-80b0-4d15-8d1b-972b4aeba18d",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-terra (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T00:01:51.767827+00:00",
+      "moves": 57,
+      "black": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "9d134bdf-a6ec-4dce-a2ff-e016c76ea895",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T16:25:01.238614+00:00",
+      "moves": 56,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "9de2eeea-4da0-414b-9bd6-b086bc0ef649",
+      "white_id": "gpt-5.5 (medium)",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-15T03:25:48.253107+00:00",
+      "moves": 76,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "a01c5562-082f-41e1-8544-b9552f35758e",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T06:04:53.107417+00:00",
+      "moves": 15,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "a2b8d187-9888-4ad7-9f2b-166711970fb0",
+      "white_id": "gpt-5.5 (high)",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T02:06:44.426562+00:00",
+      "moves": 17,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "a35a1aa7-02bc-4300-8587-586100a4a7c4",
+      "white_id": "gpt-5.6-luna (low)",
+      "black_id": "gpt-5.5 (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:56:48.765107+00:00",
+      "moves": 51,
+      "white": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "a3680f7d-d828-4917-8a0d-123f8c751f24",
+      "white_id": "gpt-5.6-sol (xhigh)",
+      "black_id": "gpt-5.5 (xhigh)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:51:01.472754+00:00",
+      "moves": 131,
+      "white": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "a51dc911-ea4c-4133-97d1-e3720872c29b",
+      "white_id": "gpt-5.6-sol (medium)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:53:51.527259+00:00",
+      "moves": 115,
+      "white": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "a54adabe-927d-46df-bef5-b633c6bbfcb6",
+      "white_id": "gpt-5.5 (xhigh)",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T02:14:33.904355+00:00",
+      "moves": 22,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "a5e70235-492a-48b2-b8d8-951035aecbd7",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-12T04:32:24.199903+00:00",
+      "moves": 126,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "a836bda7-0334-4a16-83f3-15876df0d4a9",
+      "white_id": "gpt-5.6-sol (xhigh)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T19:07:32.303902+00:00",
+      "moves": 33,
+      "white": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "ad12ca7b-f14c-43ba-b085-32d82208049b",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-luna (high)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T07:44:09.063016+00:00",
+      "moves": 103,
+      "black": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "b05f2895-fe0e-40cd-a978-6ba88ea3b5ee",
+      "white_id": "gpt-5.5 (high)",
+      "black_id": "gpt-5.6-sol (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:34:08.050611+00:00",
+      "moves": 48,
+      "black": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "b176ff36-1ec0-4485-add5-436b48912c6a",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-terra (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:10:34.638907+00:00",
+      "moves": 73,
+      "black": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "b229fdfc-49e7-4fe2-9c2a-2f65dc7e85d7",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-luna (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T16:33:39.654400+00:00",
+      "moves": 16,
+      "black": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "b46776e9-62e7-4bb0-b983-ecafdf4fa03b",
+      "white_id": "gpt-5.6-sol (high)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:39:54.211818+00:00",
+      "moves": 77,
+      "white": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "b7f46458-92d8-4b95-b8ca-c726e920722d",
+      "white_id": "gpt-5.6-luna (low)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T15:58:48.045751+00:00",
+      "moves": 33,
+      "white": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "b81311c9-e15f-4fc5-979e-691be965d409",
+      "white_id": "gpt-5.5 (low)",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "draw",
+      "termination": "insufficient_material",
+      "created_at": "2026-07-15T03:50:14.293471+00:00",
+      "moves": 133,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "b9956225-8776-4402-8495-55728b7c6b7a",
+      "white_id": "gpt-5.6-luna (xhigh)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T08:21:05.623615+00:00",
+      "moves": 128,
+      "white": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "ba6a1e9b-a87f-43ee-a439-427784866348",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-terra (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:25:12.189089+00:00",
+      "moves": 42,
+      "black": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "be34dc17-1a0b-4314-9714-edb376877136",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:18:00.063685+00:00",
+      "moves": 61,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "c04561e6-ecff-4371-a3e3-133ebb386d09",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-sol (low)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:30:52.984327+00:00",
+      "moves": 35,
+      "black": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "c284ffaf-8b66-45ce-ac5c-3a9d7b8b3af6",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:07:08.329953+00:00",
+      "moves": 22,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "c288e193-bb4c-452e-9a7c-b8867e202fb5",
+      "white_id": "gpt-5.6-luna (high)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T16:30:53.661365+00:00",
+      "moves": 23,
+      "white": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "c3f3fa13-1d89-4c0e-b937-c54847077fbd",
+      "white_id": "gpt-5.6-luna (low)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T06:47:54.093376+00:00",
+      "moves": 34,
+      "white": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "c6b5e47b-1f28-441c-8590-36d67ac6dab6",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-sol (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T15:53:51.732554+00:00",
+      "moves": 40,
+      "black": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "c88cfb42-03e9-42c5-ad19-3eb20872a525",
+      "white_id": "gpt-5.5 (xhigh)",
+      "black_id": "gpt-5.6-sol (xhigh)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:12:46.212903+00:00",
+      "moves": 48,
+      "black": {
+        "player_id": "gpt-5.6-sol (xhigh)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "cc743d08-c1e3-4b38-9bf7-31ff5a7e5917",
+      "white_id": "gpt-5.6-luna (high)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "draw",
+      "termination": "fivefold_repetition",
+      "created_at": "2026-07-13T08:01:28.855096+00:00",
+      "moves": 127,
+      "white": {
+        "player_id": "gpt-5.6-luna (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "d1238f64-2e27-4f76-aba2-23bf73d525c9",
+      "white_id": "gpt-5.6-sol (medium)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:36:21.018137+00:00",
+      "moves": 27,
+      "white": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "d2c0e50f-3588-42df-9612-56bcc3b1565b",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "gpt-5.5 (medium)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T02:17:34.702874+00:00",
+      "moves": 56,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "d4f91957-4627-4f6b-a33b-72c481d1bb21",
+      "white_id": "gpt-5.6-sol (low)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T05:17:58.577063+00:00",
+      "moves": 29,
+      "white": {
+        "player_id": "gpt-5.6-sol (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "d6755daf-d23e-4a96-a0aa-73a1d6072bc4",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-terra (high)",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-13T01:29:31.099481+00:00",
+      "moves": 37,
+      "black": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "daeed1b3-8100-4b09-8672-7911eec6e17f",
+      "white_id": "gpt-5.6-terra (high)",
+      "black_id": "gpt-5.4 (high)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T00:24:25.802582+00:00",
+      "moves": 68,
+      "white": {
+        "player_id": "gpt-5.6-terra (high)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "df2ad98b-3258-4bad-812b-9314132fd83c",
+      "white_id": "gpt-5.6-terra (medium)",
+      "black_id": "random-bot",
+      "winner": "draw",
+      "termination": "max_moves",
+      "created_at": "2026-07-12T04:17:58.909099+00:00",
+      "moves": 200,
+      "white": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "e1526246-6657-4fe0-a36f-7790bda354c5",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "gpt-5.5 (xhigh)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T03:11:37.653668+00:00",
+      "moves": 96,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "e21017bb-5a7c-4471-ae33-a779dc8954df",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-luna (low)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T16:06:59.355743+00:00",
+      "moves": 93,
+      "black": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 0,
+        "retry_failures": 1,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "e2a94e0d-ebb1-40a1-83c1-6ca50de65467",
+      "white_id": "gpt-5.6-sol (medium)",
+      "black_id": "gpt-5.5 (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T03:51:01.588078+00:00",
+      "moves": 60,
+      "white": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "e3ee20d2-47ac-41a1-a910-7505771c202a",
+      "white_id": "gpt-5.5 (low)",
+      "black_id": "gpt-5.6-luna (low)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T05:10:43.746882+00:00",
+      "moves": 58,
+      "black": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "e51576c3-8c69-475e-8fcd-8d6847f14d54",
+      "white_id": "gpt-5.6-luna (medium)",
+      "black_id": "gpt-5.5 (low)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-15T03:15:12.424472+00:00",
+      "moves": 20,
+      "white": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "e52dae55-2f3e-49b0-9545-44bcaceea088",
+      "white_id": "gpt-5.5 (low)",
+      "black_id": "gpt-5.6-terra (low)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:41:28.599036+00:00",
+      "moves": 111,
+      "black": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "e7cc1f6d-f212-4e0c-b38c-1b69282bab12",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-15T02:20:48.994187+00:00",
+      "moves": 77,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "e8ca51d3-ce99-4eaa-8879-6b25a448f803",
+      "white_id": "gpt-5.6-terra (medium)",
+      "black_id": "gpt-5.5 (medium)",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:03:52.778060+00:00",
+      "moves": 86,
+      "white": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "eb2d1b6a-3943-4d4e-b4ce-c4e1b6f04141",
+      "white_id": "gpt-5.6-luna (xhigh)",
+      "black_id": "random-bot",
+      "winner": "white",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T17:43:00.217457+00:00",
+      "moves": 57,
+      "white": {
+        "player_id": "gpt-5.6-luna (xhigh)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "eb980106-830e-4260-a621-bc14636d2104",
+      "white_id": "gpt-5.4 (high)",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-13T06:19:11.361084+00:00",
+      "moves": 93,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "ecbf923c-4c5f-4467-a0a3-195a8bef6938",
+      "white_id": "gpt-5.6-terra (low)",
+      "black_id": "random-bot",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T05:13:55.622769+00:00",
+      "moves": 38,
+      "white": {
+        "player_id": "gpt-5.6-terra (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "f305927d-6255-4c44-b78f-45a9018c1e98",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-luna (medium)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T18:24:03.184691+00:00",
+      "moves": 79,
+      "black": {
+        "player_id": "gpt-5.6-luna (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "f5ca6f76-a8f8-4981-a9a1-ab02ceb7c43c",
+      "white_id": "maia-1100",
+      "black_id": "gpt-5.6-sol (high)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T06:08:59.547622+00:00",
+      "moves": 130,
+      "black": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "f61e50d0-8bff-48f4-800d-c73ead7e38c9",
+      "white_id": "gpt-5.6-sol (high)",
+      "black_id": "gpt-5.5 (high)",
+      "winner": "white",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T04:13:44.507596+00:00",
+      "moves": 63,
+      "white": {
+        "player_id": "gpt-5.6-sol (high)",
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 0
+      }
+    },
+    {
+      "game_id": "fa4e8100-25c0-412a-8d86-28f1bc943b27",
+      "white_id": "gpt-5.6-terra (medium)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T04:44:32.484481+00:00",
+      "moves": 102,
+      "white": {
+        "player_id": "gpt-5.6-terra (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    },
+    {
+      "game_id": "fa547098-0c41-4f41-9e0f-f8bad17b2bb6",
+      "white_id": "gpt-5.6-luna (low)",
+      "black_id": "maia-1100",
+      "winner": "black",
+      "termination": "forfeit_illegal_move",
+      "created_at": "2026-07-12T18:02:12.370176+00:00",
+      "moves": 24,
+      "white": {
+        "player_id": "gpt-5.6-luna (low)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 1,
+        "evidence_available": true,
+        "illegal_responses": 2
+      }
+    },
+    {
+      "game_id": "fa6460b7-2184-41bc-a563-c83a6dfc7a64",
+      "white_id": "random-bot",
+      "black_id": "gpt-5.6-sol (medium)",
+      "winner": "black",
+      "termination": "checkmate",
+      "created_at": "2026-07-12T05:08:57.872702+00:00",
+      "moves": 84,
+      "black": {
+        "player_id": "gpt-5.6-sol (medium)",
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "later_second_strikes": 0,
+        "evidence_available": true,
+        "illegal_responses": 1
+      }
+    }
+  ]
+}

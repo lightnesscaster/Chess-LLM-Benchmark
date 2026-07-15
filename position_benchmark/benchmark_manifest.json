@@ -1,7 +1,8 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "result_schema_version": 2,
   "production_benchmark_version": "history-replay-v2",
+  "conditional_retry_protocol_version": "production-game-retry-v1",
   "stable_result_key": "position_id",
   "error_definition": "actual_game_rating - predicted_rating",
   "panels": {
@@ -11,22 +12,61 @@
       "results": "position_benchmark/results/core.json",
       "position_count": 50,
       "stockfish_depth": 30,
-      "model_calls_per_configuration": 50
+      "model_call_count": {
+        "base_first_attempt_calls": 50,
+        "conditional_retry_calls_min": 0,
+        "conditional_retry_calls_max": 50,
+        "total_calls_min": 50,
+        "total_calls_max": 100
+      }
     },
     "game_like": {
       "status": "optional-downside-only",
       "positions": "position_benchmark/panels/game_like_48.json",
       "results": "position_benchmark/results/game_like.json",
       "position_count": 48,
-      "stockfish_depth": 30
+      "stockfish_depth": 30,
+      "model_call_count": {
+        "base_first_attempt_calls": 48,
+        "conditional_retry_calls_min": 0,
+        "conditional_retry_calls_max": 48,
+        "total_calls_min": 48,
+        "total_calls_max": 96
+      }
     },
     "continuation_stability": {
       "status": "optional-downside-only",
       "starting_positions": "position_benchmark/panels/game_like_48.json",
       "results": "position_benchmark/results/stability.json",
       "minimum_starting_positions": 8,
+      "default_starting_positions": 8,
+      "selection_policy": "category-round-robin-v1",
+      "stability_probe_version": "stratified-v2",
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "positions_per_category": 2,
+      "category_order": [
+        "advantage_conversion",
+        "defense",
+        "quiet_equal",
+        "tactical_equal"
+      ],
       "probe_plies": 8,
       "stockfish_score_depth": 10
+    },
+    "legality_stress_candidate": {
+      "status": "research-candidate",
+      "positions": "position_benchmark/candidates/legality_stress_6.json",
+      "results": "position_benchmark/results/legality_stress.json",
+      "position_count": 6,
+      "selection_policy": "pre-holdout-family-balanced-illegal-rate-v1",
+      "model_call_count": {
+        "base_first_attempt_calls": 6,
+        "conditional_retry_calls_min": 0,
+        "conditional_retry_calls_max": 6,
+        "total_calls_min": 6,
+        "total_calls_max": 12
+      },
+      "production_effect": "none"
     },
     "blunder": {
       "status": "optional-historical",
@@ -41,5 +81,11 @@
     "combined_position_registry": "position_benchmark/legacy/combined_positions_75.json",
     "numeric_indices": "read-only compatibility; new results use panel-local position_idx plus position_id"
   },
-  "validation": "position_benchmark/validation/2026-06-23.json"
+  "validation": "position_benchmark/validation/2026-06-23.json",
+  "supplemental_validation": "position_benchmark/validation/2026-07-14-supplemental-review.md",
+  "gpt56_feature_analysis": "position_benchmark/validation/2026-07-14-gpt56-feature-analysis.md",
+  "gpt56_game_retry_audit": "position_benchmark/validation/2026-07-14-gpt56-game-retry-audit.json",
+  "legality_stress_pilot": "position_benchmark/validation/2026-07-14-legality-stress-pilot.md",
+  "gpt56_targeted_games": "position_benchmark/validation/2026-07-14-gpt56-targeted-games.md",
+  "gpt56_targeted_rd300": "position_benchmark/validation/2026-07-14-gpt56-targeted-rd300.json"
 }

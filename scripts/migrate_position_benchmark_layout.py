@@ -27,6 +27,8 @@ from position_benchmark.predictions import (  # noqa: E402
     CURRENT_BENCHMARK_VERSION,
     result_row_is_current,
 )
+from position_benchmark.retry_protocol import attach_conditional_retry_summary  # noqa: E402
+from position_benchmark.token_accounting import refresh_result_token_usage  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -143,6 +145,7 @@ def summarize_rows(player_id: str, rows: list[dict[str, Any]], panel: str) -> di
     else:
         summary["position_benchmark_version"] = "mixed-or-legacy"
         summary["prompt_history_replay"] = False
+    attach_conditional_retry_summary(summary, rows)
     return summary
 
 
@@ -216,8 +219,9 @@ def migrate_results(
             "summary": summary,
             "results": rows,
         }
-        if player_data.get("token_usage"):
-            migrated[player_id]["token_usage"] = deepcopy(player_data["token_usage"])
+        # The source may contain several panels. Copying its whole-file totals
+        # into each split panel makes every panel claim the same spend.
+        refresh_result_token_usage(migrated[player_id])
     if skipped_mismatched_fens:
         print(f"Skipped {skipped_mismatched_fens} FEN-mismatched rows from {panel}")
     return migrated

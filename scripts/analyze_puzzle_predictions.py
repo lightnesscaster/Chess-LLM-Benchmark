@@ -21,7 +21,9 @@ from position_benchmark.predictions import (
     DEFAULT_MIN_STABILITY_SCORED_MOVES,
     DEFAULT_MIN_STOCKFISH_DEPTH,
     benchmark_result_readiness,
+    collect_stability_probe_metrics,
     collect_equal_position_metrics,
+    combine_legality_metrics,
     combine_equal_and_game_like_predictions,
     combine_prediction_with_downside_cap,
     predict_rating,
@@ -373,6 +375,21 @@ def main() -> None:
                     predicted,
                     blunder_predicted,
                 )
+        stability_cap = None
+        stability_current = False
+        stability_metrics = None
+        if isinstance(stability_results, dict) and player_id in stability_results:
+            stability_data = stability_results[player_id]
+            stability_readiness = stability_probe_readiness(
+                stability_data,
+                min_positions=args.min_stability_positions,
+                min_scored_moves=args.min_stability_scored_moves,
+            )
+            stability_current = stability_readiness.is_ready
+            if stability_readiness.is_ready:
+                stability_metrics = collect_stability_probe_metrics(stability_data)
+                stability_cap = stability_probe_prediction_cap(stability_data)
+
         game_like_predicted = None
         game_like_current = False
         if (
@@ -395,31 +412,25 @@ def main() -> None:
                     cpl_cap=DEFAULT_GAME_LIKE_CPL_CAP,
                 )
                 if game_like_metrics is not None:
+                    legality = combine_legality_metrics(
+                        metrics,
+                        game_like_metrics,
+                        stability_metrics,
+                    )
                     game_like_predicted = predict_rating(
                         game_like_metrics.equal_cpl,
                         game_like_metrics.best_pct,
-                        game_like_metrics.legal_pct,
+                        legality.conservative_legal_pct,
                     )
                     predicted = combine_equal_and_game_like_predictions(
                         predicted,
                         game_like_predicted,
                     )
-        stability_cap = None
-        stability_current = False
-        if isinstance(stability_results, dict) and player_id in stability_results:
-            stability_data = stability_results[player_id]
-            stability_readiness = stability_probe_readiness(
-                stability_data,
-                min_positions=args.min_stability_positions,
-                min_scored_moves=args.min_stability_scored_moves,
+        if stability_current:
+            predicted = combine_prediction_with_downside_cap(
+                predicted,
+                stability_cap,
             )
-            stability_current = stability_readiness.is_ready
-            if stability_readiness.is_ready:
-                stability_cap = stability_probe_prediction_cap(stability_data)
-                predicted = combine_prediction_with_downside_cap(
-                    predicted,
-                    stability_cap,
-                )
 
         rd = rating.get("games_rd", rating.get("rating_deviation", 0.0))
         actual = float(rating["rating"])

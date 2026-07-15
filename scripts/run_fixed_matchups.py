@@ -16,9 +16,11 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from cli import create_engines, create_llm_players
+from engines.base_engine import BaseEngine
 from game.match_scheduler import GameTask, MatchScheduler
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
+from llm.base_llm import BaseLLMPlayer
 from rating.glicko2 import Glicko2System
 from rating.rating_store import RatingStore
 from utils import resolve_player_id
@@ -32,6 +34,18 @@ class PlannedGame:
     black_id: str
 
 
+@dataclass(frozen=True)
+class MatchupPlan:
+    """One unordered matchup and its required games in each color direction."""
+
+    player_a: str
+    player_b: str
+    games_per_color: int
+
+
+Player = BaseEngine | BaseLLMPlayer
+
+
 def load_yaml(path: Path) -> dict[str, Any]:
     """Load a YAML mapping with a clear error for malformed files."""
     with path.open() as f:
@@ -41,41 +55,68 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def normalize_matchups(raw_matchups: Any) -> list[tuple[str, str]]:
-    """Validate and deduplicate unordered two-player matchups."""
+def normalize_matchups(
+    raw_matchups: Any,
+    default_games_per_color: int = 1,
+) -> list[MatchupPlan]:
+    """Validate matchup entries and resolve per-matchup game targets."""
     if not isinstance(raw_matchups, list):
         raise ValueError("matchups must be a list of two-player lists")
+    if default_games_per_color < 1:
+        raise ValueError("games_per_color must be at least 1")
 
-    matchups: list[tuple[str, str]] = []
+    matchups: list[MatchupPlan] = []
     seen: set[frozenset[str]] = set()
     for index, raw in enumerate(raw_matchups):
-        if not isinstance(raw, list) or len(raw) != 2 or not all(isinstance(v, str) for v in raw):
-            raise ValueError(f"matchups[{index}] must contain exactly two player IDs")
-        white_id, black_id = raw
-        if white_id == black_id:
-            raise ValueError(f"matchups[{index}] pairs {white_id} with itself")
-        key = frozenset((white_id, black_id))
+        games_per_color = default_games_per_color
+        players = raw
+        if isinstance(raw, dict):
+            players = raw.get("players")
+            games_per_color = int(raw.get("games_per_color", default_games_per_color))
+        if (
+            not isinstance(players, list)
+            or len(players) != 2
+            or not all(isinstance(value, str) for value in players)
+        ):
+            raise ValueError(
+                f"matchups[{index}] must be a two-player list or a mapping with players"
+            )
+        if games_per_color < 1:
+            raise ValueError(f"matchups[{index}].games_per_color must be at least 1")
+        player_a, player_b = players
+        if player_a == player_b:
+            raise ValueError(f"matchups[{index}] pairs {player_a} with itself")
+        key = frozenset((player_a, player_b))
         if key in seen:
-            raise ValueError(f"Duplicate matchup: {white_id} vs {black_id}")
+            raise ValueError(f"Duplicate matchup: {player_a} vs {player_b}")
         seen.add(key)
-        matchups.append((white_id, black_id))
+        matchups.append(MatchupPlan(player_a, player_b, games_per_color))
     return matchups
 
 
 def build_missing_games(
-    matchups: Iterable[tuple[str, str]],
+    matchups: Iterable[MatchupPlan | tuple[str, str]],
     existing_results: Iterable[Any],
-    games_per_color: int,
+    games_per_color: int | None = None,
 ) -> list[PlannedGame]:
     """Return only directed games not already represented by saved results."""
-    if games_per_color < 1:
+    if games_per_color is not None and games_per_color < 1:
         raise ValueError("games_per_color must be at least 1")
 
     existing = Counter((result.white_id, result.black_id) for result in existing_results)
     planned: list[PlannedGame] = []
-    for player_a, player_b in matchups:
+    for matchup in matchups:
+        if isinstance(matchup, MatchupPlan):
+            player_a = matchup.player_a
+            player_b = matchup.player_b
+            target = matchup.games_per_color
+        else:
+            if games_per_color is None:
+                raise ValueError("games_per_color is required for tuple matchups")
+            player_a, player_b = matchup
+            target = games_per_color
         for white_id, black_id in ((player_a, player_b), (player_b, player_a)):
-            missing = max(0, games_per_color - existing[(white_id, black_id)])
+            missing = max(0, target - existing[(white_id, black_id)])
             planned.extend(PlannedGame(white_id, black_id) for _ in range(missing))
     return planned
 
@@ -110,26 +151,90 @@ def selected_player_configs(
     )
 
 
+def index_player_configs(
+    llm_configs: Iterable[dict[str, Any]],
+    engine_configs: Iterable[dict[str, Any]],
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Index selected configs by their effective benchmark player IDs."""
+    llms = {
+        resolve_player_id(config["player_id"], config.get("reasoning_effort")): config
+        for config in llm_configs
+    }
+    engines = {config["player_id"]: config for config in engine_configs}
+    return llms, engines
+
+
+def create_game_players(
+    game: PlannedGame,
+    llm_configs: dict[str, dict[str, Any]],
+    engine_configs: dict[str, dict[str, Any]],
+) -> tuple[Player, Player]:
+    """Create isolated player instances for one game.
+
+    A model may participate in several games concurrently, but mutable player
+    state (tokens, timing, retry context, and engine processes) must never be
+    shared between those games.
+    """
+    player_ids = {game.white_id, game.black_id}
+    game_llm_configs = [
+        llm_configs[player_id] for player_id in player_ids if player_id in llm_configs
+    ]
+    game_engine_configs = [
+        engine_configs[player_id] for player_id in player_ids if player_id in engine_configs
+    ]
+    llm_players, _ = create_llm_players({"llms": game_llm_configs}, api_backend="codex")
+    engine_players, _, _ = create_engines({"engines": game_engine_configs})
+    players = {**engine_players, **llm_players}
+    return players[game.white_id], players[game.black_id]
+
+
+async def close_game_players(*players: Player) -> None:
+    """Close isolated game players, including both instances on cancellation."""
+    for player in players:
+        if isinstance(player, BaseLLMPlayer):
+            await player.close()
+        else:
+            player.close()
+
+
 async def run_plan(plan_path: Path, *, dry_run: bool = False) -> int:
     """Run all missing games from one fixed matchup plan."""
     plan = load_yaml(plan_path)
-    matchups = normalize_matchups(plan.get("matchups"))
-    games_per_color = int(plan.get("games_per_color", 1))
+    default_games_per_color = int(plan.get("games_per_color", 1))
+    matchups = normalize_matchups(plan.get("matchups"), default_games_per_color)
 
     source_path = Path(plan.get("source_config", "benchmark.yaml"))
     if not source_path.is_absolute():
         source_path = plan_path.parent / source_path
     source = load_yaml(source_path)
 
-    player_ids = {player_id for matchup in matchups for player_id in matchup}
+    player_ids = {
+        player_id
+        for matchup in matchups
+        for player_id in (matchup.player_a, matchup.player_b)
+    }
     llm_configs, engine_configs = selected_player_configs(source, player_ids)
+    codex_max_concurrent = int(
+        plan.get("codex_max_concurrent", plan.get("max_concurrent", 2))
+    )
+    if codex_max_concurrent < 1:
+        raise ValueError("codex_max_concurrent must be at least 1")
+    for config in llm_configs:
+        config["codex_max_concurrent"] = codex_max_concurrent
+    llm_configs_by_id, engine_configs_by_id = index_player_configs(llm_configs, engine_configs)
 
     pgn_logger = PGNLogger()
     existing_results = pgn_logger.load_all_results()
-    games = build_missing_games(matchups, existing_results, games_per_color)
+    games = build_missing_games(matchups, existing_results)
 
-    print(f"Fixed matchup plan: {len(matchups)} pairings, {games_per_color} game(s) per color")
-    print(f"Saved directed games already satisfying this plan: {2 * len(matchups) * games_per_color - len(games)}")
+    target_games = 2 * sum(matchup.games_per_color for matchup in matchups)
+    targets = sorted({matchup.games_per_color for matchup in matchups})
+    target_description = ", ".join(str(target) for target in targets)
+    print(
+        f"Fixed matchup plan: {len(matchups)} pairings, "
+        f"{target_description} game(s) per color"
+    )
+    print(f"Saved directed games already satisfying this plan: {target_games - len(games)}")
     print(f"Missing games to run: {len(games)}")
     for game in games:
         print(f"  {game.white_id} vs {game.black_id}")
@@ -167,41 +272,24 @@ async def run_plan(plan_path: Path, *, dry_run: bool = False) -> int:
     completed = 0
     failed = 0
     lock = asyncio.Lock()
-    pending_games = list(enumerate(games, start=1))
-    busy_players: set[str] = set()
-    availability = asyncio.Condition()
-
-    async def claim_disjoint_game() -> tuple[int, PlannedGame] | None:
-        """Claim the first pending game whose two players are both idle."""
-        async with availability:
-            while pending_games:
-                for index, (game_num, game) in enumerate(pending_games):
-                    if game.white_id in busy_players or game.black_id in busy_players:
-                        continue
-                    pending_games.pop(index)
-                    busy_players.update((game.white_id, game.black_id))
-                    return game_num, game
-                await availability.wait()
-            return None
-
-    async def release_players(game: PlannedGame) -> None:
-        async with availability:
-            busy_players.discard(game.white_id)
-            busy_players.discard(game.black_id)
-            availability.notify_all()
+    pending_games: asyncio.Queue[tuple[int, PlannedGame]] = asyncio.Queue()
+    for scheduled_game in enumerate(games, start=1):
+        pending_games.put_nowait(scheduled_game)
 
     async def worker() -> None:
         nonlocal completed, failed
         while True:
-            claimed = await claim_disjoint_game()
-            if claimed is None:
-                return
-            game_num, game = claimed
             try:
+                game_num, game = pending_games.get_nowait()
+            except asyncio.QueueEmpty:
+                return
+            game_players: tuple[Player, Player] | None = None
+            try:
+                game_players = create_game_players(game, llm_configs_by_id, engine_configs_by_id)
                 result = await scheduler.run_single_game(
                     GameTask(
-                        white=players[game.white_id],
-                        black=players[game.black_id],
+                        white=game_players[0],
+                        black=game_players[1],
                         game_num=game_num,
                         total_games=len(games),
                     )
@@ -216,7 +304,9 @@ async def run_plan(plan_path: Path, *, dry_run: bool = False) -> int:
                 async with lock:
                     failed += 1
             finally:
-                await release_players(game)
+                if game_players is not None:
+                    await close_game_players(*game_players)
+                pending_games.task_done()
 
     try:
         workers = [asyncio.create_task(worker()) for _ in range(scheduler.max_concurrent)]

@@ -16,8 +16,13 @@ import chess.engine
 import json
 import threading
 import time
+import sys
 from pathlib import Path
 from collections import defaultdict
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from position_benchmark.retry_protocol import attach_conditional_retry_summary
 
 
 DEPTH = 30
@@ -325,6 +330,7 @@ def _recalc_summary(summary, results, positions=None):
     if legal_cpls:
         summary["avg_cpl_legal"] = sum(legal_cpls) / len(legal_cpls)
     summary["median_cpl"] = sorted(all_cpls)[n // 2]
+    attach_conditional_retry_summary(summary, results)
 
     # Per-type breakdowns if positions available
     if positions:

@@ -18,6 +18,8 @@ DEFAULT_MIN_GAME_LIKE_POSITIONS = 48
 DEFAULT_MIN_STABILITY_POSITIONS = 8
 DEFAULT_MIN_STABILITY_SCORED_MOVES = 24
 DEFAULT_MIN_STOCKFISH_DEPTH = 30
+CURRENT_STABILITY_PROBE_VERSION = "stratified-v2"
+CURRENT_STABILITY_SELECTION_POLICY = "category-round-robin-v1"
 DEFAULT_GAME_LIKE_CPL_CAP = 5000.0
 GAME_LIKE_CAP_TRIGGER = 150.0
 STABILITY_RISK_TRIGGER = 5.0
@@ -64,11 +66,24 @@ class StabilityProbeMetrics:
 
     attempted_positions: int
     scored_moves: int
+    legal_moves: int
+    attempts: int
     legal_pct: float
     forfeit_pct: float
     avg_cpl: float | None
     p90_cpl: float | None
     catastrophe_pct: float
+
+
+@dataclass(frozen=True)
+class CombinedLegalityMetrics:
+    """Cross-panel legality evidence used by the game-like downside check."""
+
+    panel_legal_pcts: tuple[float, ...]
+    pooled_legal_pct: float
+    conservative_legal_pct: float
+    legal_moves: int
+    attempts: int
 
 
 def resolve_result_position_index(
@@ -122,7 +137,7 @@ def result_row_is_current(
 
 
 def survival_probability(legal_pct: float, game_length: int = 40) -> float:
-    """Probability of making at most one illegal move over a game-length sample."""
+    """Current production survival proxy, which implicitly assumes retry q=0."""
     illegal_rate = max(0.0, min(1.0, 1.0 - legal_pct / 100.0))
     if illegal_rate <= 0:
         return 100.0
@@ -132,6 +147,27 @@ def survival_probability(legal_pct: float, game_length: int = 40) -> float:
     return 100.0 * (
         (1.0 - illegal_rate) ** game_length
         + game_length * illegal_rate * (1.0 - illegal_rate) ** (game_length - 1)
+    )
+
+
+def two_strike_survival_probability(
+    legal_pct: float,
+    retry_failure_pct: float,
+    game_length: int = 40,
+) -> float:
+    """Survival probability under the runner's two-strikes-per-game policy.
+
+    This is a research metric until its prediction coefficients are validated.
+    A game survives with either zero first-attempt illegals, or exactly one
+    first-attempt illegal followed by a legal retry.
+    """
+    p = max(0.0, min(1.0, 1.0 - legal_pct / 100.0))
+    q = max(0.0, min(1.0, retry_failure_pct / 100.0))
+    if game_length <= 0:
+        return 100.0
+    return 100.0 * (
+        (1.0 - p) ** game_length
+        + game_length * p * (1.0 - p) ** (game_length - 1) * (1.0 - q)
     )
 
 
@@ -383,6 +419,11 @@ def stability_probe_readiness(
 ) -> PredictionReadiness:
     """Check whether a continuation-probe summary is strong enough to cap ratings."""
     summary = model_data.get("summary", model_data)
+    if (
+        summary.get("stability_probe_version") != CURRENT_STABILITY_PROBE_VERSION
+        or summary.get("position_selection_policy") != CURRENT_STABILITY_SELECTION_POLICY
+    ):
+        return PredictionReadiness(False, "outdated stability position selection")
     try:
         attempted = int(summary.get("attempted_positions") or 0)
         scored = int(summary.get("model_scored_moves") or 0)
@@ -409,6 +450,8 @@ def collect_stability_probe_metrics(model_data: dict[str, Any]) -> StabilityProb
         return StabilityProbeMetrics(
             attempted_positions=int(summary.get("attempted_positions") or 0),
             scored_moves=int(summary.get("model_scored_moves") or 0),
+            legal_moves=int(summary.get("model_legal_moves") or 0),
+            attempts=int(summary.get("model_attempts") or 0),
             legal_pct=float(summary.get("model_legal_pct") or 0.0),
             forfeit_pct=float(summary.get("model_forfeit_pct") or 0.0),
             avg_cpl=(
@@ -425,6 +468,39 @@ def collect_stability_probe_metrics(model_data: dict[str, Any]) -> StabilityProb
         )
     except (TypeError, ValueError):
         return None
+
+
+def combine_legality_metrics(
+    primary_metrics: EqualPositionMetrics,
+    game_like_metrics: EqualPositionMetrics,
+    stability_metrics: StabilityProbeMetrics | None = None,
+) -> CombinedLegalityMetrics:
+    """Combine legality evidence without allowing another panel to hide failures.
+
+    The pooled rate is retained as a diagnostic, but averaging can make a model
+    with a weak core legality rate look better merely because another context was
+    easier. The game-like predictor therefore uses the lowest eligible panel rate.
+    This is a one-way reliability correction: supplemental evidence can reduce,
+    but never inflate, the game-like legality term.
+    """
+    panel_rates = [primary_metrics.legal_pct, game_like_metrics.legal_pct]
+    legal_moves = round(primary_metrics.total * primary_metrics.legal_pct / 100.0)
+    legal_moves += round(game_like_metrics.total * game_like_metrics.legal_pct / 100.0)
+    attempts = primary_metrics.total + game_like_metrics.total
+
+    if stability_metrics is not None:
+        panel_rates.append(stability_metrics.legal_pct)
+        legal_moves += stability_metrics.legal_moves
+        attempts += stability_metrics.attempts
+
+    pooled = 100.0 * legal_moves / attempts if attempts else 0.0
+    return CombinedLegalityMetrics(
+        panel_legal_pcts=tuple(panel_rates),
+        pooled_legal_pct=pooled,
+        conservative_legal_pct=min(panel_rates),
+        legal_moves=legal_moves,
+        attempts=attempts,
+    )
 
 
 def stability_probe_prediction_cap(model_data: dict[str, Any]) -> float | None:
@@ -479,6 +555,22 @@ def predict_rating_from_model_data_with_supplement(
     )
     if equal_prediction is None:
         return None
+    primary_metrics = collect_equal_position_metrics(model_data.get("results", []), positions)
+    if primary_metrics is None:
+        return None
+
+    stability_readiness = None
+    eligible_stability_metrics = None
+    if stability_probe_model_data is not None:
+        stability_readiness = stability_probe_readiness(
+            stability_probe_model_data,
+            min_positions=min_stability_positions,
+            min_scored_moves=min_stability_scored_moves,
+        )
+        if not require_ready or stability_readiness.is_ready:
+            eligible_stability_metrics = collect_stability_probe_metrics(
+                stability_probe_model_data
+            )
     # New layouts store the optional blunder panel separately. Fall back to
     # embedded blunder rows only for the legacy combined 75-position registry.
     selected_blunder_data = blunder_model_data
@@ -513,50 +605,39 @@ def predict_rating_from_model_data_with_supplement(
             )
 
     if game_like_model_data is not None and game_like_positions is not None:
-        if require_ready:
-            readiness = benchmark_result_readiness(
-                game_like_model_data,
+        game_like_readiness = benchmark_result_readiness(
+            game_like_model_data,
+            game_like_positions,
+            min_equal_positions=min_game_like_positions,
+            min_stockfish_depth=min_stockfish_depth,
+        )
+        if not require_ready or game_like_readiness.is_ready:
+            game_like_metrics = collect_equal_position_metrics(
+                game_like_model_data.get("results", []),
                 game_like_positions,
-                min_equal_positions=min_game_like_positions,
-                min_stockfish_depth=min_stockfish_depth,
+                cpl_cap=game_like_cpl_cap,
             )
-            if readiness.is_ready:
-                game_like_prediction = predict_rating_from_model_data(
-                    game_like_model_data,
-                    game_like_positions,
-                    require_ready=False,
-                    min_equal_positions=min_game_like_positions,
-                    min_stockfish_depth=min_stockfish_depth,
-                    cpl_cap=game_like_cpl_cap,
+            if game_like_metrics is not None:
+                legality = combine_legality_metrics(
+                    primary_metrics,
+                    game_like_metrics,
+                    eligible_stability_metrics,
+                )
+                game_like_prediction = predict_rating(
+                    game_like_metrics.equal_cpl,
+                    game_like_metrics.best_pct,
+                    legality.conservative_legal_pct,
                 )
                 equal_prediction = combine_equal_and_game_like_predictions(
                     equal_prediction,
                     game_like_prediction,
                 )
-        else:
-            game_like_prediction = predict_rating_from_model_data(
-                game_like_model_data,
-                game_like_positions,
-                require_ready=False,
-                min_equal_positions=min_game_like_positions,
-                min_stockfish_depth=min_stockfish_depth,
-                cpl_cap=game_like_cpl_cap,
-            )
-            equal_prediction = combine_equal_and_game_like_predictions(
-                equal_prediction,
-                game_like_prediction,
-            )
 
     if stability_probe_model_data is None:
         return equal_prediction
 
     if require_ready:
-        readiness = stability_probe_readiness(
-            stability_probe_model_data,
-            min_positions=min_stability_positions,
-            min_scored_moves=min_stability_scored_moves,
-        )
-        if not readiness.is_ready:
+        if stability_readiness is None or not stability_readiness.is_ready:
             return equal_prediction
 
     stability_cap = stability_probe_prediction_cap(stability_probe_model_data)
