@@ -1,0 +1,636 @@
+{
+  "generated_at": "2026-07-16T03:32:41.831372+00:00",
+  "screen_version": "failure-transfer-screen-v1",
+  "stockfish_depth": 30,
+  "production_effect": "none",
+  "aggregate": {
+    "failure_states": {
+      "attempts": 24,
+      "illegals": 3,
+      "illegal_pct": 12.5,
+      "illegal_wilson_95pct": [
+        4.344255039315584,
+        31.004288147857572
+      ],
+      "mean_cpl": 650.7916666666666,
+      "capped_5000_mean_cpl": 631.375,
+      "median_cpl": 28.0,
+      "legal_only_mean_cpl": 68.61904761904762,
+      "retry_attempts": 3,
+      "retry_recoveries": 3,
+      "retry_failures": 0
+    },
+    "matched_controls": {
+      "attempts": 24,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        13.798057582897535
+      ],
+      "mean_cpl": 27.541666666666668,
+      "capped_5000_mean_cpl": 27.541666666666668,
+      "median_cpl": 2.5,
+      "legal_only_mean_cpl": 27.541666666666668,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0
+    },
+    "illegal_rate_difference_points": 12.5,
+    "matched_pairs": 24,
+    "failure_only_discordant": 3,
+    "control_only_discordant": 0,
+    "one_sided_exact_mcnemar_p": 0.125
+  },
+  "per_target": {
+    "gpt-5.6-luna (medium)": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 2,
+        "illegal_pct": 25.0,
+        "illegal_wilson_95pct": [
+          7.147768885802764,
+          59.073012089741084
+        ],
+        "mean_cpl": 1291.875,
+        "capped_5000_mean_cpl": 1233.625,
+        "median_cpl": 28.0,
+        "legal_only_mean_cpl": 28.333333333333332,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          32.441561951087685
+        ],
+        "mean_cpl": 24.0,
+        "capped_5000_mean_cpl": 24.0,
+        "median_cpl": 4.0,
+        "legal_only_mean_cpl": 24.0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "gpt-5.6-terra (low)": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 1,
+        "illegal_pct": 12.5,
+        "illegal_wilson_95pct": [
+          2.241690886329617,
+          47.08948057698615
+        ],
+        "mean_cpl": 613.375,
+        "capped_5000_mean_cpl": 613.375,
+        "median_cpl": 82.5,
+        "legal_only_mean_cpl": 127.71428571428571,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          32.441561951087685
+        ],
+        "mean_cpl": 40.0,
+        "capped_5000_mean_cpl": 40.0,
+        "median_cpl": 9.5,
+        "legal_only_mean_cpl": 40.0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "gpt-5.6-sol (high)": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          32.441561951087685
+        ],
+        "mean_cpl": 47.125,
+        "capped_5000_mean_cpl": 47.125,
+        "median_cpl": 24.5,
+        "legal_only_mean_cpl": 47.125,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          32.441561951087685
+        ],
+        "mean_cpl": 18.625,
+        "capped_5000_mean_cpl": 18.625,
+        "median_cpl": 2.0,
+        "legal_only_mean_cpl": 18.625,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    }
+  },
+  "per_source_base_model": {
+    "luna": {
+      "attempts": 8,
+      "illegals": 1,
+      "illegal_pct": 12.5,
+      "illegal_wilson_95pct": [
+        2.241690886329617,
+        47.08948057698615
+      ],
+      "mean_cpl": 559.625,
+      "capped_5000_mean_cpl": 559.625,
+      "median_cpl": 40.0,
+      "legal_only_mean_cpl": 66.28571428571429,
+      "retry_attempts": 1,
+      "retry_recoveries": 1,
+      "retry_failures": 0
+    },
+    "terra": {
+      "attempts": 8,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        32.441561951087685
+      ],
+      "mean_cpl": 32.0,
+      "capped_5000_mean_cpl": 32.0,
+      "median_cpl": 28.0,
+      "legal_only_mean_cpl": 32.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0
+    },
+    "sol": {
+      "attempts": 8,
+      "illegals": 2,
+      "illegal_pct": 25.0,
+      "illegal_wilson_95pct": [
+        7.147768885802764,
+        59.073012089741084
+      ],
+      "mean_cpl": 1360.75,
+      "capped_5000_mean_cpl": 1302.5,
+      "median_cpl": 82.5,
+      "legal_only_mean_cpl": 120.16666666666667,
+      "retry_attempts": 2,
+      "retry_recoveries": 2,
+      "retry_failures": 0
+    }
+  },
+  "candidate_transfer": [
+    {
+      "candidate_id": "failure-transfer-luna-001",
+      "source_base_model": "luna",
+      "source_player_id": "gpt-5.6-luna (low)",
+      "source_failure_primary_class": "movement_rule_or_blocked",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 192.0,
+      "capped_5000_mean_cpl": 192.0,
+      "median_cpl": 192.0,
+      "legal_only_mean_cpl": 192.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-luna-002",
+      "source_base_model": "luna",
+      "source_player_id": "gpt-5.6-luna (medium)",
+      "source_failure_primary_class": "source_empty",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 4.5,
+      "capped_5000_mean_cpl": 4.5,
+      "median_cpl": 4.5,
+      "legal_only_mean_cpl": 4.5,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-luna-003",
+      "source_base_model": "luna",
+      "source_player_id": "gpt-5.6-luna (medium)",
+      "source_failure_primary_class": "king_safety",
+      "attempts": 2,
+      "illegals": 1,
+      "illegal_pct": 50.0,
+      "illegal_wilson_95pct": [
+        9.452865480086615,
+        90.54713451991339
+      ],
+      "mean_cpl": 2042.0,
+      "capped_5000_mean_cpl": 2042.0,
+      "median_cpl": 2042.0,
+      "legal_only_mean_cpl": 71.0,
+      "retry_attempts": 1,
+      "retry_recoveries": 1,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-luna-004",
+      "source_base_model": "luna",
+      "source_player_id": "gpt-5.6-luna (low)",
+      "source_failure_primary_class": "destination_own_piece",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 0.0,
+      "capped_5000_mean_cpl": 0.0,
+      "median_cpl": 0.0,
+      "legal_only_mean_cpl": 0.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-sol-001",
+      "source_base_model": "sol",
+      "source_player_id": "gpt-5.6-sol (low)",
+      "source_failure_primary_class": "movement_rule_or_blocked",
+      "attempts": 2,
+      "illegals": 1,
+      "illegal_pct": 50.0,
+      "illegal_wilson_95pct": [
+        9.452865480086615,
+        90.54713451991339
+      ],
+      "mean_cpl": 2428.5,
+      "capped_5000_mean_cpl": 2428.5,
+      "median_cpl": 2428.5,
+      "legal_only_mean_cpl": 158.0,
+      "retry_attempts": 1,
+      "retry_recoveries": 1,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-terra (low)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-sol-002",
+      "source_base_model": "sol",
+      "source_player_id": "gpt-5.6-sol (medium)",
+      "source_failure_primary_class": "source_empty",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 4.0,
+      "capped_5000_mean_cpl": 4.0,
+      "median_cpl": 4.0,
+      "legal_only_mean_cpl": 4.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-terra (low)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-sol-003",
+      "source_base_model": "sol",
+      "source_player_id": "gpt-5.6-sol (medium)",
+      "source_failure_primary_class": "king_safety",
+      "attempts": 2,
+      "illegals": 1,
+      "illegal_pct": 50.0,
+      "illegal_wilson_95pct": [
+        9.452865480086615,
+        90.54713451991339
+      ],
+      "mean_cpl": 3010.5,
+      "capped_5000_mean_cpl": 2777.5,
+      "median_cpl": 3010.5,
+      "legal_only_mean_cpl": 555.0,
+      "retry_attempts": 1,
+      "retry_recoveries": 1,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-terra (low)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-sol-004",
+      "source_base_model": "sol",
+      "source_player_id": "gpt-5.6-sol (high)",
+      "source_failure_primary_class": "movement_rule_or_blocked",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 0.0,
+      "capped_5000_mean_cpl": 0.0,
+      "median_cpl": 0.0,
+      "legal_only_mean_cpl": 0.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-terra (low)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-terra-001",
+      "source_base_model": "terra",
+      "source_player_id": "gpt-5.6-terra (low)",
+      "source_failure_primary_class": "movement_rule_or_blocked",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 53.0,
+      "capped_5000_mean_cpl": 53.0,
+      "median_cpl": 53.0,
+      "legal_only_mean_cpl": 53.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-terra-002",
+      "source_base_model": "terra",
+      "source_player_id": "gpt-5.6-terra (low)",
+      "source_failure_primary_class": "source_empty",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 29.5,
+      "capped_5000_mean_cpl": 29.5,
+      "median_cpl": 29.5,
+      "legal_only_mean_cpl": 29.5,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-terra-003",
+      "source_base_model": "terra",
+      "source_player_id": "gpt-5.6-terra (low)",
+      "source_failure_primary_class": "king_safety",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 40.0,
+      "capped_5000_mean_cpl": 40.0,
+      "median_cpl": 40.0,
+      "legal_only_mean_cpl": 40.0,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-sol (high)"
+      ]
+    },
+    {
+      "candidate_id": "failure-transfer-terra-004",
+      "source_base_model": "terra",
+      "source_player_id": "gpt-5.6-terra (high)",
+      "source_failure_primary_class": "destination_own_piece",
+      "attempts": 2,
+      "illegals": 0,
+      "illegal_pct": 0.0,
+      "illegal_wilson_95pct": [
+        0.0,
+        65.76280471103807
+      ],
+      "mean_cpl": 5.5,
+      "capped_5000_mean_cpl": 5.5,
+      "median_cpl": 5.5,
+      "legal_only_mean_cpl": 5.5,
+      "retry_attempts": 0,
+      "retry_recoveries": 0,
+      "retry_failures": 0,
+      "target_players": [
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-sol (high)"
+      ]
+    }
+  ],
+  "pair_outcomes": [
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-terra-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-terra-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-terra-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-terra-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-sol-001",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-sol-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-sol-003",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-luna (medium)",
+      "failure_id": "failure-transfer-sol-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-luna-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-luna-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-luna-003",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-luna-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-sol-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-terra (low)",
+      "failure_id": "failure-transfer-sol-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-luna-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-luna-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-luna-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-luna-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-terra-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-terra-002",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-terra-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gpt-5.6-sol (high)",
+      "failure_id": "failure-transfer-terra-004",
+      "failure_illegal": false,
+      "control_illegal": false
+    }
+  ],
+  "selection_warning": "Candidates positive in this screen require validation on model families that supplied neither discovery nor selection evidence."
+}

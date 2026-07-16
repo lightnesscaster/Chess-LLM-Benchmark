@@ -59,6 +59,7 @@ upper bound; recorded actual cost uses the calls and tokens that really occurred
 | Rating-prediction core | `panels/core_equal_50.json` | `results/core.json` | Required |
 | Non-opening game-like | `panels/game_like_48.json` | `results/game_like.json` | Optional downside only |
 | Continuation stability | 8 stratified game-like positions | `results/stability.json` | Optional downside only |
+| Long-sequence continuation | 4 stratified game-like positions | `results/protocol_sequence.json` | Research candidate |
 | Historical blunders | `panels/optional_blunder_25.json` | `results/optional_blunder.json` | Optional historical |
 
 Every selected position has a stable `position_id` and a panel-local
@@ -194,6 +195,31 @@ retry produced a legal move:
 
 ```bash
 python scripts/run_stability_probe.py --backfill-retry-metrics
+```
+
+### Experimental long-sequence continuation
+
+`protocol-sequence-v1` keeps the continuation workload near the existing 32-turn
+budget but uses four starts with up to eight model turns each. It selects indices
+`0, 12, 24, 36`, retains seeded random legal replies, scores both sides at
+Stockfish depth 10, and records exact first-attempt illegality separately from
+conditional retry responses. Results live in `results/protocol_sequence.json` and
+have no production effect.
+
+The initial Luna-medium, Terra-low, and Sol-high pilot produced 4/94 first-attempt
+illegals versus 46/1,174 in their live games, while also separating their later
+CPL sharply. This is promising mechanism evidence from three deliberately chosen
+configurations, not enough to fit or activate a new rating rule. See
+`validation/2026-07-15-protocol-sequence-pilot.md`.
+
+Run the frozen research protocol with:
+
+```bash
+python scripts/run_stability_probe.py \
+  --protocol-sequence-v1 \
+  --players "PLAYER_ID" \
+  --api codex \
+  --allow-unknown-cost
 ```
 
 ### Historical blunder panel

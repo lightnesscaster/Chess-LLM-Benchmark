@@ -28,7 +28,11 @@ from position_benchmark.run_benchmark import (  # noqa: E402
     load_player_configs,
     replay_position_board,
 )
-from position_benchmark.layout import GAME_LIKE_POSITIONS_PATH, STABILITY_RESULTS_PATH  # noqa: E402
+from position_benchmark.layout import (  # noqa: E402
+    GAME_LIKE_POSITIONS_PATH,
+    PROTOCOL_SEQUENCE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
 from position_benchmark.retry_protocol import (  # noqa: E402
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
     derive_two_strike_retry_metrics,
@@ -41,6 +45,10 @@ DEFAULT_PROBE_PLIES = 8
 DEFAULT_SCORE_DEPTH = 10
 STABILITY_PROBE_VERSION = "stratified-v2"
 STABILITY_SELECTION_POLICY = "category-round-robin-v1"
+PROTOCOL_SEQUENCE_VERSION = "protocol-sequence-v1"
+PROTOCOL_SEQUENCE_SELECTION_POLICY = "category-round-robin-one-per-category-v1"
+PROTOCOL_SEQUENCE_POSITION_LIMIT = 4
+PROTOCOL_SEQUENCE_PROBE_PLIES = 16
 EXPLICIT_SELECTION_VERSION = "explicit-selection-v1"
 
 
@@ -118,25 +126,30 @@ def _percentile(values: list[float], percentile: float) -> float | None:
     return sorted_values[max(0, min(len(sorted_values) - 1, rank))]
 
 
-def score_model_moves_from_pgn(
+def score_continuation_moves_from_pgn(
     pgn: str,
     *,
     model_side: chess.Color,
     pre_move_count: int,
     stockfish: chess.engine.SimpleEngine,
     depth: int,
-) -> list[dict[str, Any]]:
-    """Score legal model continuation moves in a probe PGN with Stockfish CPL."""
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score model and random-opponent continuation moves with Stockfish CPL."""
     game = chess.pgn.read_game(io.StringIO(pgn))
     if game is None:
-        return []
+        return [], []
 
     board = chess.Board()
-    scores: list[dict[str, Any]] = []
+    model_scores: list[dict[str, Any]] = []
+    opponent_scores: list[dict[str, Any]] = []
+    model_turn_index = 0
+    opponent_turn_index = 0
+    preceding_opponent_cpl: float | None = None
     for ply, move in enumerate(game.mainline_moves(), start=1):
-        should_score = ply > pre_move_count and board.turn == model_side
+        should_score = ply > pre_move_count
         if should_score:
             perspective = board.turn
+            is_model_move = perspective == model_side
             info_before = stockfish.analyse(board, chess.engine.Limit(depth=depth))
             eval_before = eval_to_cp(info_before, perspective)
             move_san = board.san(move)
@@ -145,17 +158,45 @@ def score_model_moves_from_pgn(
             info_after = stockfish.analyse(board, chess.engine.Limit(depth=depth))
             eval_model = -eval_to_cp(info_after, not perspective)
             cpl = max(0.0, eval_before - eval_model)
-            scores.append(
-                {
-                    "ply": ply,
-                    "move": move.uci(),
-                    "move_san": move_san,
-                    "eval_before": eval_before,
-                    "eval_model": eval_model,
-                    "cpl": cpl,
-                }
-            )
-    return scores
+            score = {
+                "ply": ply,
+                "continuation_ply": ply - pre_move_count,
+                "move": move.uci(),
+                "move_san": move_san,
+                "eval_before": eval_before,
+                "eval_model": eval_model,
+                "cpl": cpl,
+            }
+            if is_model_move:
+                model_turn_index += 1
+                score["model_turn_index"] = model_turn_index
+                score["preceding_opponent_cpl"] = preceding_opponent_cpl
+                model_scores.append(score)
+            else:
+                opponent_turn_index += 1
+                score["opponent_turn_index"] = opponent_turn_index
+                opponent_scores.append(score)
+                preceding_opponent_cpl = cpl
+    return model_scores, opponent_scores
+
+
+def score_model_moves_from_pgn(
+    pgn: str,
+    *,
+    model_side: chess.Color,
+    pre_move_count: int,
+    stockfish: chess.engine.SimpleEngine,
+    depth: int,
+) -> list[dict[str, Any]]:
+    """Return model-only scores for callers using the original interface."""
+    model_scores, _ = score_continuation_moves_from_pgn(
+        pgn,
+        model_side=model_side,
+        pre_move_count=pre_move_count,
+        stockfish=stockfish,
+        depth=depth,
+    )
+    return model_scores
 
 
 def _pgn_move_count(pgn: str) -> int:
@@ -287,6 +328,24 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         for score in row.get("model_move_scores", [])
         if score.get("cpl") is not None
     ]
+    first_move_cpls = [
+        float(scores[0]["cpl"])
+        for row in rows
+        if (scores := row.get("model_move_scores", []))
+        and scores[0].get("cpl") is not None
+    ]
+    later_move_cpls = [
+        float(score["cpl"])
+        for row in rows
+        for score in row.get("model_move_scores", [])[1:]
+        if score.get("cpl") is not None
+    ]
+    opponent_cpls = [
+        float(score["cpl"])
+        for row in rows
+        for score in row.get("opponent_move_scores", [])
+        if score.get("cpl") is not None
+    ]
     blunder_moves = sum(1 for cpl in move_cpls if cpl >= 300)
     catastrophe_moves = sum(1 for cpl in move_cpls if cpl >= 1000)
     retry_source_rows = [row for row in rows if retry_evidence_is_available(row)]
@@ -297,6 +356,20 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
     retry_failures = sum(row["model_retry_failures"] for row in retry_rows)
     retry_unknown = sum(row["model_retry_unknown"] for row in retry_rows)
     known_retry_outcomes = retry_recoveries + retry_failures
+    first_attempt_illegals = sum(
+        len(
+            {
+                int(detail["move_number"])
+                for detail in row.get("illegal_move_details", [])
+                if detail.get("move_number") is not None
+            }
+        )
+        for row in retry_source_rows
+    )
+    first_attempt_turns = sum(
+        int(row["model_legal_moves"]) + int(bool(row["model_forfeited"]))
+        for row in retry_source_rows
+    )
 
     summary = {
         "attempted_positions": attempted,
@@ -304,6 +377,17 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "model_illegal_attempts": model_illegal,
         "model_attempts": model_attempts,
         "model_legal_pct": 100.0 * model_legal / model_attempts if model_attempts else 0.0,
+        "model_first_attempt_turns": (
+            first_attempt_turns if incomplete_retry_games == 0 else None
+        ),
+        "model_first_attempt_illegals": (
+            first_attempt_illegals if incomplete_retry_games == 0 else None
+        ),
+        "model_first_attempt_illegal_pct": (
+            100.0 * first_attempt_illegals / first_attempt_turns
+            if first_attempt_turns and incomplete_retry_games == 0
+            else None
+        ),
         "illegal_attempts_per_model_move": model_illegal / model_legal if model_legal else float(model_illegal),
         "model_forfeits": own_forfeits,
         "model_forfeit_pct": 100.0 * own_forfeits / attempted if attempted else 0.0,
@@ -312,12 +396,22 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "avg_probe_plies_played": probe_plies / attempted if attempted else 0.0,
         "model_scored_moves": len(move_cpls),
         "model_avg_cpl": sum(move_cpls) / len(move_cpls) if move_cpls else None,
+        "model_first_move_avg_cpl": (
+            sum(first_move_cpls) / len(first_move_cpls) if first_move_cpls else None
+        ),
+        "model_later_move_avg_cpl": (
+            sum(later_move_cpls) / len(later_move_cpls) if later_move_cpls else None
+        ),
         "model_median_cpl": _median(move_cpls),
         "model_p90_cpl": _percentile(move_cpls, 0.9),
         "model_300cp_blunders": blunder_moves,
         "model_300cp_blunder_pct": 100.0 * blunder_moves / len(move_cpls) if move_cpls else None,
         "model_1000cp_catastrophes": catastrophe_moves,
         "model_1000cp_catastrophe_pct": 100.0 * catastrophe_moves / len(move_cpls) if move_cpls else None,
+        "opponent_scored_moves": len(opponent_cpls),
+        "opponent_avg_cpl": (
+            sum(opponent_cpls) / len(opponent_cpls) if opponent_cpls else None
+        ),
         "model_retry_attempts": retry_attempts,
         "model_retry_recoveries": retry_recoveries,
         "model_retry_failures": retry_failures,
@@ -448,8 +542,9 @@ async def run_probe_for_player(
                 and game_result.winner not in (side_name, "draw")
             )
             model_move_scores = []
+            opponent_move_scores = []
             if stockfish is not None and score_depth > 0:
-                model_move_scores = score_model_moves_from_pgn(
+                model_move_scores, opponent_move_scores = score_continuation_moves_from_pgn(
                     pgn,
                     model_side=model_side,
                     pre_move_count=len(pre_moves),
@@ -481,6 +576,7 @@ async def run_probe_for_player(
                         if item.get("side") == side_name
                     ],
                     "model_move_scores": model_move_scores,
+                    "opponent_move_scores": opponent_move_scores,
                     "pgn": pgn,
                 }
             annotate_retry_metrics(row)
@@ -509,11 +605,11 @@ async def run_probe_for_player(
 async def main_async() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--positions", type=Path, default=GAME_LIKE_POSITIONS_PATH)
-    parser.add_argument("--output", type=Path, default=STABILITY_RESULTS_PATH)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--players", nargs="+")
     parser.add_argument("--position-indices", nargs="+", type=int)
-    parser.add_argument("--limit", type=int, default=DEFAULT_POSITION_LIMIT)
-    parser.add_argument("--probe-plies", type=int, default=DEFAULT_PROBE_PLIES)
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--probe-plies", type=int)
     parser.add_argument("--score-depth", type=int, default=DEFAULT_SCORE_DEPTH)
     parser.add_argument("--stockfish-path", default="stockfish")
     parser.add_argument("--api", choices=["openrouter", "gemini", "codex"], default="openrouter")
@@ -528,21 +624,47 @@ async def main_async() -> None:
     parser.add_argument("--allow-unknown-cost", action="store_true")
     parser.add_argument("--verbose-games", action="store_true")
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate selection and print the planned workload without model calls",
+    )
+    parser.add_argument(
+        "--protocol-sequence-v1",
+        action="store_true",
+        help="Use four category-balanced starts with 16 continuation plies",
+    )
+    parser.add_argument(
         "--backfill-retry-metrics",
         action="store_true",
         help="Backfill retry outcomes in --output without engines or model calls",
     )
     args = parser.parse_args()
 
+    output_path = args.output or (
+        PROTOCOL_SEQUENCE_RESULTS_PATH
+        if args.protocol_sequence_v1
+        else STABILITY_RESULTS_PATH
+    )
+    position_limit = args.limit if args.limit is not None else (
+        PROTOCOL_SEQUENCE_POSITION_LIMIT
+        if args.protocol_sequence_v1
+        else DEFAULT_POSITION_LIMIT
+    )
+    probe_plies = args.probe_plies if args.probe_plies is not None else (
+        PROTOCOL_SEQUENCE_PROBE_PLIES
+        if args.protocol_sequence_v1
+        else DEFAULT_PROBE_PLIES
+    )
+
     if args.backfill_retry_metrics:
-        if not args.output.exists():
-            raise SystemExit(f"No continuation results found at {args.output}")
-        output = load_json(args.output)
+        if not output_path.exists():
+            raise SystemExit(f"No continuation results found at {output_path}")
+        output = load_json(output_path)
         updated_players, updated_rows = backfill_retry_metrics(output)
-        args.output.write_text(json.dumps(output, indent=2) + "\n")
+        output_path.write_text(json.dumps(output, indent=2) + "\n")
         print(
             f"Backfilled retry metrics for {updated_rows} rows across "
-            f"{updated_players} players in {args.output}"
+            f"{updated_players} players in {output_path}"
         )
         return
 
@@ -554,7 +676,7 @@ async def main_async() -> None:
     indexed_positions = selected_positions(
         positions,
         position_indices=args.position_indices,
-        limit=args.limit,
+        limit=position_limit,
     )
     if not indexed_positions:
         raise SystemExit("No positions selected.")
@@ -572,7 +694,7 @@ async def main_async() -> None:
     estimated_cost, unknown_cost_players = estimate_cost(
         players_to_test,
         selected_count=len(indexed_positions),
-        estimated_model_moves_per_position=max(1, (args.probe_plies + 1) // 2),
+        estimated_model_moves_per_position=max(1, (probe_plies + 1) // 2),
         api_backend=args.api,
         respect_config_api=not args.ignore_config_api,
         cost_calculator=cost_calculator,
@@ -592,9 +714,25 @@ async def main_async() -> None:
                 + " (pass --allow-unknown-cost to run anyway)"
             )
 
+    if args.dry_run:
+        version = (
+            EXPLICIT_SELECTION_VERSION
+            if args.position_indices is not None
+            else PROTOCOL_SEQUENCE_VERSION
+            if args.protocol_sequence_v1
+            else STABILITY_PROBE_VERSION
+        )
+        planned_calls = len(indexed_positions) * max(1, (probe_plies + 1) // 2)
+        print(f"Probe version: {version}")
+        print(f"Selected indices: {[index for index, _ in indexed_positions]}")
+        print(f"Probe plies per position: {probe_plies}")
+        print(f"Planned first-attempt calls per player: {planned_calls}")
+        print(f"Output: {output_path}")
+        return
+
     output: dict[str, Any] = {}
-    if args.output.exists():
-        output = load_json(args.output)
+    if output_path.exists():
+        output = load_json(output_path)
 
     stockfish = None
     if args.score_depth > 0:
@@ -607,7 +745,7 @@ async def main_async() -> None:
                 player_id,
                 config,
                 indexed_positions,
-                probe_plies=args.probe_plies,
+                probe_plies=probe_plies,
                 api_backend=args.api,
                 random_seed=args.random_seed,
                 verbose=args.verbose_games,
@@ -617,23 +755,28 @@ async def main_async() -> None:
             )
             output[player_id]["summary"]["player_id"] = player_id
             output[player_id]["summary"]["positions_file"] = str(args.positions)
-            output[player_id]["summary"]["probe_plies"] = args.probe_plies
+            output[player_id]["summary"]["probe_plies"] = probe_plies
             output[player_id]["summary"]["score_depth"] = args.score_depth
             output[player_id]["summary"]["stability_probe_version"] = (
-                STABILITY_PROBE_VERSION
-                if args.position_indices is None
-                else EXPLICIT_SELECTION_VERSION
+                EXPLICIT_SELECTION_VERSION
+                if args.position_indices is not None
+                else PROTOCOL_SEQUENCE_VERSION
+                if args.protocol_sequence_v1
+                else STABILITY_PROBE_VERSION
             )
             output[player_id]["summary"]["position_selection_policy"] = (
-                STABILITY_SELECTION_POLICY
-                if args.position_indices is None
-                else "explicit-indices"
+                "explicit-indices"
+                if args.position_indices is not None
+                else PROTOCOL_SEQUENCE_SELECTION_POLICY
+                if args.protocol_sequence_v1
+                else STABILITY_SELECTION_POLICY
             )
             output[player_id]["summary"]["selected_position_indices"] = [
                 position_idx for position_idx, _ in indexed_positions
             ]
-            args.output.write_text(json.dumps(output, indent=2))
-            print(f"Saved partial results to {args.output}", flush=True)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(json.dumps(output, indent=2) + "\n")
+            print(f"Saved partial results to {output_path}", flush=True)
     finally:
         if stockfish is not None:
             stockfish.quit()

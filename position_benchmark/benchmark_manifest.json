@@ -53,6 +53,23 @@
       "probe_plies": 8,
       "stockfish_score_depth": 10
     },
+    "continuation_sequence_candidate": {
+      "status": "research-candidate",
+      "starting_positions": "position_benchmark/panels/game_like_48.json",
+      "results": "position_benchmark/results/protocol_sequence.json",
+      "starting_position_count": 4,
+      "selection_policy": "category-round-robin-one-per-category-v1",
+      "stability_probe_version": "protocol-sequence-v1",
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "positions_per_category": 1,
+      "probe_plies": 16,
+      "planned_model_moves_per_position": 8,
+      "planned_base_first_attempt_calls": 32,
+      "opponent_policy": "seeded-random-legal-v1",
+      "random_seed": 1729,
+      "stockfish_score_depth": 10,
+      "production_effect": "none"
+    },
     "legality_stress_candidate": {
       "status": "research-candidate",
       "positions": "position_benchmark/candidates/legality_stress_6.json",
@@ -66,6 +83,31 @@
         "total_calls_min": 6,
         "total_calls_max": 12
       },
+      "production_effect": "none"
+    },
+    "failure_transfer_screen": {
+      "status": "research-screen",
+      "matrix": "position_benchmark/candidates/failure_transfer_screen_v1/matrix.json",
+      "results": "position_benchmark/results/failure_transfer_screen.json",
+      "screen_version": "failure-transfer-screen-v1",
+      "selection_policy": "leave-one-base-model-out-v1",
+      "source_failure_count": 12,
+      "matched_control_count": 12,
+      "positions_per_target": 16,
+      "target_count": 3,
+      "planned_base_first_attempt_calls": 48,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "stockfish_depth": 30,
+      "production_effect": "none"
+    },
+    "failure_transfer_positive_shortlist": {
+      "status": "research-candidate",
+      "positions": "position_benchmark/candidates/failure_transfer_positive_3.json",
+      "source_screen": "failure-transfer-screen-v1",
+      "failure_position_count": 3,
+      "matched_control_count": 3,
+      "stockfish_depth": 30,
+      "required_next_gate": "held-out-non-gpt56-model-families",
       "production_effect": "none"
     },
     "blunder": {
@@ -84,6 +126,12 @@
   "validation": "position_benchmark/validation/2026-06-23.json",
   "supplemental_validation": "position_benchmark/validation/2026-07-14-supplemental-review.md",
   "gpt56_feature_analysis": "position_benchmark/validation/2026-07-14-gpt56-feature-analysis.md",
+  "gpt56_illegal_forensics": "position_benchmark/validation/2026-07-15-gpt56-illegal-forensics.md",
+  "gpt56_illegal_forensics_data": "position_benchmark/validation/2026-07-15-gpt56-illegal-forensics.json",
+  "protocol_sequence_pilot": "position_benchmark/validation/2026-07-15-protocol-sequence-pilot.md",
+  "protocol_sequence_pilot_data": "position_benchmark/validation/2026-07-15-protocol-sequence-pilot.json",
+  "failure_transfer_screen_validation": "position_benchmark/validation/2026-07-15-failure-transfer-screen.md",
+  "failure_transfer_screen_validation_data": "position_benchmark/validation/2026-07-15-failure-transfer-screen.json",
   "gpt56_game_retry_audit": "position_benchmark/validation/2026-07-14-gpt56-game-retry-audit.json",
   "legality_stress_pilot": "position_benchmark/validation/2026-07-14-legality-stress-pilot.md",
   "gpt56_targeted_games": "position_benchmark/validation/2026-07-14-gpt56-targeted-games.md",

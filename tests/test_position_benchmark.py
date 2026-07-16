@@ -36,10 +36,14 @@ from position_benchmark.layout import (
     CORE_RESULTS_PATH,
     GAME_LIKE_POSITIONS_PATH,
     GAME_LIKE_RESULTS_PATH,
+    FAILURE_TRANSFER_MATRIX_PATH,
+    FAILURE_TRANSFER_RESULTS_PATH,
+    FAILURE_TRANSFER_SHORTLIST_PATH,
     LEGALITY_STRESS_POSITIONS_PATH,
     LEGALITY_STRESS_RESULTS_PATH,
     LEGACY_COMBINED_POSITIONS_PATH,
     MANIFEST_PATH,
+    PROTOCOL_SEQUENCE_RESULTS_PATH,
     STABILITY_RESULTS_PATH,
     repo_relative,
 )
@@ -67,6 +71,10 @@ from scripts.run_stability_probe import (
     DEFAULT_POSITION_LIMIT,
     DEFAULT_PROBE_PLIES,
     DEFAULT_SCORE_DEPTH,
+    PROTOCOL_SEQUENCE_POSITION_LIMIT,
+    PROTOCOL_SEQUENCE_PROBE_PLIES,
+    PROTOCOL_SEQUENCE_SELECTION_POLICY,
+    PROTOCOL_SEQUENCE_VERSION,
     STABILITY_PROBE_VERSION,
     backfill_retry_metrics,
     derive_retry_metrics,
@@ -126,6 +134,47 @@ class ProductionContractTests(unittest.TestCase):
         self.assertAlmostEqual(validation["selected_illegal_pct"], 9.7222222222)
         self.assertGreater(validation["illegal_incidence_lift"], 2.7)
         self.assertGreater(validation["stress_vs_live_spearman"], 0.7)
+
+    def test_failure_transfer_matrix_excludes_each_target_base_model(self) -> None:
+        matrix = json.loads(FAILURE_TRANSFER_MATRIX_PATH.read_text())
+        metadata = matrix["metadata"]
+
+        self.assertEqual(metadata["screen_version"], "failure-transfer-screen-v1")
+        self.assertEqual(metadata["status"], "frozen-before-target-calls")
+        self.assertEqual(metadata["selected_failure_count"], 12)
+        self.assertEqual(metadata["matched_control_count"], 12)
+        self.assertEqual(metadata["planned_first_attempt_calls"], 48)
+
+        failures = {
+            row["candidate_id"]: row for row in matrix["selected_failures"]
+        }
+        controls = {
+            row["candidate_id"]: row for row in matrix["matched_controls"]
+        }
+        self.assertEqual(
+            {row["base_model"] for row in failures.values()},
+            {"luna", "terra", "sol"},
+        )
+        for target, position_ids in matrix["test_matrix"].items():
+            target_family = next(
+                family for family in ("luna", "terra", "sol") if family in target
+            )
+            self.assertEqual(len(position_ids), 16)
+            self.assertEqual(sum(position_id.startswith("failure-") for position_id in position_ids), 8)
+            self.assertEqual(sum(position_id.startswith("control-") for position_id in position_ids), 8)
+            for position_id in position_ids:
+                source = failures.get(position_id) or controls[position_id]
+                self.assertNotEqual(source["base_model"], target_family)
+
+        for target_file in metadata["target_files"].values():
+            data = json.loads((ROOT / target_file).read_text())
+            self.assertEqual(len(data["positions"]), 16)
+            for position in data["positions"]:
+                board = replay_position_board(position)
+                self.assertEqual(
+                    " ".join(board.fen().split()[:4]),
+                    " ".join(position["fen"].split()[:4]),
+                )
 
     def test_legality_stress_pilot_is_isolated_and_protocol_stamped(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text())
@@ -216,6 +265,8 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(DEFAULT_POSITION_LIMIT, 8)
         self.assertEqual(DEFAULT_PROBE_PLIES, 8)
         self.assertEqual(DEFAULT_SCORE_DEPTH, 10)
+        self.assertEqual(PROTOCOL_SEQUENCE_POSITION_LIMIT, 4)
+        self.assertEqual(PROTOCOL_SEQUENCE_PROBE_PLIES, 16)
         self.assertEqual(STABILITY_PROBE_VERSION, CURRENT_STABILITY_PROBE_VERSION)
         self.assertEqual(manifest["panels"]["core"]["position_count"], 50)
         self.assertEqual(
@@ -237,6 +288,28 @@ class ProductionContractTests(unittest.TestCase):
             96,
         )
         self.assertEqual(manifest["panels"]["blunder"]["status"], "optional-historical")
+        sequence = manifest["panels"]["continuation_sequence_candidate"]
+        self.assertEqual(sequence["status"], "research-candidate")
+        self.assertEqual(sequence["production_effect"], "none")
+        self.assertEqual(sequence["stability_probe_version"], PROTOCOL_SEQUENCE_VERSION)
+        self.assertEqual(sequence["selection_policy"], PROTOCOL_SEQUENCE_SELECTION_POLICY)
+        self.assertEqual(sequence["probe_plies"], PROTOCOL_SEQUENCE_PROBE_PLIES)
+        self.assertEqual(sequence["planned_base_first_attempt_calls"], 32)
+        self.assertEqual(sequence["results"], repo_relative(PROTOCOL_SEQUENCE_RESULTS_PATH))
+        transfer = manifest["panels"]["failure_transfer_screen"]
+        self.assertEqual(transfer["production_effect"], "none")
+        self.assertEqual(transfer["matrix"], repo_relative(FAILURE_TRANSFER_MATRIX_PATH))
+        self.assertEqual(transfer["results"], repo_relative(FAILURE_TRANSFER_RESULTS_PATH))
+        self.assertEqual(transfer["planned_base_first_attempt_calls"], 48)
+        self.assertEqual(transfer["stockfish_depth"], 30)
+        shortlist = manifest["panels"]["failure_transfer_positive_shortlist"]
+        self.assertEqual(shortlist["production_effect"], "none")
+        self.assertEqual(shortlist["positions"], repo_relative(FAILURE_TRANSFER_SHORTLIST_PATH))
+        self.assertEqual(shortlist["stockfish_depth"], 30)
+        self.assertEqual(
+            shortlist["required_next_gate"],
+            "held-out-non-gpt56-model-families",
+        )
 
     def test_manifest_paths_match_runtime_paths(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text())
@@ -1246,6 +1319,30 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertIn("existing-model", merged)
         self.assertEqual(merged["new-model"], record)
 
+    def test_sequence_shard_merge_accepts_frozen_research_contract(self) -> None:
+        indices = [0, 12, 24, 36]
+        record = {
+            "summary": {
+                "stability_probe_version": PROTOCOL_SEQUENCE_VERSION,
+                "position_selection_policy": PROTOCOL_SEQUENCE_SELECTION_POLICY,
+                "selected_position_indices": indices,
+                "attempted_positions": 4,
+                "api_errors": 0,
+            },
+            "results": [{"position_idx": index} for index in indices],
+        }
+
+        merged, players = merge_shards(
+            {},
+            [{"sequence-model": record}],
+            expected_indices=indices,
+            expected_version=PROTOCOL_SEQUENCE_VERSION,
+            expected_policy=PROTOCOL_SEQUENCE_SELECTION_POLICY,
+        )
+
+        self.assertEqual(players, ["sequence-model"])
+        self.assertEqual(merged["sequence-model"], record)
+
     def test_default_selection_is_stratified_across_game_like_categories(self) -> None:
         positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
 
@@ -1261,6 +1358,26 @@ class StabilityProbeTests(unittest.TestCase):
                 "quiet_equal": 2,
                 "tactical_equal": 2,
             },
+        )
+
+    def test_sequence_selection_uses_one_start_from_each_category(self) -> None:
+        positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
+
+        selected = selected_positions(
+            positions,
+            position_indices=None,
+            limit=PROTOCOL_SEQUENCE_POSITION_LIMIT,
+        )
+
+        self.assertEqual([index for index, _ in selected], [0, 12, 24, 36])
+        self.assertEqual(
+            [position["regan_bucket"] for _, position in selected],
+            [
+                "advantage_conversion",
+                "defense",
+                "quiet_equal",
+                "tactical_equal",
+            ],
         )
 
     def test_explicit_selection_preserves_requested_panel_order(self) -> None:
@@ -1345,9 +1462,10 @@ class StabilityProbeTests(unittest.TestCase):
                 "termination": "max_moves",
                 "probe_plies_played": 8,
                 "model_move_scores": [
-                    {"cpl": 25},
-                    {"cpl": 350},
+                    {"cpl": 25, "model_turn_index": 1},
+                    {"cpl": 350, "model_turn_index": 2},
                 ],
+                "opponent_move_scores": [{"cpl": 75}],
             },
             {
                 "model_legal_moves": 1,
@@ -1356,8 +1474,9 @@ class StabilityProbeTests(unittest.TestCase):
                 "termination": "forfeit_illegal_move",
                 "probe_plies_played": 3,
                 "model_move_scores": [
-                    {"cpl": 1200},
+                    {"cpl": 1200, "model_turn_index": 1},
                 ],
+                "opponent_move_scores": [{"cpl": 225}],
             },
         ]
 
@@ -1367,9 +1486,16 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertEqual(summary["model_legal_moves"], 5)
         self.assertEqual(summary["model_illegal_attempts"], 2)
         self.assertAlmostEqual(summary["model_legal_pct"], 100 * 5 / 7)
+        self.assertIsNone(summary["model_first_attempt_turns"])
+        self.assertIsNone(summary["model_first_attempt_illegals"])
+        self.assertIsNone(summary["model_first_attempt_illegal_pct"])
         self.assertEqual(summary["model_forfeit_pct"], 50.0)
         self.assertEqual(summary["model_scored_moves"], 3)
         self.assertAlmostEqual(summary["model_avg_cpl"], 525.0)
+        self.assertAlmostEqual(summary["model_first_move_avg_cpl"], 612.5)
+        self.assertEqual(summary["model_later_move_avg_cpl"], 350.0)
+        self.assertEqual(summary["opponent_scored_moves"], 2)
+        self.assertEqual(summary["opponent_avg_cpl"], 150.0)
         self.assertEqual(summary["model_300cp_blunders"], 2)
         self.assertAlmostEqual(summary["model_300cp_blunder_pct"], 100 * 2 / 3)
         self.assertEqual(summary["conditional_retry"]["incomplete_evidence_games"], 1)

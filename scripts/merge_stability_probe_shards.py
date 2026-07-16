@@ -11,7 +11,11 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from position_benchmark.predictions import stability_probe_readiness  # noqa: E402
+from position_benchmark.predictions import (  # noqa: E402
+    CURRENT_STABILITY_PROBE_VERSION,
+    CURRENT_STABILITY_SELECTION_POLICY,
+    stability_probe_readiness,
+)
 
 
 def validate_record(
@@ -19,15 +23,28 @@ def validate_record(
     record: dict[str, Any],
     *,
     expected_indices: list[int],
+    expected_version: str = CURRENT_STABILITY_PROBE_VERSION,
+    expected_policy: str = CURRENT_STABILITY_SELECTION_POLICY,
 ) -> None:
-    """Raise ValueError unless one shard record satisfies the production contract."""
-    readiness = stability_probe_readiness(record)
-    if not readiness.is_ready:
-        raise ValueError(f"{player_id}: {readiness.reason}")
+    """Raise ValueError unless one shard record satisfies the requested contract."""
+    summary = record.get("summary", {})
+    if expected_version == CURRENT_STABILITY_PROBE_VERSION:
+        readiness = stability_probe_readiness(record)
+        if not readiness.is_ready:
+            raise ValueError(f"{player_id}: {readiness.reason}")
+    else:
+        if summary.get("stability_probe_version") != expected_version:
+            raise ValueError(f"{player_id}: unexpected probe version")
+        if summary.get("position_selection_policy") != expected_policy:
+            raise ValueError(f"{player_id}: unexpected selection policy")
+        if int(summary.get("attempted_positions", 0)) != len(expected_indices):
+            raise ValueError(f"{player_id}: incomplete position count")
+        if int(summary.get("api_errors", 0)) != 0:
+            raise ValueError(f"{player_id}: probe contains API errors")
 
     rows = record.get("results", [])
     row_indices = [row.get("position_idx") for row in rows]
-    summary_indices = record.get("summary", {}).get("selected_position_indices")
+    summary_indices = summary.get("selected_position_indices")
     if row_indices != expected_indices:
         raise ValueError(f"{player_id}: unexpected row indices {row_indices}")
     if summary_indices != expected_indices:
@@ -39,6 +56,8 @@ def merge_shards(
     shards: list[dict[str, Any]],
     *,
     expected_indices: list[int],
+    expected_version: str = CURRENT_STABILITY_PROBE_VERSION,
+    expected_policy: str = CURRENT_STABILITY_SELECTION_POLICY,
 ) -> tuple[dict[str, Any], list[str]]:
     """Return existing results with validated shard records replaced by player ID."""
     merged = dict(existing)
@@ -49,7 +68,13 @@ def merge_shards(
                 raise ValueError(f"duplicate player across shards: {player_id}")
             if not isinstance(record, dict):
                 raise ValueError(f"{player_id}: result record is not an object")
-            validate_record(player_id, record, expected_indices=expected_indices)
+            validate_record(
+                player_id,
+                record,
+                expected_indices=expected_indices,
+                expected_version=expected_version,
+                expected_policy=expected_policy,
+            )
             seen.add(player_id)
             merged[player_id] = record
     return merged, sorted(seen)
@@ -60,6 +85,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--inputs", type=Path, nargs="+", required=True)
     parser.add_argument("--expected-indices", type=int, nargs="+", required=True)
+    parser.add_argument(
+        "--expected-version",
+        default=CURRENT_STABILITY_PROBE_VERSION,
+    )
+    parser.add_argument(
+        "--expected-policy",
+        default=CURRENT_STABILITY_SELECTION_POLICY,
+    )
     args = parser.parse_args()
 
     existing = json.loads(args.output.read_text()) if args.output.exists() else {}
@@ -68,6 +101,8 @@ def main() -> None:
         existing,
         shards,
         expected_indices=args.expected_indices,
+        expected_version=args.expected_version,
+        expected_policy=args.expected_policy,
     )
 
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
