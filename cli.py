@@ -368,6 +368,16 @@ async def run_benchmark(args):
     # Load config
     config = load_config(args.config)
 
+    if getattr(args, "acquisition_plan", False):
+        from scripts.plan_benchmark_acquisition import run_preflight
+
+        run_preflight(
+            config_path=Path(args.config),
+            api_backend=getattr(args, "api", "openrouter"),
+            max_cost=args.max_cost,
+        )
+        return 0
+
     # Get API key based on backend
     api_backend = getattr(args, "api", "openrouter")
     if api_backend == "gemini":
@@ -1259,6 +1269,11 @@ def main():
         choices=["openrouter", "gemini", "codex"],
         default="openrouter",
         help="API backend to use (default: openrouter; codex runs only llms with api: codex)",
+    )
+    run_parser.add_argument(
+        "--acquisition-plan",
+        action="store_true",
+        help="Print the freeze-, readiness-, budget-, and cost-aware acquisition plan without model calls",
     )
 
     # Leaderboard command

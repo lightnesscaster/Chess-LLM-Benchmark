@@ -24,7 +24,8 @@
       "continuation_sequence_candidate",
       "legality_stress_candidate",
       "failure_transfer_screen",
-      "failure_transfer_positive_shortlist"
+      "failure_transfer_positive_shortlist",
+      "failure_transfer_heldout"
     ]
   },
   "panels": {
@@ -128,13 +129,40 @@
       "production_effect": "none"
     },
     "failure_transfer_positive_shortlist": {
-      "status": "research-candidate",
+      "status": "research-only-heldout-gate-failed",
       "positions": "position_benchmark/candidates/failure_transfer_positive_3.json",
       "source_screen": "failure-transfer-screen-v1",
       "failure_position_count": 3,
       "matched_control_count": 3,
       "stockfish_depth": 30,
       "required_next_gate": "held-out-non-gpt56-model-families",
+      "heldout_gate": "failure_transfer_heldout",
+      "production_effect": "none"
+    },
+    "failure_transfer_heldout": {
+      "status": "complete-no-promotion",
+      "positions": "position_benchmark/candidates/failure_transfer_positive_3.json",
+      "plan": "position_benchmark/validation/2026-07-17-failure-transfer-heldout-plan.json",
+      "results": "position_benchmark/results/failure_transfer_heldout.json",
+      "analysis": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.json",
+      "report": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.md",
+      "target_configuration_count": 8,
+      "target_family_count": 5,
+      "planned_base_first_attempt_calls": 48,
+      "actual_model_calls": 58,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "stockfish_depth": 30,
+      "primary_result": {
+        "failure_illegals": 6,
+        "failure_attempts": 24,
+        "control_illegals": 4,
+        "control_attempts": 24,
+        "failure_only_discordant": 4,
+        "control_only_discordant": 2,
+        "one_sided_exact_mcnemar_p": 0.34375,
+        "positive_family_count": 2,
+        "promotion_gate_passed": false
+      },
       "production_effect": "none"
     },
     "blunder": {
@@ -159,6 +187,10 @@
   "protocol_sequence_pilot_data": "position_benchmark/validation/2026-07-15-protocol-sequence-pilot.json",
   "failure_transfer_screen_validation": "position_benchmark/validation/2026-07-15-failure-transfer-screen.md",
   "failure_transfer_screen_validation_data": "position_benchmark/validation/2026-07-15-failure-transfer-screen.json",
+  "failure_transfer_heldout_plan": "position_benchmark/validation/2026-07-17-failure-transfer-heldout-plan.md",
+  "failure_transfer_heldout_plan_data": "position_benchmark/validation/2026-07-17-failure-transfer-heldout-plan.json",
+  "failure_transfer_heldout_validation": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.md",
+  "failure_transfer_heldout_validation_data": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.json",
   "gpt56_game_retry_audit": "position_benchmark/validation/2026-07-14-gpt56-game-retry-audit.json",
   "legality_stress_pilot": "position_benchmark/validation/2026-07-14-legality-stress-pilot.md",
   "gpt56_targeted_games": "position_benchmark/validation/2026-07-14-gpt56-targeted-games.md",

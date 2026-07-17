@@ -23,6 +23,7 @@ from collections import defaultdict
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from position_benchmark.retry_protocol import attach_conditional_retry_summary
+from position_benchmark.scoring import ILLEGAL_MOVE_EVAL, illegal_move_cpl
 
 
 DEPTH = 30
@@ -287,8 +288,8 @@ def reeval_results_file(evaluator, results_filepath, positions_filepath, fen_cac
                 er = eval_results[task_id]
                 if er.get("illegal"):
                     result["is_legal"] = False
-                    result["eval_model"] = -5000
-                    result["cpl"] = new_eval_before + 5000
+                    result["eval_model"] = ILLEGAL_MOVE_EVAL
+                    result["cpl"] = illegal_move_cpl(new_eval_before)
                 else:
                     new_eval_model = int(er["eval"])
                     result["eval_model"] = new_eval_model
@@ -296,8 +297,8 @@ def reeval_results_file(evaluator, results_filepath, positions_filepath, fen_cac
             else:
                 # Illegal move - recalculate CPL with new eval_before
                 if not result.get("is_legal", True):
-                    result["eval_model"] = -5000
-                    result["cpl"] = new_eval_before + 5000
+                    result["eval_model"] = ILLEGAL_MOVE_EVAL
+                    result["cpl"] = illegal_move_cpl(new_eval_before)
 
         # Recalculate summary
         if isinstance(model_data, dict) and "summary" in model_data:

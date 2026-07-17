@@ -1,0 +1,132 @@
+{
+  "experiment_id": "failure-transfer-heldout-v1",
+  "frozen_at": "2026-07-17T08:19:40Z",
+  "status": "frozen-before-target-calls",
+  "production_effect": "none",
+  "api_backend": "openrouter",
+  "positions": "position_benchmark/candidates/failure_transfer_positive_3.json",
+  "positions_sha256": "5b35b5858b33428e2a4707f54460a2babc05c1e5ce736b1a1cdbdd54392901d1",
+  "config_source": "config/benchmark.yaml",
+  "config_sha256_at_freeze": "f39a1cb4c87a7cb46dedad7facaa7f6a663262121e2dd2a81adbe9a8fa208863",
+  "results": "position_benchmark/results/failure_transfer_heldout.json",
+  "analysis": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.json",
+  "report": "position_benchmark/validation/2026-07-17-failure-transfer-heldout.md",
+  "stockfish_depth": 30,
+  "conditional_retry_protocol_version": "production-game-retry-v1",
+  "first_attempt_calls": 48,
+  "conditional_retry_calls_min": 0,
+  "conditional_retry_calls_max": 48,
+  "estimated_base_cost_usd": 0.1626,
+  "estimated_worst_case_cost_usd": 0.3252,
+  "preflight_estimated_cost_cap_usd": 0.33,
+  "selection_warning": "GPT-5.6 supplied discovery and shortlist-selection evidence, so no GPT-5.6 configuration is an eligible held-out target.",
+  "position_pairs": [
+    {
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003"
+    },
+    {
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001"
+    },
+    {
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003"
+    }
+  ],
+  "targets": [
+    {
+      "player_id": "gemini-3.5-flash (medium)",
+      "family": "google",
+      "model_name": "google/gemini-3.5-flash",
+      "reasoning_effort": "medium",
+      "temperature": 0.0
+    },
+    {
+      "player_id": "gemini-3-flash-preview (minimal)",
+      "family": "google",
+      "model_name": "google/gemini-3-flash-preview",
+      "reasoning_effort": "minimal",
+      "temperature": 0.0
+    },
+    {
+      "player_id": "deepseek-v4-flash (no thinking)",
+      "family": "deepseek",
+      "model_name": "deepseek/deepseek-v4-flash",
+      "reasoning": false,
+      "provider_order": [
+        "deepseek",
+        "novita",
+        "siliconflow"
+      ],
+      "provider_ignore": [
+        "deepinfra"
+      ],
+      "temperature": 0.0
+    },
+    {
+      "player_id": "deepseek-v4-flash (high)",
+      "family": "deepseek",
+      "model_name": "deepseek/deepseek-v4-flash",
+      "reasoning_effort": "high",
+      "provider_order": [
+        "deepseek",
+        "novita",
+        "siliconflow"
+      ],
+      "provider_ignore": [
+        "deepinfra"
+      ],
+      "temperature": 0.0
+    },
+    {
+      "player_id": "claude-opus-4.6 (no thinking)",
+      "family": "anthropic",
+      "model_name": "anthropic/claude-opus-4.6",
+      "reasoning": false,
+      "temperature": 0.0
+    },
+    {
+      "player_id": "claude-opus-4.6 (medium)",
+      "family": "anthropic",
+      "model_name": "anthropic/claude-opus-4.6",
+      "reasoning_effort": "medium",
+      "temperature": 0.0
+    },
+    {
+      "player_id": "glm-4.6 (thinking)",
+      "family": "z-ai",
+      "model_name": "z-ai/glm-4.6",
+      "reasoning": true,
+      "temperature": 0.0
+    },
+    {
+      "player_id": "qwen3-235b-a22b-2507",
+      "family": "qwen",
+      "model_name": "qwen/qwen3-235b-a22b-2507",
+      "temperature": 0.0
+    }
+  ],
+  "primary_hypothesis": "The three transfer-positive failure states produce more illegal first answers than their frozen matched controls on non-GPT-5.6 target families.",
+  "primary_endpoint": "Paired first-answer illegality across all 24 target-position pairs.",
+  "primary_test": "One-sided exact McNemar test, equivalently an exact sign/binomial test over discordant pairs.",
+  "promotion_gate": {
+    "overall_direction": "failure_illegal_rate > control_illegal_rate",
+    "one_sided_exact_mcnemar_p_max": 0.05,
+    "minimum_positive_distinct_families": 3,
+    "positive_family_definition": "Within a family, failure-state illegal first answers outnumber matched-control illegal first answers.",
+    "effect_if_passed": "Promote the shortlist only to a broader calibration candidate; do not change production rating coefficients or panel acquisition.",
+    "effect_if_failed": "Keep the shortlist research-only and do not expand failure-position mining from this evidence."
+  },
+  "secondary_endpoints": [
+    "First-answer illegal incidence by target, family, and position pair",
+    "Recovery under the exact production conditional-retry prompt",
+    "Depth-30 CPL for all rows and legal-only rows",
+    "Candidate-level transfer counts"
+  ],
+  "interpretation_limits": [
+    "The three failures were selected for positive transfer within GPT-5.6, so this test estimates replication of this frozen shortlist, not the prevalence of transferable failures in all games.",
+    "Reasoning settings from the same provider family are not independent families.",
+    "Secondary endpoints are descriptive and cannot override the primary promotion gate."
+  ]
+}

@@ -492,6 +492,20 @@ class ProductionContractTests(unittest.TestCase):
             shortlist["required_next_gate"],
             "held-out-non-gpt56-model-families",
         )
+        self.assertEqual(
+            shortlist["status"],
+            "research-only-heldout-gate-failed",
+        )
+        heldout = manifest["panels"]["failure_transfer_heldout"]
+        self.assertEqual(heldout["status"], "complete-no-promotion")
+        self.assertEqual(heldout["production_effect"], "none")
+        self.assertEqual(heldout["planned_base_first_attempt_calls"], 48)
+        self.assertEqual(heldout["actual_model_calls"], 58)
+        self.assertFalse(heldout["primary_result"]["promotion_gate_passed"])
+        self.assertEqual(
+            heldout["primary_result"]["one_sided_exact_mcnemar_p"],
+            0.34375,
+        )
 
     def test_manifest_paths_match_runtime_paths(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text())

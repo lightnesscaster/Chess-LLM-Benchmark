@@ -20,6 +20,7 @@ from position_benchmark.run_benchmark import eval_to_cp  # noqa: E402
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current  # noqa: E402
 from position_benchmark.layout import CORE_POSITIONS_PATH  # noqa: E402
 from position_benchmark.retry_protocol import attach_conditional_retry_summary  # noqa: E402
+from position_benchmark.scoring import ILLEGAL_MOVE_EVAL, illegal_move_cpl  # noqa: E402
 from position_benchmark.token_accounting import refresh_result_token_usage  # noqa: E402
 
 
@@ -146,8 +147,8 @@ def evaluate_row(
         except (ValueError, chess.InvalidMoveError):
             result["is_legal"] = False
             result["model_move_san"] = ""
-            result["eval_model"] = -5000
-            result["cpl"] = eval_before + 5000
+            result["eval_model"] = ILLEGAL_MOVE_EVAL
+            result["cpl"] = illegal_move_cpl(eval_before)
 
         result["is_best"] = result.get("model_move") == result.get("best_move")
         return result

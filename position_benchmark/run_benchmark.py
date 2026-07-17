@@ -35,6 +35,7 @@ from position_benchmark.retry_protocol import (
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
     attach_conditional_retry_summary,
 )
+from position_benchmark.scoring import ILLEGAL_MOVE_EVAL, illegal_move_cpl
 from rating.cost_calculator import CostCalculator
 
 
@@ -312,10 +313,10 @@ async def test_llm_on_position(
     board = replay_position_board(position)
     perspective = board.turn
 
-    # Calculate illegal move CPL: half the swing to losing (eval_before + 5000)
-    # This represents "half a game loss" since 2 illegals = forfeit
+    # One illegal is half a forfeit. Floor at zero so a forced-mate position
+    # already below the penalty evaluation cannot receive negative CPL.
     eval_before = position["eval_before"]
-    illegal_cpl = eval_before + 5000
+    illegal_cpl = illegal_move_cpl(eval_before)
 
     # Let TransientAPIError propagate: provider failures are not illegal moves.
     # Empty/invalid model responses, however, follow the production game retry
@@ -361,7 +362,7 @@ async def test_llm_on_position(
             is_legal=False,
             is_best=False,
             avoided_blunder=model_move_uci != blunder_move_uci,
-            eval_model=-5000,
+            eval_model=ILLEGAL_MOVE_EVAL,
             eval_best=eval_before,
             eval_before=eval_before,
             prompt_tokens=initial_prompt_tokens + retry_prompt_tokens,
@@ -443,7 +444,7 @@ def test_engine_on_position(
             best_move=best_move_uci,
             best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=eval_before + 5000,  # Same formula as LLM illegal moves
+            cpl=illegal_move_cpl(eval_before),
             is_legal=False,
             is_best=False,
             avoided_blunder=True,

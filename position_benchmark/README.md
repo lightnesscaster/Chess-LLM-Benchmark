@@ -312,6 +312,23 @@ although neither failure repeated at the same model-position pair. See
 `validation/2026-07-14-legality-stress-pilot.md` for the repeatability analysis and
 the limits on interpreting this small stress sample.
 
+### Experimental failure-transfer shortlist
+
+`candidates/failure_transfer_positive_3.json` contains three live-game failure
+states selected for transfer within GPT-5.6 and three matched controls. Because
+GPT-5.6 supplied discovery and selection evidence, its required replication used
+eight configurations from five non-GPT-5.6 families. The plan, targets, primary
+test, and promotion threshold were frozen before the 48 first attempts.
+
+The held-out panel produced 6/24 illegal first answers on failure states and 4/24
+on controls. Four discordant pairs favored the failure states and two favored the
+controls, giving a one-sided exact McNemar probability of 0.34375. Only two of the
+five families had a positive direction, below the frozen requirement of three.
+The shortlist therefore failed its promotion gate and remains research-only. It
+must not affect production ratings or automatic acquisition. See
+`validation/2026-07-17-failure-transfer-heldout.md` for the full result and
+`validation/2026-07-17-failure-transfer-heldout-plan.json` for the frozen design.
+
 ## June 2026 validation record
 
 The end-of-session validation recorded the following performance after adding the
@@ -380,6 +397,17 @@ commands:
 ```bash
 python cli.py run -c config/benchmark.yaml -v
 ```
+
+Before allowing calls, print the exact readiness-, freeze-, priority-, and
+budget-aware plan with:
+
+```bash
+python cli.py run -c config/benchmark.yaml --api codex --acquisition-plan
+```
+
+This reads the same rating and game state as production but creates no model/API
+calls and writes no benchmark results. It reports panels scheduled or deferred,
+planned first-attempt calls, maximum retries, and estimated base cost.
 
 For repair, isolated reruns, or research, the game-like panel can still be invoked
 directly:
