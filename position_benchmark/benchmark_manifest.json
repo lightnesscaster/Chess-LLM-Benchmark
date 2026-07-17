@@ -5,9 +5,32 @@
   "conditional_retry_protocol_version": "production-game-retry-v1",
   "stable_result_key": "position_id",
   "error_definition": "actual_game_rating - predicted_rating",
+  "automatic_acquisition": {
+    "enabled": true,
+    "policy_version": "production-supplements-v1",
+    "eligibility": "selected-configured-non-engine-non-frozen",
+    "panel_order": [
+      "core",
+      "game_like",
+      "continuation_stability"
+    ],
+    "completion_policy": "current-readiness-v1",
+    "legacy_static_retry_policy": "additive-does-not-invalidate-ready-rows",
+    "resume_policy": "first-missing-panel",
+    "budget_policy": "check-before-each-panel",
+    "defer_games_after_acquisition": true,
+    "excluded_panels": [
+      "blunder",
+      "continuation_sequence_candidate",
+      "legality_stress_candidate",
+      "failure_transfer_screen",
+      "failure_transfer_positive_shortlist"
+    ]
+  },
   "panels": {
     "core": {
       "status": "required",
+      "acquisition": "automatic",
       "positions": "position_benchmark/panels/core_equal_50.json",
       "results": "position_benchmark/results/core.json",
       "position_count": 50,
@@ -22,6 +45,7 @@
     },
     "game_like": {
       "status": "optional-downside-only",
+      "acquisition": "automatic",
       "positions": "position_benchmark/panels/game_like_48.json",
       "results": "position_benchmark/results/game_like.json",
       "position_count": 48,
@@ -36,6 +60,7 @@
     },
     "continuation_stability": {
       "status": "optional-downside-only",
+      "acquisition": "automatic",
       "starting_positions": "position_benchmark/panels/game_like_48.json",
       "results": "position_benchmark/results/stability.json",
       "minimum_starting_positions": 8,
@@ -51,6 +76,8 @@
         "tactical_equal"
       ],
       "probe_plies": 8,
+      "planned_base_first_attempt_calls": 32,
+      "random_seed": 1729,
       "stockfish_score_depth": 10
     },
     "continuation_sequence_candidate": {

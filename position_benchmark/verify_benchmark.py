@@ -145,6 +145,52 @@ def verify_legacy_mapping(manifest: dict[str, Any]) -> list[str]:
     return issues
 
 
+def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
+    """Verify the deterministic core + supplemental scheduler contract."""
+    issues: list[str] = []
+    config = manifest.get("automatic_acquisition", {})
+    expected_order = ["core", "game_like", "continuation_stability"]
+    if config.get("enabled") is not True:
+        issues.append("automatic_acquisition: must remain enabled")
+    if config.get("policy_version") != "production-supplements-v1":
+        issues.append("automatic_acquisition: policy version mismatch")
+    if config.get("panel_order") != expected_order:
+        issues.append("automatic_acquisition: panel order mismatch")
+    if config.get("completion_policy") != "current-readiness-v1":
+        issues.append("automatic_acquisition: readiness policy mismatch")
+    if (
+        config.get("legacy_static_retry_policy")
+        != "additive-does-not-invalidate-ready-rows"
+    ):
+        issues.append("automatic_acquisition: static retry compatibility mismatch")
+    if config.get("resume_policy") != "first-missing-panel":
+        issues.append("automatic_acquisition: resume policy mismatch")
+    if config.get("defer_games_after_acquisition") is not True:
+        issues.append("automatic_acquisition: acquired models must defer games")
+
+    for panel_name in expected_order:
+        if manifest["panels"].get(panel_name, {}).get("acquisition") != "automatic":
+            issues.append(f"automatic_acquisition: {panel_name} is not automatic")
+
+    excluded = set(config.get("excluded_panels", []))
+    expected_excluded = set(manifest["panels"]) - set(expected_order)
+    if excluded != expected_excluded:
+        issues.append("automatic_acquisition: excluded panel set mismatch")
+    for panel_name in excluded:
+        if manifest["panels"].get(panel_name, {}).get("acquisition") == "automatic":
+            issues.append(f"automatic_acquisition: excluded {panel_name} is automatic")
+
+    continuation = manifest["panels"]["continuation_stability"]
+    expected_calls = (
+        int(continuation.get("default_starting_positions", 0))
+        * ((int(continuation.get("probe_plies", 0)) + 1) // 2)
+    )
+    if int(continuation.get("planned_base_first_attempt_calls", 0)) != expected_calls:
+        issues.append("automatic_acquisition: continuation call count mismatch")
+    print(f"  automatic_acquisition: {', '.join(expected_order)}")
+    return issues
+
+
 def verify_sequence_candidate(manifest: dict[str, Any]) -> list[str]:
     """Verify the isolated long-sequence research contract and saved rows."""
     issues: list[str] = []
@@ -318,6 +364,7 @@ def main() -> None:
     manifest = load_json(BASE / "benchmark_manifest.json")
     print("POSITION BENCHMARK LAYOUT VERIFICATION")
     issues: list[str] = []
+    issues.extend(verify_automatic_acquisition(manifest))
     issues.extend(verify_panel("core", manifest["panels"]["core"], require_complete_results=True))
     issues.extend(
         verify_panel("game_like", manifest["panels"]["game_like"], require_complete_results=True)

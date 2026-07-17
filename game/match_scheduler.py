@@ -25,7 +25,13 @@ from .stats_collector import StatsCollector
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
-from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH
+from position_benchmark.acquisition import (
+    AcquisitionPanel,
+    load_acquisition_policy,
+    load_acquisition_state,
+    missing_panels,
+    panel_readiness,
+)
 
 
 Player = Union[BaseEngine, BaseLLMPlayer]
@@ -183,7 +189,10 @@ class MatchScheduler:
         self.reasoning_ids = reasoning_ids or set()
         self._llm_configs = llm_configs or {}
 
-        # Track which models already have position benchmark results
+        # Load the manifest-backed core + supplemental acquisition contract once.
+        self._acquisition_policy = load_acquisition_policy()
+        self._acquisition_state = load_acquisition_state(self._acquisition_policy)
+        # Retain the historical attribute, now meaning the full automatic suite.
         self._benchmark_completed = self._load_existing_benchmark_results()
 
         # Semaphore for concurrency control
@@ -249,29 +258,29 @@ class MatchScheduler:
             pass  # No publish dates available
 
     def _load_existing_benchmark_results(self) -> set:
-        """Load player IDs that already have position benchmark results."""
-        results_path = CORE_RESULTS_PATH
-        try:
-            if results_path.exists():
-                with open(results_path) as f:
-                    data = json.load(f)
-                return set(data.keys())
-        except (json.JSONDecodeError, OSError):
-            pass
-        return set()
+        """Return players with every current automatic acquisition panel ready."""
+        required = {panel.name for panel in self._acquisition_policy.panels}
+        return {
+            player_id
+            for player_id, completed in self._acquisition_state.items()
+            if required <= completed
+        }
 
     def _needs_position_benchmark(self, player_id: str) -> bool:
-        """Check if a player needs a position benchmark run."""
+        """Check if a player needs any automatic benchmark acquisition panel."""
         # Engines don't need benchmarks
         if isinstance(self.players.get(player_id), BaseEngine):
-            return False
-        # Already has results
-        if player_id in self._benchmark_completed:
             return False
         # No config available (can't run benchmark without it)
         if player_id not in self._llm_configs:
             return False
-        return True
+        return bool(
+            missing_panels(
+                player_id,
+                self._acquisition_policy,
+                self._acquisition_state,
+            )
+        )
 
     @staticmethod
     def _format_player_list(player_ids: List[str], limit: int = 12) -> str:
@@ -289,17 +298,42 @@ class MatchScheduler:
             f"games={rating.games_played}, W-L-D={rating.wins}-{rating.losses}-{rating.draws}"
         )
 
-    def _estimate_benchmark_cost(self, player_id: str) -> float:
-        """
-        Estimate cost of running position benchmark for a model.
-
-        50 equal positions, ~1500 prompt tokens each, ~10-200 completion tokens.
-        """
-        return self._cost_calculator.estimate_position_benchmark_cost(
+    def _estimate_benchmark_cost(
+        self,
+        player_id: str,
+        panel: AcquisitionPanel,
+    ) -> float:
+        """Estimate one missing panel before allowing its model calls."""
+        estimate = self._cost_calculator.estimate_position_benchmark_cost(
             player_id,
-            num_positions=50,
+            num_positions=panel.planned_first_attempt_calls,
             reasoning=player_id in self.reasoning_ids,
-        ) or 0.0
+        )
+        if estimate is not None:
+            return estimate
+        return (
+            self.UNKNOWN_MODEL_DEFAULT_COST
+            * panel.planned_first_attempt_calls
+            / 50
+        )
+
+    def _actual_benchmark_cost(
+        self,
+        player_id: str,
+        token_usage: dict[str, Any],
+        *,
+        model_calls: int,
+    ) -> float:
+        """Calculate token-priced or override-scaled acquisition cost."""
+        override = self._cost_calculator.get_budget_cost_override(player_id)
+        if override is not None:
+            return override * max(0, model_calls) / 50
+        model_name = self._cost_calculator.get_model_for_player(player_id) or ""
+        tokens = {
+            "prompt_tokens": int(token_usage.get("prompt", 0) or 0),
+            "completion_tokens": int(token_usage.get("completion", 0) or 0),
+        }
+        return self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
 
     async def _run_position_benchmarks(
         self,
@@ -308,32 +342,41 @@ class MatchScheduler:
         max_cost: float,
     ) -> set:
         """
-        Phase 1: Run position benchmarks for models missing results.
+        Phase 1: Acquire every missing current production/supplemental panel.
 
         Runs sequentially with a shared Stockfish instance.
-        Each benchmark counts as 1 game for the model.
+        One acquisition pass counts as 1 game for the model, regardless of how many
+        missing panels it fills.
 
         Returns:
             Set of player IDs that were successfully benchmarked.
         """
         import chess.engine as ce
         from position_benchmark.run_benchmark import run_benchmark_for_scheduler
+        from scripts.run_stability_probe import run_probe_for_scheduler
 
         benchmarked = set()
 
-        already_benchmarked = []
+        acquisition_complete = []
         missing_config = []
         frozen = []
-        eligible = []
+        eligible: list[tuple[str, list[AcquisitionPanel]]] = []
 
         for llm_id in llm_ids:
             if isinstance(self.players.get(llm_id), BaseEngine):
                 continue
-            if llm_id in self._benchmark_completed:
-                already_benchmarked.append(llm_id)
-                continue
             if llm_id not in self._llm_configs:
                 missing_config.append(llm_id)
+                continue
+
+            missing = missing_panels(
+                llm_id,
+                self._acquisition_policy,
+                self._acquisition_state,
+            )
+            if not missing:
+                acquisition_complete.append(llm_id)
+                self._benchmark_completed.add(llm_id)
                 continue
 
             rating = self.rating_store.get(llm_id)
@@ -341,18 +384,21 @@ class MatchScheduler:
                 frozen.append((llm_id, self._format_rating_snapshot(rating)))
                 continue
 
-            eligible.append(llm_id)
+            eligible.append((llm_id, missing))
 
         print(
             "Phase 1: Position benchmark precheck: "
             f"{len(eligible)} queued, "
-            f"{len(already_benchmarked)} already done, "
+            f"{len(acquisition_complete)} complete, "
             f"{len(frozen)} frozen, "
             f"{len(missing_config)} missing config"
         )
 
-        if self.verbose and already_benchmarked:
-            print(f"  Already benchmarked: {self._format_player_list(already_benchmarked)}")
+        if self.verbose and acquisition_complete:
+            print(
+                "  Acquisition complete: "
+                f"{self._format_player_list(acquisition_complete)}"
+            )
         for llm_id, snapshot in frozen:
             print(f"  Skipping position benchmark for {llm_id}: frozen ({snapshot})")
         if missing_config:
@@ -362,91 +408,155 @@ class MatchScheduler:
             )
 
         if not eligible:
-            print("  No position benchmarks to run.")
+            print("  No automatic benchmark panels to acquire.")
             print()
             return benchmarked
 
-        print(f"Phase 1: Position benchmarks for {len(eligible)} model(s)")
+        print(
+            f"Phase 1: Automatic benchmark acquisition "
+            f"({self._acquisition_policy.version}) for {len(eligible)} model(s)"
+        )
 
         # Sort by priority (highest RD / lowest cost first)
-        eligible.sort(key=lambda lid: self._calculate_priority(lid), reverse=True)
+        eligible.sort(key=lambda item: self._calculate_priority(item[0]), reverse=True)
 
-        # Load positions and open Stockfish once
-        positions_path = CORE_POSITIONS_PATH
-        if not positions_path.exists():
-            print(f"  Warning: {positions_path} not found, skipping position benchmarks")
-            return benchmarked
-
-        with open(positions_path) as f:
-            positions_data = json.load(f)
-        positions = positions_data["positions"]
-        if len(positions) != 50 or any(p.get("type") != "equal" for p in positions):
-            raise ValueError("Canonical position benchmark core must contain exactly 50 equal positions")
+        # Load and validate every automatic panel before making any model call.
+        panel_positions: dict[str, list[dict[str, Any]]] = {}
+        for panel in self._acquisition_policy.panels:
+            if not panel.positions_path.exists():
+                raise FileNotFoundError(f"Missing automatic panel: {panel.positions_path}")
+            with open(panel.positions_path) as f:
+                positions_data = json.load(f)
+            positions = positions_data["positions"]
+            if panel.runner == "positions" and len(positions) != panel.position_count:
+                raise ValueError(
+                    f"{panel.name} must contain exactly {panel.position_count} positions"
+                )
+            if panel.runner == "positions" and any(
+                position.get("type") != "equal" for position in positions
+            ):
+                raise ValueError(f"{panel.name} automatic panel must contain equal positions")
+            if panel.runner == "continuation" and len(positions) < panel.position_count:
+                raise ValueError(
+                    f"{panel.name} needs at least {panel.position_count} starting positions"
+                )
+            panel_positions[panel.name] = positions
 
         stockfish = None
         try:
             stockfish = ce.SimpleEngine.popen_uci("stockfish")
 
-            for llm_id in eligible:
-                # Check budget
-                estimated_cost = self._estimate_benchmark_cost(llm_id)
-                if counters["total_cost"] + estimated_cost >= max_cost:
-                    print(f"  Skipping {llm_id}: would exceed budget "
-                          f"(${counters['total_cost']:.2f} + ${estimated_cost:.2f} >= ${max_cost:.2f})")
-                    continue
-
+            for llm_id, initially_missing in eligible:
                 config = self._llm_configs[llm_id]
-                print(f"  Running position benchmark for {llm_id}...")
-
-                result = await run_benchmark_for_scheduler(
-                    player_id=llm_id,
-                    player_config=config,
-                    stockfish=stockfish,
-                    positions=positions,
-                    depth=30,
-                    original_indices=None,
+                acquired_any = False
+                print(
+                    f"  {llm_id}: missing "
+                    f"{', '.join(panel.name for panel in initially_missing)}"
                 )
 
-                if result["success"]:
-                    summary = result["summary"]
-                    token_usage = result.get("token_usage", {"prompt": 0, "completion": 0})
+                for panel in initially_missing:
+                    estimated_cost = self._estimate_benchmark_cost(llm_id, panel)
+                    if counters["total_cost"] + estimated_cost >= max_cost:
+                        print(
+                            f"    Deferring {panel.name}: would exceed budget "
+                            f"(${counters['total_cost']:.2f} + ${estimated_cost:.2f} "
+                            f">= ${max_cost:.2f})"
+                        )
+                        break
 
-                    # Calculate actual cost from token usage
-                    model_name = self._cost_calculator.get_model_for_player(llm_id) or ""
-                    tokens = {
-                        "prompt_tokens": token_usage.get("prompt", 0),
-                        "completion_tokens": token_usage.get("completion", 0),
-                    }
-                    override = self._cost_calculator.get_budget_cost_override(llm_id)
-                    if override is not None:
-                        actual_cost = override
+                    print(f"    Running {panel.name}...")
+                    if panel.runner == "positions":
+                        result = await run_benchmark_for_scheduler(
+                            player_id=llm_id,
+                            player_config=config,
+                            stockfish=stockfish,
+                            positions=panel_positions[panel.name],
+                            depth=panel.score_depth,
+                            original_indices=None,
+                            results_path=panel.results_path,
+                            sync_firestore=panel.name == "core",
+                        )
                     else:
-                        actual_cost = self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
+                        result = await run_probe_for_scheduler(
+                            player_id=llm_id,
+                            player_config=config,
+                            stockfish=stockfish,
+                            positions=panel_positions[panel.name],
+                            positions_path=panel.positions_path,
+                            results_path=panel.results_path,
+                            position_limit=panel.position_count,
+                            probe_plies=panel.probe_plies,
+                            score_depth=panel.score_depth,
+                            random_seed=panel.random_seed,
+                        )
 
+                    if not result["success"]:
+                        print(
+                            f"    Warning: {panel.name} failed: "
+                            f"{result.get('error', 'unknown')}"
+                        )
+                        break
+
+                    readiness = panel_readiness(panel, llm_id)
+                    if not readiness.is_ready:
+                        print(
+                            f"    Warning: {panel.name} saved but is not current: "
+                            f"{readiness.reason}"
+                        )
+                        break
+
+                    self._acquisition_state.setdefault(llm_id, set()).add(panel.name)
+                    acquired_any = True
+                    token_usage = result.get(
+                        "token_usage", {"prompt": 0, "completion": 0}
+                    )
+                    model_calls = int(
+                        result.get("model_calls", panel.planned_first_attempt_calls) or 0
+                    )
+                    actual_cost = self._actual_benchmark_cost(
+                        llm_id,
+                        token_usage,
+                        model_calls=model_calls,
+                    )
                     counters["total_cost"] += actual_cost
-                    self._benchmark_completed.add(llm_id)
-                    benchmarked.add(llm_id)
+                    summary = result["summary"]
+                    if panel.runner == "positions":
+                        metrics = (
+                            f"CPL={summary['avg_cpl']:.0f}, "
+                            f"Legal={summary['legal_pct']:.1f}%"
+                        )
+                    else:
+                        metrics = (
+                            f"CPL={float(summary.get('model_avg_cpl') or 0):.0f}, "
+                            f"Legal={float(summary.get('model_legal_pct') or 0):.1f}%"
+                        )
+                    print(f"    {panel.name}: {metrics}, Cost=${actual_cost:.4f}")
 
-                    # Count as 1 game played (reduces remaining game cap by 1 for reasoning models)
+                if acquired_any:
+                    benchmarked.add(llm_id)
+                    # One suite acquisition pass counts as one game, preserving the
+                    # historical reasoning-model cap behavior.
                     self._games_played[llm_id] = self._games_played.get(llm_id, 0) + 1
 
-                    print(f"  Position benchmark for {llm_id}: "
-                          f"CPL={summary['avg_cpl']:.0f}, "
-                          f"Legal={summary['legal_pct']:.1f}%, "
-                          f"Cost=${actual_cost:.4f}")
-                else:
-                    print(f"  Warning: Position benchmark failed for {llm_id}: {result.get('error', 'unknown')}")
+                if not missing_panels(
+                    llm_id,
+                    self._acquisition_policy,
+                    self._acquisition_state,
+                ):
+                    self._benchmark_completed.add(llm_id)
 
         finally:
             if stockfish is not None:
                 stockfish.quit()
 
-        # Refresh rating store once with all new benchmark predictions
+        # Refresh once after all newly acquired core or downside-only evidence.
         if benchmarked:
             self.rating_store.refresh_benchmark_predictions()
 
         print()
-        return benchmarked
+        if self._acquisition_policy.defer_games_after_acquisition:
+            return benchmarked
+        return set()
 
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game

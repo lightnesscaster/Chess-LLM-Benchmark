@@ -1,13 +1,23 @@
+import asyncio
 import json
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import chess
 
+from game.match_scheduler import MatchScheduler
+from position_benchmark.acquisition import (
+    SUPPORTED_AUTOMATIC_PANELS,
+    load_acquisition_policy,
+    load_acquisition_state,
+    missing_panels,
+)
 from position_benchmark.predictions import (
     CURRENT_STABILITY_SELECTION_POLICY,
+    CURRENT_STABILITY_POSITION_INDICES,
     CURRENT_STABILITY_PROBE_VERSION,
     CURRENT_BENCHMARK_VERSION,
     DEFAULT_MIN_BLUNDER_POSITIONS,
@@ -15,6 +25,7 @@ from position_benchmark.predictions import (
     DEFAULT_MIN_GAME_LIKE_POSITIONS,
     DEFAULT_MIN_STABILITY_POSITIONS,
     DEFAULT_MIN_STOCKFISH_DEPTH,
+    PredictionReadiness,
     benchmark_result_readiness,
     combine_legality_metrics,
     collect_equal_position_coverage,
@@ -81,6 +92,8 @@ from scripts.run_stability_probe import (
     pre_moves_from_position,
     selected_positions,
     summarize_player,
+    probe_token_usage,
+    stamp_probe_record,
 )
 from scripts.merge_stability_probe_shards import merge_shards
 from scripts.select_legality_stress_panel import select_panel
@@ -90,6 +103,162 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ProductionContractTests(unittest.TestCase):
+    def test_automatic_acquisition_backfills_supplements_after_core(self) -> None:
+        policy = load_acquisition_policy()
+        self.assertEqual(
+            tuple(panel.name for panel in policy.panels),
+            SUPPORTED_AUTOMATIC_PANELS,
+        )
+        self.assertEqual(
+            [panel.planned_first_attempt_calls for panel in policy.panels],
+            [50, 48, 32],
+        )
+        self.assertTrue(policy.defer_games_after_acquisition)
+
+        scheduler = object.__new__(MatchScheduler)
+        scheduler.players = {"core-only": object()}
+        scheduler._llm_configs = {"core-only": {}}
+        scheduler._acquisition_policy = policy
+        scheduler._acquisition_state = {"core-only": {"core"}}
+
+        self.assertTrue(scheduler._needs_position_benchmark("core-only"))
+        self.assertEqual(
+            [
+                panel.name
+                for panel in missing_panels(
+                    "core-only",
+                    policy,
+                    scheduler._acquisition_state,
+                )
+            ],
+            ["game_like", "continuation_stability"],
+        )
+
+        scheduler._acquisition_state["core-only"].update(
+            {"game_like", "continuation_stability"}
+        )
+        self.assertFalse(scheduler._needs_position_benchmark("core-only"))
+
+    def test_saved_gpt56_rows_satisfy_full_automatic_acquisition_policy(self) -> None:
+        policy = load_acquisition_policy()
+        state = load_acquisition_state(policy)
+        expected = set(SUPPORTED_AUTOMATIC_PANELS)
+
+        gpt56_players = {
+            player_id for player_id in state if player_id.startswith("gpt-5.6-")
+        }
+        self.assertEqual(len(gpt56_players), 12)
+        self.assertTrue(all(state[player_id] == expected for player_id in gpt56_players))
+
+    def test_probe_scheduler_helpers_stamp_contract_and_sum_tokens(self) -> None:
+        record = {
+            "summary": {},
+            "results": [
+                {"tokens": {"prompt_tokens": 10, "completion_tokens": 2}},
+                {"tokens": {"prompt_tokens": 20, "completion_tokens": 3}},
+            ],
+        }
+        indexed_positions = [(0, {}), (12, {})]
+
+        stamp_probe_record(
+            record,
+            player_id="model",
+            positions_path=GAME_LIKE_POSITIONS_PATH,
+            indexed_positions=indexed_positions,
+            probe_plies=8,
+            score_depth=10,
+        )
+
+        self.assertEqual(probe_token_usage(record), {"prompt": 30, "completion": 5})
+        self.assertEqual(record["summary"]["selected_position_indices"], [0, 12])
+        self.assertEqual(
+            record["summary"]["stability_probe_version"],
+            CURRENT_STABILITY_PROBE_VERSION,
+        )
+
+    def test_scheduler_runs_missing_supplements_in_manifest_order(self) -> None:
+        policy = load_acquisition_policy()
+        scheduler = object.__new__(MatchScheduler)
+        scheduler.players = {"core-only": object()}
+        scheduler._llm_configs = {"core-only": {"model_name": "test/model"}}
+        scheduler._acquisition_policy = policy
+        scheduler._acquisition_state = {"core-only": {"core"}}
+        scheduler._benchmark_completed = set()
+        scheduler._games_played = {}
+        scheduler.verbose = False
+        scheduler.rating_store = SimpleNamespace(
+            get=lambda _player_id: SimpleNamespace(
+                rating=1000,
+                rating_deviation=300,
+                games_played=0,
+                wins=0,
+                losses=0,
+                draws=0,
+            ),
+            refresh_benchmark_predictions=lambda: None,
+        )
+        scheduler._freeze_checker = SimpleNamespace(
+            is_frozen=lambda _player_id, _rd: False
+        )
+        scheduler._calculate_priority = lambda _player_id: 1.0
+        scheduler._estimate_benchmark_cost = lambda _player_id, _panel: 0.01
+        scheduler._actual_benchmark_cost = (
+            lambda _player_id, _tokens, model_calls: 0.01
+        )
+
+        calls: list[str] = []
+
+        async def fake_positions(**kwargs):
+            calls.append(kwargs["results_path"].name)
+            return {
+                "success": True,
+                "summary": {"avg_cpl": 10.0, "legal_pct": 100.0},
+                "token_usage": {"prompt": 1, "completion": 1},
+                "model_calls": 48,
+            }
+
+        async def fake_continuation(**_kwargs):
+            calls.append("stability.json")
+            return {
+                "success": True,
+                "summary": {"model_avg_cpl": 20.0, "model_legal_pct": 100.0},
+                "token_usage": {"prompt": 1, "completion": 1},
+                "model_calls": 32,
+            }
+
+        engine = SimpleNamespace(quit=lambda: None)
+        counters = {"total_cost": 0.0}
+        with (
+            patch(
+                "position_benchmark.run_benchmark.run_benchmark_for_scheduler",
+                side_effect=fake_positions,
+            ),
+            patch(
+                "scripts.run_stability_probe.run_probe_for_scheduler",
+                side_effect=fake_continuation,
+            ),
+            patch(
+                "game.match_scheduler.panel_readiness",
+                return_value=PredictionReadiness(True, "ready"),
+            ),
+            patch("chess.engine.SimpleEngine.popen_uci", return_value=engine),
+        ):
+            deferred = asyncio.run(
+                scheduler._run_position_benchmarks(
+                    ["core-only"],
+                    counters,
+                    max_cost=10.0,
+                )
+            )
+
+        self.assertEqual(calls, ["game_like.json", "stability.json"])
+        self.assertEqual(deferred, {"core-only"})
+        self.assertEqual(
+            scheduler._acquisition_state["core-only"],
+            set(SUPPORTED_AUTOMATIC_PANELS),
+        )
+        self.assertIn("core-only", scheduler._benchmark_completed)
+
     def test_legality_stress_candidate_is_selected_without_gpt56_leakage(self) -> None:
         positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
         results = json.loads(CORE_RESULTS_PATH.read_text())
@@ -302,6 +471,19 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(transfer["results"], repo_relative(FAILURE_TRANSFER_RESULTS_PATH))
         self.assertEqual(transfer["planned_base_first_attempt_calls"], 48)
         self.assertEqual(transfer["stockfish_depth"], 30)
+        acquisition = manifest["automatic_acquisition"]
+        self.assertTrue(acquisition["enabled"])
+        self.assertEqual(
+            acquisition["panel_order"],
+            ["core", "game_like", "continuation_stability"],
+        )
+        self.assertTrue(acquisition["defer_games_after_acquisition"])
+        self.assertEqual(
+            manifest["panels"]["continuation_stability"][
+                "planned_base_first_attempt_calls"
+            ],
+            32,
+        )
         shortlist = manifest["panels"]["failure_transfer_positive_shortlist"]
         self.assertEqual(shortlist["production_effect"], "none")
         self.assertEqual(shortlist["positions"], repo_relative(FAILURE_TRANSFER_SHORTLIST_PATH))
@@ -1089,6 +1271,7 @@ class PredictionMetricTests(unittest.TestCase):
             "summary": {
                 "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
                 "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                "selected_position_indices": list(CURRENT_STABILITY_POSITION_INDICES),
                 "attempted_positions": 4,
                 "model_scored_moves": 12,
                 "model_forfeit_pct": 50.0,
@@ -1140,6 +1323,7 @@ class PredictionMetricTests(unittest.TestCase):
             "summary": {
                 "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
                 "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                "selected_position_indices": list(CURRENT_STABILITY_POSITION_INDICES),
                 "attempted_positions": 8,
                 "model_legal_moves": 24,
                 "model_attempts": 24,
@@ -1190,6 +1374,7 @@ class PredictionMetricTests(unittest.TestCase):
             "summary": {
                 "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
                 "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                "selected_position_indices": list(CURRENT_STABILITY_POSITION_INDICES),
                 "attempted_positions": 8,
                 "model_legal_moves": 0,
                 "model_attempts": 16,

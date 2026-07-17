@@ -4,8 +4,8 @@ This document is the source of truth for the position benchmark used to predict 
 model's game-playing rating. The production design was finalized on June 23, 2026
 and implemented in commit `08ffc44` (`improve position benchmark prediction`).
 
-The benchmark has one required core and optional, downside-only diagnostics. A
-supplemental panel is not part of the core workload and can never raise a rating.
+The benchmark has one required core and automatic, downside-only supplements. A
+supplemental panel is not required for core rating readiness and can never raise a rating.
 Experimental position sets and analysis scripts do not change this specification
 unless this document, the benchmark version, and the validation record are updated
 together.
@@ -34,8 +34,14 @@ The core workload has **50 required first-attempt calls per model configuration*
 plus exactly one conditional retry call for each illegal first answer. It therefore
 uses 50–100 total calls per configuration. For 12 configurations, the base is 600
 calls and the exact total is `600 + the number of first-attempt illegals` (at most
-1200). The optional panels below are additional work and must not be included in
-that count unless they are explicitly requested.
+1200). That remains the correct count when discussing the core alone.
+
+The scheduler's complete automatic acquisition suite is larger: 50 core calls, 48
+game-like calls, and up to 32 first-attempt continuation turns, or **130 planned
+first-attempt calls per configuration**. Conditional retries add 0–50 core calls,
+0–48 game-like calls, and at most eight continuation calls. The automatic suite is
+therefore 130–236 calls per configuration; for 12 configurations its planned base
+is 1,560 calls, not 600.
 
 The retry call uses the same player method and arguments as a production game:
 the unchanged history-replayed board, `is_retry=True`, and
@@ -57,8 +63,8 @@ upper bound; recorded actual cost uses the calls and tokens that really occurred
 | Purpose | Positions | Results | Status |
 | --- | --- | --- | --- |
 | Rating-prediction core | `panels/core_equal_50.json` | `results/core.json` | Required |
-| Non-opening game-like | `panels/game_like_48.json` | `results/game_like.json` | Optional downside only |
-| Continuation stability | 8 stratified game-like positions | `results/stability.json` | Optional downside only |
+| Non-opening game-like | `panels/game_like_48.json` | `results/game_like.json` | Automatic downside only |
+| Continuation stability | 8 stratified game-like positions | `results/stability.json` | Automatic downside only |
 | Long-sequence continuation | 4 stratified game-like positions | `results/protocol_sequence.json` | Research candidate |
 | Historical blunders | `panels/optional_blunder_25.json` | `results/optional_blunder.json` | Optional historical |
 
@@ -71,6 +77,33 @@ are never active inputs.
 The runner refuses any positions file marked `active_production_input: false`.
 Historical tools may override that protection only by explicitly passing
 `--allow-legacy-input`; normal benchmark commands must never use that flag.
+
+## Automatic acquisition policy
+
+`benchmark_manifest.json` defines `production-supplements-v1`. For every model
+selected in a normal benchmark run that is configured, non-engine, and not frozen,
+the scheduler checks current readiness and acquires missing panels in this fixed
+order:
+
+1. `core`;
+2. `game_like`;
+3. `continuation_stability`.
+
+This is not an operator choice. A model with a valid core but missing or stale
+supplements is still queued. Static rows must have history replay, the required
+Stockfish depth, and complete position coverage. Every new acquisition records the
+production retry protocol; otherwise-current historical static rows are not
+invalidated solely because retry recovery was not measured, since it remains
+additive evidence and does not change their rating formula. Continuation results
+must use the exact stratified indices, depth 10, zero API-error games, and the
+current retry stamp.
+
+The budget is checked before each panel. If the next panel does not fit, the
+scheduler preserves completed work and resumes at the first missing panel on a
+later run. A model that acquires any panel is deferred from ordinary games for that
+run, preserving the existing one-benchmark-contribution scheduling behavior.
+Historical blunders and every research-candidate panel are explicitly excluded
+from automatic acquisition.
 
 ## Rating formula
 
@@ -120,11 +153,13 @@ error = actual_game_rating - predicted_rating
 
 A negative error therefore means the position benchmark overestimated the model.
 
-## Optional downside checks
+## Automatic downside checks
 
-These panels address specific optimistic failure modes. They are not required for a
-production-ready core result, do not provide positive evidence, and never increase
-the core estimate.
+These panels address specific optimistic failure modes. The scheduler acquires them
+automatically, but they are not required for a production-ready core result, do not
+provide positive evidence, and never increase the core estimate. This distinction
+allows historical core-only results to remain readable without making acquisition
+for new or actively selected models manual.
 
 ### Non-opening game-like panel
 
@@ -339,7 +374,15 @@ python position_benchmark/run_benchmark.py \
 Use `--limit 1` and a temporary `--output` for a smoke test. Do not merge smoke-test
 rows into the production results file.
 
-Run the optional game-like panel only when that diagnostic is wanted:
+The normal scheduler runs the core and both automatic supplements without separate
+commands:
+
+```bash
+python cli.py run -c config/benchmark.yaml -v
+```
+
+For repair, isolated reruns, or research, the game-like panel can still be invoked
+directly:
 
 ```bash
 python position_benchmark/run_benchmark.py \
@@ -357,7 +400,7 @@ conditionally after a fresh illegal answer; it does not manufacture a retry from
 stored historical illegal move. `--retry-missing` retains its narrower meaning of
 filling absent position rows.
 
-Run the optional continuation probe with:
+Likewise, the continuation probe can be invoked directly for repair or research:
 
 ```bash
 python scripts/run_stability_probe.py \
@@ -391,7 +434,8 @@ Audit freshness, coverage, prediction error, and any available supplemental caps
 python scripts/audit_position_benchmark_readiness.py --show-all
 ```
 
-The audit reads the separate optional result files under `position_benchmark/results/`
+The audit reads the separate automatic supplemental result files under
+`position_benchmark/results/`
 when they exist. A current leaderboard audit will not necessarily reproduce the
 frozen June metrics because actual game ratings continue to change.
 
@@ -405,8 +449,8 @@ Any future change to the production methodology must include all of the followin
 3. Record the exact validation cohort, commit, MAE, RMSE, error definition, and
    target-failure count.
 4. Separate current rows from legacy or provider-mismatched rows.
-5. State the required and optional call counts explicitly.
-6. Preserve the model API/provider surface between the position benchmark, optional
+5. State the core and full automatic-acquisition call counts explicitly.
+6. Preserve the model API/provider surface between the position benchmark, automatic
    probes, and rated games, or label the comparison as provider-mismatched.
 
 Research scripts and newly generated panels are experiments until this change

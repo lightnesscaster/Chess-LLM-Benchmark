@@ -755,12 +755,14 @@ async def run_benchmark_for_scheduler(
     depth: int = 30,
     api_backend: str = "openrouter",
     original_indices: Optional[list[int]] = None,
+    results_path: Path = CORE_RESULTS_PATH,
+    sync_firestore: bool | None = None,
 ) -> dict:
     """
     Run position benchmark for a single model, called from the match scheduler.
 
     Uses a shared Stockfish instance and pre-loaded positions (caller manages lifecycle).
-    Merges results into the canonical core results file.
+    Merges results into the requested canonical panel results file.
 
     Args:
         player_id: The model's player ID
@@ -771,6 +773,9 @@ async def run_benchmark_for_scheduler(
         api_backend: API backend to use ("openrouter" or "gemini")
         original_indices: Legacy compatibility mapping for callers using the old
                          combined position registry.
+        results_path: Canonical output for the selected panel.
+        sync_firestore: Whether to sync the result to the production core
+                        collection. Defaults to true only for ``CORE_RESULTS_PATH``.
 
     Returns:
         {"success": True, "summary": dict, "token_usage": dict} on success
@@ -793,8 +798,7 @@ async def run_benchmark_for_scheduler(
                 if 0 <= subset_idx < len(original_indices):
                     r["position_idx"] = original_indices[subset_idx]
 
-        # Merge into the canonical core results file.
-        results_path = CORE_RESULTS_PATH
+        # Merge into the canonical panel results file.
         all_results = {}
         if results_path.exists():
             with open(results_path) as f:
@@ -808,18 +812,25 @@ async def run_benchmark_for_scheduler(
             "run_model_calls": result.get("run_model_calls", 0),
         }
 
+        results_path.parent.mkdir(parents=True, exist_ok=True)
         with open(results_path, "w") as f:
             json.dump(all_results, f, indent=2)
 
-        # Sync to Firestore (per-model document to avoid 1 MiB limit)
-        try:
-            from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
-            db = get_firestore_client()
-            db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
-                all_results[player_id]
-            )
-        except Exception as e:
-            print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
+        should_sync_firestore = (
+            results_path.resolve() == CORE_RESULTS_PATH.resolve()
+            if sync_firestore is None
+            else sync_firestore
+        )
+        if should_sync_firestore:
+            # Core rows are synced per model to avoid Firestore's 1 MiB document limit.
+            try:
+                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
+                db = get_firestore_client()
+                db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
+                    all_results[player_id]
+                )
+            except Exception as e:
+                print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
 
         return {
             "success": True,

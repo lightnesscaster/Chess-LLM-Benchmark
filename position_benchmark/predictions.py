@@ -17,9 +17,11 @@ DEFAULT_MIN_BLUNDER_POSITIONS = 25
 DEFAULT_MIN_GAME_LIKE_POSITIONS = 48
 DEFAULT_MIN_STABILITY_POSITIONS = 8
 DEFAULT_MIN_STABILITY_SCORED_MOVES = 24
+DEFAULT_MIN_STABILITY_SCORE_DEPTH = 10
 DEFAULT_MIN_STOCKFISH_DEPTH = 30
 CURRENT_STABILITY_PROBE_VERSION = "stratified-v2"
 CURRENT_STABILITY_SELECTION_POLICY = "category-round-robin-v1"
+CURRENT_STABILITY_POSITION_INDICES = (0, 12, 24, 36, 1, 13, 25, 37)
 DEFAULT_GAME_LIKE_CPL_CAP = 5000.0
 GAME_LIKE_CAP_TRIGGER = 150.0
 STABILITY_RISK_TRIGGER = 5.0
@@ -416,6 +418,7 @@ def stability_probe_readiness(
     *,
     min_positions: int = DEFAULT_MIN_STABILITY_POSITIONS,
     min_scored_moves: int = DEFAULT_MIN_STABILITY_SCORED_MOVES,
+    min_score_depth: int = DEFAULT_MIN_STABILITY_SCORE_DEPTH,
 ) -> PredictionReadiness:
     """Check whether a continuation-probe summary is strong enough to cap ratings."""
     summary = model_data.get("summary", model_data)
@@ -424,6 +427,8 @@ def stability_probe_readiness(
         or summary.get("position_selection_policy") != CURRENT_STABILITY_SELECTION_POLICY
     ):
         return PredictionReadiness(False, "outdated stability position selection")
+    if tuple(summary.get("selected_position_indices") or ()) != CURRENT_STABILITY_POSITION_INDICES:
+        return PredictionReadiness(False, "unexpected stability position indices")
     try:
         attempted = int(summary.get("attempted_positions") or 0)
         scored = int(summary.get("model_scored_moves") or 0)
@@ -438,8 +443,13 @@ def stability_probe_readiness(
     enough_forfeit_evidence = forfeits >= max(2, min_positions // 4)
     if scored < min_scored_moves and move_attempts < min_scored_moves and not enough_forfeit_evidence:
         return PredictionReadiness(False, f"stability scored moves < {min_scored_moves}")
-    if score_depth <= 0:
-        return PredictionReadiness(False, "unscored stability probe")
+    if score_depth < min_score_depth:
+        return PredictionReadiness(
+            False,
+            f"stability score depth < {min_score_depth}",
+        )
+    if int(summary.get("api_errors", 0) or 0) != 0:
+        return PredictionReadiness(False, "stability probe contains API errors")
     return PredictionReadiness(True, "ready")
 
 

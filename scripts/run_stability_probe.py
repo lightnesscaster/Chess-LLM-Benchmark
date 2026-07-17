@@ -602,6 +602,104 @@ async def run_probe_for_player(
     }
 
 
+def stamp_probe_record(
+    record: dict[str, Any],
+    *,
+    player_id: str,
+    positions_path: Path,
+    indexed_positions: list[tuple[int, dict[str, Any]]],
+    probe_plies: int,
+    score_depth: int,
+    probe_version: str = STABILITY_PROBE_VERSION,
+    selection_policy: str = STABILITY_SELECTION_POLICY,
+) -> None:
+    """Stamp a continuation result with the contract used by readiness checks."""
+    summary = record.setdefault("summary", {})
+    summary["player_id"] = player_id
+    summary["positions_file"] = str(positions_path)
+    summary["probe_plies"] = probe_plies
+    summary["score_depth"] = score_depth
+    summary["stability_probe_version"] = probe_version
+    summary["position_selection_policy"] = selection_policy
+    summary["selected_position_indices"] = [
+        position_idx for position_idx, _ in indexed_positions
+    ]
+
+
+def probe_token_usage(record: dict[str, Any]) -> dict[str, int]:
+    """Sum model token usage across continuation starting positions."""
+    prompt = 0
+    completion = 0
+    for row in record.get("results", []):
+        tokens = row.get("tokens") or {}
+        prompt += int(tokens.get("prompt_tokens", 0) or 0)
+        completion += int(tokens.get("completion_tokens", 0) or 0)
+    return {"prompt": prompt, "completion": completion}
+
+
+async def run_probe_for_scheduler(
+    player_id: str,
+    player_config: dict[str, Any],
+    stockfish: chess.engine.SimpleEngine,
+    positions: list[dict[str, Any]],
+    *,
+    positions_path: Path = GAME_LIKE_POSITIONS_PATH,
+    results_path: Path = STABILITY_RESULTS_PATH,
+    position_limit: int = DEFAULT_POSITION_LIMIT,
+    probe_plies: int = DEFAULT_PROBE_PLIES,
+    score_depth: int = DEFAULT_SCORE_DEPTH,
+    random_seed: int = 1729,
+    api_backend: str = "openrouter",
+) -> dict[str, Any]:
+    """Run and persist the canonical continuation supplement for the scheduler."""
+    try:
+        indexed_positions = selected_positions(
+            positions,
+            position_indices=None,
+            limit=position_limit,
+        )
+        record = await run_probe_for_player(
+            player_id,
+            player_config,
+            indexed_positions,
+            probe_plies=probe_plies,
+            api_backend=api_backend,
+            random_seed=random_seed,
+            verbose=False,
+            respect_config_api=True,
+            stockfish=stockfish,
+            score_depth=score_depth,
+        )
+        stamp_probe_record(
+            record,
+            player_id=player_id,
+            positions_path=positions_path,
+            indexed_positions=indexed_positions,
+            probe_plies=probe_plies,
+            score_depth=score_depth,
+        )
+
+        output: dict[str, Any] = {}
+        if results_path.exists():
+            output = load_json(results_path)
+        output[player_id] = record
+        results_path.parent.mkdir(parents=True, exist_ok=True)
+        results_path.write_text(json.dumps(output, indent=2) + "\n")
+
+        summary = record["summary"]
+        return {
+            "success": True,
+            "summary": summary,
+            "token_usage": probe_token_usage(record),
+            "model_calls": int(summary.get("model_attempts", 0) or 0),
+        }
+    except Exception as exc:
+        import traceback
+
+        traceback.print_exc()
+        return {"success": False, "error": str(exc)}
+
+
 async def main_async() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--positions", type=Path, default=GAME_LIKE_POSITIONS_PATH)
@@ -753,27 +851,30 @@ async def main_async() -> None:
                 stockfish=stockfish,
                 score_depth=args.score_depth,
             )
-            output[player_id]["summary"]["player_id"] = player_id
-            output[player_id]["summary"]["positions_file"] = str(args.positions)
-            output[player_id]["summary"]["probe_plies"] = probe_plies
-            output[player_id]["summary"]["score_depth"] = args.score_depth
-            output[player_id]["summary"]["stability_probe_version"] = (
+            probe_version = (
                 EXPLICIT_SELECTION_VERSION
                 if args.position_indices is not None
                 else PROTOCOL_SEQUENCE_VERSION
                 if args.protocol_sequence_v1
                 else STABILITY_PROBE_VERSION
             )
-            output[player_id]["summary"]["position_selection_policy"] = (
+            selection_policy = (
                 "explicit-indices"
                 if args.position_indices is not None
                 else PROTOCOL_SEQUENCE_SELECTION_POLICY
                 if args.protocol_sequence_v1
                 else STABILITY_SELECTION_POLICY
             )
-            output[player_id]["summary"]["selected_position_indices"] = [
-                position_idx for position_idx, _ in indexed_positions
-            ]
+            stamp_probe_record(
+                output[player_id],
+                player_id=player_id,
+                positions_path=args.positions,
+                indexed_positions=indexed_positions,
+                probe_plies=probe_plies,
+                score_depth=args.score_depth,
+                probe_version=probe_version,
+                selection_policy=selection_policy,
+            )
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(json.dumps(output, indent=2) + "\n")
             print(f"Saved partial results to {output_path}", flush=True)
