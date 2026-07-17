@@ -221,6 +221,35 @@ As with the game-like panel, the cap is applied only when it is more than 150 El
 below the current estimate. Eight starting positions require up to 32 ordinary
 model turns, plus any illegal-move retries.
 
+### Family-held-out supplemental predictor audit
+
+The 2026-07-17 zero-call audit replayed 6,276 production games using the current
+benchmark prior mean with validation-only RD 300, then evaluated learned candidates
+with nested leave-one-model-line-family-out prediction. Production remained at RD
+166 and was not written.
+
+On the broader game-like cohort (15 configurations, six families), the current
+downside system materially improved over the core alone: MAE fell from 354.8 to
+239.1 Elo and RMSE from 476.7 to 323.0. No learned aggregate, category, legality,
+or continuous-deadband replacement improved held-out MAE. Pooled first-answer
+illegality was the strongest remaining cross-family diagnostic (Spearman -0.617
+with `actual - predicted`), but fitting it still worsened MAE.
+
+Only the twelve GPT-5.6 configurations have a currently ready stratified-v2
+continuation record alongside the game-like panel. Within that selected cohort,
+continuation CPL had almost no relationship to remaining prediction error
+(Spearman -0.091) and did not improve held-out MAE. The earlier GPT-5.6 defense-CPL
+signal also failed to generalize: its correlation was -0.643 inside GPT-5.6 but
+only -0.157 across the broader game-like cohort. The direct continuation
+forfeit/catastrophe cap made no additional adjustment for these twelve models;
+continuation legality still participates in the game-like panel's conservative
+legality input.
+
+The frozen evidence gate required 30 configurations and eight families, so the
+decision is to retain the production predictor. See
+`validation/2026-07-17-supplemental-predictor-analysis.md` and its frozen plan for
+the full leakage controls and results.
+
 Continuation rows explicitly record the outcome of the first production retry in
 each probe game as recovery, failure, or unknown provider outcome. A later second
 illegal strike is an immediate forfeit under the game policy and is not counted as
