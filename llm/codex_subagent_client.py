@@ -69,6 +69,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         self.working_dir = working_dir
         self._last_prompt_tokens = 0
         self._last_completion_tokens = 0
+        self._prefetched_response: Optional[dict] = None
+        self.last_api_error: str = ""
 
         if max_concurrent is None:
             max_concurrent = int(os.environ.get("CODEX_SUBAGENT_MAX_CONCURRENT", "6"))
@@ -142,21 +144,34 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         is_retry: bool = False,
         last_move_illegal: str = None,
     ) -> str:
-        move_start_time = time.time()
         prompt = self._build_prompt(board, is_retry, last_move_illegal)
         self.last_prompt = prompt
         self.last_raw_response = ""
         self._last_prompt_tokens = 0
         self._last_completion_tokens = 0
 
-        assert self._GLOBAL_SEMAPHORE is not None
-        async with self._GLOBAL_SEMAPHORE:
-            try:
-                response_text, usage = await self._run_codex(prompt)
-            finally:
-                elapsed = time.time() - move_start_time
-                self.move_times.append(elapsed)
-                self.total_move_time += elapsed
+        prefetched = self._prefetched_response
+        if (
+            prefetched is not None
+            and not is_retry
+            and prefetched["fen"] == board.fen()
+        ):
+            self._prefetched_response = None
+            response_text = str(prefetched["response_text"])
+            usage = dict(prefetched["usage"])
+            elapsed = float(prefetched["elapsed"])
+            self.move_times.append(elapsed)
+            self.total_move_time += elapsed
+        else:
+            move_start_time = time.time()
+            assert self._GLOBAL_SEMAPHORE is not None
+            async with self._GLOBAL_SEMAPHORE:
+                try:
+                    response_text, usage = await self._run_codex(prompt)
+                finally:
+                    elapsed = time.time() - move_start_time
+                    self.move_times.append(elapsed)
+                    self.total_move_time += elapsed
 
         self.last_raw_response = response_text
         self._track_usage(usage)
@@ -166,10 +181,32 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             return response_text.strip()[:80] if response_text else ""
         return move
 
+    async def preflight(self, board: chess.Board) -> None:
+        """Verify model access and cache the response as the first real move.
+
+        The successful preflight is consumed by ``select_move`` so it adds no
+        model call. Permanent account/model incompatibilities are detected on
+        the first request instead of being retried for every probe position.
+        """
+        if self._prefetched_response is not None:
+            return
+        prompt = self._build_prompt(board, False, None)
+        started = time.time()
+        assert self._GLOBAL_SEMAPHORE is not None
+        async with self._GLOBAL_SEMAPHORE:
+            response_text, usage = await self._run_codex(prompt)
+        self._prefetched_response = {
+            "fen": board.fen(),
+            "response_text": response_text,
+            "usage": usage,
+            "elapsed": time.time() - started,
+        }
+
     async def _run_codex(self, prompt: str) -> tuple[str, dict]:
         last_error: Optional[BaseException] = None
 
         for attempt in range(self.max_retries):
+            permanent_failure = False
             output_file = tempfile.NamedTemporaryFile(prefix="codex_chess_move_", suffix=".txt", delete=False)
             output_path = output_file.name
             output_file.close()
@@ -199,11 +236,13 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                         + ", ".join(disallowed_items)
                     )
                 elif process.returncode == 0:
+                    self.last_api_error = ""
                     return response_text, usage
                 else:
                     last_error = RuntimeError(
                         f"codex exec exited {process.returncode}: {stdout[-1000:]}"
                     )
+                    permanent_failure = self._is_permanent_model_failure(stdout)
             except asyncio.TimeoutError as exc:
                 last_error = exc
                 if "process" in locals() and process.returncode is None:
@@ -215,10 +254,26 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                 except OSError:
                     pass
 
+            if permanent_failure:
+                break
             if attempt < self.max_retries - 1:
                 await asyncio.sleep(2 * (attempt + 1))
 
-        raise TransientAPIError(f"Codex subagent call failed: {last_error}")
+        self.last_api_error = f"Codex subagent call failed: {last_error}"
+        raise TransientAPIError(self.last_api_error)
+
+    @staticmethod
+    def _is_permanent_model_failure(stdout: str) -> bool:
+        """Return whether Codex reported a non-retryable model/account error."""
+        lowered = stdout.lower()
+        return any(
+            marker in lowered
+            for marker in (
+                "not supported when using codex with a chatgpt account",
+                "model_not_found",
+                "does not exist or you do not have access to it",
+            )
+        )
 
     def _disallowed_item_types(self, stdout: str) -> list[str]:
         """Return JSONL item types that could affect a tool-free chess answer."""

@@ -1,7 +1,11 @@
 """Tests for the isolated Codex CLI chess player."""
 
+import asyncio
 import json
 import unittest
+from unittest.mock import AsyncMock, patch
+
+import chess
 
 from llm.codex_subagent_client import CodexSubagentPlayer
 
@@ -49,6 +53,38 @@ class CodexSubagentPlayerTests(unittest.TestCase):
             self.player._disallowed_item_types(stdout),
             ["command_execution", "web_search"],
         )
+
+    def test_permanent_chatgpt_model_failure_is_not_retryable(self) -> None:
+        stdout = (
+            "The 'gpt-5.2' model is not supported when using Codex "
+            "with a ChatGPT account."
+        )
+
+        self.assertTrue(self.player._is_permanent_model_failure(stdout))
+        self.assertFalse(
+            self.player._is_permanent_model_failure("temporary upstream timeout")
+        )
+
+    def test_preflight_response_is_reused_as_first_move(self) -> None:
+        board = chess.Board()
+        usage = {"prompt_tokens": 10, "completion_tokens": 2}
+
+        with patch.object(
+            self.player,
+            "_run_codex",
+            new=AsyncMock(return_value=("MOVE: e2e4", usage)),
+        ) as run_codex:
+            async def exercise() -> str:
+                await self.player.preflight(board)
+                self.player.reset_token_usage()
+                self.player.reset_timing()
+                return await self.player.select_move(board)
+
+            move = asyncio.run(exercise())
+
+        self.assertEqual(move, "e2e4")
+        run_codex.assert_awaited_once()
+        self.assertEqual(self.player.get_token_usage()["total_tokens"], 12)
 
 
 if __name__ == "__main__":

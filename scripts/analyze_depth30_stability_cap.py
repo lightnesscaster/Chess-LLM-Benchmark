@@ -515,7 +515,7 @@ while the present cohort does not validate a direct random-reply CPL cap.
 
 ## Decision boundary
 
-- Do not fit new cap coefficients on 14 configurations.
+- Do not fit new cap coefficients on {analysis['configuration_count']} configurations.
 - Do not describe RD-300 as independent; it still shares the benchmark prior.
 - Production may deduplicate catastrophes within a trajectory because this cannot
   increase any penalty and does not fit the validation targets.

@@ -7,10 +7,15 @@ import argparse
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
+from datetime import datetime, timezone
+import fcntl
+import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 import threading
 from typing import Any
 
@@ -58,6 +63,113 @@ EXPLICIT_SELECTION_VERSION = "explicit-selection-v1"
 def load_json(path: Path) -> Any:
     with path.open() as f:
         return json.load(f)
+
+
+def _merge_json_record(
+    results_path: Path,
+    player_id: str,
+    record: dict[str, Any],
+) -> dict[str, Any]:
+    """Atomically merge one keyed record into a shared JSON file.
+
+    Continuation probes are often launched as separate processes. Each save must
+    therefore reload the canonical file while holding a stable interprocess lock;
+    otherwise the last process to finish can silently discard earlier results.
+    """
+    results_path = results_path.resolve()
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_digest = hashlib.sha256(str(results_path).encode()).hexdigest()[:20]
+    lock_path = Path(tempfile.gettempdir()) / f"chess_stability_{lock_digest}.lock"
+
+    with lock_path.open("a+") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            output: dict[str, Any] = {}
+            if results_path.exists():
+                output = load_json(results_path)
+            output[player_id] = record
+
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=results_path.parent,
+                prefix=f".{results_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary:
+                json.dump(output, temporary, indent=2)
+                temporary.write("\n")
+                temporary_path = Path(temporary.name)
+            os.replace(temporary_path, results_path)
+            return output
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def validate_probe_record(record: dict[str, Any]) -> None:
+    """Reject incomplete or API-failed records before canonical persistence."""
+    summary = record.get("summary") or {}
+    rows = record.get("results") or []
+    expected_indices = summary.get("selected_position_indices") or []
+    actual_indices = [row.get("position_idx") for row in rows]
+
+    if not expected_indices:
+        raise ValueError("probe record has no selected position indices")
+    if actual_indices != expected_indices:
+        raise ValueError(
+            f"incomplete probe rows: expected {expected_indices}, got {actual_indices}"
+        )
+    if int(summary.get("attempted_positions", 0) or 0) != len(expected_indices):
+        raise ValueError("probe attempted-position count is incomplete")
+    if int(summary.get("api_errors", 0) or 0) != 0 or any(
+        row.get("termination") == "api_error" for row in rows
+    ):
+        raise ValueError("probe contains API errors")
+
+    score_depth = int(summary.get("score_depth", 0) or 0)
+    if any(int(row.get("score_depth", -1)) != score_depth for row in rows):
+        raise ValueError("probe row score-depth stamps do not match its summary")
+
+
+def save_player_record(
+    results_path: Path,
+    player_id: str,
+    record: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate and atomically merge one canonical continuation record."""
+    validate_probe_record(record)
+    return _merge_json_record(results_path, player_id, record)
+
+
+def failure_results_path(results_path: Path) -> Path:
+    """Return the noncanonical diagnostic path for failed probe attempts."""
+    return results_path.with_name(f"{results_path.stem}.failures{results_path.suffix}")
+
+
+def save_probe_failure(
+    results_path: Path,
+    player_id: str,
+    record: dict[str, Any],
+    error: str,
+) -> Path:
+    """Persist a failed attempt without touching the canonical result record."""
+    path = failure_results_path(results_path)
+    diagnostic = dict(record)
+    diagnostic["failure"] = {
+        "failed_at": datetime.now(timezone.utc).isoformat(),
+        "error": error,
+        "canonical_output": str(results_path.resolve()),
+    }
+    _merge_json_record(path, player_id, diagnostic)
+    return path
+
+
+class ProbeRunError(RuntimeError):
+    """A probe-level failure carrying partial rows for separate diagnostics."""
+
+    def __init__(self, message: str, record: dict[str, Any]):
+        super().__init__(message)
+        self.record = record
 
 
 def selected_positions(
@@ -682,6 +794,21 @@ async def run_probe_for_player(
     )
     rows: list[dict[str, Any]] = []
     try:
+        preflight = getattr(player, "preflight", None)
+        if preflight is not None and indexed_positions:
+            try:
+                await preflight(replay_position_board(indexed_positions[0][1]))
+            except Exception as exc:
+                record = {
+                    "summary": summarize_player(rows),
+                    "results": rows,
+                }
+                detail = getattr(player, "last_api_error", "") or str(exc)
+                raise ProbeRunError(
+                    f"{player_id} availability preflight failed: {detail}",
+                    record,
+                ) from exc
+
         for ordinal, (position_idx, position) in enumerate(indexed_positions, start=1):
             board = replay_position_board(position)
             model_side = board.turn
@@ -763,6 +890,17 @@ async def run_probe_for_player(
                 f"term={game_result.termination}{score_suffix}",
                 flush=True,
             )
+            if game_result.termination == "api_error":
+                record = {
+                    "summary": summarize_player(rows),
+                    "results": rows,
+                }
+                detail = getattr(player, "last_api_error", "")
+                suffix = f": {detail}" if detail else ""
+                raise ProbeRunError(
+                    f"{player_id} aborted after its first exhausted API failure{suffix}",
+                    record,
+                )
     finally:
         close = getattr(player, "close", None)
         if close is not None:
@@ -796,6 +934,8 @@ def stamp_probe_record(
     summary["selected_position_indices"] = [
         position_idx for position_idx, _ in indexed_positions
     ]
+    for row in record.get("results", []):
+        row["score_depth"] = score_depth
 
 
 def probe_token_usage(record: dict[str, Any]) -> dict[str, int]:
@@ -851,12 +991,7 @@ async def run_probe_for_scheduler(
             score_depth=score_depth,
         )
 
-        output: dict[str, Any] = {}
-        if results_path.exists():
-            output = load_json(results_path)
-        output[player_id] = record
-        results_path.parent.mkdir(parents=True, exist_ok=True)
-        results_path.write_text(json.dumps(output, indent=2) + "\n")
+        save_player_record(results_path, player_id, record)
 
         summary = record["summary"]
         return {
@@ -864,6 +999,26 @@ async def run_probe_for_scheduler(
             "summary": summary,
             "token_usage": probe_token_usage(record),
             "model_calls": int(summary.get("model_attempts", 0) or 0),
+        }
+    except ProbeRunError as exc:
+        stamp_probe_record(
+            exc.record,
+            player_id=player_id,
+            positions_path=positions_path,
+            indexed_positions=indexed_positions,
+            probe_plies=probe_plies,
+            score_depth=score_depth,
+        )
+        diagnostic_path = save_probe_failure(
+            results_path,
+            player_id,
+            exc.record,
+            str(exc),
+        )
+        return {
+            "success": False,
+            "error": str(exc),
+            "failure_record": str(diagnostic_path),
         }
     except Exception as exc:
         import traceback
@@ -1050,29 +1205,14 @@ async def main_async() -> None:
         print(f"Output: {output_path}")
         return
 
-    output: dict[str, Any] = {}
-    if output_path.exists():
-        output = load_json(output_path)
-
     stockfish = None
     if args.score_depth > 0:
         stockfish = chess.engine.SimpleEngine.popen_uci(args.stockfish_path)
 
+    failed_players: list[str] = []
     try:
         for player_id, config in players_to_test.items():
             print(f"\n=== {player_id} ===", flush=True)
-            output[player_id] = await run_probe_for_player(
-                player_id,
-                config,
-                indexed_positions,
-                probe_plies=probe_plies,
-                api_backend=args.api,
-                random_seed=args.random_seed,
-                verbose=args.verbose_games,
-                respect_config_api=not args.ignore_config_api,
-                stockfish=stockfish,
-                score_depth=args.score_depth,
-            )
             probe_version = (
                 EXPLICIT_SELECTION_VERSION
                 if args.position_indices is not None
@@ -1087,8 +1227,45 @@ async def main_async() -> None:
                 if args.protocol_sequence_v1
                 else STABILITY_SELECTION_POLICY
             )
+            try:
+                record = await run_probe_for_player(
+                    player_id,
+                    config,
+                    indexed_positions,
+                    probe_plies=probe_plies,
+                    api_backend=args.api,
+                    random_seed=args.random_seed,
+                    verbose=args.verbose_games,
+                    respect_config_api=not args.ignore_config_api,
+                    stockfish=stockfish,
+                    score_depth=args.score_depth,
+                )
+            except ProbeRunError as exc:
+                record = exc.record
+                stamp_probe_record(
+                    record,
+                    player_id=player_id,
+                    positions_path=args.positions,
+                    indexed_positions=indexed_positions,
+                    probe_plies=probe_plies,
+                    score_depth=args.score_depth,
+                    probe_version=probe_version,
+                    selection_policy=selection_policy,
+                )
+                diagnostic_path = save_probe_failure(
+                    output_path,
+                    player_id,
+                    record,
+                    str(exc),
+                )
+                failed_players.append(player_id)
+                print(
+                    f"FAILED: {exc}\nSaved diagnostic result to {diagnostic_path}",
+                    flush=True,
+                )
+                continue
             stamp_probe_record(
-                output[player_id],
+                record,
                 player_id=player_id,
                 positions_path=args.positions,
                 indexed_positions=indexed_positions,
@@ -1097,12 +1274,14 @@ async def main_async() -> None:
                 probe_version=probe_version,
                 selection_policy=selection_policy,
             )
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(json.dumps(output, indent=2) + "\n")
+            save_player_record(output_path, player_id, record)
             print(f"Saved partial results to {output_path}", flush=True)
     finally:
         if stockfish is not None:
             stockfish.quit()
+
+    if failed_players:
+        raise SystemExit("Probe failed for: " + ", ".join(failed_players))
 
 
 def main() -> None:

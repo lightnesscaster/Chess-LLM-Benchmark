@@ -1,18 +1,20 @@
 {
-  "generated_at": "2026-07-22T03:33:52.658657+00:00",
+  "generated_at": "2026-07-22T17:06:39.996404+00:00",
   "production_effect": "catastrophe-event-deduplication-only",
   "production_rating_store_write": false,
   "model_call_count": 0,
   "score_depth": 30,
-  "configuration_count": 14,
+  "configuration_count": 16,
   "families": [
     "deepseek-v4-flash",
+    "gemini-3.1",
+    "gpt-3.5-turbo-instruct",
     "gpt-5.5",
     "gpt-5.6-luna",
     "gpt-5.6-sol",
     "gpt-5.6-terra"
   ],
-  "family_count": 5,
+  "family_count": 7,
   "candidate_order": [
     "current_move_cap",
     "deduplicated_move_exposure_cap",
@@ -35,7 +37,7 @@
     "position_benchmark/results/game_like.json": "dc26b9b7103f4e5d6f5dc786ffa22c790eed1f7c95037f8ee2f032e1858dea15",
     "position_benchmark/panels/optional_blunder_25.json": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd",
     "position_benchmark/results/optional_blunder.json": "2a15100368eeb79828d11d375772d2237210a77eaa4efd77c14c6d8a3697f15b",
-    "position_benchmark/results/stability.json": "d2d0088deb5f125b958cdc56fea36455934a6b6bd636ac0ea023c76c7779c654",
+    "position_benchmark/results/stability.json": "59fcfe64bb30db629897bac7f8883d09b5f84670f4ec9f0258b44a8cf49006fb",
     "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json": "844bf28016fda5a30430d962db997841550c3ae9fb4846d418ad9447299706d5",
     "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json": "520c82d4aec16324b1556edc222234f398e7cdcf4a3d7095b072a95be2473de3"
   },
@@ -47,13 +49,15 @@
       "warning": "Higher RD reduces but does not eliminate shared-prior circularity.",
       "candidates": {
         "current_move_cap": {
-          "mae": 232.10220546600445,
-          "rmse": 307.3793589887918,
-          "bias": 126.912182225819,
-          "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 320.09898236438084,
+          "mae": 287.26327128127605,
+          "rmse": 396.19628406186143,
+          "bias": 64.12029029893819,
+          "max_absolute_error": 1048.8136851774045,
+          "inverse_variance_weighted_mae": 531.6469104379656,
           "family_mae": {
             "deepseek-v4-flash": 101.87618720554633,
+            "gemini-3.1": 297.96777879894967,
+            "gpt-3.5-turbo-instruct": 1048.8136851774045,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
@@ -73,13 +77,15 @@
           }
         },
         "deduplicated_move_exposure_cap": {
-          "mae": 238.4330645367942,
-          "rmse": 310.3757638285161,
-          "bias": 147.79678232597252,
-          "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 329.1645099805717,
+          "mae": 292.802772968217,
+          "rmse": 398.2350554499562,
+          "bias": 82.3943153865725,
+          "max_absolute_error": 1048.8136851774045,
+          "inverse_variance_weighted_mae": 537.0662889618718,
           "family_mae": {
             "deepseek-v4-flash": 190.5082141966027,
+            "gemini-3.1": 297.96777879894967,
+            "gpt-3.5-turbo-instruct": 1048.8136851774045,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
@@ -88,24 +94,26 @@
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
             "mae_delta_p05": 0.0,
-            "mae_delta_p50": 6.330859070789728,
-            "mae_delta_p95": 24.17237099756082
+            "mae_delta_p50": 5.53950168694098,
+            "mae_delta_p95": 20.453544690243746
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.3524,
-            "mae_delta_p05": -20.447617169946426,
-            "mae_delta_p50": 6.200338706758146,
-            "mae_delta_p95": 20.884600100153534
+            "probability_mae_improves": 0.3475,
+            "mae_delta_p05": -17.602033867250952,
+            "mae_delta_p50": 5.446112107314661,
+            "mae_delta_p95": 18.2740250876343
           }
         },
         "trajectory_hazard_cap": {
-          "mae": 238.68731529160112,
-          "rmse": 310.59475221011826,
-          "bias": 147.54253157116554,
-          "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 329.2723944773738,
+          "mae": 293.12604883028604,
+          "rmse": 398.6499260185319,
+          "bias": 82.07103952450353,
+          "max_absolute_error": 1050.426588403211,
+          "inverse_variance_weighted_mae": 537.6043323315406,
           "family_mae": {
             "deepseek-v4-flash": 190.5082141966027,
+            "gemini-3.1": 297.96777879894967,
+            "gpt-3.5-turbo-instruct": 1050.426588403211,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 273.16543931736595,
             "gpt-5.6-sol": 142.85716508267865,
@@ -113,25 +121,27 @@
           },
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
-            "mae_delta_p05": 0.0,
-            "mae_delta_p50": 6.3308590707897565,
-            "mae_delta_p95": 24.172370997560847
+            "mae_delta_p05": 0.1240694789082113,
+            "mae_delta_p50": 5.640308138553934,
+            "mae_delta_p95": 20.453544690243803
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.34525,
-            "mae_delta_p05": -20.49507857477778,
-            "mae_delta_p50": 6.536201238552508,
-            "mae_delta_p95": 21.138850854960424
+            "probability_mae_improves": 0.3397,
+            "mae_delta_p05": -17.699236228160657,
+            "mae_delta_p50": 5.885262083351677,
+            "mae_delta_p95": 18.59730094970331
           }
         },
         "two_affected_trajectory_gate": {
-          "mae": 238.4330645367942,
-          "rmse": 310.3757638285161,
-          "bias": 147.79678232597252,
-          "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 329.1645099805717,
+          "mae": 292.802772968217,
+          "rmse": 398.2350554499562,
+          "bias": 82.3943153865725,
+          "max_absolute_error": 1048.8136851774045,
+          "inverse_variance_weighted_mae": 537.0662889618718,
           "family_mae": {
             "deepseek-v4-flash": 190.5082141966027,
+            "gemini-3.1": 297.96777879894967,
+            "gpt-3.5-turbo-instruct": 1048.8136851774045,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
@@ -140,66 +150,70 @@
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
             "mae_delta_p05": 0.0,
-            "mae_delta_p50": 6.330859070789728,
-            "mae_delta_p95": 24.17237099756082
+            "mae_delta_p50": 5.53950168694098,
+            "mae_delta_p95": 20.453544690243746
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.3475,
-            "mae_delta_p05": -20.202136678961608,
-            "mae_delta_p50": 6.285903433438875,
-            "mae_delta_p95": 20.884600100153534
+            "probability_mae_improves": 0.34535,
+            "mae_delta_p05": -17.819286264854725,
+            "mae_delta_p50": 5.621551629510634,
+            "mae_delta_p95": 18.2740250876343
           }
         },
         "repeated_forfeit_only": {
-          "mae": 235.60497956068158,
-          "rmse": 308.12750717403725,
-          "bias": 182.91782477275962,
+          "mae": 226.1706408080067,
+          "rmse": 297.74964460991316,
+          "bias": 177.28278533362305,
           "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 327.96448788115583,
+          "inverse_variance_weighted_mae": 234.96138005978713,
           "family_mae": {
             "deepseek-v4-flash": 190.5082141966027,
+            "gemini-3.1": 297.96777879894967,
+            "gpt-3.5-turbo-instruct": 22.29276027961555,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 262.37726425914764,
             "gpt-5.6-sol": 142.85716508267865,
             "gpt-5.6-terra": 276.7880188599551
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.27375,
-            "mae_delta_p05": -5.656169952225184,
-            "mae_delta_p50": 3.502774094677136,
-            "mae_delta_p95": 22.15800674776409
+            "probability_mae_improves": 0.7503,
+            "mae_delta_p05": -233.11722595137593,
+            "mae_delta_p50": -58.1951212752075,
+            "mae_delta_p95": 11.079003373882045
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.4722,
-            "mae_delta_p05": -40.913479820605005,
-            "mae_delta_p50": 2.3243624640359144,
-            "mae_delta_p95": 47.62439906859922
+            "probability_mae_improves": 0.99985,
+            "mae_delta_p05": -98.52254247697968,
+            "mae_delta_p50": -61.01192533730267,
+            "mae_delta_p95": -20.6655425648986
           }
         },
         "no_hard_cap": {
-          "mae": 235.60497956068158,
-          "rmse": 308.12750717403725,
-          "bias": 182.91782477275962,
+          "mae": 240.6878074553349,
+          "rmse": 317.2981511221071,
+          "bias": 191.79995198095125,
           "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 327.96448788115583,
+          "inverse_variance_weighted_mae": 260.18602783829425,
           "family_mae": {
             "deepseek-v4-flash": 190.5082141966027,
+            "gemini-3.1": 530.2424451562005,
+            "gpt-3.5-turbo-instruct": 22.29276027961555,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 262.37726425914764,
             "gpt-5.6-sol": 142.85716508267865,
             "gpt-5.6-terra": 276.7880188599551
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.269,
-            "mae_delta_p05": -5.656169952225184,
-            "mae_delta_p50": 3.502774094677136,
-            "mae_delta_p95": 22.15800674776409
+            "probability_mae_improves": 0.67735,
+            "mae_delta_p05": -212.20431394961994,
+            "mae_delta_p50": -43.886286747690235,
+            "mae_delta_p95": 41.07692558788602
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.47165,
-            "mae_delta_p05": -40.70482594918357,
-            "mae_delta_p50": 2.3001161468505416,
-            "mae_delta_p95": 48.231759070063845
+            "probability_mae_improves": 0.9906,
+            "mae_delta_p05": -84.36024653814383,
+            "mae_delta_p50": -46.47208221852543,
+            "mae_delta_p95": -6.517732867419738
           }
         }
       }
@@ -209,13 +223,15 @@
       "warning": "Independent of the position prior but noisier for low-game configurations.",
       "candidates": {
         "current_move_cap": {
-          "mae": 291.3370944092336,
-          "rmse": 351.6970265124538,
-          "bias": 79.3408222495481,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 372.4703584662514,
+          "mae": 339.3472380437082,
+          "rmse": 427.55539905715534,
+          "bias": 22.585140464215417,
+          "max_absolute_error": 1050.1228755181442,
+          "inverse_variance_weighted_mae": 566.1876405804935,
           "family_mae": {
             "deepseek-v4-flash": 412.91391527765654,
+            "gemini-3.1": 300.71361145191736,
+            "gpt-3.5-turbo-instruct": 1050.1228755181442,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
@@ -235,133 +251,143 @@
           }
         },
         "deduplicated_move_exposure_cap": {
-          "mae": 270.4524943090801,
-          "rmse": 335.48479214978323,
-          "bias": 100.2254223497016,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 364.059285329732,
+          "mae": 321.0732129560739,
+          "rmse": 415.9993517491881,
+          "bias": 40.85916555184973,
+          "max_absolute_error": 1050.1228755181442,
+          "inverse_variance_weighted_mae": 561.1688231618775,
           "family_mae": {
             "deepseek-v4-flash": 120.52951387550752,
+            "gemini-3.1": 300.71361145191736,
+            "gpt-3.5-turbo-instruct": 1050.1228755181442,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
             "gpt-5.6-terra": 332.85516053907986
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.67615,
-            "mae_delta_p05": -79.74120038240429,
-            "mae_delta_p50": -20.884600100153477,
+            "probability_mae_improves": 0.6618,
+            "mae_delta_p05": -67.47332340049593,
+            "mae_delta_p50": -18.2740250876343,
             "mae_delta_p95": 0.0
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.895,
-            "mae_delta_p05": -20.884600100153534,
-            "mae_delta_p50": -20.884600100153477,
-            "mae_delta_p95": 12.661372623343027
+            "probability_mae_improves": 0.8885,
+            "mae_delta_p05": -18.274025087634357,
+            "mae_delta_p50": -18.2740250876343,
+            "mae_delta_p95": 11.322499099201991
           }
         },
         "trajectory_hazard_cap": {
-          "mae": 270.706745063887,
-          "rmse": 335.69283889413936,
-          "bias": 99.97117159489468,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 364.1793843657351,
+          "mae": 321.39648881814287,
+          "rmse": 416.4006764516218,
+          "bias": 40.535889689780774,
+          "max_absolute_error": 1051.7357787439505,
+          "inverse_variance_weighted_mae": 561.7196957713087,
           "family_mae": {
             "deepseek-v4-flash": 120.52951387550752,
+            "gemini-3.1": 300.71361145191736,
+            "gpt-3.5-turbo-instruct": 1051.7357787439505,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 330.1916981894922,
             "gpt-5.6-sol": 153.30024239421255,
             "gpt-5.6-terra": 332.85516053907986
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.67245,
-            "mae_delta_p05": -79.41760851265002,
-            "mae_delta_p50": -20.37609859053964,
-            "mae_delta_p95": 0.5085015096138363
+            "probability_mae_improves": 0.6595,
+            "mae_delta_p05": -67.07544541641101,
+            "mae_delta_p50": -17.829086266722186,
+            "mae_delta_p95": 0.5457452725250391
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.8874,
-            "mae_delta_p05": -21.138850854960424,
-            "mae_delta_p50": -20.63034934534653,
-            "mae_delta_p95": 13.75026284328328
+            "probability_mae_improves": 0.8843,
+            "mae_delta_p05": -18.39568804647746,
+            "mae_delta_p50": -17.950749225565346,
+            "mae_delta_p95": 11.946647836166392
           }
         },
         "two_affected_trajectory_gate": {
-          "mae": 270.4524943090801,
-          "rmse": 335.48479214978323,
-          "bias": 100.2254223497016,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 364.059285329732,
+          "mae": 321.0732129560739,
+          "rmse": 415.9993517491881,
+          "bias": 40.85916555184973,
+          "max_absolute_error": 1050.1228755181442,
+          "inverse_variance_weighted_mae": 561.1688231618775,
           "family_mae": {
             "deepseek-v4-flash": 120.52951387550752,
+            "gemini-3.1": 300.71361145191736,
+            "gpt-3.5-turbo-instruct": 1050.1228755181442,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
             "gpt-5.6-terra": 332.85516053907986
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.66905,
-            "mae_delta_p05": -79.74120038240426,
-            "mae_delta_p50": -20.884600100153477,
+            "probability_mae_improves": 0.66045,
+            "mae_delta_p05": -67.47332340049593,
+            "mae_delta_p50": -18.2740250876343,
             "mae_delta_p95": 0.0
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.8927,
-            "mae_delta_p05": -20.884600100153534,
-            "mae_delta_p50": -20.884600100153477,
-            "mae_delta_p95": 12.363876090855655
+            "probability_mae_improves": 0.8909,
+            "mae_delta_p05": -18.274025087634357,
+            "mae_delta_p50": -18.2740250876343,
+            "mae_delta_p95": 11.241216475391184
           }
         },
         "repeated_forfeit_only": {
-          "mae": 266.5987085731728,
-          "rmse": 332.64870381533217,
-          "bias": 135.34646479648876,
+          "mae": 253.54359263104328,
+          "rmse": 320.1716307589794,
+          "bias": 135.74763549890028,
           "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 362.2388936766308,
+          "inverse_variance_weighted_mae": 255.0924467734222,
           "family_mae": {
             "deepseek-v4-flash": 120.52951387550752,
+            "gemini-3.1": 300.71361145191736,
+            "gpt-3.5-turbo-instruct": 23.601950620355183,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 315.8135704719926,
             "gpt-5.6-sol": 153.30024239421255,
             "gpt-5.6-terra": 332.85516053907986
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.91665,
-            "mae_delta_p05": -84.64601859174078,
-            "mae_delta_p50": -24.738385836060758,
-            "mae_delta_p95": 0.0
+            "probability_mae_improves": 0.9775,
+            "mae_delta_p05": -263.7810652599876,
+            "mae_delta_p50": -78.96314806906068,
+            "mae_delta_p95": -3.372062518918824
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.73615,
-            "mae_delta_p05": -56.005642546940635,
-            "mae_delta_p50": -19.43860101652257,
-            "mae_delta_p95": 22.122332314100277
+            "probability_mae_improves": 1.0,
+            "mae_delta_p05": -113.16249503468487,
+            "mae_delta_p50": -79.55389500292154,
+            "mae_delta_p95": -42.98562094918242
           }
         },
         "no_hard_cap": {
-          "mae": 266.5987085731728,
-          "rmse": 332.64870381533217,
-          "bias": 135.34646479648876,
+          "mae": 268.06075927837145,
+          "rmse": 338.54521471062,
+          "bias": 150.26480214622848,
           "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 362.2388936766308,
+          "inverse_variance_weighted_mae": 279.7595041742034,
           "family_mae": {
             "deepseek-v4-flash": 120.52951387550752,
+            "gemini-3.1": 532.9882778091682,
+            "gpt-3.5-turbo-instruct": 23.601950620355183,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 315.8135704719926,
             "gpt-5.6-sol": 153.30024239421255,
             "gpt-5.6-terra": 332.85516053907986
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.9231,
-            "mae_delta_p05": -79.8402253883749,
-            "mae_delta_p50": -24.738385836060758,
-            "mae_delta_p95": 0.0
+            "probability_mae_improves": 0.87545,
+            "mae_delta_p05": -245.66350077238206,
+            "mae_delta_p50": -65.70998215004158,
+            "mae_delta_p95": 16.211060550413606
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.73635,
-            "mae_delta_p05": -56.005642546940635,
-            "mae_delta_p50": -19.414372460649588,
-            "mae_delta_p95": 21.88390789943483
+            "probability_mae_improves": 0.9984,
+            "mae_delta_p05": -98.6453283873567,
+            "mae_delta_p50": -65.42528079524402,
+            "mae_delta_p95": -28.219345359683416
           }
         }
       }
@@ -388,11 +414,11 @@
         "prediction_before": 802,
         "prediction_after": 408,
         "actual_rating": 278,
-        "repeated_forfeit_only_prediction": 425.0,
-        "forfeits": 6,
+        "repeated_forfeit_only_prediction": 500.0,
+        "forfeits": 2,
         "absolute_errors": {
           "current_historical_cap": 130.0,
-          "repeated_forfeit_only": 147.0,
+          "repeated_forfeit_only": 222.0,
           "no_hard_cap": 524.0
         }
       },
@@ -412,11 +438,50 @@
     ],
     "mae": {
       "current_historical_cap": 107.33333333333333,
-      "repeated_forfeit_only": 197.66666666666666,
+      "repeated_forfeit_only": 222.66666666666666,
       "no_hard_cap": 399.3333333333333
     }
   },
   "rows": [
+    {
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "family": "gemini-3.1",
+      "score_depth": 30,
+      "current_cap": 500.0,
+      "hazard_cap": 500.0,
+      "deduplicated_cap": 500.0,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 26,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 2,
+      "affected_positions": 2,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 26,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 25.0,
+      "candidates": {
+        "current_move_cap": 500.0,
+        "trajectory_hazard_cap": 500.0,
+        "deduplicated_move_exposure_cap": 500.0,
+        "two_affected_trajectory_gate": 500.0,
+        "repeated_forfeit_only": 500.0,
+        "no_hard_cap": 732.2746663572508
+      },
+      "targets": {
+        "rd300": {
+          "rating": 202.03222120105033,
+          "rd": 85.04510594894847,
+          "games": 20
+        },
+        "no_position": {
+          "rating": 199.28638854808264,
+          "rd": 87.64867793634266,
+          "games": 20
+        }
+      }
+    },
     {
       "player_id": "gpt-5.6-sol (low)",
       "family": "gpt-5.6-sol",
@@ -960,6 +1025,45 @@
           "rating": 987.9139152776565,
           "rd": 218.01155916987057,
           "games": 11
+        }
+      }
+    },
+    {
+      "player_id": "gpt-3.5-turbo-instruct",
+      "family": "gpt-3.5-turbo-instruct",
+      "score_depth": 30,
+      "current_cap": 600.0,
+      "hazard_cap": 598.3870967741935,
+      "deduplicated_cap": 600.0,
+      "deduplicated_catastrophe_pct": 6.25,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 2,
+      "forfeit_positions": 0,
+      "affected_positions": 2,
+      "catastrophe_episodes": 2,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 2,
+      "catastrophe_hazard_pct": 6.451612903225806,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 600.0,
+        "trajectory_hazard_cap": 598.3870967741935,
+        "deduplicated_move_exposure_cap": 600.0,
+        "two_affected_trajectory_gate": 600.0,
+        "repeated_forfeit_only": 1626.520924897789,
+        "no_hard_cap": 1626.520924897789
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1648.8136851774045,
+          "rd": 51.72282290210805,
+          "games": 116
+        },
+        "no_position": {
+          "rating": 1650.1228755181442,
+          "rd": 52.40154672592653,
+          "games": 116
         }
       }
     }

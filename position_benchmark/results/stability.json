@@ -26,33 +26,6 @@
       "score_depth": 10
     }
   },
-  "gemini-3.1-flash-lite-preview": {
-    "summary": {
-      "attempted_positions": 16,
-      "model_legal_moves": 46,
-      "model_illegal_attempts": 12,
-      "model_attempts": 58,
-      "model_legal_pct": 79.3103448275862,
-      "illegal_attempts_per_model_move": 0.2608695652173913,
-      "model_forfeits": 6,
-      "model_forfeit_pct": 37.5,
-      "api_errors": 0,
-      "probe_plies_played": 92,
-      "avg_probe_plies_played": 5.75,
-      "model_scored_moves": 46,
-      "model_avg_cpl": 287.82608695652175,
-      "model_median_cpl": 32.0,
-      "model_p90_cpl": 228.0,
-      "model_300cp_blunders": 3,
-      "model_300cp_blunder_pct": 6.521739130434782,
-      "model_1000cp_catastrophes": 1,
-      "model_1000cp_catastrophe_pct": 2.1739130434782608,
-      "player_id": "gemini-3.1-flash-lite-preview",
-      "positions_file": "position_benchmark/nonopening_screening_positions.json",
-      "probe_plies": 8,
-      "score_depth": 10
-    }
-  },
   "gpt-5.1 (no thinking)": {
     "summary": {
       "attempted_positions": 8,
@@ -14010,6 +13983,1900 @@
           }
         ],
         "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.20\"]\n[Round \"1\"]\n[White \"deepseek-v4-flash (max)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4 9. a3 Na6 10. Ke1 Nc7 11. Qxc4 a6 12. Bd3 Bf3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      }
+    ]
+  },
+  "gemini-3.1-flash-lite-preview": {
+    "summary": {
+      "attempted_positions": 8,
+      "model_legal_moves": 26,
+      "model_illegal_attempts": 4,
+      "model_attempts": 30,
+      "model_legal_pct": 86.66666666666667,
+      "model_first_attempt_turns": 28,
+      "model_first_attempt_illegals": 2,
+      "model_first_attempt_illegal_pct": 7.142857142857143,
+      "illegal_attempts_per_model_move": 0.15384615384615385,
+      "model_forfeits": 2,
+      "model_forfeit_pct": 25.0,
+      "api_errors": 0,
+      "probe_plies_played": 52,
+      "avg_probe_plies_played": 6.5,
+      "model_scored_moves": 26,
+      "model_avg_cpl": 43.96153846153846,
+      "model_first_move_avg_cpl": 51.714285714285715,
+      "model_later_move_avg_cpl": 41.10526315789474,
+      "model_median_cpl": 3.5,
+      "model_p90_cpl": 123.0,
+      "model_300cp_blunders": 1,
+      "model_300cp_blunder_pct": 3.8461538461538463,
+      "model_300cp_blunder_positions": 1,
+      "model_300cp_blunder_position_pct": 12.5,
+      "model_1000cp_catastrophes": 0,
+      "model_1000cp_catastrophe_pct": 0.0,
+      "model_1000cp_catastrophe_positions": 0,
+      "model_1000cp_catastrophe_position_pct": 0.0,
+      "model_1000cp_deduplicated_catastrophe_pct": 0.0,
+      "opponent_scored_moves": 26,
+      "opponent_avg_cpl": 563.0769230769231,
+      "model_retry_attempts": 2,
+      "model_retry_recoveries": 0,
+      "model_retry_failures": 2,
+      "model_retry_unknown": 0,
+      "model_retry_recovery_pct": 0.0,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "conditional_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 8,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 2,
+        "retry_recoveries": 0,
+        "retry_failures": 2,
+        "retry_unknown": 0,
+        "known_outcomes": 2,
+        "recovery_pct": 0.0
+      },
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
+      "probe_plies": 8,
+      "score_depth": 30,
+      "stability_probe_version": "stratified-depth30-v3",
+      "position_selection_policy": "category-round-robin-v1",
+      "selected_position_indices": [
+        0,
+        12,
+        24,
+        36,
+        1,
+        13,
+        25,
+        37
+      ]
+    },
+    "results": [
+      {
+        "position_idx": 0,
+        "position_id": "game-like-001",
+        "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1319,
+          "completion_tokens": 16,
+          "total_tokens": 1335
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "d3d1",
+            "move_san": "Qxd1+",
+            "eval_before": 485,
+            "eval_model": 464,
+            "cpl": 21,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "e4f2",
+            "move_san": "Nxf2+",
+            "eval_before": 477,
+            "eval_model": 491,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 13
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 5,
+            "move": "f2h1",
+            "move_san": "Nxh1",
+            "eval_before": 495,
+            "eval_model": 511,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 4
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 7,
+            "move": "c8b7",
+            "move_san": "Bb7",
+            "eval_before": 614,
+            "eval_model": 603,
+            "cpl": 11,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 103
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "e1d1",
+            "move_san": "Kxd1",
+            "eval_before": -464,
+            "eval_model": -477,
+            "cpl": 13,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "d1e1",
+            "move_san": "Ke1",
+            "eval_before": -491,
+            "eval_model": -495,
+            "cpl": 4,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 6,
+            "move": "h2h3",
+            "move_san": "h3",
+            "eval_before": -511,
+            "eval_model": -614,
+            "cpl": 103,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 8,
+            "move": "h3h4",
+            "move_san": "h4",
+            "eval_before": -603,
+            "eval_model": -672,
+            "cpl": 69,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemini-3.1-flash-lite-preview\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3 Qxd1+ 9. Kxd1 Nxf2+ 10. Ke1 Nxh1 11. h3 Bb7 12. h4 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 12,
+        "position_id": "game-like-013",
+        "fen": "r1bqk2r/pppp1ppp/2n2n2/8/3p4/6P1/P2KPP1P/RN1Q1BNR w kq - 1 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1331,
+          "completion_tokens": 16,
+          "total_tokens": 1347
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "b1c3",
+            "move_san": "Nc3",
+            "eval_before": -521,
+            "eval_model": -742,
+            "cpl": 221,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "c3d5",
+            "move_san": "Nd5",
+            "eval_before": -563,
+            "eval_model": -649,
+            "cpl": 86,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 179
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "g1f3",
+            "move_san": "Nf3",
+            "eval_before": -486,
+            "eval_model": -641,
+            "cpl": 155,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 163
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "d5e7",
+            "move_san": "Nxe7",
+            "eval_before": 343,
+            "eval_model": 343,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 984
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "a7a6",
+            "move_san": "a6",
+            "eval_before": 742,
+            "eval_model": 563,
+            "cpl": 179,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "h7h5",
+            "move_san": "h5",
+            "eval_before": 649,
+            "eval_model": 486,
+            "cpl": 163,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "d8e7",
+            "move_san": "Qe7",
+            "eval_before": 641,
+            "eval_model": -343,
+            "cpl": 984,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "d4d3",
+            "move_san": "d3",
+            "eval_before": -343,
+            "eval_model": -578,
+            "cpl": 235,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gemini-3.1-flash-lite-preview\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. b4 Nf6 2. g3 e5 3. d4 exd4 4. Bf4 Bxb4+ 5. c3 Bxc3+ 6. Bd2 Bxd2+ 7. Kxd2 Nc6 8. Nc3 a6 9. Nd5 h5 10. Nf3 Qe7 11. Nxe7 d3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 24,
+        "position_id": "game-like-025",
+        "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+        "model_side": "black",
+        "pre_moves": 19,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1409,
+          "completion_tokens": 16,
+          "total_tokens": 1425
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 20,
+            "continuation_ply": 1,
+            "move": "a5b3",
+            "move_san": "Nxb3",
+            "eval_before": -100,
+            "eval_model": -193,
+            "cpl": 93,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 3,
+            "move": "b3d2",
+            "move_san": "Nxd2",
+            "eval_before": -210,
+            "eval_model": -521,
+            "cpl": 311,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 0.0
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 5,
+            "move": "d2b1",
+            "move_san": "Nxb1",
+            "eval_before": -354,
+            "eval_model": -411,
+            "cpl": 57,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 167
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 7,
+            "move": "d8d6",
+            "move_san": "Qd6",
+            "eval_before": 21,
+            "eval_model": -10,
+            "cpl": 31,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 432
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 2,
+            "move": "e5c6",
+            "move_san": "Nc6",
+            "eval_before": 193,
+            "eval_model": 210,
+            "cpl": 0.0,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 4,
+            "move": "a2a3",
+            "move_san": "a3",
+            "eval_before": 521,
+            "eval_model": 354,
+            "cpl": 167,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 6,
+            "move": "e1e3",
+            "move_san": "Re3",
+            "eval_before": 411,
+            "eval_model": -21,
+            "cpl": 432,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 8,
+            "move": "d1c2",
+            "move_san": "Qc2",
+            "eval_before": 10,
+            "eval_model": -577,
+            "cpl": 587,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemini-3.1-flash-lite-preview\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5 Nxb3 11. Nc6 Nxd2 12. a3 Nxb1 13. Re3 Qd6 14. Qc2 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 36,
+        "position_id": "game-like-037",
+        "fen": "r1b1kb1r/ppppqppp/2n5/4P3/3Qn3/2P2N2/P1P2PPP/R1B1KB1R w KQkq - 3 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1312,
+          "completion_tokens": 16,
+          "total_tokens": 1328
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "d4e4",
+            "move_san": "Qxe4",
+            "eval_before": -25,
+            "eval_model": -37,
+            "cpl": 12,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e5d6",
+            "move_san": "exd6+",
+            "eval_before": 833,
+            "eval_model": 843,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 870
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "d6e7",
+            "move_san": "dxe7",
+            "eval_before": 884,
+            "eval_model": 888,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 41
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "e4e5",
+            "move_san": "Qxe5",
+            "eval_before": 1536,
+            "eval_model": 9810,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 648
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "e7d6",
+            "move_san": "Qd6",
+            "eval_before": 37,
+            "eval_model": -833,
+            "cpl": 870,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": -843,
+            "eval_model": -884,
+            "cpl": 41,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "c6e5",
+            "move_san": "Ne5",
+            "eval_before": -888,
+            "eval_model": -1536,
+            "cpl": 648,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "b7b5",
+            "move_san": "b5",
+            "eval_before": -9810,
+            "eval_model": -9900,
+            "cpl": 90,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gemini-3.1-flash-lite-preview\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. e5 dxc3 6. bxc3 Ne4 7. Qd4 Qe7 8. Qxe4 Qd6 9. exd6+ Be7 10. dxe7 Ne5 11. Qxe5 b5 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 1,
+        "position_id": "game-like-002",
+        "fen": "rnbqkbnr/ppp2pp1/8/4p3/Q1p5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 1 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 4,
+        "termination": "forfeit_illegal_move",
+        "winner": "white",
+        "model_legal_moves": 2,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 1336,
+          "completion_tokens": 18,
+          "total_tokens": 1354
+        },
+        "illegal_move_details": [
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "r1bqkbnr/ppp2pp1/8/4p3/1np5/1P5P/P2PPPp1/RNB1K1R1 b Qkq - 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Nxb4 10. b3\n\n>>> White's last move: b3 (b2b3) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/ppp2pp1/8/4p3/1np5/1P5P/P2PPPp1/RNB1K1R1 b Qkq - 0 10\n\nBoard:\n8 | r . b q k b n r\n7 | p p p . . p p .\n6 | . . . . . . . .\n5 | . . . . p . . .\n4 | . n p . . . . .\n3 | . P . . . . . P\n2 | P . . P P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "g2h1q",
+            "parsed_move": "g2h1q"
+          },
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "r1bqkbnr/ppp2pp1/8/4p3/1np5/1P5P/P2PPPp1/RNB1K1R1 b Qkq - 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Nxb4 10. b3\n\n>>> White's last move: b3 (b2b3) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/ppp2pp1/8/4p3/1np5/1P5P/P2PPPp1/RNB1K1R1 b Qkq - 0 10\n\nBoard:\n8 | r . b q k b n r\n7 | p p p . . p p .\n6 | . . . . . . . .\n5 | . . . . p . . .\n4 | . n p . . . . .\n3 | . P . . . . . P\n2 | P . . P P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"g2h1q\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "g2h1r",
+            "parsed_move": "g2h1r"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "b8c6",
+            "move_san": "Nc6",
+            "eval_before": 852,
+            "eval_model": 860,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "c6b4",
+            "move_san": "Nxb4",
+            "eval_before": 1379,
+            "eval_model": 1469,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 519
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "a4b4",
+            "move_san": "Qb4",
+            "eval_before": -860,
+            "eval_model": -1379,
+            "cpl": 519,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "b2b3",
+            "move_san": "b3",
+            "eval_before": -1469,
+            "eval_model": -9890,
+            "cpl": 8421,
+            "opponent_turn_index": 2
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemini-3.1-flash-lite-preview\"]\n[Result \"1-0\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Nxb4 10. b3 1-0",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 13,
+        "position_id": "game-like-014",
+        "fen": "r1b1kb1r/pppq1pp1/2np1n1p/8/4P3/1P4p1/P1PP3P/RNBQK1NR w KQkq - 1 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1349,
+          "completion_tokens": 16,
+          "total_tokens": 1365
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "h2g3",
+            "move_san": "hxg3",
+            "eval_before": -686,
+            "eval_model": -701,
+            "cpl": 15,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "d2d3",
+            "move_san": "d3",
+            "eval_before": -641,
+            "eval_model": -644,
+            "cpl": 3,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 60
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "e4d5",
+            "move_san": "exd5",
+            "eval_before": -650,
+            "eval_model": -773,
+            "cpl": 123,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 0.0
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "d5c6",
+            "move_san": "dxc6",
+            "eval_before": -495,
+            "eval_model": -487,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 278
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": 701,
+            "eval_model": 641,
+            "cpl": 60,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "d6d5",
+            "move_san": "d5",
+            "eval_before": 644,
+            "eval_model": 650,
+            "cpl": 0.0,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "f6h7",
+            "move_san": "Nh7",
+            "eval_before": 773,
+            "eval_model": 495,
+            "cpl": 278,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "d7d6",
+            "move_san": "Qd6",
+            "eval_before": 487,
+            "eval_model": 314,
+            "cpl": 173,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gemini-3.1-flash-lite-preview\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. g3 e5 2. Bh3 d6 3. f3 Nc6 4. Bg4 h6 5. Bd7+ Qxd7 6. f4 exf4 7. e4 fxg3 8. b3 Nf6 9. hxg3 Be7 10. d3 d5 11. exd5 Nh7 12. dxc6 Qd6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 25,
+        "position_id": "game-like-026",
+        "fen": "r1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11",
+        "model_side": "white",
+        "pre_moves": 20,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1451,
+          "completion_tokens": 16,
+          "total_tokens": 1467
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 1,
+            "move": "b1d2",
+            "move_san": "Nbd2",
+            "eval_before": 0,
+            "eval_model": 0,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 3,
+            "move": "b5a6",
+            "move_san": "bxa6",
+            "eval_before": 431,
+            "eval_model": 439,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 431
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 5,
+            "move": "g2h3",
+            "move_san": "gxh3",
+            "eval_before": 515,
+            "eval_model": 511,
+            "cpl": 4,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 76
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 7,
+            "move": "e4d5",
+            "move_san": "exd5",
+            "eval_before": 534,
+            "eval_model": 549,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 23
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 22,
+            "continuation_ply": 2,
+            "move": "a8a6",
+            "move_san": "Ra6",
+            "eval_before": 0,
+            "eval_model": -431,
+            "cpl": 431,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 4,
+            "move": "c8h3",
+            "move_san": "Bxh3",
+            "eval_before": -439,
+            "eval_model": -515,
+            "cpl": 76,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 6,
+            "move": "d6d5",
+            "move_san": "d5",
+            "eval_before": -511,
+            "eval_model": -534,
+            "cpl": 23,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 28,
+            "continuation_ply": 8,
+            "move": "e5e4",
+            "move_san": "e4",
+            "eval_before": -549,
+            "eval_model": -623,
+            "cpl": 74,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gemini-3.1-flash-lite-preview\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. Nbd2 Ra6 12. bxa6 Bxh3 13. gxh3 d5 14. exd5 e4 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 37,
+        "position_id": "game-like-038",
+        "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 0,
+        "termination": "forfeit_illegal_move",
+        "winner": "black",
+        "model_legal_moves": 0,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 666,
+          "completion_tokens": 8,
+          "total_tokens": 674
+        },
+        "illegal_move_details": [
+          {
+            "side": "white",
+            "move_number": 17,
+            "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4\n\n>>> Black's last move: c4 (c5c4) <<<\n\n\nCurrent position (FEN):\nrn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9\n\nBoard:\n8 | r n . q k b . r\n7 | p p . . . p p p\n6 | . . . p . n . .\n5 | . . . . . . . .\n4 | . . p N P . b .\n3 | . . N . . . . .\n2 | P P P P Q . P P\n1 | . R B K . B . R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "e2c4",
+            "parsed_move": "e2c4"
+          },
+          {
+            "side": "white",
+            "move_number": 17,
+            "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4\n\n>>> Black's last move: c4 (c5c4) <<<\n\n\nCurrent position (FEN):\nrn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9\n\nBoard:\n8 | r n . q k b . r\n7 | p p . . . p p p\n6 | . . . p . n . .\n5 | . . . . . . . .\n4 | . . p N P . b .\n3 | . . N . . . . .\n2 | P P P P Q . P P\n1 | . R B K . B . R\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"e2c4\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "e2c4",
+            "parsed_move": "e2c4"
+          }
+        ],
+        "model_move_scores": [],
+        "opponent_move_scores": [],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gemini-3.1-flash-lite-preview\"]\n[Black \"stability-random\"]\n[Result \"0-1\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4 0-1",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      }
+    ]
+  },
+  "gpt-3.5-turbo-instruct": {
+    "summary": {
+      "attempted_positions": 8,
+      "model_legal_moves": 32,
+      "model_illegal_attempts": 0,
+      "model_attempts": 32,
+      "model_legal_pct": 100.0,
+      "model_first_attempt_turns": 32,
+      "model_first_attempt_illegals": 0,
+      "model_first_attempt_illegal_pct": 0.0,
+      "illegal_attempts_per_model_move": 0.0,
+      "model_forfeits": 0,
+      "model_forfeit_pct": 0.0,
+      "api_errors": 0,
+      "probe_plies_played": 63,
+      "avg_probe_plies_played": 7.875,
+      "model_scored_moves": 32,
+      "model_avg_cpl": 611.125,
+      "model_first_move_avg_cpl": 145.0,
+      "model_later_move_avg_cpl": 766.5,
+      "model_median_cpl": 14.0,
+      "model_p90_cpl": 444.0,
+      "model_300cp_blunders": 6,
+      "model_300cp_blunder_pct": 18.75,
+      "model_300cp_blunder_positions": 5,
+      "model_300cp_blunder_position_pct": 62.5,
+      "model_1000cp_catastrophes": 2,
+      "model_1000cp_catastrophe_pct": 6.25,
+      "model_1000cp_catastrophe_positions": 2,
+      "model_1000cp_catastrophe_position_pct": 25.0,
+      "model_1000cp_deduplicated_catastrophe_pct": 6.25,
+      "opponent_scored_moves": 31,
+      "opponent_avg_cpl": 1653.5483870967741,
+      "model_retry_attempts": 0,
+      "model_retry_recoveries": 0,
+      "model_retry_failures": 0,
+      "model_retry_unknown": 0,
+      "model_retry_recovery_pct": null,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "conditional_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 8,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "known_outcomes": 0,
+        "recovery_pct": null
+      },
+      "player_id": "gpt-3.5-turbo-instruct",
+      "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
+      "probe_plies": 8,
+      "score_depth": 30,
+      "stability_probe_version": "stratified-depth30-v3",
+      "position_selection_policy": "category-round-robin-v1",
+      "selected_position_indices": [
+        0,
+        12,
+        24,
+        36,
+        1,
+        13,
+        25,
+        37
+      ]
+    },
+    "results": [
+      {
+        "position_idx": 0,
+        "position_id": "game-like-001",
+        "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 904,
+          "completion_tokens": 32,
+          "total_tokens": 936
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "d3d1",
+            "move_san": "Qxd1+",
+            "eval_before": 485,
+            "eval_model": 464,
+            "cpl": 21,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "e4f2",
+            "move_san": "Nxf2+",
+            "eval_before": 477,
+            "eval_model": 491,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 13
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 5,
+            "move": "f2h1",
+            "move_san": "Nxh1",
+            "eval_before": 495,
+            "eval_model": 511,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 4
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 7,
+            "move": "c8b7",
+            "move_san": "Bb7",
+            "eval_before": 614,
+            "eval_model": 603,
+            "cpl": 11,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 103
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "e1d1",
+            "move_san": "Kxd1",
+            "eval_before": -464,
+            "eval_model": -477,
+            "cpl": 13,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "d1e1",
+            "move_san": "Ke1",
+            "eval_before": -491,
+            "eval_model": -495,
+            "cpl": 4,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 6,
+            "move": "h2h3",
+            "move_san": "h3",
+            "eval_before": -511,
+            "eval_model": -614,
+            "cpl": 103,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 8,
+            "move": "h3h4",
+            "move_san": "h4",
+            "eval_before": -603,
+            "eval_model": -672,
+            "cpl": 69,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gpt-3.5-turbo-instruct\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3 Qxd1+ 9. Kxd1 Nxf2+ 10. Ke1 Nxh1 11. h3 Bb7 12. h4 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 12,
+        "position_id": "game-like-013",
+        "fen": "r1bqk2r/pppp1ppp/2n2n2/8/3p4/6P1/P2KPP1P/RN1Q1BNR w kq - 1 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 893,
+          "completion_tokens": 32,
+          "total_tokens": 925
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "g1f3",
+            "move_san": "Nf3",
+            "eval_before": -521,
+            "eval_model": -547,
+            "cpl": 26,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e2d3",
+            "move_san": "exd3",
+            "eval_before": -412,
+            "eval_model": -434,
+            "cpl": 22,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 135
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "f3g5",
+            "move_san": "Nxg5",
+            "eval_before": -301,
+            "eval_model": -312,
+            "cpl": 11,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 133
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "b1c3",
+            "move_san": "Nc3",
+            "eval_before": -243,
+            "eval_model": -231,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 69
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "d4d3",
+            "move_san": "d3",
+            "eval_before": 547,
+            "eval_model": 412,
+            "cpl": 135,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "g7g5",
+            "move_san": "g5",
+            "eval_before": 434,
+            "eval_model": 301,
+            "cpl": 133,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "a8b8",
+            "move_san": "Rb8",
+            "eval_before": 312,
+            "eval_model": 243,
+            "cpl": 69,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "d7d6",
+            "move_san": "d6",
+            "eval_before": 231,
+            "eval_model": 146,
+            "cpl": 85,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gpt-3.5-turbo-instruct\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. b4 Nf6 2. g3 e5 3. d4 exd4 4. Bf4 Bxb4+ 5. c3 Bxc3+ 6. Bd2 Bxd2+ 7. Kxd2 Nc6 8. Nf3 d3 9. exd3 g5 10. Nxg5 Rb8 11. Nc3 d6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 24,
+        "position_id": "game-like-025",
+        "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+        "model_side": "black",
+        "pre_moves": 19,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 957,
+          "completion_tokens": 32,
+          "total_tokens": 989
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 20,
+            "continuation_ply": 1,
+            "move": "a5b3",
+            "move_san": "Nxb3",
+            "eval_before": -92,
+            "eval_model": -186,
+            "cpl": 94,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 3,
+            "move": "d8d5",
+            "move_san": "Qxd5",
+            "eval_before": -192,
+            "eval_model": -636,
+            "cpl": 444,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 0.0
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 5,
+            "move": "e7c5",
+            "move_san": "Bc5+",
+            "eval_before": 685,
+            "eval_model": 639,
+            "cpl": 46,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 1321
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 7,
+            "move": "d5c6",
+            "move_san": "Qxc6",
+            "eval_before": 870,
+            "eval_model": 854,
+            "cpl": 16,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 231
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 2,
+            "move": "e5c6",
+            "move_san": "Nc6",
+            "eval_before": 186,
+            "eval_model": 192,
+            "cpl": 0.0,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 4,
+            "move": "f2f4",
+            "move_san": "f4",
+            "eval_before": 636,
+            "eval_model": -685,
+            "cpl": 1321,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 6,
+            "move": "g1f1",
+            "move_san": "Kf1",
+            "eval_before": -639,
+            "eval_model": -870,
+            "cpl": 231,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 8,
+            "move": "b1a3",
+            "move_san": "Na3",
+            "eval_before": -854,
+            "eval_model": -1358,
+            "cpl": 504,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gpt-3.5-turbo-instruct\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5 Nxb3 11. Nc6 Qxd5 12. f4 Bc5+ 13. Kf1 Qxc6 14. Na3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 36,
+        "position_id": "game-like-037",
+        "fen": "r1b1kb1r/ppppqppp/2n5/4P3/3Qn3/2P2N2/P1P2PPP/R1B1KB1R w KQkq - 3 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 889,
+          "completion_tokens": 32,
+          "total_tokens": 921
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "d4e4",
+            "move_san": "Qxe4",
+            "eval_before": -55,
+            "eval_model": -55,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e5d6",
+            "move_san": "exd6+",
+            "eval_before": 850,
+            "eval_model": 878,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 905
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "d6e7",
+            "move_san": "dxe7",
+            "eval_before": 899,
+            "eval_model": 916,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 21
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "f3e5",
+            "move_san": "Nxe5",
+            "eval_before": 9810,
+            "eval_model": 1299,
+            "cpl": 8511,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 8894
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "e7d6",
+            "move_san": "Qd6",
+            "eval_before": 55,
+            "eval_model": -850,
+            "cpl": 905,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": -878,
+            "eval_model": -899,
+            "cpl": 21,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "c6e5",
+            "move_san": "Ne5",
+            "eval_before": -916,
+            "eval_model": -9810,
+            "cpl": 8894,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "c7c5",
+            "move_san": "c5",
+            "eval_before": -1299,
+            "eval_model": -9920,
+            "cpl": 8621,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gpt-3.5-turbo-instruct\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. e5 dxc3 6. bxc3 Ne4 7. Qd4 Qe7 8. Qxe4 Qd6 9. exd6+ Be7 10. dxe7 Ne5 11. Nxe5 c5 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 1,
+        "position_id": "game-like-002",
+        "fen": "rnbqkbnr/ppp2pp1/8/4p3/Q1p5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 1 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 909,
+          "completion_tokens": 32,
+          "total_tokens": 941
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "b8c6",
+            "move_san": "Nc6",
+            "eval_before": 889,
+            "eval_model": 919,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "c6b4",
+            "move_san": "Nxb4",
+            "eval_before": 1560,
+            "eval_model": 1640,
+            "cpl": 0.0,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 641
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 5,
+            "move": "b4c2",
+            "move_san": "Nc2+",
+            "eval_before": 9890,
+            "eval_model": 1335,
+            "cpl": 8555,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 8250
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 7,
+            "move": "c2a1",
+            "move_san": "Nxa1",
+            "eval_before": 1341,
+            "eval_model": 1402,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 6
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "a4b4",
+            "move_san": "Qb4",
+            "eval_before": -919,
+            "eval_model": -1560,
+            "cpl": 641,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "b2b3",
+            "move_san": "b3",
+            "eval_before": -1640,
+            "eval_model": -9890,
+            "cpl": 8250,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 6,
+            "move": "e1d1",
+            "move_san": "Kd1",
+            "eval_before": -1335,
+            "eval_model": -1341,
+            "cpl": 6,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 8,
+            "move": "f2f4",
+            "move_san": "f4",
+            "eval_before": -1402,
+            "eval_model": -9930,
+            "cpl": 8528,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gpt-3.5-turbo-instruct\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Nxb4 10. b3 Nc2+ 11. Kd1 Nxa1 12. f4 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 13,
+        "position_id": "game-like-014",
+        "fen": "r1b1kb1r/pppq1pp1/2np1n1p/8/4P3/1P4p1/P1PP3P/RNBQK1NR w KQkq - 1 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 901,
+          "completion_tokens": 32,
+          "total_tokens": 933
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "d2d3",
+            "move_san": "d3",
+            "eval_before": -701,
+            "eval_model": -1047,
+            "cpl": 346,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "b1c3",
+            "move_san": "Nc3",
+            "eval_before": -667,
+            "eval_model": -1056,
+            "cpl": 389,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 380
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "g1f3",
+            "move_san": "Nf3",
+            "eval_before": -605,
+            "eval_model": -692,
+            "cpl": 87,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 451
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "e1g1",
+            "move_san": "O-O",
+            "eval_before": -509,
+            "eval_model": -567,
+            "cpl": 58,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 183
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": 1047,
+            "eval_model": 667,
+            "cpl": 380,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "h6h5",
+            "move_san": "h5",
+            "eval_before": 1056,
+            "eval_model": 605,
+            "cpl": 451,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "c6b8",
+            "move_san": "Nb8",
+            "eval_before": 692,
+            "eval_model": 509,
+            "cpl": 183,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "f6h7",
+            "move_san": "Nh7",
+            "eval_before": 567,
+            "eval_model": 460,
+            "cpl": 107,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gpt-3.5-turbo-instruct\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. g3 e5 2. Bh3 d6 3. f3 Nc6 4. Bg4 h6 5. Bd7+ Qxd7 6. f4 exf4 7. e4 fxg3 8. b3 Nf6 9. d3 Be7 10. Nc3 h5 11. Nf3 Nb8 12. O-O Nh7 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 25,
+        "position_id": "game-like-026",
+        "fen": "r1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11",
+        "model_side": "white",
+        "pre_moves": 20,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 958,
+          "completion_tokens": 32,
+          "total_tokens": 990
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 1,
+            "move": "c1e3",
+            "move_san": "Be3",
+            "eval_before": -19,
+            "eval_model": -31,
+            "cpl": 12,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 3,
+            "move": "b5a6",
+            "move_san": "bxa6",
+            "eval_before": 445,
+            "eval_model": 437,
+            "cpl": 8,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 476
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 5,
+            "move": "g2h3",
+            "move_san": "gxh3",
+            "eval_before": 521,
+            "eval_model": 535,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 84
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 7,
+            "move": "e3b6",
+            "move_san": "Bxb6",
+            "eval_before": 535,
+            "eval_model": 456,
+            "cpl": 79,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 0.0
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 22,
+            "continuation_ply": 2,
+            "move": "a8a6",
+            "move_san": "Ra6",
+            "eval_before": 31,
+            "eval_model": -445,
+            "cpl": 476,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 4,
+            "move": "c8h3",
+            "move_san": "Bxh3",
+            "eval_before": -437,
+            "eval_model": -521,
+            "cpl": 84,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 6,
+            "move": "b7a6",
+            "move_san": "bxa6",
+            "eval_before": -535,
+            "eval_model": -535,
+            "cpl": 0.0,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 28,
+            "continuation_ply": 8,
+            "move": "f6h7",
+            "move_san": "Nh7",
+            "eval_before": -456,
+            "eval_model": -687,
+            "cpl": 231,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gpt-3.5-turbo-instruct\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. Be3 Ra6 12. bxa6 Bxh3 13. gxh3 bxa6 14. Bxb6 Nh7 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 37,
+        "position_id": "game-like-038",
+        "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 7,
+        "termination": "checkmate",
+        "winner": "white",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1344,
+          "completion_tokens": 48,
+          "total_tokens": 1392
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "d4c6",
+            "move_san": "Nc6",
+            "eval_before": -15,
+            "eval_model": -676,
+            "cpl": 661,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "e2g4",
+            "move_san": "Qxg4",
+            "eval_before": 386,
+            "eval_model": 227,
+            "cpl": 159,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 1062
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "g4c8",
+            "move_san": "Qc8+",
+            "eval_before": 9980,
+            "eval_model": 9990,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 9753
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "c8d8",
+            "move_san": "Qxd8#",
+            "eval_before": 9990,
+            "eval_model": 10000,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 0.0
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "f6g8",
+            "move_san": "Ng8",
+            "eval_before": 676,
+            "eval_model": -386,
+            "cpl": 1062,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "d8b6",
+            "move_san": "Qb6",
+            "eval_before": -227,
+            "eval_model": -9980,
+            "cpl": 9753,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "b6d8",
+            "move_san": "Qd8",
+            "eval_before": -9990,
+            "eval_model": -9990,
+            "cpl": 0.0,
+            "opponent_turn_index": 3
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.22\"]\n[Round \"1\"]\n[White \"gpt-3.5-turbo-instruct\"]\n[Black \"stability-random\"]\n[Result \"1-0\"]\n[Termination \"checkmate\"]\n\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4 9. Nc6 Ng8 10. Qxg4 Qb6 11. Qc8+ Qd8 12. Qxd8# 1-0",
         "model_retry_attempts": 0,
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,

@@ -37,6 +37,7 @@ position_benchmark/lichess_*.json
 position_benchmark/game_blunders*.json
 position_benchmark/gemini_good_positions.json
 position_benchmark/results_*.json
+position_benchmark/results/*.failures.json
 
 # Generated analysis caches
 data/*_cache/

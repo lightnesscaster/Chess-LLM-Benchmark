@@ -3,8 +3,8 @@
 This zero-call audit evaluates the corrected depth-30 continuation artifacts. It
 did not write the production rating store. The accompanying predictor change only
 deduplicates catastrophe events within each trajectory. The cohort has
-14 configurations across
-5 model-line families.
+16 configurations across
+7 model-line families.
 
 ## Result
 
@@ -36,22 +36,22 @@ passes the evidence gate.
 
 | Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | RD simulation P(improves) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `current_move_cap` | 232.1 | 307.4 | +126.9 | 320.1 | 0.000 | 0.000 |
-| `deduplicated_move_exposure_cap` | 238.4 | 310.4 | +147.8 | 329.2 | 0.000 | 0.352 |
-| `trajectory_hazard_cap` | 238.7 | 310.6 | +147.5 | 329.3 | 0.000 | 0.345 |
-| `two_affected_trajectory_gate` | 238.4 | 310.4 | +147.8 | 329.2 | 0.000 | 0.347 |
-| `repeated_forfeit_only` | 235.6 | 308.1 | +182.9 | 328.0 | 0.274 | 0.472 |
-| `no_hard_cap` | 235.6 | 308.1 | +182.9 | 328.0 | 0.269 | 0.472 |
+| `current_move_cap` | 287.3 | 396.2 | +64.1 | 531.6 | 0.000 | 0.000 |
+| `deduplicated_move_exposure_cap` | 292.8 | 398.2 | +82.4 | 537.1 | 0.000 | 0.347 |
+| `trajectory_hazard_cap` | 293.1 | 398.6 | +82.1 | 537.6 | 0.000 | 0.340 |
+| `two_affected_trajectory_gate` | 292.8 | 398.2 | +82.4 | 537.1 | 0.000 | 0.345 |
+| `repeated_forfeit_only` | 226.2 | 297.7 | +177.3 | 235.0 | 0.750 | 1.000 |
+| `no_hard_cap` | 240.7 | 317.3 | +191.8 | 260.2 | 0.677 | 0.991 |
 ### No-position-seed game ratings
 
 | Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | RD simulation P(improves) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `current_move_cap` | 291.3 | 351.7 | +79.3 | 372.5 | 0.000 | 0.000 |
-| `deduplicated_move_exposure_cap` | 270.5 | 335.5 | +100.2 | 364.1 | 0.676 | 0.895 |
-| `trajectory_hazard_cap` | 270.7 | 335.7 | +100.0 | 364.2 | 0.672 | 0.887 |
-| `two_affected_trajectory_gate` | 270.5 | 335.5 | +100.2 | 364.1 | 0.669 | 0.893 |
-| `repeated_forfeit_only` | 266.6 | 332.6 | +135.3 | 362.2 | 0.917 | 0.736 |
-| `no_hard_cap` | 266.6 | 332.6 | +135.3 | 362.2 | 0.923 | 0.736 |
+| `current_move_cap` | 339.3 | 427.6 | +22.6 | 566.2 | 0.000 | 0.000 |
+| `deduplicated_move_exposure_cap` | 321.1 | 416.0 | +40.9 | 561.2 | 0.662 | 0.888 |
+| `trajectory_hazard_cap` | 321.4 | 416.4 | +40.5 | 561.7 | 0.659 | 0.884 |
+| `two_affected_trajectory_gate` | 321.1 | 416.0 | +40.9 | 561.2 | 0.660 | 0.891 |
+| `repeated_forfeit_only` | 253.5 | 320.2 | +135.7 | 255.1 | 0.978 | 1.000 |
+| `no_hard_cap` | 268.1 | 338.5 | +150.3 | 279.8 | 0.875 | 0.998 |
 
 All bootstrap and uncertainty probabilities compare the candidate against
 `current_move_cap`. Candidates are fixed structural alternatives; no coefficients
@@ -61,15 +61,17 @@ were fitted to these targets.
 
 | Model | Catastrophic moves | Affected catastrophe starts | All affected starts | Current | Deduplicated | Hazard-style | No hard cap |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| gemini-3.1-flash-lite-preview | 0 | 0 | 2 | 500 | 500 | 500 | 732 |
 | gpt-5.6-luna (high) | 2 | 2 | 2 | 598 | 598 | 595 | 1090 |
 | deepseek-v4-flash (max) | 3 | 1 | 1 | 575 | 867 | 867 | 867 |
+| gpt-3.5-turbo-instruct | 2 | 2 | 2 | 600 | 600 | 598 | 1627 |
 
 ## Historical sensitivity
 
 The stale June depth-10/pre-stratification snapshot is not current validation, but
 it explains why the cap existed. Its three-row MAE was
 107.3 with the
-old cap, 197.7
+old cap, 222.7
 with repeated-forfeit-only protection, and
 399.3 with no hard cap.
 Thus repeated-forfeit protection retains much of the historical weak-model value,
@@ -77,7 +79,7 @@ while the present cohort does not validate a direct random-reply CPL cap.
 
 ## Decision boundary
 
-- Do not fit new cap coefficients on 14 configurations.
+- Do not fit new cap coefficients on 16 configurations.
 - Do not describe RD-300 as independent; it still shares the benchmark prior.
 - Production may deduplicate catastrophes within a trajectory because this cannot
   increase any penalty and does not fit the validation targets.

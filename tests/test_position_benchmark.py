@@ -1,9 +1,10 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import json
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from pathlib import Path
 
 import chess
@@ -87,11 +88,14 @@ from scripts.run_stability_probe import (
     PROTOCOL_SEQUENCE_PROBE_PLIES,
     PROTOCOL_SEQUENCE_SELECTION_POLICY,
     PROTOCOL_SEQUENCE_VERSION,
+    ProbeRunError,
     STABILITY_PROBE_VERSION,
     backfill_retry_metrics,
     derive_retry_metrics,
     pre_moves_from_position,
     rescore_existing_results,
+    run_probe_for_player,
+    save_player_record,
     score_continuation_moves_from_pgn,
     selected_positions,
     summarize_player,
@@ -178,6 +182,9 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(
             record["summary"]["stability_probe_version"],
             CURRENT_STABILITY_PROBE_VERSION,
+        )
+        self.assertTrue(
+            all(row["score_depth"] == 30 for row in record["results"])
         )
 
     def test_scheduler_runs_missing_supplements_in_manifest_order(self) -> None:
@@ -1533,6 +1540,118 @@ class AvailabilityHintTests(unittest.TestCase):
 
 
 class StabilityProbeTests(unittest.TestCase):
+    def test_concurrent_player_saves_preserve_every_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            results_path = Path(tmpdir) / "stability.json"
+            player_ids = [f"model-{index}" for index in range(12)]
+
+            def record(player_id: str) -> dict:
+                return {
+                    "summary": {
+                        "player_id": player_id,
+                        "attempted_positions": 1,
+                        "api_errors": 0,
+                        "score_depth": 30,
+                        "selected_position_indices": [0],
+                    },
+                    "results": [
+                        {
+                            "position_idx": 0,
+                            "termination": "max_moves",
+                            "score_depth": 30,
+                        }
+                    ],
+                }
+
+            with ThreadPoolExecutor(max_workers=6) as executor:
+                futures = [
+                    executor.submit(
+                        save_player_record,
+                        results_path,
+                        player_id,
+                        record(player_id),
+                    )
+                    for player_id in player_ids
+                ]
+                for future in futures:
+                    future.result()
+
+            saved = json.loads(results_path.read_text())
+            self.assertEqual(set(saved), set(player_ids))
+            for player_id in player_ids:
+                self.assertEqual(saved[player_id]["summary"]["player_id"], player_id)
+
+    def test_invalid_probe_cannot_replace_valid_canonical_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            results_path = Path(tmpdir) / "stability.json"
+            valid = {
+                "summary": {
+                    "attempted_positions": 1,
+                    "api_errors": 0,
+                    "score_depth": 30,
+                    "selected_position_indices": [0],
+                },
+                "results": [
+                    {
+                        "position_idx": 0,
+                        "termination": "max_moves",
+                        "score_depth": 30,
+                    }
+                ],
+            }
+            save_player_record(results_path, "model", valid)
+            failed = json.loads(json.dumps(valid))
+            failed["summary"]["api_errors"] = 1
+            failed["results"][0]["termination"] = "api_error"
+
+            with self.assertRaisesRegex(ValueError, "API errors"):
+                save_player_record(results_path, "model", failed)
+
+            self.assertEqual(json.loads(results_path.read_text())["model"], valid)
+
+    def test_probe_aborts_after_first_exhausted_api_failure(self) -> None:
+        positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
+        indexed_positions = [(0, positions[0]), (1, positions[1])]
+        player = SimpleNamespace(close=AsyncMock(), last_api_error="upstream failed")
+        game_result = SimpleNamespace(
+            termination="api_error",
+            winner="draw",
+            moves=0,
+            illegal_moves_white=0,
+            illegal_moves_black=0,
+            total_moves_white=0,
+            total_moves_black=0,
+            tokens_white={},
+            tokens_black={},
+            illegal_move_details=[],
+        )
+
+        with (
+            patch(
+                "scripts.run_stability_probe.create_llm_player",
+                return_value=player,
+            ),
+            patch(
+                "scripts.run_stability_probe.GameRunner.play_game",
+                new=AsyncMock(return_value=(game_result, "")),
+            ) as play_game,
+        ):
+            with self.assertRaises(ProbeRunError):
+                asyncio.run(
+                    run_probe_for_player(
+                        "model",
+                        {"model_name": "test/model"},
+                        indexed_positions,
+                        probe_plies=8,
+                        api_backend="openrouter",
+                        random_seed=1729,
+                        verbose=False,
+                        respect_config_api=False,
+                    )
+                )
+
+        self.assertEqual(play_game.await_count, 1)
+
     def test_layout_verifier_rejects_depth_10_replayable_stability_rows(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             results_path = Path(tmpdir) / "stability.json"
