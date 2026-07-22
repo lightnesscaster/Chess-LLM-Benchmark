@@ -52,9 +52,16 @@ are additional evidence and do not currently change the production rating formul
 Summary `conditional_retry` metrics are calculated only over stamped rows, so old
 results remain readable without being mistaken for measured recovery evidence.
 Per-row `prompt_tokens` and `completion_tokens` include both chess prompts, while
-the `initial_*` and `retry_*` fields retain the split. CLI cost output labels the
-50-call estimate as the base and also reports/enforces a conservative 100-call
-upper bound; recorded actual cost uses the calls and tokens that really occurred.
+the `initial_*` and `retry_*` fields retain the split. CLI cost estimates are
+empirical: same-player history is preferred, followed by same-model-and-effort,
+effort-level P90, and reasoning/non-reasoning P90 evidence. The CLI prints the
+assumed prompt/completion tokens per call, source, and sample count. With no saved
+history, the conservative fallback is 15,000 completion tokens for reasoning and
+500 for non-reasoning calls; the former 200-token reasoning default was removed.
+The static runner labels the first-attempt estimate as the base and also reports
+the all-conditional-retries upper bound. OpenRouter usage from truncated responses
+is retained before provider-level retry when the response supplies usage, so
+recorded actual cost includes those otherwise discarded generations.
 
 ## Artifact layout
 
@@ -80,7 +87,7 @@ Historical tools may override that protection only by explicitly passing
 
 ## Automatic acquisition policy
 
-`benchmark_manifest.json` defines `production-supplements-v1`. For every model
+`benchmark_manifest.json` defines `production-supplements-depth30-v2`. For every model
 selected in a normal benchmark run that is configured, non-engine, and not frozen,
 the scheduler checks current readiness and acquires missing panels in this fixed
 order:
@@ -95,8 +102,9 @@ Stockfish depth, and complete position coverage. Every new acquisition records t
 production retry protocol; otherwise-current historical static rows are not
 invalidated solely because retry recovery was not measured, since it remains
 additive evidence and does not change their rating formula. Continuation results
-must use the exact stratified indices, depth 10, zero API-error games, and the
-current retry stamp.
+must use the exact stratified indices, Stockfish depth 30, zero API-error games,
+and the current retry stamp. Depth-10 continuation rows are historical research
+evidence only and cannot affect a production prediction.
 
 The budget is checked before each panel. If the next panel does not fit, the
 scheduler preserves completed work and resumes at the first missing panel on a
@@ -195,20 +203,32 @@ default selector deterministically takes two positions from each game-like bucke
 in round-robin order: advantage conversion, defense, quiet/equal, and tactical/
 equal. With the current ordered panel, those indices are `0, 12, 24, 36, 1, 13,
 25, 37`. It exercises the real illegal-move retry and forfeit path. Stockfish depth
-10 scores the model's moves.
+30 scores every continuation move, matching the core and game-like panels.
 
-Eligible summaries must be stamped `stability_probe_version: stratified-v2`.
+Eligible summaries must be stamped
+`stability_probe_version: stratified-depth30-v3`.
 Earlier summaries selected positions 0 through 7, all from the advantage-conversion
 block, and are retained only as historical research evidence. They cannot affect a
 current production prediction; affected models need an eight-start rerun under the
-stratified policy.
+stratified policy. Existing canonical PGNs can instead be rescored without model
+calls:
+
+```bash
+python scripts/run_stability_probe.py \
+  --rescore-existing \
+  --score-depth 30 \
+  --workers 4
+```
 
 A probe is eligible when it has at least eight attempted starting positions and at
 least 24 scored/model-attempted moves, unless repeated forfeits already provide
 sufficient evidence. Define:
 
 - `F`: percentage of starting positions ending in a model illegal-move forfeit;
-- `K`: percentage of scored model moves losing at least 1000 CPL.
+- `K`: deduplicated catastrophe events divided by scored model moves, where each
+  continuation start contributes at most one event after its first move losing at
+  least 1000 CPL. Later catastrophe-scale moves in the same trajectory are treated
+  as correlated consequences, not independent failures.
 
 If `F + K < 5`, the stability probe does nothing. Otherwise its downside estimate
 is:
@@ -216,6 +236,15 @@ is:
 ```text
 stability_cap = clamp(650 - 6*F - 8*K, -500, 650)
 ```
+
+This trajectory deduplication is a conservative counting correction: it preserves
+the original exposure denominator and coefficients and can never make the cap more
+severe. A July 21 depth-30 audit compared the old move count, this correction,
+survival-style hazard censoring, repeated-forfeit-only protection, and no hard cap
+against both RD-300 and no-position-seed game ratings. The targets disagreed, and
+the 14-configuration/five-family cohort failed the existing 30/eight evidence
+gate, so no coefficient refit, hazard redesign, or cap removal was adopted. See
+`validation/2026-07-21-depth30-stability-cap-analysis.md`.
 
 As with the game-like panel, the cap is applied only when it is more than 150 Elo
 below the current estimate. Eight starting positions require up to 32 ordinary
@@ -235,8 +264,9 @@ or continuous-deadband replacement improved held-out MAE. Pooled first-answer
 illegality was the strongest remaining cross-family diagnostic (Spearman -0.617
 with `actual - predicted`), but fitting it still worsened MAE.
 
-Only the twelve GPT-5.6 configurations have a currently ready stratified-v2
-continuation record alongside the game-like panel. Within that selected cohort,
+The July 17 audit used twelve GPT-5.6 `stratified-v2` continuation records scored
+at depth 10. Those rows are now historical until depth-30 rescoring. Within that
+selected cohort,
 continuation CPL had almost no relationship to remaining prediction error
 (Spearman -0.091) and did not improve held-out MAE. The earlier GPT-5.6 defense-CPL
 signal also failed to generalize: its correlation was -0.643 inside GPT-5.6 but
@@ -266,7 +296,7 @@ python scripts/run_stability_probe.py --backfill-retry-metrics
 `protocol-sequence-v1` keeps the continuation workload near the existing 32-turn
 budget but uses four starts with up to eight model turns each. It selects indices
 `0, 12, 24, 36`, retains seeded random legal replies, scores both sides at
-Stockfish depth 10, and records exact first-attempt illegality separately from
+Stockfish depth 30, and records exact first-attempt illegality separately from
 conditional retry responses. Results live in `results/protocol_sequence.json` and
 have no production effect.
 
@@ -463,7 +493,7 @@ Likewise, the continuation probe can be invoked directly for repair or research:
 python scripts/run_stability_probe.py \
   --players "PLAYER_ID" \
   --probe-plies 8 \
-  --score-depth 10 \
+  --score-depth 30 \
   --api codex
 ```
 

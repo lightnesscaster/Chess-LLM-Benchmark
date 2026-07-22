@@ -152,11 +152,11 @@ def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
     expected_order = ["core", "game_like", "continuation_stability"]
     if config.get("enabled") is not True:
         issues.append("automatic_acquisition: must remain enabled")
-    if config.get("policy_version") != "production-supplements-v1":
+    if config.get("policy_version") != "production-supplements-depth30-v2":
         issues.append("automatic_acquisition: policy version mismatch")
     if config.get("panel_order") != expected_order:
         issues.append("automatic_acquisition: panel order mismatch")
-    if config.get("completion_policy") != "current-readiness-v1":
+    if config.get("completion_policy") != "current-readiness-v2":
         issues.append("automatic_acquisition: readiness policy mismatch")
     if (
         config.get("legacy_static_retry_policy")
@@ -181,6 +181,17 @@ def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
             issues.append(f"automatic_acquisition: excluded {panel_name} is automatic")
 
     continuation = manifest["panels"]["continuation_stability"]
+    if continuation.get("stability_probe_version") != "stratified-depth30-v3":
+        issues.append("automatic_acquisition: continuation probe version mismatch")
+    if int(continuation.get("stockfish_score_depth", 0)) != 30:
+        issues.append("automatic_acquisition: continuation depth must remain 30")
+    if (
+        continuation.get("catastrophe_event_policy")
+        != "first-1000cp-event-per-start-v1"
+    ):
+        issues.append("automatic_acquisition: catastrophe event policy mismatch")
+    if continuation.get("catastrophe_rate_denominator") != "scored_model_moves":
+        issues.append("automatic_acquisition: catastrophe denominator mismatch")
     expected_calls = (
         int(continuation.get("default_starting_positions", 0))
         * ((int(continuation.get("probe_plies", 0)) + 1) // 2)
@@ -188,6 +199,44 @@ def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
     if int(continuation.get("planned_base_first_attempt_calls", 0)) != expected_calls:
         issues.append("automatic_acquisition: continuation call count mismatch")
     print(f"  automatic_acquisition: {', '.join(expected_order)}")
+    return issues
+
+
+def verify_stability_results(manifest: dict[str, Any]) -> list[str]:
+    """Verify replayable production continuation rows against the current contract."""
+    issues: list[str] = []
+    config = manifest["panels"]["continuation_stability"]
+    results_path = resolve_manifest_path(config["results"])
+    if not results_path.exists():
+        return [f"stability: missing results file {results_path}"]
+
+    expected_depth = int(config["stockfish_score_depth"])
+    expected_indices = config["selected_position_indices"]
+    results = load_json(results_path)
+    replayable = 0
+    for player_id, record in results.items():
+        rows = record.get("results") or []
+        if not rows:
+            continue
+        replayable += 1
+        summary = record.get("summary", {})
+        if summary.get("stability_probe_version") != config.get(
+            "stability_probe_version"
+        ):
+            issues.append(f"stability/{player_id}: probe version mismatch")
+        if summary.get("position_selection_policy") != config.get("selection_policy"):
+            issues.append(f"stability/{player_id}: selection policy mismatch")
+        if summary.get("selected_position_indices") != expected_indices:
+            issues.append(f"stability/{player_id}: summary indices mismatch")
+        if int(summary.get("score_depth", 0)) != expected_depth:
+            issues.append(f"stability/{player_id}: summary depth mismatch")
+        if any(int(row.get("score_depth", 0)) != expected_depth for row in rows):
+            issues.append(f"stability/{player_id}: result row depth mismatch")
+
+    print(
+        f"  stability: {len(results)} model result sets, "
+        f"{replayable} replayable sets checked against the current contract"
+    )
     return issues
 
 
@@ -218,6 +267,11 @@ def verify_sequence_candidate(manifest: dict[str, Any]) -> list[str]:
             issues.append(f"protocol_sequence/{player_id}: incomplete positions")
         if int(summary.get("probe_plies", 0)) != int(config.get("probe_plies", 0)):
             issues.append(f"protocol_sequence/{player_id}: probe plies mismatch")
+        expected_depth = int(config.get("stockfish_score_depth", 0))
+        if int(summary.get("score_depth", 0)) != expected_depth:
+            issues.append(f"protocol_sequence/{player_id}: summary depth mismatch")
+        if any(int(row.get("score_depth", 0)) != expected_depth for row in rows):
+            issues.append(f"protocol_sequence/{player_id}: result row depth mismatch")
         if int(summary.get("api_errors", 0)) != 0:
             issues.append(f"protocol_sequence/{player_id}: contains API errors")
         if any(
@@ -377,11 +431,7 @@ def main() -> None:
     issues.extend(verify_failure_transfer_screen(manifest))
     issues.extend(verify_failure_transfer_shortlist(manifest))
 
-    stability_path = resolve_manifest_path(manifest["panels"]["continuation_stability"]["results"])
-    if not stability_path.exists():
-        issues.append(f"stability: missing results file {stability_path}")
-    else:
-        print(f"  stability: {len(load_json(stability_path))} model result sets")
+    issues.extend(verify_stability_results(manifest))
 
     if issues:
         print(f"FAILED: {len(issues)} issue(s)")

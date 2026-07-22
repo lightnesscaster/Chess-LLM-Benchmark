@@ -6,6 +6,9 @@
       "model_illegal_attempts": 3,
       "model_attempts": 34,
       "model_legal_pct": 91.17647058823529,
+      "model_first_attempt_turns": 32,
+      "model_first_attempt_illegals": 3,
+      "model_first_attempt_illegal_pct": 9.375,
       "illegal_attempts_per_model_move": 0.0967741935483871,
       "model_forfeits": 1,
       "model_forfeit_pct": 25.0,
@@ -13,17 +16,21 @@
       "probe_plies_played": 62,
       "avg_probe_plies_played": 15.5,
       "model_scored_moves": 31,
-      "model_avg_cpl": 953.4193548387096,
-      "model_first_move_avg_cpl": 70.25,
-      "model_later_move_avg_cpl": 1084.2592592592594,
-      "model_median_cpl": 74.0,
-      "model_p90_cpl": 901.0,
-      "model_300cp_blunders": 4,
-      "model_300cp_blunder_pct": 12.903225806451612,
-      "model_1000cp_catastrophes": 3,
-      "model_1000cp_catastrophe_pct": 9.67741935483871,
+      "model_avg_cpl": 630.9032258064516,
+      "model_first_move_avg_cpl": 60.0,
+      "model_later_move_avg_cpl": 715.4814814814815,
+      "model_median_cpl": 40.0,
+      "model_p90_cpl": 247.0,
+      "model_300cp_blunders": 3,
+      "model_300cp_blunder_pct": 9.67741935483871,
+      "model_300cp_blunder_positions": 2,
+      "model_300cp_blunder_position_pct": 50.0,
+      "model_1000cp_catastrophes": 2,
+      "model_1000cp_catastrophe_pct": 6.451612903225806,
+      "model_1000cp_catastrophe_positions": 1,
+      "model_1000cp_catastrophe_position_pct": 25.0,
       "opponent_scored_moves": 31,
-      "opponent_avg_cpl": 1615.6129032258063,
+      "opponent_avg_cpl": 1309.5483870967741,
       "model_retry_attempts": 2,
       "model_retry_recoveries": 2,
       "model_retry_failures": 0,
@@ -45,8 +52,6 @@
       "player_id": "gpt-5.6-luna (medium)",
       "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
       "probe_plies": 16,
-      "score_depth": 10,
-      "stability_probe_version": "protocol-sequence-v1",
       "position_selection_policy": "category-round-robin-one-per-category-v1",
       "selected_position_indices": [
         0,
@@ -54,9 +59,9 @@
         24,
         36
       ],
-      "model_first_attempt_turns": 32,
-      "model_first_attempt_illegals": 3,
-      "model_first_attempt_illegal_pct": 9.375
+      "score_depth": 30,
+      "stability_probe_version": "protocol-sequence-v1",
+      "model_1000cp_deduplicated_catastrophe_pct": 3.225806451612903
     },
     "results": [
       {
@@ -85,9 +90,9 @@
             "continuation_ply": 1,
             "move": "d3d1",
             "move_san": "Qxd1+",
-            "eval_before": 459,
-            "eval_model": 467,
-            "cpl": 0.0,
+            "eval_before": 483,
+            "eval_model": 470,
+            "cpl": 13,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -96,77 +101,77 @@
             "continuation_ply": 3,
             "move": "e4f2",
             "move_san": "Nxf2+",
-            "eval_before": 449,
-            "eval_model": 457,
-            "cpl": 0.0,
+            "eval_before": 476,
+            "eval_model": 474,
+            "cpl": 2,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 6
           },
           {
             "ply": 20,
             "continuation_ply": 5,
             "move": "f2h1",
             "move_san": "Nxh1",
-            "eval_before": 502,
-            "eval_model": 467,
-            "cpl": 35,
+            "eval_before": 491,
+            "eval_model": 499,
+            "cpl": 0.0,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 13
+            "preceding_opponent_cpl": 17
           },
           {
             "ply": 22,
             "continuation_ply": 7,
             "move": "h1f2",
             "move_san": "Nf2",
-            "eval_before": 611,
-            "eval_model": 442,
-            "cpl": 169,
+            "eval_before": 603,
+            "eval_model": 453,
+            "cpl": 150,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 152
+            "preceding_opponent_cpl": 104
           },
           {
             "ply": 24,
             "continuation_ply": 9,
             "move": "f2h1",
             "move_san": "Nh1",
-            "eval_before": 736,
-            "eval_model": 509,
-            "cpl": 227,
+            "eval_before": 714,
+            "eval_model": 574,
+            "cpl": 140,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 280
+            "preceding_opponent_cpl": 261
           },
           {
             "ply": 26,
             "continuation_ply": 11,
             "move": "h1f2",
             "move_san": "Nf2",
-            "eval_before": 730,
-            "eval_model": 506,
-            "cpl": 224,
+            "eval_before": 652,
+            "eval_model": 442,
+            "cpl": 210,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 168
+            "preceding_opponent_cpl": 78
           },
           {
             "ply": 28,
             "continuation_ply": 13,
             "move": "f2e4",
             "move_san": "Ne4",
-            "eval_before": 616,
-            "eval_model": 640,
-            "cpl": 0.0,
+            "eval_before": 691,
+            "eval_model": 546,
+            "cpl": 145,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 155
+            "preceding_opponent_cpl": 249
           },
           {
             "ply": 30,
             "continuation_ply": 15,
             "move": "e7e6",
             "move_san": "e6",
-            "eval_before": 676,
-            "eval_model": 576,
-            "cpl": 100,
+            "eval_before": 642,
+            "eval_model": 541,
+            "cpl": 101,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 40
+            "preceding_opponent_cpl": 96
           }
         ],
         "opponent_move_scores": [
@@ -175,9 +180,9 @@
             "continuation_ply": 2,
             "move": "e1d1",
             "move_san": "Kxd1",
-            "eval_before": -492,
-            "eval_model": -466,
-            "cpl": 0.0,
+            "eval_before": -470,
+            "eval_model": -476,
+            "cpl": 6,
             "opponent_turn_index": 1
           },
           {
@@ -185,9 +190,9 @@
             "continuation_ply": 4,
             "move": "d1e1",
             "move_san": "Ke1",
-            "eval_before": -459,
-            "eval_model": -472,
-            "cpl": 13,
+            "eval_before": -474,
+            "eval_model": -491,
+            "cpl": 17,
             "opponent_turn_index": 2
           },
           {
@@ -195,9 +200,9 @@
             "continuation_ply": 6,
             "move": "h2h3",
             "move_san": "h3",
-            "eval_before": -481,
-            "eval_model": -633,
-            "cpl": 152,
+            "eval_before": -499,
+            "eval_model": -603,
+            "cpl": 104,
             "opponent_turn_index": 3
           },
           {
@@ -205,9 +210,9 @@
             "continuation_ply": 8,
             "move": "h3h4",
             "move_san": "h4",
-            "eval_before": -447,
-            "eval_model": -727,
-            "cpl": 280,
+            "eval_before": -453,
+            "eval_model": -714,
+            "cpl": 261,
             "opponent_turn_index": 4
           },
           {
@@ -215,9 +220,9 @@
             "continuation_ply": 10,
             "move": "e1f1",
             "move_san": "Kf1",
-            "eval_before": -544,
-            "eval_model": -712,
-            "cpl": 168,
+            "eval_before": -574,
+            "eval_model": -652,
+            "cpl": 78,
             "opponent_turn_index": 5
           },
           {
@@ -225,9 +230,9 @@
             "continuation_ply": 12,
             "move": "a2a4",
             "move_san": "a4",
-            "eval_before": -492,
-            "eval_model": -647,
-            "cpl": 155,
+            "eval_before": -442,
+            "eval_model": -691,
+            "cpl": 249,
             "opponent_turn_index": 6
           },
           {
@@ -235,9 +240,9 @@
             "continuation_ply": 14,
             "move": "g1f3",
             "move_san": "Nf3",
-            "eval_before": -616,
-            "eval_model": -656,
-            "cpl": 40,
+            "eval_before": -546,
+            "eval_model": -642,
+            "cpl": 96,
             "opponent_turn_index": 7
           },
           {
@@ -245,9 +250,9 @@
             "continuation_ply": 16,
             "move": "f3e1",
             "move_san": "Ne1",
-            "eval_before": -595,
-            "eval_model": -755,
-            "cpl": 160,
+            "eval_before": -541,
+            "eval_model": -710,
+            "cpl": 169,
             "opponent_turn_index": 8
           }
         ],
@@ -256,7 +261,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 12,
@@ -301,9 +307,9 @@
             "continuation_ply": 1,
             "move": "e2e4",
             "move_san": "e4",
-            "eval_before": -470,
-            "eval_model": -681,
-            "cpl": 211,
+            "eval_before": -521,
+            "eval_model": -663,
+            "cpl": 142,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -312,66 +318,66 @@
             "continuation_ply": 3,
             "move": "d2d3",
             "move_san": "Kxd3",
-            "eval_before": -492,
-            "eval_model": -660,
-            "cpl": 168,
+            "eval_before": -579,
+            "eval_model": -647,
+            "cpl": 68,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 165
+            "preceding_opponent_cpl": 84
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "e4e5",
             "move_san": "e5",
-            "eval_before": -463,
-            "eval_model": -542,
-            "cpl": 79,
+            "eval_before": -513,
+            "eval_model": -548,
+            "cpl": 35,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 120
+            "preceding_opponent_cpl": 134
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "e5f6",
             "move_san": "exf6",
-            "eval_before": -346,
-            "eval_model": -361,
+            "eval_before": -345,
+            "eval_model": -360,
             "cpl": 15,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 238
+            "preceding_opponent_cpl": 203
           },
           {
             "ply": 23,
             "continuation_ply": 9,
             "move": "d1h5",
             "move_san": "Qh5",
-            "eval_before": -314,
-            "eval_model": -499,
-            "cpl": 185,
+            "eval_before": -337,
+            "eval_model": -584,
+            "cpl": 247,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 23
           },
           {
             "ply": 25,
             "continuation_ply": 11,
             "move": "h5e5",
             "move_san": "Qe5+",
-            "eval_before": -43,
-            "eval_model": -944,
-            "cpl": 901,
+            "eval_before": -190,
+            "eval_model": -917,
+            "cpl": 727,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 390
+            "preceding_opponent_cpl": 394
           },
           {
             "ply": 27,
             "continuation_ply": 13,
             "move": "e5d5",
             "move_san": "Qxd5+",
-            "eval_before": 244,
-            "eval_model": 245,
+            "eval_before": 284,
+            "eval_model": 303,
             "cpl": 0.0,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 1209
+            "preceding_opponent_cpl": 1201
           }
         ],
         "opponent_move_scores": [
@@ -380,9 +386,9 @@
             "continuation_ply": 2,
             "move": "d4d3",
             "move_san": "d3",
-            "eval_before": 699,
-            "eval_model": 534,
-            "cpl": 165,
+            "eval_before": 663,
+            "eval_model": 579,
+            "cpl": 84,
             "opponent_turn_index": 1
           },
           {
@@ -390,9 +396,9 @@
             "continuation_ply": 4,
             "move": "g7g5",
             "move_san": "g5",
-            "eval_before": 626,
-            "eval_model": 506,
-            "cpl": 120,
+            "eval_before": 647,
+            "eval_model": 513,
+            "cpl": 134,
             "opponent_turn_index": 2
           },
           {
@@ -401,8 +407,8 @@
             "move": "a8b8",
             "move_san": "Rb8",
             "eval_before": 548,
-            "eval_model": 310,
-            "cpl": 238,
+            "eval_model": 345,
+            "cpl": 203,
             "opponent_turn_index": 3
           },
           {
@@ -410,9 +416,9 @@
             "continuation_ply": 8,
             "move": "d7d5",
             "move_san": "d5",
-            "eval_before": 299,
-            "eval_model": 324,
-            "cpl": 0.0,
+            "eval_before": 360,
+            "eval_model": 337,
+            "cpl": 23,
             "opponent_turn_index": 4
           },
           {
@@ -420,9 +426,9 @@
             "continuation_ply": 10,
             "move": "g5g4",
             "move_san": "g4",
-            "eval_before": 509,
-            "eval_model": 119,
-            "cpl": 390,
+            "eval_before": 584,
+            "eval_model": 190,
+            "cpl": 394,
             "opponent_turn_index": 5
           },
           {
@@ -430,9 +436,9 @@
             "continuation_ply": 12,
             "move": "e8d7",
             "move_san": "Kd7",
-            "eval_before": 934,
-            "eval_model": -275,
-            "cpl": 1209,
+            "eval_before": 917,
+            "eval_model": -284,
+            "cpl": 1201,
             "opponent_turn_index": 6
           },
           {
@@ -440,9 +446,9 @@
             "continuation_ply": 14,
             "move": "d7e8",
             "move_san": "Ke8",
-            "eval_before": -244,
-            "eval_model": -271,
-            "cpl": 27,
+            "eval_before": -303,
+            "eval_model": -299,
+            "cpl": 0.0,
             "opponent_turn_index": 7
           }
         ],
@@ -451,7 +457,8 @@
         "model_retry_recoveries": 1,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 24,
@@ -488,9 +495,9 @@
             "continuation_ply": 1,
             "move": "a5b3",
             "move_san": "Nxb3",
-            "eval_before": -85,
-            "eval_model": -146,
-            "cpl": 61,
+            "eval_before": -101,
+            "eval_model": -186,
+            "cpl": 85,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -499,9 +506,9 @@
             "continuation_ply": 3,
             "move": "d8d7",
             "move_san": "Qd7",
-            "eval_before": -161,
-            "eval_model": -319,
-            "cpl": 158,
+            "eval_before": -198,
+            "eval_model": -336,
+            "cpl": 138,
             "model_turn_index": 2,
             "preceding_opponent_cpl": 0.0
           },
@@ -510,55 +517,55 @@
             "continuation_ply": 5,
             "move": "b3a1",
             "move_san": "Nxa1",
-            "eval_before": 380,
-            "eval_model": 414,
+            "eval_before": 510,
+            "eval_model": 525,
             "cpl": 0.0,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 734
+            "preceding_opponent_cpl": 846
           },
           {
             "ply": 26,
             "continuation_ply": 7,
             "move": "f6e4",
             "move_san": "Nxe4",
-            "eval_before": 612,
-            "eval_model": 552,
-            "cpl": 60,
+            "eval_before": 870,
+            "eval_model": 885,
+            "cpl": 0.0,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 230
+            "preceding_opponent_cpl": 345
           },
           {
             "ply": 28,
             "continuation_ply": 9,
             "move": "e7f6",
             "move_san": "Bf6",
-            "eval_before": 754,
-            "eval_model": 703,
-            "cpl": 51,
+            "eval_before": 929,
+            "eval_model": 873,
+            "cpl": 56,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 83
+            "preceding_opponent_cpl": 44
           },
           {
             "ply": 30,
             "continuation_ply": 11,
             "move": "a1c2",
             "move_san": "Nxc2",
-            "eval_before": 1096,
-            "eval_model": 998,
-            "cpl": 98,
+            "eval_before": 9930,
+            "eval_model": 1311,
+            "cpl": 8619,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 352
+            "preceding_opponent_cpl": 9057
           },
           {
             "ply": 32,
             "continuation_ply": 13,
             "move": "b5b4",
             "move_san": "b4",
-            "eval_before": 9950,
-            "eval_model": 1028,
-            "cpl": 8922,
+            "eval_before": 9960,
+            "eval_model": 1491,
+            "cpl": 8469,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 8989
+            "preceding_opponent_cpl": 8649
           },
           {
             "ply": 34,
@@ -569,7 +576,7 @@
             "eval_model": 9970,
             "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 8931
+            "preceding_opponent_cpl": 8469
           }
         ],
         "opponent_move_scores": [
@@ -578,8 +585,8 @@
             "continuation_ply": 2,
             "move": "e5c6",
             "move_san": "Nc6",
-            "eval_before": 163,
-            "eval_model": 188,
+            "eval_before": 186,
+            "eval_model": 198,
             "cpl": 0.0,
             "opponent_turn_index": 1
           },
@@ -588,9 +595,9 @@
             "continuation_ply": 4,
             "move": "g2g4",
             "move_san": "g4",
-            "eval_before": 340,
-            "eval_model": -394,
-            "cpl": 734,
+            "eval_before": 336,
+            "eval_model": -510,
+            "cpl": 846,
             "opponent_turn_index": 2
           },
           {
@@ -598,9 +605,9 @@
             "continuation_ply": 6,
             "move": "e1e4",
             "move_san": "Re4",
-            "eval_before": -409,
-            "eval_model": -639,
-            "cpl": 230,
+            "eval_before": -525,
+            "eval_model": -870,
+            "cpl": 345,
             "opponent_turn_index": 3
           },
           {
@@ -608,9 +615,9 @@
             "continuation_ply": 8,
             "move": "d2d4",
             "move_san": "d4",
-            "eval_before": -645,
-            "eval_model": -728,
-            "cpl": 83,
+            "eval_before": -885,
+            "eval_model": -929,
+            "cpl": 44,
             "opponent_turn_index": 4
           },
           {
@@ -618,9 +625,9 @@
             "continuation_ply": 10,
             "move": "d1c2",
             "move_san": "Qc2",
-            "eval_before": -707,
-            "eval_model": -1059,
-            "cpl": 352,
+            "eval_before": -873,
+            "eval_model": -9930,
+            "cpl": 9057,
             "opponent_turn_index": 5
           },
           {
@@ -628,9 +635,9 @@
             "continuation_ply": 12,
             "move": "c6a5",
             "move_san": "Na5",
-            "eval_before": -961,
-            "eval_model": -9950,
-            "cpl": 8989,
+            "eval_before": -1311,
+            "eval_model": -9960,
+            "cpl": 8649,
             "opponent_turn_index": 6
           },
           {
@@ -638,9 +645,9 @@
             "continuation_ply": 14,
             "move": "c1d2",
             "move_san": "Bd2",
-            "eval_before": -1029,
+            "eval_before": -1491,
             "eval_model": -9960,
-            "cpl": 8931,
+            "cpl": 8469,
             "opponent_turn_index": 7
           },
           {
@@ -659,7 +666,8 @@
         "model_retry_recoveries": 1,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 36,
@@ -687,9 +695,9 @@
             "continuation_ply": 1,
             "move": "d4e4",
             "move_san": "Qxe4",
-            "eval_before": 19,
-            "eval_model": 10,
-            "cpl": 9,
+            "eval_before": -26,
+            "eval_model": -26,
+            "cpl": 0.0,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -698,33 +706,33 @@
             "continuation_ply": 3,
             "move": "e5d6",
             "move_san": "exd6+",
-            "eval_before": 724,
-            "eval_model": 650,
-            "cpl": 74,
+            "eval_before": 832,
+            "eval_model": 867,
+            "cpl": 0.0,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 731
+            "preceding_opponent_cpl": 858
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "e4g4",
             "move_san": "Qg4",
-            "eval_before": 787,
-            "eval_model": 644,
-            "cpl": 143,
+            "eval_before": 903,
+            "eval_model": 777,
+            "cpl": 126,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 37
+            "preceding_opponent_cpl": 36
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "g4g7",
             "move_san": "Qxg7",
-            "eval_before": 938,
-            "eval_model": 927,
-            "cpl": 11,
+            "eval_before": 9870,
+            "eval_model": 9880,
+            "cpl": 0.0,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 228
+            "preceding_opponent_cpl": 9093
           },
           {
             "ply": 23,
@@ -735,7 +743,7 @@
             "eval_model": 9970,
             "cpl": 0.0,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 9057
+            "preceding_opponent_cpl": 80
           },
           {
             "ply": 25,
@@ -743,8 +751,8 @@
             "move": "h8h7",
             "move_san": "Qxh7+",
             "eval_before": 9970,
-            "eval_model": 1147,
-            "cpl": 8823,
+            "eval_model": 9940,
+            "cpl": 30,
             "model_turn_index": 6,
             "preceding_opponent_cpl": 0.0
           },
@@ -757,7 +765,7 @@
             "eval_model": 9980,
             "cpl": 0.0,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 8783
+            "preceding_opponent_cpl": 40
           },
           {
             "ply": 29,
@@ -765,8 +773,8 @@
             "move": "h8h7",
             "move_san": "Qh7+",
             "eval_before": 9980,
-            "eval_model": 1148,
-            "cpl": 8832,
+            "eval_model": 9940,
+            "cpl": 40,
             "model_turn_index": 8,
             "preceding_opponent_cpl": 0.0
           }
@@ -777,9 +785,9 @@
             "continuation_ply": 2,
             "move": "e7d6",
             "move_san": "Qd6",
-            "eval_before": -1,
-            "eval_model": -732,
-            "cpl": 731,
+            "eval_before": 26,
+            "eval_model": -832,
+            "cpl": 858,
             "opponent_turn_index": 1
           },
           {
@@ -787,9 +795,9 @@
             "continuation_ply": 4,
             "move": "f8e7",
             "move_san": "Be7",
-            "eval_before": -722,
-            "eval_model": -759,
-            "cpl": 37,
+            "eval_before": -867,
+            "eval_model": -903,
+            "cpl": 36,
             "opponent_turn_index": 2
           },
           {
@@ -797,9 +805,9 @@
             "continuation_ply": 6,
             "move": "e7d8",
             "move_san": "Bd8",
-            "eval_before": -649,
-            "eval_model": -877,
-            "cpl": 228,
+            "eval_before": -777,
+            "eval_model": -9870,
+            "cpl": 9093,
             "opponent_turn_index": 3
           },
           {
@@ -807,9 +815,9 @@
             "continuation_ply": 8,
             "move": "f7f6",
             "move_san": "f6",
-            "eval_before": -903,
+            "eval_before": -9880,
             "eval_model": -9960,
-            "cpl": 9057,
+            "cpl": 80,
             "opponent_turn_index": 4
           },
           {
@@ -827,9 +835,9 @@
             "continuation_ply": 12,
             "move": "f7f8",
             "move_san": "Kf8",
-            "eval_before": -1197,
+            "eval_before": -9940,
             "eval_model": -9980,
-            "cpl": 8783,
+            "cpl": 40,
             "opponent_turn_index": 6
           },
           {
@@ -847,9 +855,9 @@
             "continuation_ply": 16,
             "move": "f7f8",
             "move_san": "Kf8",
-            "eval_before": -1188,
+            "eval_before": -9940,
             "eval_model": -9980,
-            "cpl": 8792,
+            "cpl": 40,
             "opponent_turn_index": 8
           }
         ],
@@ -858,7 +866,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       }
     ]
   },
@@ -869,6 +878,9 @@
       "model_illegal_attempts": 1,
       "model_attempts": 33,
       "model_legal_pct": 96.96969696969697,
+      "model_first_attempt_turns": 32,
+      "model_first_attempt_illegals": 1,
+      "model_first_attempt_illegal_pct": 3.125,
       "illegal_attempts_per_model_move": 0.03125,
       "model_forfeits": 0,
       "model_forfeit_pct": 0.0,
@@ -876,17 +888,21 @@
       "probe_plies_played": 64,
       "avg_probe_plies_played": 16.0,
       "model_scored_moves": 32,
-      "model_avg_cpl": 118.4375,
-      "model_first_move_avg_cpl": 38.75,
-      "model_later_move_avg_cpl": 129.82142857142858,
-      "model_median_cpl": 18.5,
-      "model_p90_cpl": 347.0,
-      "model_300cp_blunders": 4,
-      "model_300cp_blunder_pct": 12.5,
+      "model_avg_cpl": 133.71875,
+      "model_first_move_avg_cpl": 25.0,
+      "model_later_move_avg_cpl": 149.25,
+      "model_median_cpl": 12.0,
+      "model_p90_cpl": 564.0,
+      "model_300cp_blunders": 6,
+      "model_300cp_blunder_pct": 18.75,
+      "model_300cp_blunder_positions": 4,
+      "model_300cp_blunder_position_pct": 100.0,
       "model_1000cp_catastrophes": 0,
       "model_1000cp_catastrophe_pct": 0.0,
+      "model_1000cp_catastrophe_positions": 0,
+      "model_1000cp_catastrophe_position_pct": 0.0,
       "opponent_scored_moves": 32,
-      "opponent_avg_cpl": 235.875,
+      "opponent_avg_cpl": 1085.8125,
       "model_retry_attempts": 1,
       "model_retry_recoveries": 1,
       "model_retry_failures": 0,
@@ -908,8 +924,6 @@
       "player_id": "gpt-5.6-terra (low)",
       "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
       "probe_plies": 16,
-      "score_depth": 10,
-      "stability_probe_version": "protocol-sequence-v1",
       "position_selection_policy": "category-round-robin-one-per-category-v1",
       "selected_position_indices": [
         0,
@@ -917,9 +931,9 @@
         24,
         36
       ],
-      "model_first_attempt_turns": 32,
-      "model_first_attempt_illegals": 1,
-      "model_first_attempt_illegal_pct": 3.125
+      "score_depth": 30,
+      "stability_probe_version": "protocol-sequence-v1",
+      "model_1000cp_deduplicated_catastrophe_pct": 0.0
     },
     "results": [
       {
@@ -948,9 +962,9 @@
             "continuation_ply": 1,
             "move": "d3d1",
             "move_san": "Qxd1+",
-            "eval_before": 459,
-            "eval_model": 467,
-            "cpl": 0.0,
+            "eval_before": 483,
+            "eval_model": 470,
+            "cpl": 13,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -959,77 +973,77 @@
             "continuation_ply": 3,
             "move": "e4f2",
             "move_san": "Nxf2+",
-            "eval_before": 449,
-            "eval_model": 457,
-            "cpl": 0.0,
+            "eval_before": 476,
+            "eval_model": 474,
+            "cpl": 2,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 6
           },
           {
             "ply": 20,
             "continuation_ply": 5,
             "move": "f2d3",
             "move_san": "Nd3+",
-            "eval_before": 502,
-            "eval_model": 397,
-            "cpl": 105,
+            "eval_before": 491,
+            "eval_model": 454,
+            "cpl": 37,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 13
+            "preceding_opponent_cpl": 17
           },
           {
             "ply": 22,
             "continuation_ply": 7,
             "move": "d3b2",
             "move_san": "Nxb2+",
-            "eval_before": 470,
-            "eval_model": -101,
-            "cpl": 571,
+            "eval_before": 499,
+            "eval_model": -136,
+            "cpl": 635,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 37
+            "preceding_opponent_cpl": 45
           },
           {
             "ply": 24,
             "continuation_ply": 9,
             "move": "b2c4",
             "move_san": "Nc4+",
-            "eval_before": 532,
-            "eval_model": 529,
-            "cpl": 3,
+            "eval_before": 487,
+            "eval_model": 493,
+            "cpl": 0.0,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 650
+            "preceding_opponent_cpl": 623
           },
           {
             "ply": 26,
             "continuation_ply": 11,
             "move": "c4b2",
             "move_san": "Nb2+",
-            "eval_before": 611,
-            "eval_model": -98,
-            "cpl": 709,
+            "eval_before": 593,
+            "eval_model": -71,
+            "cpl": 664,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 32
+            "preceding_opponent_cpl": 100
           },
           {
             "ply": 28,
             "continuation_ply": 13,
             "move": "c7c5",
             "move_san": "c5+",
-            "eval_before": 490,
-            "eval_model": 479,
-            "cpl": 11,
+            "eval_before": 512,
+            "eval_model": 465,
+            "cpl": 47,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 609
+            "preceding_opponent_cpl": 583
           },
           {
             "ply": 30,
             "continuation_ply": 15,
             "move": "e7e6",
             "move_san": "e6",
-            "eval_before": 537,
-            "eval_model": 395,
-            "cpl": 142,
+            "eval_before": 547,
+            "eval_model": 469,
+            "cpl": 78,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 65
+            "preceding_opponent_cpl": 82
           }
         ],
         "opponent_move_scores": [
@@ -1038,9 +1052,9 @@
             "continuation_ply": 2,
             "move": "e1d1",
             "move_san": "Kxd1",
-            "eval_before": -492,
-            "eval_model": -466,
-            "cpl": 0.0,
+            "eval_before": -470,
+            "eval_model": -476,
+            "cpl": 6,
             "opponent_turn_index": 1
           },
           {
@@ -1048,9 +1062,9 @@
             "continuation_ply": 4,
             "move": "d1e1",
             "move_san": "Ke1",
-            "eval_before": -459,
-            "eval_model": -472,
-            "cpl": 13,
+            "eval_before": -474,
+            "eval_model": -491,
+            "cpl": 17,
             "opponent_turn_index": 2
           },
           {
@@ -1058,9 +1072,9 @@
             "continuation_ply": 6,
             "move": "e1d1",
             "move_san": "Kd1",
-            "eval_before": -442,
-            "eval_model": -479,
-            "cpl": 37,
+            "eval_before": -454,
+            "eval_model": -499,
+            "cpl": 45,
             "opponent_turn_index": 3
           },
           {
@@ -1068,9 +1082,9 @@
             "continuation_ply": 8,
             "move": "d1d2",
             "move_san": "Kd2",
-            "eval_before": 124,
-            "eval_model": -526,
-            "cpl": 650,
+            "eval_before": 136,
+            "eval_model": -487,
+            "cpl": 623,
             "opponent_turn_index": 4
           },
           {
@@ -1078,9 +1092,9 @@
             "continuation_ply": 10,
             "move": "d2d3",
             "move_san": "Kd3",
-            "eval_before": -553,
-            "eval_model": -585,
-            "cpl": 32,
+            "eval_before": -493,
+            "eval_model": -593,
+            "cpl": 100,
             "opponent_turn_index": 5
           },
           {
@@ -1088,9 +1102,9 @@
             "continuation_ply": 12,
             "move": "d3d4",
             "move_san": "Kd4",
-            "eval_before": 126,
-            "eval_model": -483,
-            "cpl": 609,
+            "eval_before": 71,
+            "eval_model": -512,
+            "cpl": 583,
             "opponent_turn_index": 6
           },
           {
@@ -1098,9 +1112,9 @@
             "continuation_ply": 14,
             "move": "d4e4",
             "move_san": "Ke4",
-            "eval_before": -478,
-            "eval_model": -543,
-            "cpl": 65,
+            "eval_before": -465,
+            "eval_model": -547,
+            "cpl": 82,
             "opponent_turn_index": 7
           },
           {
@@ -1108,9 +1122,9 @@
             "continuation_ply": 16,
             "move": "g2g3",
             "move_san": "g3",
-            "eval_before": -483,
-            "eval_model": -771,
-            "cpl": 288,
+            "eval_before": -469,
+            "eval_model": -719,
+            "cpl": 250,
             "opponent_turn_index": 8
           }
         ],
@@ -1119,7 +1133,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 12,
@@ -1147,9 +1162,9 @@
             "continuation_ply": 1,
             "move": "g1f3",
             "move_san": "Nf3",
-            "eval_before": -495,
-            "eval_model": -494,
-            "cpl": 0.0,
+            "eval_before": -521,
+            "eval_model": -523,
+            "cpl": 2,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -1158,77 +1173,77 @@
             "continuation_ply": 3,
             "move": "e2d3",
             "move_san": "exd3",
-            "eval_before": -442,
-            "eval_model": -427,
-            "cpl": 0.0,
+            "eval_before": -420,
+            "eval_model": -431,
+            "cpl": 11,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 61
+            "preceding_opponent_cpl": 103
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "f3g5",
             "move_san": "Nxg5",
-            "eval_before": -296,
-            "eval_model": -272,
-            "cpl": 0.0,
+            "eval_before": -306,
+            "eval_model": -312,
+            "cpl": 6,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 110
+            "preceding_opponent_cpl": 125
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "f1g2",
             "move_san": "Bg2",
-            "eval_before": -219,
-            "eval_model": -217,
-            "cpl": 0.0,
+            "eval_before": -225,
+            "eval_model": -245,
+            "cpl": 20,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 23
+            "preceding_opponent_cpl": 87
           },
           {
             "ply": 23,
             "continuation_ply": 9,
             "move": "g5f7",
             "move_san": "Nxf7",
-            "eval_before": -101,
-            "eval_model": -448,
-            "cpl": 347,
+            "eval_before": -86,
+            "eval_model": -411,
+            "cpl": 325,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 125
+            "preceding_opponent_cpl": 159
           },
           {
             "ply": 25,
             "continuation_ply": 11,
             "move": "f7d8",
             "move_san": "Nxd8",
-            "eval_before": 590,
-            "eval_model": 552,
-            "cpl": 38,
+            "eval_before": 557,
+            "eval_model": 568,
+            "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 1144
+            "preceding_opponent_cpl": 968
           },
           {
             "ply": 27,
             "continuation_ply": 13,
             "move": "d8e6",
             "move_san": "Nxe6",
-            "eval_before": 781,
-            "eval_model": 840,
+            "eval_before": 928,
+            "eval_model": 950,
             "cpl": 0.0,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 280
+            "preceding_opponent_cpl": 360
           },
           {
             "ply": 29,
             "continuation_ply": 15,
             "move": "b1c3",
             "move_san": "Nc3",
-            "eval_before": 836,
-            "eval_model": 893,
-            "cpl": 0.0,
+            "eval_before": 1027,
+            "eval_model": 1018,
+            "cpl": 9,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 94
+            "preceding_opponent_cpl": 77
           }
         ],
         "opponent_move_scores": [
@@ -1237,9 +1252,9 @@
             "continuation_ply": 2,
             "move": "d4d3",
             "move_san": "d3",
-            "eval_before": 536,
-            "eval_model": 475,
-            "cpl": 61,
+            "eval_before": 523,
+            "eval_model": 420,
+            "cpl": 103,
             "opponent_turn_index": 1
           },
           {
@@ -1247,9 +1262,9 @@
             "continuation_ply": 4,
             "move": "g7g5",
             "move_san": "g5",
-            "eval_before": 415,
-            "eval_model": 305,
-            "cpl": 110,
+            "eval_before": 431,
+            "eval_model": 306,
+            "cpl": 125,
             "opponent_turn_index": 2
           },
           {
@@ -1257,9 +1272,9 @@
             "continuation_ply": 6,
             "move": "a8b8",
             "move_san": "Rb8",
-            "eval_before": 227,
-            "eval_model": 204,
-            "cpl": 23,
+            "eval_before": 312,
+            "eval_model": 225,
+            "cpl": 87,
             "opponent_turn_index": 3
           },
           {
@@ -1267,9 +1282,9 @@
             "continuation_ply": 8,
             "move": "d7d6",
             "move_san": "d6",
-            "eval_before": 243,
-            "eval_model": 118,
-            "cpl": 125,
+            "eval_before": 245,
+            "eval_model": 86,
+            "cpl": 159,
             "opponent_turn_index": 4
           },
           {
@@ -1277,9 +1292,9 @@
             "continuation_ply": 10,
             "move": "c8e6",
             "move_san": "Be6",
-            "eval_before": 498,
-            "eval_model": -646,
-            "cpl": 1144,
+            "eval_before": 411,
+            "eval_model": -557,
+            "cpl": 968,
             "opponent_turn_index": 5
           },
           {
@@ -1287,9 +1302,9 @@
             "continuation_ply": 12,
             "move": "a7a6",
             "move_san": "a6",
-            "eval_before": -530,
-            "eval_model": -810,
-            "cpl": 280,
+            "eval_before": -568,
+            "eval_model": -928,
+            "cpl": 360,
             "opponent_turn_index": 6
           },
           {
@@ -1297,9 +1312,9 @@
             "continuation_ply": 14,
             "move": "f6g8",
             "move_san": "Ng8",
-            "eval_before": -851,
-            "eval_model": -945,
-            "cpl": 94,
+            "eval_before": -950,
+            "eval_model": -1027,
+            "cpl": 77,
             "opponent_turn_index": 7
           },
           {
@@ -1307,9 +1322,9 @@
             "continuation_ply": 16,
             "move": "c6b4",
             "move_san": "Nb4",
-            "eval_before": -854,
-            "eval_model": -978,
-            "cpl": 124,
+            "eval_before": -1018,
+            "eval_model": -9750,
+            "cpl": 8732,
             "opponent_turn_index": 8
           }
         ],
@@ -1318,7 +1333,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 24,
@@ -1355,9 +1371,9 @@
             "continuation_ply": 1,
             "move": "a5b3",
             "move_san": "Nxb3",
-            "eval_before": -78,
-            "eval_model": -142,
-            "cpl": 64,
+            "eval_before": -101,
+            "eval_model": -186,
+            "cpl": 85,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -1366,9 +1382,9 @@
             "continuation_ply": 3,
             "move": "d8d6",
             "move_san": "Qd6",
-            "eval_before": -108,
-            "eval_model": -265,
-            "cpl": 157,
+            "eval_before": -198,
+            "eval_model": -409,
+            "cpl": 211,
             "model_turn_index": 2,
             "preceding_opponent_cpl": 0.0
           },
@@ -1377,66 +1393,66 @@
             "continuation_ply": 5,
             "move": "b3a1",
             "move_san": "Nxa1",
-            "eval_before": 452,
-            "eval_model": 474,
+            "eval_before": 473,
+            "eval_model": 487,
             "cpl": 0.0,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 796
+            "preceding_opponent_cpl": 882
           },
           {
             "ply": 26,
             "continuation_ply": 7,
             "move": "f6e4",
             "move_san": "Nxe4",
-            "eval_before": 744,
-            "eval_model": 736,
-            "cpl": 8,
+            "eval_before": 865,
+            "eval_model": 869,
+            "cpl": 0.0,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 155
+            "preceding_opponent_cpl": 378
           },
           {
             "ply": 28,
             "continuation_ply": 9,
             "move": "e4c3",
             "move_san": "Nxc3",
-            "eval_before": 810,
-            "eval_model": 563,
-            "cpl": 247,
+            "eval_before": 901,
+            "eval_model": 718,
+            "cpl": 183,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 43
+            "preceding_opponent_cpl": 32
           },
           {
             "ply": 30,
             "continuation_ply": 11,
             "move": "c3e2",
             "move_san": "Nxe2+",
-            "eval_before": 964,
-            "eval_model": 1036,
+            "eval_before": 1291,
+            "eval_model": 1323,
             "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 403
+            "preceding_opponent_cpl": 573
           },
           {
             "ply": 32,
             "continuation_ply": 13,
             "move": "d6f4",
             "move_san": "Qxf4+",
-            "eval_before": 1040,
-            "eval_model": 795,
-            "cpl": 245,
+            "eval_before": 1532,
+            "eval_model": 968,
+            "cpl": 564,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 45
+            "preceding_opponent_cpl": 209
           },
           {
             "ply": 34,
             "continuation_ply": 15,
             "move": "f4c1",
             "move_san": "Qxc1+",
-            "eval_before": 1194,
-            "eval_model": 1147,
-            "cpl": 47,
+            "eval_before": 9940,
+            "eval_model": 9950,
+            "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 294
+            "preceding_opponent_cpl": 8972
           }
         ],
         "opponent_move_scores": [
@@ -1445,8 +1461,8 @@
             "continuation_ply": 2,
             "move": "e5c6",
             "move_san": "Nc6",
-            "eval_before": 163,
-            "eval_model": 163,
+            "eval_before": 186,
+            "eval_model": 198,
             "cpl": 0.0,
             "opponent_turn_index": 1
           },
@@ -1455,9 +1471,9 @@
             "continuation_ply": 4,
             "move": "f2f4",
             "move_san": "f4",
-            "eval_before": 353,
-            "eval_model": -443,
-            "cpl": 796,
+            "eval_before": 409,
+            "eval_model": -473,
+            "cpl": 882,
             "opponent_turn_index": 2
           },
           {
@@ -1465,9 +1481,9 @@
             "continuation_ply": 6,
             "move": "e1e4",
             "move_san": "Re4",
-            "eval_before": -483,
-            "eval_model": -638,
-            "cpl": 155,
+            "eval_before": -487,
+            "eval_model": -865,
+            "cpl": 378,
             "opponent_turn_index": 3
           },
           {
@@ -1475,9 +1491,9 @@
             "continuation_ply": 8,
             "move": "d2d4",
             "move_san": "d4",
-            "eval_before": -761,
-            "eval_model": -804,
-            "cpl": 43,
+            "eval_before": -869,
+            "eval_model": -901,
+            "cpl": 32,
             "opponent_turn_index": 4
           },
           {
@@ -1485,9 +1501,9 @@
             "continuation_ply": 10,
             "move": "d1e2",
             "move_san": "Qe2",
-            "eval_before": -574,
-            "eval_model": -977,
-            "cpl": 403,
+            "eval_before": -718,
+            "eval_model": -1291,
+            "cpl": 573,
             "opponent_turn_index": 5
           },
           {
@@ -1495,9 +1511,9 @@
             "continuation_ply": 12,
             "move": "g1f2",
             "move_san": "Kf2",
-            "eval_before": -1020,
-            "eval_model": -1065,
-            "cpl": 45,
+            "eval_before": -1323,
+            "eval_model": -1532,
+            "cpl": 209,
             "opponent_turn_index": 6
           },
           {
@@ -1505,9 +1521,9 @@
             "continuation_ply": 14,
             "move": "f2e1",
             "move_san": "Ke1",
-            "eval_before": -808,
-            "eval_model": -1102,
-            "cpl": 294,
+            "eval_before": -968,
+            "eval_model": -9940,
+            "cpl": 8972,
             "opponent_turn_index": 7
           },
           {
@@ -1515,9 +1531,9 @@
             "continuation_ply": 16,
             "move": "e1f2",
             "move_san": "Kf2",
-            "eval_before": -1129,
-            "eval_model": -1200,
-            "cpl": 71,
+            "eval_before": -9950,
+            "eval_model": -9970,
+            "cpl": 20,
             "opponent_turn_index": 8
           }
         ],
@@ -1526,7 +1542,8 @@
         "model_retry_recoveries": 1,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 36,
@@ -1554,9 +1571,9 @@
             "continuation_ply": 1,
             "move": "d4e4",
             "move_san": "Qxe4",
-            "eval_before": 71,
-            "eval_model": -20,
-            "cpl": 91,
+            "eval_before": -26,
+            "eval_model": -26,
+            "cpl": 0.0,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -1565,77 +1582,77 @@
             "continuation_ply": 3,
             "move": "c1f4",
             "move_san": "Bf4",
-            "eval_before": 683,
-            "eval_model": 39,
-            "cpl": 644,
+            "eval_before": 832,
+            "eval_model": 19,
+            "cpl": 813,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 770
+            "preceding_opponent_cpl": 858
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "f1d3",
             "move_san": "Bxd3",
-            "eval_before": 679,
-            "eval_model": 705,
-            "cpl": 0.0,
+            "eval_before": 740,
+            "eval_model": 713,
+            "cpl": 27,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 682
+            "preceding_opponent_cpl": 721
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "e1g1",
             "move_san": "O-O",
-            "eval_before": 736,
-            "eval_model": 784,
-            "cpl": 0.0,
+            "eval_before": 851,
+            "eval_model": 845,
+            "cpl": 6,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 16
+            "preceding_opponent_cpl": 138
           },
           {
             "ply": 23,
             "continuation_ply": 9,
             "move": "e5e6",
             "move_san": "e6",
-            "eval_before": 767,
-            "eval_model": 741,
-            "cpl": 26,
+            "eval_before": 852,
+            "eval_model": 799,
+            "cpl": 53,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 7
           },
           {
             "ply": 25,
             "continuation_ply": 11,
             "move": "a1d1",
             "move_san": "Rad1",
-            "eval_before": 830,
-            "eval_model": 755,
-            "cpl": 75,
+            "eval_before": 918,
+            "eval_model": 928,
+            "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 119
           },
           {
             "ply": 27,
             "continuation_ply": 13,
             "move": "e4c6",
             "move_san": "Qxc6",
-            "eval_before": 831,
-            "eval_model": 571,
-            "cpl": 260,
+            "eval_before": 1074,
+            "eval_model": 586,
+            "cpl": 488,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 89
+            "preceding_opponent_cpl": 146
           },
           {
             "ply": 29,
             "continuation_ply": 15,
             "move": "c6c7",
             "move_san": "Qxc7+",
-            "eval_before": 1314,
-            "eval_model": 9930,
+            "eval_before": 9960,
+            "eval_model": 9970,
             "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 529
+            "preceding_opponent_cpl": 9374
           }
         ],
         "opponent_move_scores": [
@@ -1644,9 +1661,9 @@
             "continuation_ply": 2,
             "move": "e7d6",
             "move_san": "Qd6",
-            "eval_before": 58,
-            "eval_model": -712,
-            "cpl": 770,
+            "eval_before": 26,
+            "eval_model": -832,
+            "cpl": 858,
             "opponent_turn_index": 1
           },
           {
@@ -1654,9 +1671,9 @@
             "continuation_ply": 4,
             "move": "d6d3",
             "move_san": "Qd3",
-            "eval_before": -31,
-            "eval_model": -713,
-            "cpl": 682,
+            "eval_before": -19,
+            "eval_model": -740,
+            "cpl": 721,
             "opponent_turn_index": 2
           },
           {
@@ -1664,9 +1681,9 @@
             "continuation_ply": 6,
             "move": "e8d8",
             "move_san": "Kd8",
-            "eval_before": -740,
-            "eval_model": -756,
-            "cpl": 16,
+            "eval_before": -713,
+            "eval_model": -851,
+            "cpl": 138,
             "opponent_turn_index": 3
           },
           {
@@ -1674,9 +1691,9 @@
             "continuation_ply": 8,
             "move": "h7h6",
             "move_san": "h6",
-            "eval_before": -807,
-            "eval_model": -764,
-            "cpl": 0.0,
+            "eval_before": -845,
+            "eval_model": -852,
+            "cpl": 7,
             "opponent_turn_index": 4
           },
           {
@@ -1685,8 +1702,8 @@
             "move": "d7e6",
             "move_san": "dxe6",
             "eval_before": -799,
-            "eval_model": -790,
-            "cpl": 0.0,
+            "eval_model": -918,
+            "cpl": 119,
             "opponent_turn_index": 5
           },
           {
@@ -1694,9 +1711,9 @@
             "continuation_ply": 12,
             "move": "a8b8",
             "move_san": "Rb8",
-            "eval_before": -755,
-            "eval_model": -844,
-            "cpl": 89,
+            "eval_before": -928,
+            "eval_model": -1074,
+            "cpl": 146,
             "opponent_turn_index": 6
           },
           {
@@ -1704,9 +1721,9 @@
             "continuation_ply": 14,
             "move": "f8a3",
             "move_san": "Ba3",
-            "eval_before": -546,
-            "eval_model": -1075,
-            "cpl": 529,
+            "eval_before": -586,
+            "eval_model": -9960,
+            "cpl": 9374,
             "opponent_turn_index": 7
           },
           {
@@ -1714,8 +1731,8 @@
             "continuation_ply": 16,
             "move": "d8e8",
             "move_san": "Ke8",
-            "eval_before": -9930,
-            "eval_model": -9930,
+            "eval_before": -9970,
+            "eval_model": -9970,
             "cpl": 0.0,
             "opponent_turn_index": 8
           }
@@ -1725,7 +1742,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       }
     ]
   },
@@ -1736,6 +1754,9 @@
       "model_illegal_attempts": 0,
       "model_attempts": 30,
       "model_legal_pct": 100.0,
+      "model_first_attempt_turns": 30,
+      "model_first_attempt_illegals": 0,
+      "model_first_attempt_illegal_pct": 0.0,
       "illegal_attempts_per_model_move": 0.0,
       "model_forfeits": 0,
       "model_forfeit_pct": 0.0,
@@ -1743,17 +1764,21 @@
       "probe_plies_played": 59,
       "avg_probe_plies_played": 14.75,
       "model_scored_moves": 30,
-      "model_avg_cpl": 51.5,
-      "model_first_move_avg_cpl": 37.0,
-      "model_later_move_avg_cpl": 53.73076923076923,
+      "model_avg_cpl": 41.766666666666666,
+      "model_first_move_avg_cpl": 25.0,
+      "model_later_move_avg_cpl": 44.34615384615385,
       "model_median_cpl": 1.5,
-      "model_p90_cpl": 127.0,
+      "model_p90_cpl": 75.0,
       "model_300cp_blunders": 1,
       "model_300cp_blunder_pct": 3.3333333333333335,
+      "model_300cp_blunder_positions": 1,
+      "model_300cp_blunder_position_pct": 25.0,
       "model_1000cp_catastrophes": 0,
       "model_1000cp_catastrophe_pct": 0.0,
+      "model_1000cp_catastrophe_positions": 0,
+      "model_1000cp_catastrophe_position_pct": 0.0,
       "opponent_scored_moves": 29,
-      "opponent_avg_cpl": 462.62068965517244,
+      "opponent_avg_cpl": 808.8620689655172,
       "model_retry_attempts": 0,
       "model_retry_recoveries": 0,
       "model_retry_failures": 0,
@@ -1775,8 +1800,6 @@
       "player_id": "gpt-5.6-sol (high)",
       "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
       "probe_plies": 16,
-      "score_depth": 10,
-      "stability_probe_version": "protocol-sequence-v1",
       "position_selection_policy": "category-round-robin-one-per-category-v1",
       "selected_position_indices": [
         0,
@@ -1784,9 +1807,9 @@
         24,
         36
       ],
-      "model_first_attempt_turns": 30,
-      "model_first_attempt_illegals": 0,
-      "model_first_attempt_illegal_pct": 0.0
+      "score_depth": 30,
+      "stability_probe_version": "protocol-sequence-v1",
+      "model_1000cp_deduplicated_catastrophe_pct": 0.0
     },
     "results": [
       {
@@ -1815,9 +1838,9 @@
             "continuation_ply": 1,
             "move": "d3d1",
             "move_san": "Qxd1+",
-            "eval_before": 459,
-            "eval_model": 467,
-            "cpl": 0.0,
+            "eval_before": 483,
+            "eval_model": 470,
+            "cpl": 13,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -1826,77 +1849,77 @@
             "continuation_ply": 3,
             "move": "e4f2",
             "move_san": "Nxf2+",
-            "eval_before": 449,
-            "eval_model": 457,
-            "cpl": 0.0,
+            "eval_before": 476,
+            "eval_model": 474,
+            "cpl": 2,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 6
           },
           {
             "ply": 20,
             "continuation_ply": 5,
             "move": "f2h1",
             "move_san": "Nxh1",
-            "eval_before": 502,
-            "eval_model": 467,
-            "cpl": 35,
+            "eval_before": 491,
+            "eval_model": 499,
+            "cpl": 0.0,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 13
+            "preceding_opponent_cpl": 17
           },
           {
             "ply": 22,
             "continuation_ply": 7,
             "move": "h1g3",
             "move_san": "Ng3",
-            "eval_before": 611,
-            "eval_model": 633,
-            "cpl": 0.0,
+            "eval_before": 603,
+            "eval_model": 596,
+            "cpl": 7,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 152
+            "preceding_opponent_cpl": 104
           },
           {
             "ply": 24,
             "continuation_ply": 9,
             "move": "b5c4",
             "move_san": "bxc4",
-            "eval_before": 602,
-            "eval_model": 631,
+            "eval_before": 653,
+            "eval_model": 673,
             "cpl": 0.0,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 57
           },
           {
             "ply": 26,
             "continuation_ply": 11,
             "move": "g7h6",
             "move_san": "gxh6",
-            "eval_before": 737,
-            "eval_model": 700,
-            "cpl": 37,
+            "eval_before": 847,
+            "eval_model": 863,
+            "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 134
+            "preceding_opponent_cpl": 174
           },
           {
             "ply": 28,
             "continuation_ply": 13,
             "move": "c4b3",
             "move_san": "cxb3",
-            "eval_before": 776,
-            "eval_model": 798,
-            "cpl": 0.0,
+            "eval_before": 904,
+            "eval_model": 886,
+            "cpl": 18,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 46
+            "preceding_opponent_cpl": 41
           },
           {
             "ply": 30,
             "continuation_ply": 15,
             "move": "b3b2",
             "move_san": "b2",
-            "eval_before": 820,
-            "eval_model": 994,
+            "eval_before": 1598,
+            "eval_model": 9810,
             "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 712
           }
         ],
         "opponent_move_scores": [
@@ -1905,9 +1928,9 @@
             "continuation_ply": 2,
             "move": "e1d1",
             "move_san": "Kxd1",
-            "eval_before": -492,
-            "eval_model": -466,
-            "cpl": 0.0,
+            "eval_before": -470,
+            "eval_model": -476,
+            "cpl": 6,
             "opponent_turn_index": 1
           },
           {
@@ -1915,9 +1938,9 @@
             "continuation_ply": 4,
             "move": "d1e1",
             "move_san": "Ke1",
-            "eval_before": -459,
-            "eval_model": -472,
-            "cpl": 13,
+            "eval_before": -474,
+            "eval_model": -491,
+            "cpl": 17,
             "opponent_turn_index": 2
           },
           {
@@ -1925,9 +1948,9 @@
             "continuation_ply": 6,
             "move": "h2h3",
             "move_san": "h3",
-            "eval_before": -481,
-            "eval_model": -633,
-            "cpl": 152,
+            "eval_before": -499,
+            "eval_model": -603,
+            "cpl": 104,
             "opponent_turn_index": 3
           },
           {
@@ -1935,9 +1958,9 @@
             "continuation_ply": 8,
             "move": "c3c4",
             "move_san": "c4",
-            "eval_before": -622,
-            "eval_model": -603,
-            "cpl": 0.0,
+            "eval_before": -596,
+            "eval_model": -653,
+            "cpl": 57,
             "opponent_turn_index": 4
           },
           {
@@ -1945,9 +1968,9 @@
             "continuation_ply": 10,
             "move": "c1h6",
             "move_san": "Bh6",
-            "eval_before": -606,
-            "eval_model": -740,
-            "cpl": 134,
+            "eval_before": -673,
+            "eval_model": -847,
+            "cpl": 174,
             "opponent_turn_index": 5
           },
           {
@@ -1955,9 +1978,9 @@
             "continuation_ply": 12,
             "move": "b2b3",
             "move_san": "b3",
-            "eval_before": -756,
-            "eval_model": -802,
-            "cpl": 46,
+            "eval_before": -863,
+            "eval_model": -904,
+            "cpl": 41,
             "opponent_turn_index": 6
           },
           {
@@ -1965,9 +1988,9 @@
             "continuation_ply": 14,
             "move": "g1f3",
             "move_san": "Nf3",
-            "eval_before": -805,
-            "eval_model": -784,
-            "cpl": 0.0,
+            "eval_before": -886,
+            "eval_model": -1598,
+            "cpl": 712,
             "opponent_turn_index": 7
           },
           {
@@ -1975,9 +1998,9 @@
             "continuation_ply": 16,
             "move": "f3g1",
             "move_san": "Ng1",
-            "eval_before": -1103,
-            "eval_model": -1271,
-            "cpl": 168,
+            "eval_before": -9810,
+            "eval_model": -9920,
+            "cpl": 110,
             "opponent_turn_index": 8
           }
         ],
@@ -1986,7 +2009,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 12,
@@ -2014,9 +2038,9 @@
             "continuation_ply": 1,
             "move": "g1f3",
             "move_san": "Nf3",
-            "eval_before": -477,
-            "eval_model": -498,
-            "cpl": 21,
+            "eval_before": -521,
+            "eval_model": -523,
+            "cpl": 2,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -2025,77 +2049,77 @@
             "continuation_ply": 3,
             "move": "e2d3",
             "move_san": "exd3",
-            "eval_before": -457,
-            "eval_model": -450,
-            "cpl": 0.0,
+            "eval_before": -420,
+            "eval_model": -431,
+            "cpl": 11,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 62
+            "preceding_opponent_cpl": 103
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "f3g5",
             "move_san": "Nxg5",
-            "eval_before": -303,
-            "eval_model": -311,
-            "cpl": 8,
+            "eval_before": -306,
+            "eval_model": -312,
+            "cpl": 6,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 107
+            "preceding_opponent_cpl": 125
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "b1c3",
             "move_san": "Nc3",
-            "eval_before": -181,
-            "eval_model": -205,
-            "cpl": 24,
+            "eval_before": -225,
+            "eval_model": -230,
+            "cpl": 5,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 59
+            "preceding_opponent_cpl": 87
           },
           {
             "ply": 23,
             "continuation_ply": 9,
             "move": "f1g2",
             "move_san": "Bg2",
-            "eval_before": -163,
-            "eval_model": -171,
-            "cpl": 8,
+            "eval_before": -162,
+            "eval_model": -175,
+            "cpl": 13,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 39
+            "preceding_opponent_cpl": 68
           },
           {
             "ply": 25,
             "continuation_ply": 11,
             "move": "h1e1",
             "move_san": "Re1+",
-            "eval_before": 44,
-            "eval_model": 11,
-            "cpl": 33,
+            "eval_before": 0,
+            "eval_model": -28,
+            "cpl": 28,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 165
+            "preceding_opponent_cpl": 175
           },
           {
             "ply": 27,
             "continuation_ply": 13,
             "move": "g2c6",
             "move_san": "Bc6+",
-            "eval_before": 245,
-            "eval_model": -348,
-            "cpl": 593,
+            "eval_before": 295,
+            "eval_model": -461,
+            "cpl": 756,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 133
+            "preceding_opponent_cpl": 323
           },
           {
             "ply": 29,
             "continuation_ply": 15,
             "move": "c6d7",
             "move_san": "Bxd7+",
-            "eval_before": 369,
-            "eval_model": 388,
+            "eval_before": 501,
+            "eval_model": 501,
             "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 701
+            "preceding_opponent_cpl": 962
           }
         ],
         "opponent_move_scores": [
@@ -2104,9 +2128,9 @@
             "continuation_ply": 2,
             "move": "d4d3",
             "move_san": "d3",
-            "eval_before": 482,
+            "eval_before": 523,
             "eval_model": 420,
-            "cpl": 62,
+            "cpl": 103,
             "opponent_turn_index": 1
           },
           {
@@ -2114,9 +2138,9 @@
             "continuation_ply": 4,
             "move": "g7g5",
             "move_san": "g5",
-            "eval_before": 417,
-            "eval_model": 310,
-            "cpl": 107,
+            "eval_before": 431,
+            "eval_model": 306,
+            "cpl": 125,
             "opponent_turn_index": 2
           },
           {
@@ -2124,9 +2148,9 @@
             "continuation_ply": 6,
             "move": "a8b8",
             "move_san": "Rb8",
-            "eval_before": 282,
-            "eval_model": 223,
-            "cpl": 59,
+            "eval_before": 312,
+            "eval_model": 225,
+            "cpl": 87,
             "opponent_turn_index": 3
           },
           {
@@ -2134,9 +2158,9 @@
             "continuation_ply": 8,
             "move": "d7d6",
             "move_san": "d6",
-            "eval_before": 195,
-            "eval_model": 156,
-            "cpl": 39,
+            "eval_before": 230,
+            "eval_model": 162,
+            "cpl": 68,
             "opponent_turn_index": 4
           },
           {
@@ -2144,9 +2168,9 @@
             "continuation_ply": 10,
             "move": "c8f5",
             "move_san": "Bf5",
-            "eval_before": 149,
-            "eval_model": -16,
-            "cpl": 165,
+            "eval_before": 175,
+            "eval_model": 0,
+            "cpl": 175,
             "opponent_turn_index": 5
           },
           {
@@ -2154,9 +2178,9 @@
             "continuation_ply": 12,
             "move": "c6e7",
             "move_san": "Ne7",
-            "eval_before": -30,
-            "eval_model": -163,
-            "cpl": 133,
+            "eval_before": 28,
+            "eval_model": -295,
+            "cpl": 323,
             "opponent_turn_index": 6
           },
           {
@@ -2164,9 +2188,9 @@
             "continuation_ply": 14,
             "move": "f5d7",
             "move_san": "Bd7",
-            "eval_before": 335,
-            "eval_model": -366,
-            "cpl": 701,
+            "eval_before": 461,
+            "eval_model": -501,
+            "cpl": 962,
             "opponent_turn_index": 7
           },
           {
@@ -2174,9 +2198,9 @@
             "continuation_ply": 16,
             "move": "e8d7",
             "move_san": "Kxd7",
-            "eval_before": -433,
-            "eval_model": -423,
-            "cpl": 0.0,
+            "eval_before": -501,
+            "eval_model": -567,
+            "cpl": 66,
             "opponent_turn_index": 8
           }
         ],
@@ -2185,7 +2209,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 24,
@@ -2213,9 +2238,9 @@
             "continuation_ply": 1,
             "move": "a5b3",
             "move_san": "Nxb3",
-            "eval_before": -88,
-            "eval_model": -215,
-            "cpl": 127,
+            "eval_before": -101,
+            "eval_model": -186,
+            "cpl": 85,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
           },
@@ -2224,77 +2249,77 @@
             "continuation_ply": 3,
             "move": "d8d6",
             "move_san": "Qd6",
-            "eval_before": -159,
-            "eval_model": -322,
-            "cpl": 163,
+            "eval_before": -198,
+            "eval_model": -409,
+            "cpl": 211,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 37
+            "preceding_opponent_cpl": 0.0
           },
           {
             "ply": 24,
             "continuation_ply": 5,
             "move": "b3a1",
             "move_san": "Nxa1",
-            "eval_before": 429,
-            "eval_model": 431,
+            "eval_before": 473,
+            "eval_model": 487,
             "cpl": 0.0,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 721
+            "preceding_opponent_cpl": 882
           },
           {
             "ply": 26,
             "continuation_ply": 7,
             "move": "f6e4",
             "move_san": "Nxe4",
-            "eval_before": 593,
-            "eval_model": 643,
+            "eval_before": 865,
+            "eval_model": 869,
             "cpl": 0.0,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 203
+            "preceding_opponent_cpl": 378
           },
           {
             "ply": 28,
             "continuation_ply": 9,
             "move": "f7f5",
             "move_san": "f5",
-            "eval_before": 757,
-            "eval_model": 674,
-            "cpl": 83,
+            "eval_before": 901,
+            "eval_model": 826,
+            "cpl": 75,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 52
+            "preceding_opponent_cpl": 32
           },
           {
             "ply": 30,
             "continuation_ply": 11,
             "move": "e4d2",
             "move_san": "Nxd2",
-            "eval_before": 925,
-            "eval_model": 922,
-            "cpl": 3,
+            "eval_before": 1080,
+            "eval_model": 1101,
+            "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 288
+            "preceding_opponent_cpl": 254
           },
           {
             "ply": 32,
             "continuation_ply": 13,
             "move": "d2b1",
             "move_san": "Nxb1",
-            "eval_before": 1037,
-            "eval_model": 1049,
-            "cpl": 0.0,
+            "eval_before": 1360,
+            "eval_model": 1340,
+            "cpl": 20,
             "model_turn_index": 7,
-            "preceding_opponent_cpl": 131
+            "preceding_opponent_cpl": 259
           },
           {
             "ply": 34,
             "continuation_ply": 15,
             "move": "d6d5",
             "move_san": "Qxd5",
-            "eval_before": 1187,
-            "eval_model": 1114,
-            "cpl": 73,
+            "eval_before": 9880,
+            "eval_model": 9920,
+            "cpl": 0.0,
             "model_turn_index": 8,
-            "preceding_opponent_cpl": 78
+            "preceding_opponent_cpl": 8540
           }
         ],
         "opponent_move_scores": [
@@ -2303,9 +2328,9 @@
             "continuation_ply": 2,
             "move": "e5c6",
             "move_san": "Nc6",
-            "eval_before": 159,
-            "eval_model": 122,
-            "cpl": 37,
+            "eval_before": 186,
+            "eval_model": 198,
+            "cpl": 0.0,
             "opponent_turn_index": 1
           },
           {
@@ -2313,9 +2338,9 @@
             "continuation_ply": 4,
             "move": "f2f4",
             "move_san": "f4",
-            "eval_before": 283,
-            "eval_model": -438,
-            "cpl": 721,
+            "eval_before": 409,
+            "eval_model": -473,
+            "cpl": 882,
             "opponent_turn_index": 2
           },
           {
@@ -2323,9 +2348,9 @@
             "continuation_ply": 6,
             "move": "e1e4",
             "move_san": "Re4",
-            "eval_before": -413,
-            "eval_model": -616,
-            "cpl": 203,
+            "eval_before": -487,
+            "eval_model": -865,
+            "cpl": 378,
             "opponent_turn_index": 3
           },
           {
@@ -2333,9 +2358,9 @@
             "continuation_ply": 8,
             "move": "d2d4",
             "move_san": "d4",
-            "eval_before": -687,
-            "eval_model": -739,
-            "cpl": 52,
+            "eval_before": -869,
+            "eval_model": -901,
+            "cpl": 32,
             "opponent_turn_index": 4
           },
           {
@@ -2343,9 +2368,9 @@
             "continuation_ply": 10,
             "move": "d1d2",
             "move_san": "Qd2",
-            "eval_before": -653,
-            "eval_model": -941,
-            "cpl": 288,
+            "eval_before": -826,
+            "eval_model": -1080,
+            "cpl": 254,
             "opponent_turn_index": 5
           },
           {
@@ -2353,9 +2378,9 @@
             "continuation_ply": 12,
             "move": "c6a5",
             "move_san": "Na5",
-            "eval_before": -928,
-            "eval_model": -1059,
-            "cpl": 131,
+            "eval_before": -1101,
+            "eval_model": -1360,
+            "cpl": 259,
             "opponent_turn_index": 6
           },
           {
@@ -2363,9 +2388,9 @@
             "continuation_ply": 14,
             "move": "g2g3",
             "move_san": "g3",
-            "eval_before": -1077,
-            "eval_model": -1155,
-            "cpl": 78,
+            "eval_before": -1340,
+            "eval_model": -9880,
+            "cpl": 8540,
             "opponent_turn_index": 7
           },
           {
@@ -2373,9 +2398,9 @@
             "continuation_ply": 16,
             "move": "c1d2",
             "move_san": "Bd2",
-            "eval_before": -1110,
-            "eval_model": -1163,
-            "cpl": 53,
+            "eval_before": -9920,
+            "eval_model": -9950,
+            "cpl": 30,
             "opponent_turn_index": 8
           }
         ],
@@ -2384,7 +2409,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       },
       {
         "position_idx": 36,
@@ -2412,8 +2438,8 @@
             "continuation_ply": 1,
             "move": "d4e4",
             "move_san": "Qxe4",
-            "eval_before": -39,
-            "eval_model": -35,
+            "eval_before": -26,
+            "eval_model": -26,
             "cpl": 0.0,
             "model_turn_index": 1,
             "preceding_opponent_cpl": null
@@ -2423,44 +2449,44 @@
             "continuation_ply": 3,
             "move": "e5d6",
             "move_san": "exd6+",
-            "eval_before": 770,
-            "eval_model": 732,
-            "cpl": 38,
+            "eval_before": 832,
+            "eval_model": 867,
+            "cpl": 0.0,
             "model_turn_index": 2,
-            "preceding_opponent_cpl": 767
+            "preceding_opponent_cpl": 858
           },
           {
             "ply": 19,
             "continuation_ply": 5,
             "move": "d6e7",
             "move_san": "dxe7",
-            "eval_before": 766,
-            "eval_model": 774,
-            "cpl": 0.0,
+            "eval_before": 903,
+            "eval_model": 902,
+            "cpl": 1,
             "model_turn_index": 3,
-            "preceding_opponent_cpl": 0.0
+            "preceding_opponent_cpl": 36
           },
           {
             "ply": 21,
             "continuation_ply": 7,
             "move": "e4e5",
             "move_san": "Qxe5",
-            "eval_before": 1000,
-            "eval_model": 1002,
+            "eval_before": 9790,
+            "eval_model": 9800,
             "cpl": 0.0,
             "model_turn_index": 4,
-            "preceding_opponent_cpl": 195
+            "preceding_opponent_cpl": 8888
           },
           {
             "ply": 23,
             "continuation_ply": 9,
             "move": "e5c7",
             "move_san": "Qxc7",
-            "eval_before": 1172,
-            "eval_model": 873,
-            "cpl": 299,
+            "eval_before": 9900,
+            "eval_model": 9920,
+            "cpl": 0.0,
             "model_turn_index": 5,
-            "preceding_opponent_cpl": 69
+            "preceding_opponent_cpl": 100
           },
           {
             "ply": 25,
@@ -2471,7 +2497,7 @@
             "eval_model": 10000,
             "cpl": 0.0,
             "model_turn_index": 6,
-            "preceding_opponent_cpl": 9043
+            "preceding_opponent_cpl": 70
           }
         ],
         "opponent_move_scores": [
@@ -2480,9 +2506,9 @@
             "continuation_ply": 2,
             "move": "e7d6",
             "move_san": "Qd6",
-            "eval_before": 45,
-            "eval_model": -722,
-            "cpl": 767,
+            "eval_before": 26,
+            "eval_model": -832,
+            "cpl": 858,
             "opponent_turn_index": 1
           },
           {
@@ -2490,9 +2516,9 @@
             "continuation_ply": 4,
             "move": "f8e7",
             "move_san": "Be7",
-            "eval_before": -753,
-            "eval_model": -752,
-            "cpl": 0.0,
+            "eval_before": -867,
+            "eval_model": -903,
+            "cpl": 36,
             "opponent_turn_index": 2
           },
           {
@@ -2500,9 +2526,9 @@
             "continuation_ply": 6,
             "move": "c6e5",
             "move_san": "Ne5",
-            "eval_before": -766,
-            "eval_model": -961,
-            "cpl": 195,
+            "eval_before": -902,
+            "eval_model": -9790,
+            "cpl": 8888,
             "opponent_turn_index": 3
           },
           {
@@ -2510,9 +2536,9 @@
             "continuation_ply": 8,
             "move": "b7b5",
             "move_san": "b5",
-            "eval_before": -1062,
-            "eval_model": -1131,
-            "cpl": 69,
+            "eval_before": -9800,
+            "eval_model": -9900,
+            "cpl": 100,
             "opponent_turn_index": 4
           },
           {
@@ -2520,9 +2546,9 @@
             "continuation_ply": 10,
             "move": "b5b4",
             "move_san": "b4",
-            "eval_before": -947,
+            "eval_before": -9920,
             "eval_model": -9990,
-            "cpl": 9043,
+            "cpl": 70,
             "opponent_turn_index": 5
           }
         ],
@@ -2531,7 +2557,8 @@
         "model_retry_recoveries": 0,
         "model_retry_failures": 0,
         "model_retry_unknown": 0,
-        "conditional_retry_protocol_version": "production-game-retry-v1"
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
       }
     ]
   }

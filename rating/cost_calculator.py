@@ -4,6 +4,7 @@ Cost calculation for LLM players based on token usage and OpenRouter pricing.
 
 import json
 import logging
+import math
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union, Protocol
@@ -103,10 +104,19 @@ class CostCalculator:
             pricing_path = self._PROJECT_ROOT / "config" / "pricing.json"
         if config_path is None:
             config_path = self._PROJECT_ROOT / "config" / "benchmark.yaml"
+        self._config_path = Path(config_path)
+        config_parent = self._config_path.resolve().parent
+        self._project_root = (
+            config_parent.parent if config_parent.name == "config" else config_parent
+        )
         self.pricing = self._load_pricing(pricing_path)
         self.player_to_model: Dict[str, str] = {}
+        self.player_reasoning_effort: Dict[str, str] = {}
+        self.reasoning_players: set[str] = set()
         self.player_budget_cost_overrides: Dict[str, float] = {}
         self.player_exclude_runtime_token_cost: set[str] = set()
+        self._position_usage_cache: Optional[List[Dict[str, Any]]] = None
+        self._position_usage_signature: Optional[tuple[tuple[str, int, int], ...]] = None
         self._load_player_config(config_path)
 
     def _load_pricing(self, path: str) -> Dict[str, Dict[str, float]]:
@@ -140,6 +150,16 @@ class CostCalculator:
             for pid in player_ids:
                 if model_name:
                     self.player_to_model[pid] = model_name
+
+                reasoning_effort = llm.get("reasoning_effort")
+                if reasoning_effort:
+                    self.player_reasoning_effort[pid] = str(reasoning_effort)
+                if (
+                    reasoning_effort
+                    or llm.get("reasoning") is True
+                    or llm.get("reasoning_max_tokens") is not None
+                ):
+                    self.reasoning_players.add(pid)
 
                 if llm.get("exclude_runtime_tokens_from_cost", False):
                     self.player_exclude_runtime_token_cost.add(pid)
@@ -224,6 +244,123 @@ class CostCalculator:
 
         return prompt_cost + completion_cost
 
+    @staticmethod
+    def _nearest_rank(values: List[float], percentile: float) -> float:
+        """Return a conservative nearest-rank percentile."""
+        ordered = sorted(values)
+        rank = max(1, math.ceil(percentile * len(ordered)))
+        return ordered[min(rank - 1, len(ordered) - 1)]
+
+    def _position_usage_observations(self) -> List[Dict[str, Any]]:
+        """Load retained per-call token rates from current benchmark panels."""
+        result_paths = (
+            self._project_root / "position_benchmark/results/core.json",
+            self._project_root / "position_benchmark/results/game_like.json",
+            self._project_root / "position_benchmark/results/stability.json",
+        )
+        signature = tuple(
+            (str(path), path.stat().st_mtime_ns, path.stat().st_size)
+            for path in result_paths
+            if path.exists()
+        )
+        if (
+            self._position_usage_cache is not None
+            and signature == self._position_usage_signature
+        ):
+            return self._position_usage_cache
+        observations: List[Dict[str, Any]] = []
+        for path in result_paths:
+            if not path.exists():
+                continue
+            try:
+                records = json.loads(path.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            for observed_player, record in records.items():
+                prompt_tokens = 0
+                completion_tokens = 0
+                calls = 0
+                for row in record.get("results", []):
+                    if path.name == "stability.json":
+                        tokens = row.get("tokens") or {}
+                        prompt_tokens += int(tokens.get("prompt_tokens", 0) or 0)
+                        completion_tokens += int(tokens.get("completion_tokens", 0) or 0)
+                        calls += int(row.get("model_legal_moves", 0) or 0)
+                        calls += int(row.get("model_illegal_attempts", 0) or 0)
+                    else:
+                        prompt_tokens += int(row.get("prompt_tokens", 0) or 0)
+                        completion_tokens += int(row.get("completion_tokens", 0) or 0)
+                        calls += 1 + int(row.get("retry_attempted") is True)
+                if calls <= 0 or (prompt_tokens <= 0 and completion_tokens <= 0):
+                    continue
+                observations.append(
+                    {
+                        "player_id": observed_player,
+                        "model_name": self.player_to_model.get(observed_player),
+                        "effort": self.player_reasoning_effort.get(observed_player),
+                        "reasoning": observed_player in self.reasoning_players,
+                        "prompt_per_call": prompt_tokens / calls,
+                        "completion_per_call": completion_tokens / calls,
+                    }
+                )
+        self._position_usage_cache = observations
+        self._position_usage_signature = signature
+        return observations
+
+    def position_benchmark_token_estimate(
+        self,
+        player_id: str,
+        *,
+        model_name: Optional[str] = None,
+        reasoning: bool = False,
+    ) -> Dict[str, Any]:
+        """Estimate per-call tokens from saved benchmark usage, using P90 fallbacks."""
+        model = model_name or self.get_model_for_player(player_id)
+        effort = self.player_reasoning_effort.get(player_id)
+        observations = self._position_usage_observations()
+        candidates = [row for row in observations if row["player_id"] == player_id]
+        source = "same-player historical maximum"
+        percentile = 1.0
+        if not candidates and model and effort:
+            candidates = [
+                row
+                for row in observations
+                if row["model_name"] == model and row["effort"] == effort
+            ]
+            source = "same-model-and-effort historical P90"
+            percentile = 0.9
+        if not candidates and effort:
+            candidates = [row for row in observations if row["effort"] == effort]
+            source = f"{effort} effort historical P90"
+            percentile = 0.9
+        if not candidates:
+            candidates = [
+                row for row in observations if bool(row["reasoning"]) == reasoning
+            ]
+            source = (
+                "reasoning historical P90"
+                if reasoning
+                else "non-reasoning historical P90"
+            )
+            percentile = 0.9
+        if candidates:
+            prompt = self._nearest_rank(
+                [float(row["prompt_per_call"]) for row in candidates], percentile
+            )
+            completion = self._nearest_rank(
+                [float(row["completion_per_call"]) for row in candidates], percentile
+            )
+        else:
+            prompt = 1500.0
+            completion = 15000.0 if reasoning else 500.0
+            source = "conservative no-history fallback"
+        return {
+            "prompt_tokens_per_call": int(math.ceil(prompt)),
+            "completion_tokens_per_call": int(math.ceil(completion)),
+            "source": source,
+            "samples": len(candidates),
+        }
+
     def estimate_position_benchmark_cost(
         self,
         player_id: str,
@@ -231,7 +368,7 @@ class CostCalculator:
         model_name: Optional[str] = None,
         num_positions: int = 50,
         reasoning: bool = False,
-        prompt_tokens_per_position: int = 1500,
+        prompt_tokens_per_position: Optional[int] = None,
         completion_tokens_per_position: Optional[int] = None,
         full_benchmark_positions: int = 50,
         use_budget_overrides: bool = True,
@@ -258,12 +395,20 @@ class CostCalculator:
         if not pricing:
             return None
 
+        token_estimate = self.position_benchmark_token_estimate(
+            player_id,
+            model_name=model,
+            reasoning=reasoning,
+        )
+        prompt_est = prompt_tokens_per_position
+        if prompt_est is None:
+            prompt_est = int(token_estimate["prompt_tokens_per_call"])
         completion_est = completion_tokens_per_position
         if completion_est is None:
-            completion_est = 200 if reasoning else 10
+            completion_est = int(token_estimate["completion_tokens_per_call"])
 
         return (
-            num_positions * prompt_tokens_per_position * pricing.get("prompt", 0.0)
+            num_positions * prompt_est * pricing.get("prompt", 0.0)
             + num_positions * completion_est * pricing.get("completion", 0.0)
         )
 

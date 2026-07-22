@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import suppress
 import io
 import json
 from pathlib import Path
 import sys
+import threading
 from typing import Any
 
 import chess
@@ -42,8 +45,8 @@ from rating.cost_calculator import CostCalculator  # noqa: E402
 
 DEFAULT_POSITION_LIMIT = 8
 DEFAULT_PROBE_PLIES = 8
-DEFAULT_SCORE_DEPTH = 10
-STABILITY_PROBE_VERSION = "stratified-v2"
+DEFAULT_SCORE_DEPTH = 30
+STABILITY_PROBE_VERSION = "stratified-depth30-v3"
 STABILITY_SELECTION_POLICY = "category-round-robin-v1"
 PROTOCOL_SEQUENCE_VERSION = "protocol-sequence-v1"
 PROTOCOL_SEQUENCE_SELECTION_POLICY = "category-round-robin-one-per-category-v1"
@@ -133,6 +136,8 @@ def score_continuation_moves_from_pgn(
     pre_move_count: int,
     stockfish: chess.engine.SimpleEngine,
     depth: int,
+    analysis_cache: dict[str, chess.engine.InfoDict] | None = None,
+    analysis_cache_lock: threading.Lock | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Score model and random-opponent continuation moves with Stockfish CPL."""
     game = chess.pgn.read_game(io.StringIO(pgn))
@@ -145,17 +150,41 @@ def score_continuation_moves_from_pgn(
     model_turn_index = 0
     opponent_turn_index = 0
     preceding_opponent_cpl: float | None = None
+    cached_info: chess.engine.InfoDict | None = None
+
+    def analyse(position: chess.Board) -> chess.engine.InfoDict:
+        cache_key = position.fen()
+        if analysis_cache is not None:
+            if analysis_cache_lock is None:
+                cached = analysis_cache.get(cache_key)
+            else:
+                with analysis_cache_lock:
+                    cached = analysis_cache.get(cache_key)
+            if cached is not None:
+                return cached
+        info = stockfish.analyse(position, chess.engine.Limit(depth=depth))
+        if analysis_cache is not None:
+            if analysis_cache_lock is None:
+                analysis_cache.setdefault(cache_key, info)
+            else:
+                with analysis_cache_lock:
+                    analysis_cache.setdefault(cache_key, info)
+        return info
+
     for ply, move in enumerate(game.mainline_moves(), start=1):
         should_score = ply > pre_move_count
         if should_score:
             perspective = board.turn
             is_model_move = perspective == model_side
-            info_before = stockfish.analyse(board, chess.engine.Limit(depth=depth))
+            info_before = cached_info
+            if info_before is None:
+                info_before = analyse(board)
             eval_before = eval_to_cp(info_before, perspective)
             move_san = board.san(move)
         board.push(move)
         if should_score:
-            info_after = stockfish.analyse(board, chess.engine.Limit(depth=depth))
+            info_after = analyse(board)
+            cached_info = info_after
             eval_model = -eval_to_cp(info_after, not perspective)
             cpl = max(0.0, eval_before - eval_model)
             score = {
@@ -322,12 +351,15 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
     own_forfeits = sum(1 for row in rows if row["model_forfeited"])
     api_errors = sum(1 for row in rows if row["termination"] == "api_error")
     probe_plies = sum(int(row["probe_plies_played"]) for row in rows)
-    move_cpls = [
-        float(score["cpl"])
+    row_move_cpls = [
+        [
+            float(score["cpl"])
+            for score in row.get("model_move_scores", [])
+            if score.get("cpl") is not None
+        ]
         for row in rows
-        for score in row.get("model_move_scores", [])
-        if score.get("cpl") is not None
     ]
+    move_cpls = [cpl for cpls in row_move_cpls for cpl in cpls]
     first_move_cpls = [
         float(scores[0]["cpl"])
         for row in rows
@@ -348,6 +380,10 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     blunder_moves = sum(1 for cpl in move_cpls if cpl >= 300)
     catastrophe_moves = sum(1 for cpl in move_cpls if cpl >= 1000)
+    blunder_positions = sum(any(cpl >= 300 for cpl in cpls) for cpls in row_move_cpls)
+    catastrophe_positions = sum(
+        any(cpl >= 1000 for cpl in cpls) for cpls in row_move_cpls
+    )
     retry_source_rows = [row for row in rows if retry_evidence_is_available(row)]
     retry_rows = [derive_retry_metrics(row) for row in retry_source_rows]
     incomplete_retry_games = len(rows) - len(retry_source_rows)
@@ -406,8 +442,19 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "model_p90_cpl": _percentile(move_cpls, 0.9),
         "model_300cp_blunders": blunder_moves,
         "model_300cp_blunder_pct": 100.0 * blunder_moves / len(move_cpls) if move_cpls else None,
+        "model_300cp_blunder_positions": blunder_positions,
+        "model_300cp_blunder_position_pct": (
+            100.0 * blunder_positions / attempted if attempted else None
+        ),
         "model_1000cp_catastrophes": catastrophe_moves,
         "model_1000cp_catastrophe_pct": 100.0 * catastrophe_moves / len(move_cpls) if move_cpls else None,
+        "model_1000cp_catastrophe_positions": catastrophe_positions,
+        "model_1000cp_catastrophe_position_pct": (
+            100.0 * catastrophe_positions / attempted if attempted else None
+        ),
+        "model_1000cp_deduplicated_catastrophe_pct": (
+            100.0 * catastrophe_positions / len(move_cpls) if move_cpls else None
+        ),
         "opponent_scored_moves": len(opponent_cpls),
         "opponent_avg_cpl": (
             sum(opponent_cpls) / len(opponent_cpls) if opponent_cpls else None
@@ -455,6 +502,131 @@ def backfill_retry_metrics(results: dict[str, Any]) -> tuple[int, int]:
         player_data.setdefault("summary", {}).update(summarize_player(rows))
         updated_players += 1
     return updated_players, updated_rows
+
+
+def rescore_existing_results(
+    results: dict[str, Any],
+    *,
+    player_ids: set[str] | None,
+    stockfish_path: str,
+    score_depth: int,
+    workers: int,
+) -> tuple[int, int]:
+    """Rescore stored continuation PGNs without making any model calls.
+
+    Each worker owns one persistent Stockfish process. Model outputs, PGNs,
+    retry evidence, and token usage remain unchanged; only move evaluations and
+    their derived summaries are replaced.
+    """
+    if score_depth < 1:
+        raise ValueError("score_depth must be positive when rescoring")
+    selected = {
+        player_id: record
+        for player_id, record in results.items()
+        if player_ids is None or player_id in player_ids
+    }
+    missing = sorted((player_ids or set()) - set(selected))
+    if missing:
+        raise ValueError(f"Unknown continuation player(s): {', '.join(missing)}")
+
+    without_rows = sorted(
+        player_id
+        for player_id, record in selected.items()
+        if not record.get("results")
+    )
+    if player_ids is not None and without_rows:
+        raise ValueError(
+            "Cannot rescore continuation player(s) without stored result rows: "
+            + ", ".join(without_rows)
+        )
+    for player_id in without_rows:
+        selected.pop(player_id)
+
+    tasks: list[tuple[str, int, dict[str, Any]]] = []
+    for player_id, record in selected.items():
+        for row_index, row in enumerate(record.get("results", [])):
+            if not row.get("pgn") or row.get("model_side") not in {"white", "black"}:
+                raise ValueError(
+                    f"Cannot rescore {player_id} row {row_index}: "
+                    "stored PGN and model_side are required"
+                )
+            tasks.append((player_id, row_index, row))
+
+    local = threading.local()
+    engines: list[chess.engine.SimpleEngine] = []
+    engines_lock = threading.Lock()
+    analysis_cache: dict[str, chess.engine.InfoDict] = {}
+    analysis_cache_lock = threading.Lock()
+
+    def get_engine() -> chess.engine.SimpleEngine:
+        engine = getattr(local, "engine", None)
+        if engine is None:
+            engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
+            try:
+                engine.configure({"Hash": 128})
+            except chess.engine.EngineError:
+                pass
+            local.engine = engine
+            with engines_lock:
+                engines.append(engine)
+        return engine
+
+    def score_task(
+        task: tuple[str, int, dict[str, Any]],
+    ) -> tuple[str, int, list[dict[str, Any]], list[dict[str, Any]]]:
+        player_id, row_index, row = task
+        model_side = chess.WHITE if row["model_side"] == "white" else chess.BLACK
+        model_scores, opponent_scores = score_continuation_moves_from_pgn(
+            str(row["pgn"]),
+            model_side=model_side,
+            pre_move_count=int(row.get("pre_moves", 0) or 0),
+            stockfish=get_engine(),
+            depth=score_depth,
+            analysis_cache=analysis_cache,
+            analysis_cache_lock=analysis_cache_lock,
+        )
+        return player_id, row_index, model_scores, opponent_scores
+
+    completed = 0
+    try:
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+            futures = {executor.submit(score_task, task): task for task in tasks}
+            for future in as_completed(futures):
+                player_id, row_index, model_scores, opponent_scores = future.result()
+                row = selected[player_id]["results"][row_index]
+                row["model_move_scores"] = model_scores
+                row["opponent_move_scores"] = opponent_scores
+                row["score_depth"] = score_depth
+                completed += 1
+                if completed % 8 == 0 or completed == len(tasks):
+                    print(
+                        f"Rescored {completed}/{len(tasks)} continuation games at depth {score_depth}",
+                        flush=True,
+                    )
+    finally:
+        for engine in engines:
+            with suppress(chess.engine.EngineTerminatedError):
+                engine.quit()
+
+    for player_id, record in selected.items():
+        old_summary = record.get("summary", {})
+        summary = summarize_player(record.get("results", []))
+        for field in (
+            "player_id",
+            "positions_file",
+            "probe_plies",
+            "position_selection_policy",
+            "selected_position_indices",
+        ):
+            if field in old_summary:
+                summary[field] = old_summary[field]
+        summary["score_depth"] = score_depth
+        if summary.get("position_selection_policy") == STABILITY_SELECTION_POLICY:
+            summary["stability_probe_version"] = STABILITY_PROBE_VERSION
+        elif "stability_probe_version" in old_summary:
+            summary["stability_probe_version"] = old_summary["stability_probe_version"]
+        record["summary"] = summary
+    return len(selected), completed
 
 
 def estimate_cost(
@@ -736,6 +908,17 @@ async def main_async() -> None:
         action="store_true",
         help="Backfill retry outcomes in --output without engines or model calls",
     )
+    parser.add_argument(
+        "--rescore-existing",
+        action="store_true",
+        help="Rescore stored continuation PGNs without model calls",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Parallel Stockfish workers for --rescore-existing",
+    )
     args = parser.parse_args()
 
     output_path = args.output or (
@@ -766,8 +949,34 @@ async def main_async() -> None:
         )
         return
 
+    if args.rescore_existing:
+        if not output_path.exists():
+            raise SystemExit(f"No continuation results found at {output_path}")
+        output = load_json(output_path)
+        try:
+            updated_players, updated_rows = rescore_existing_results(
+                output,
+                player_ids=set(args.players) if args.players else None,
+                stockfish_path=args.stockfish_path,
+                score_depth=args.score_depth,
+                workers=args.workers,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        temporary = output_path.with_suffix(output_path.suffix + ".tmp")
+        temporary.write_text(json.dumps(output, indent=2) + "\n")
+        temporary.replace(output_path)
+        print(
+            f"Rescored {updated_rows} continuation games across {updated_players} "
+            f"players in {output_path} at depth {args.score_depth}"
+        )
+        return
+
     if not args.players:
-        raise SystemExit("--players is required unless --backfill-retry-metrics is used")
+        raise SystemExit(
+            "--players is required unless --backfill-retry-metrics or "
+            "--rescore-existing is used"
+        )
 
     positions_data = load_json(args.positions)
     positions = positions_data["positions"] if isinstance(positions_data, dict) else positions_data
@@ -800,6 +1009,19 @@ async def main_async() -> None:
     if estimated_cost or unknown_cost_players:
         suffix = f"; unknown for {', '.join(unknown_cost_players)}" if unknown_cost_players else ""
         print(f"Estimated API cost: ${estimated_cost:.4f}{suffix}")
+        for player_id, player_config in players_to_test.items():
+            if config_is_engine(player_config):
+                continue
+            estimate = cost_calculator.position_benchmark_token_estimate(
+                player_id,
+                model_name=player_config.get("model_name"),
+                reasoning=config_uses_reasoning(player_config),
+            )
+            print(
+                f"  {player_id}: {estimate['prompt_tokens_per_call']} prompt + "
+                f"{estimate['completion_tokens_per_call']} completion tokens/call "
+                f"({estimate['source']}, n={estimate['samples']})"
+            )
     if args.max_estimated_cost is not None:
         if estimated_cost > args.max_estimated_cost:
             raise SystemExit(

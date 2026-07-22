@@ -503,12 +503,18 @@ async def recalculate_ratings(args):
 
     validation_output = getattr(args, "validation_output", None)
     validation_seed_rd = getattr(args, "validation_seed_rd", None)
+    disable_benchmark_seeds = getattr(
+        args, "validation_disable_benchmark_seeds", False
+    )
     validation_mode = validation_output is not None or validation_seed_rd is not None
     if validation_mode and (validation_output is None or validation_seed_rd is None):
         print("Error: --validation-output and --validation-seed-rd must be used together")
         return 1
     if validation_seed_rd is not None and validation_seed_rd <= 0:
         print("Error: --validation-seed-rd must be positive")
+        return 1
+    if disable_benchmark_seeds and not validation_mode:
+        print("Error: --validation-disable-benchmark-seeds requires validation mode")
         return 1
 
     ratings_path = Path(validation_output or "data/ratings.json")
@@ -520,6 +526,7 @@ async def recalculate_ratings(args):
     if validation_mode:
         print(
             f"Validation-only recalculation: benchmark seed RD={benchmark_seed_rd:.0f}, "
+            f"benchmark seeds={'disabled' if disable_benchmark_seeds else 'enabled'}, "
             f"local output={ratings_path}"
         )
 
@@ -599,6 +606,7 @@ async def recalculate_ratings(args):
         ghost_ids=ghost_ids,
         use_firestore=False if validation_mode else None,
         benchmark_seed_rd=benchmark_seed_rd,
+        use_benchmark_predictions=not disable_benchmark_seeds,
     )
 
     # Always reset when recalculating to avoid double-counting
@@ -703,7 +711,9 @@ async def recalculate_ratings(args):
 
     # Pre-initialize all non-anchor players with appropriate starting ratings
     # Priority: benchmark prediction > legal move rate heuristic > model type default
-    benchmark_preds = load_benchmark_predictions()
+    benchmark_preds = (
+        {} if disable_benchmark_seeds else load_benchmark_predictions()
+    )
     # Include models with benchmark predictions even if they haven't played games yet
     all_players |= set(benchmark_preds.keys())
     benchmark_count = 0
@@ -1312,6 +1322,14 @@ def main():
         "--validation-seed-rd",
         type=float,
         help="Benchmark seed RD for --validation-output (production remains 166)",
+    )
+    recalc_parser.add_argument(
+        "--validation-disable-benchmark-seeds",
+        action="store_true",
+        help=(
+            "Validation only: use ordinary legality/model-type initialization "
+            "instead of position-benchmark seeds"
+        ),
     )
 
     # Manual game command

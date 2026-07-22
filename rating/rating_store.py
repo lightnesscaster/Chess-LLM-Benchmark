@@ -109,6 +109,7 @@ class RatingStore:
         ghost_ids: Set[str] = None,
         use_firestore: bool = None,
         benchmark_seed_rd: float = BENCHMARK_SEED_RD,
+        use_benchmark_predictions: bool = True,
     ):
         """
         Initialize the rating store.
@@ -123,11 +124,15 @@ class RatingStore:
             benchmark_seed_rd: Initial RD for position-benchmark seeds. The
                                production default remains BENCHMARK_SEED_RD;
                                alternate values are for isolated validation runs.
+            use_benchmark_predictions: Load and apply position-benchmark seeds.
+                                       Disable only for isolated counterfactual
+                                       validation; production defaults to True.
         """
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
         self.ghost_ids = ghost_ids or set()
         self._benchmark_seed_rd = benchmark_seed_rd
+        self._use_benchmark_predictions = use_benchmark_predictions
         self._ratings: Dict[str, PlayerRating] = {}
 
         # Determine storage backend (must be set before _load_benchmark_predictions)
@@ -136,7 +141,9 @@ class RatingStore:
         self._use_firestore = use_firestore
 
         # Load benchmark predictions for seeding new players
-        self._benchmark_predictions = self._load_benchmark_predictions()
+        self._benchmark_predictions = (
+            self._load_benchmark_predictions() if use_benchmark_predictions else {}
+        )
 
         # Load model_id → [player_ids...] mapping for effort-variant seeding
         self._player_model_ids: Dict[str, str] = {}
@@ -424,6 +431,8 @@ class RatingStore:
         benchmark phase. It picks up new predictions and updates any _ratings entries
         that were created with defaults (1500/RD=350) before the benchmark ran.
         """
+        if not self._use_benchmark_predictions:
+            return
         new_predictions = self._load_benchmark_predictions(force_refresh=True)
 
         self._benchmark_predictions = new_predictions

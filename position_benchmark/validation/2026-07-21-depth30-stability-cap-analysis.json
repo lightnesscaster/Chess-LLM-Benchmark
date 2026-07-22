@@ -1,0 +1,967 @@
+{
+  "generated_at": "2026-07-22T03:33:52.658657+00:00",
+  "production_effect": "catastrophe-event-deduplication-only",
+  "production_rating_store_write": false,
+  "model_call_count": 0,
+  "score_depth": 30,
+  "configuration_count": 14,
+  "families": [
+    "deepseek-v4-flash",
+    "gpt-5.5",
+    "gpt-5.6-luna",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra"
+  ],
+  "family_count": 5,
+  "candidate_order": [
+    "current_move_cap",
+    "deduplicated_move_exposure_cap",
+    "trajectory_hazard_cap",
+    "two_affected_trajectory_gate",
+    "repeated_forfeit_only",
+    "no_hard_cap"
+  ],
+  "evidence_gate": {
+    "minimum_configurations": 30,
+    "minimum_families": 8,
+    "configuration_count_passed": false,
+    "family_count_passed": false,
+    "passed": false
+  },
+  "inputs": {
+    "position_benchmark/panels/core_equal_50.json": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+    "position_benchmark/results/core.json": "544d9de285b3bf7647542bea5d631a2c60aed44079fdae47efdd04336d173334",
+    "position_benchmark/panels/game_like_48.json": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+    "position_benchmark/results/game_like.json": "dc26b9b7103f4e5d6f5dc786ffa22c790eed1f7c95037f8ee2f032e1858dea15",
+    "position_benchmark/panels/optional_blunder_25.json": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd",
+    "position_benchmark/results/optional_blunder.json": "2a15100368eeb79828d11d375772d2237210a77eaa4efd77c14c6d8a3697f15b",
+    "position_benchmark/results/stability.json": "d2d0088deb5f125b958cdc56fea36455934a6b6bd636ac0ea023c76c7779c654",
+    "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json": "844bf28016fda5a30430d962db997841550c3ae9fb4846d418ad9447299706d5",
+    "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json": "520c82d4aec16324b1556edc222234f398e7cdcf4a3d7095b072a95be2473de3"
+  },
+  "bootstrap_resamples": 20000,
+  "rating_uncertainty_draws": 20000,
+  "targets": {
+    "rd300": {
+      "label": "Position-seeded validation ratings with RD 300",
+      "warning": "Higher RD reduces but does not eliminate shared-prior circularity.",
+      "candidates": {
+        "current_move_cap": {
+          "mae": 232.10220546600445,
+          "rmse": 307.3793589887918,
+          "bias": 126.912182225819,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 320.09898236438084,
+          "family_mae": {
+            "deepseek-v4-flash": 101.87618720554633,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 272.27556167554167,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 0.0,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 0.0,
+            "mae_delta_p95": 0.0
+          }
+        },
+        "deduplicated_move_exposure_cap": {
+          "mae": 238.4330645367942,
+          "rmse": 310.3757638285161,
+          "bias": 147.79678232597252,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 329.1645099805717,
+          "family_mae": {
+            "deepseek-v4-flash": 190.5082141966027,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 272.27556167554167,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 6.330859070789728,
+            "mae_delta_p95": 24.17237099756082
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.3524,
+            "mae_delta_p05": -20.447617169946426,
+            "mae_delta_p50": 6.200338706758146,
+            "mae_delta_p95": 20.884600100153534
+          }
+        },
+        "trajectory_hazard_cap": {
+          "mae": 238.68731529160112,
+          "rmse": 310.59475221011826,
+          "bias": 147.54253157116554,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 329.2723944773738,
+          "family_mae": {
+            "deepseek-v4-flash": 190.5082141966027,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 273.16543931736595,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 6.3308590707897565,
+            "mae_delta_p95": 24.172370997560847
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.34525,
+            "mae_delta_p05": -20.49507857477778,
+            "mae_delta_p50": 6.536201238552508,
+            "mae_delta_p95": 21.138850854960424
+          }
+        },
+        "two_affected_trajectory_gate": {
+          "mae": 238.4330645367942,
+          "rmse": 310.3757638285161,
+          "bias": 147.79678232597252,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 329.1645099805717,
+          "family_mae": {
+            "deepseek-v4-flash": 190.5082141966027,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 272.27556167554167,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 6.330859070789728,
+            "mae_delta_p95": 24.17237099756082
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.3475,
+            "mae_delta_p05": -20.202136678961608,
+            "mae_delta_p50": 6.285903433438875,
+            "mae_delta_p95": 20.884600100153534
+          }
+        },
+        "repeated_forfeit_only": {
+          "mae": 235.60497956068158,
+          "rmse": 308.12750717403725,
+          "bias": 182.91782477275962,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 327.96448788115583,
+          "family_mae": {
+            "deepseek-v4-flash": 190.5082141966027,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 262.37726425914764,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.27375,
+            "mae_delta_p05": -5.656169952225184,
+            "mae_delta_p50": 3.502774094677136,
+            "mae_delta_p95": 22.15800674776409
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.4722,
+            "mae_delta_p05": -40.913479820605005,
+            "mae_delta_p50": 2.3243624640359144,
+            "mae_delta_p95": 47.62439906859922
+          }
+        },
+        "no_hard_cap": {
+          "mae": 235.60497956068158,
+          "rmse": 308.12750717403725,
+          "bias": 182.91782477275962,
+          "max_absolute_error": 737.0231597051418,
+          "inverse_variance_weighted_mae": 327.96448788115583,
+          "family_mae": {
+            "deepseek-v4-flash": 190.5082141966027,
+            "gpt-5.5": 379.87170684581406,
+            "gpt-5.6-luna": 262.37726425914764,
+            "gpt-5.6-sol": 142.85716508267865,
+            "gpt-5.6-terra": 276.7880188599551
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.269,
+            "mae_delta_p05": -5.656169952225184,
+            "mae_delta_p50": 3.502774094677136,
+            "mae_delta_p95": 22.15800674776409
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.47165,
+            "mae_delta_p05": -40.70482594918357,
+            "mae_delta_p50": 2.3001161468505416,
+            "mae_delta_p95": 48.231759070063845
+          }
+        }
+      }
+    },
+    "no_position": {
+      "label": "No-position-seed game ratings",
+      "warning": "Independent of the position prior but noisier for low-game configurations.",
+      "candidates": {
+        "current_move_cap": {
+          "mae": 291.3370944092336,
+          "rmse": 351.6970265124538,
+          "bias": 79.3408222495481,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 372.4703584662514,
+          "family_mae": {
+            "deepseek-v4-flash": 412.91391527765654,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 329.30182054766794,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 0.0,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.0,
+            "mae_delta_p05": 0.0,
+            "mae_delta_p50": 0.0,
+            "mae_delta_p95": 0.0
+          }
+        },
+        "deduplicated_move_exposure_cap": {
+          "mae": 270.4524943090801,
+          "rmse": 335.48479214978323,
+          "bias": 100.2254223497016,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 364.059285329732,
+          "family_mae": {
+            "deepseek-v4-flash": 120.52951387550752,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 329.30182054766794,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.67615,
+            "mae_delta_p05": -79.74120038240429,
+            "mae_delta_p50": -20.884600100153477,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.895,
+            "mae_delta_p05": -20.884600100153534,
+            "mae_delta_p50": -20.884600100153477,
+            "mae_delta_p95": 12.661372623343027
+          }
+        },
+        "trajectory_hazard_cap": {
+          "mae": 270.706745063887,
+          "rmse": 335.69283889413936,
+          "bias": 99.97117159489468,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 364.1793843657351,
+          "family_mae": {
+            "deepseek-v4-flash": 120.52951387550752,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 330.1916981894922,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.67245,
+            "mae_delta_p05": -79.41760851265002,
+            "mae_delta_p50": -20.37609859053964,
+            "mae_delta_p95": 0.5085015096138363
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.8874,
+            "mae_delta_p05": -21.138850854960424,
+            "mae_delta_p50": -20.63034934534653,
+            "mae_delta_p95": 13.75026284328328
+          }
+        },
+        "two_affected_trajectory_gate": {
+          "mae": 270.4524943090801,
+          "rmse": 335.48479214978323,
+          "bias": 100.2254223497016,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 364.059285329732,
+          "family_mae": {
+            "deepseek-v4-flash": 120.52951387550752,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 329.30182054766794,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.66905,
+            "mae_delta_p05": -79.74120038240426,
+            "mae_delta_p50": -20.884600100153477,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.8927,
+            "mae_delta_p05": -20.884600100153534,
+            "mae_delta_p50": -20.884600100153477,
+            "mae_delta_p95": 12.363876090855655
+          }
+        },
+        "repeated_forfeit_only": {
+          "mae": 266.5987085731728,
+          "rmse": 332.64870381533217,
+          "bias": 135.34646479648876,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 362.2388936766308,
+          "family_mae": {
+            "deepseek-v4-flash": 120.52951387550752,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 315.8135704719926,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.91665,
+            "mae_delta_p05": -84.64601859174078,
+            "mae_delta_p50": -24.738385836060758,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.73615,
+            "mae_delta_p05": -56.005642546940635,
+            "mae_delta_p50": -19.43860101652257,
+            "mae_delta_p95": 22.122332314100277
+          }
+        },
+        "no_hard_cap": {
+          "mae": 266.5987085731728,
+          "rmse": 332.64870381533217,
+          "bias": 135.34646479648876,
+          "max_absolute_error": 768.0711437894142,
+          "inverse_variance_weighted_mae": 362.2388936766308,
+          "family_mae": {
+            "deepseek-v4-flash": 120.52951387550752,
+            "gpt-5.5": 403.97651252777234,
+            "gpt-5.6-luna": 315.8135704719926,
+            "gpt-5.6-sol": 153.30024239421255,
+            "gpt-5.6-terra": 332.85516053907986
+          },
+          "family_bootstrap": {
+            "probability_mae_improves": 0.9231,
+            "mae_delta_p05": -79.8402253883749,
+            "mae_delta_p50": -24.738385836060758,
+            "mae_delta_p95": 0.0
+          },
+          "rating_uncertainty": {
+            "probability_mae_improves": 0.73635,
+            "mae_delta_p05": -56.005642546940635,
+            "mae_delta_p50": -19.414372460649588,
+            "mae_delta_p95": 21.88390789943483
+          }
+        }
+      }
+    }
+  },
+  "historical_sensitivity": {
+    "warning": "Historical, pre-stratification depth-10 sensitivity only; not current-contract validation.",
+    "rows": [
+      {
+        "player_id": "gemini-2.5-flash (no thinking)",
+        "prediction_before": 803,
+        "prediction_after": 547,
+        "actual_rating": 368,
+        "repeated_forfeit_only_prediction": 575.0,
+        "forfeits": 2,
+        "absolute_errors": {
+          "current_historical_cap": 179.0,
+          "repeated_forfeit_only": 207.0,
+          "no_hard_cap": 435.0
+        }
+      },
+      {
+        "player_id": "gemini-3.1-flash-lite-preview",
+        "prediction_before": 802,
+        "prediction_after": 408,
+        "actual_rating": 278,
+        "repeated_forfeit_only_prediction": 425.0,
+        "forfeits": 6,
+        "absolute_errors": {
+          "current_historical_cap": 130.0,
+          "repeated_forfeit_only": 147.0,
+          "no_hard_cap": 524.0
+        }
+      },
+      {
+        "player_id": "gpt-5.1 (no thinking)",
+        "prediction_before": 747,
+        "prediction_after": 495,
+        "actual_rating": 508,
+        "repeated_forfeit_only_prediction": 747.0,
+        "forfeits": 0,
+        "absolute_errors": {
+          "current_historical_cap": 13.0,
+          "repeated_forfeit_only": 239.0,
+          "no_hard_cap": 239.0
+        }
+      }
+    ],
+    "mae": {
+      "current_historical_cap": 107.33333333333333,
+      "repeated_forfeit_only": 197.66666666666666,
+      "no_hard_cap": 399.3333333333333
+    }
+  },
+  "rows": [
+    {
+      "player_id": "gpt-5.6-sol (low)",
+      "family": "gpt-5.6-sol",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 0,
+      "affected_positions": 0,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 32,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1255.4886167688715,
+        "trajectory_hazard_cap": 1255.4886167688715,
+        "deduplicated_move_exposure_cap": 1255.4886167688715,
+        "two_affected_trajectory_gate": 1255.4886167688715,
+        "repeated_forfeit_only": 1255.4886167688715,
+        "no_hard_cap": 1255.4886167688715
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1021.3209055428576,
+          "rd": 183.81554978908667,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 1164.2114986309057,
+          "rd": 176.03032951595426,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-sol (medium)",
+      "family": "gpt-5.6-sol",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.225806451612903,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1305.347271836264,
+        "trajectory_hazard_cap": 1305.347271836264,
+        "deduplicated_move_exposure_cap": 1305.347271836264,
+        "two_affected_trajectory_gate": 1305.347271836264,
+        "repeated_forfeit_only": 1305.347271836264,
+        "no_hard_cap": 1305.347271836264
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1279.704948577991,
+          "rd": 223.18428114178045,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 1403.604923632773,
+          "rd": 193.65217123019954,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-sol (high)",
+      "family": "gpt-5.6-sol",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.225806451612903,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1341.976300335384,
+        "trajectory_hazard_cap": 1341.976300335384,
+        "deduplicated_move_exposure_cap": 1341.976300335384,
+        "two_affected_trajectory_gate": 1341.976300335384,
+        "repeated_forfeit_only": 1341.976300335384,
+        "no_hard_cap": 1341.976300335384
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1567.6224081678845,
+          "rd": 215.55974708335273,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 1640.8832362493658,
+          "rd": 205.06878403323557,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-sol (xhigh)",
+      "family": "gpt-5.6-sol",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 31,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 0,
+      "affected_positions": 0,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1539.1326240084977,
+        "trajectory_hazard_cap": 1539.1326240084977,
+        "deduplicated_move_exposure_cap": 1539.1326240084977,
+        "two_affected_trajectory_gate": 1539.1326240084977,
+        "repeated_forfeit_only": 1539.1326240084977,
+        "no_hard_cap": 1539.1326240084977
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1625.1051420224248,
+          "rd": 192.8907624495893,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 1663.8918877368912,
+          "rd": 185.75508027605542,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-terra (low)",
+      "family": "gpt-5.6-terra",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 30,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.3333333333333335,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 980.4132926046909,
+        "trajectory_hazard_cap": 980.4132926046909,
+        "deduplicated_move_exposure_cap": 980.4132926046909,
+        "two_affected_trajectory_gate": 980.4132926046909,
+        "repeated_forfeit_only": 980.4132926046909,
+        "no_hard_cap": 980.4132926046909
+      },
+      "targets": {
+        "rd300": {
+          "rating": 456.41361255097104,
+          "rd": 100.93995439923899,
+          "games": 16
+        },
+        "no_position": {
+          "rating": 493.5056349500127,
+          "rd": 115.24924400255601,
+          "games": 16
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-terra (medium)",
+      "family": "gpt-5.6-terra",
+      "score_depth": 30,
+      "current_cap": 572.5806451612904,
+      "hazard_cap": 590.7407407407408,
+      "deduplicated_cap": 598.3870967741935,
+      "deduplicated_catastrophe_pct": 6.451612903225806,
+      "attempted_positions": 8,
+      "scored_moves": 31,
+      "catastrophe_positions": 2,
+      "forfeit_positions": 0,
+      "affected_positions": 2,
+      "catastrophe_episodes": 2,
+      "at_risk_moves": 27,
+      "raw_catastrophe_moves": 3,
+      "catastrophe_hazard_pct": 7.407407407407407,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 504.7687227445485,
+        "trajectory_hazard_cap": 504.7687227445485,
+        "deduplicated_move_exposure_cap": 504.7687227445485,
+        "two_affected_trajectory_gate": 504.7687227445485,
+        "repeated_forfeit_only": 504.7687227445485,
+        "no_hard_cap": 504.7687227445485
+      },
+      "targets": {
+        "rd300": {
+          "rating": 399.8296906372775,
+          "rd": 153.05836031142636,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 395.7853330749781,
+          "rd": 161.07035892826835,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-terra (high)",
+      "family": "gpt-5.6-terra",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 30,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.3333333333333335,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 942.5198082657837,
+        "trajectory_hazard_cap": 942.5198082657837,
+        "deduplicated_move_exposure_cap": 942.5198082657837,
+        "two_affected_trajectory_gate": 942.5198082657837,
+        "repeated_forfeit_only": 942.5198082657837,
+        "no_hard_cap": 942.5198082657837
+      },
+      "targets": {
+        "rd300": {
+          "rating": 568.4307609879418,
+          "rd": 168.38456486462618,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 476.6005927594439,
+          "rd": 157.91255102047137,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-terra (xhigh)",
+      "family": "gpt-5.6-terra",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 0,
+      "affected_positions": 0,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 32,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1246.0993533231185,
+        "trajectory_hazard_cap": 1246.0993533231185,
+        "deduplicated_move_exposure_cap": 1246.0993533231185,
+        "two_affected_trajectory_gate": 1246.0993533231185,
+        "repeated_forfeit_only": 1246.0993533231185,
+        "no_hard_cap": 1246.0993533231185
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1141.975037322131,
+          "rd": 192.02909536186039,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 976.4889739973875,
+          "rd": 199.30449252508672,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-luna (low)",
+      "family": "gpt-5.6-luna",
+      "score_depth": 30,
+      "current_cap": 575.0,
+      "hazard_cap": 575.0,
+      "deduplicated_cap": 575.0,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 30,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 1,
+      "affected_positions": 1,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 30,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 12.5,
+      "candidates": {
+        "current_move_cap": 626.7407958477775,
+        "trajectory_hazard_cap": 626.7407958477775,
+        "deduplicated_move_exposure_cap": 626.7407958477775,
+        "two_affected_trajectory_gate": 626.7407958477775,
+        "repeated_forfeit_only": 626.7407958477775,
+        "no_hard_cap": 626.7407958477775
+      },
+      "targets": {
+        "rd300": {
+          "rating": 597.4970584800766,
+          "rd": 160.1438678877779,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 894.921322033946,
+          "rd": 175.30925402358906,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-luna (medium)",
+      "family": "gpt-5.6-luna",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 0,
+      "affected_positions": 0,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 32,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1063.6907128447913,
+        "trajectory_hazard_cap": 1063.6907128447913,
+        "deduplicated_move_exposure_cap": 1063.6907128447913,
+        "two_affected_trajectory_gate": 1063.6907128447913,
+        "repeated_forfeit_only": 1063.6907128447913,
+        "no_hard_cap": 1063.6907128447913
+      },
+      "targets": {
+        "rd300": {
+          "rating": 326.6675531396495,
+          "rd": 113.57903048807998,
+          "games": 16
+        },
+        "no_position": {
+          "rating": 295.61956905537704,
+          "rd": 112.69256983936734,
+          "games": 16
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-luna (high)",
+      "family": "gpt-5.6-luna",
+      "score_depth": 30,
+      "current_cap": 598.3870967741935,
+      "hazard_cap": 594.8275862068965,
+      "deduplicated_cap": 598.3870967741935,
+      "deduplicated_catastrophe_pct": 6.451612903225806,
+      "attempted_positions": 8,
+      "scored_moves": 31,
+      "catastrophe_positions": 2,
+      "forfeit_positions": 0,
+      "affected_positions": 2,
+      "catastrophe_episodes": 2,
+      "at_risk_moves": 29,
+      "raw_catastrophe_moves": 2,
+      "catastrophe_hazard_pct": 6.896551724137931,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 598.3870967741935,
+        "trajectory_hazard_cap": 594.8275862068965,
+        "deduplicated_move_exposure_cap": 598.3870967741935,
+        "two_affected_trajectory_gate": 598.3870967741935,
+        "repeated_forfeit_only": 1090.0816910292135,
+        "no_hard_cap": 1090.0816910292135
+      },
+      "targets": {
+        "rd300": {
+          "rating": 864.0309887344916,
+          "rd": 208.20846492940547,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 871.2108940530542,
+          "rd": 201.30451162415577,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.6-luna (xhigh)",
+      "family": "gpt-5.6-luna",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.225806451612903,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1279.719219848457,
+        "trajectory_hazard_cap": 1279.719219848457,
+        "deduplicated_move_exposure_cap": 1279.719219848457,
+        "two_affected_trajectory_gate": 1279.719219848457,
+        "repeated_forfeit_only": 1279.719219848457,
+        "no_hard_cap": 1279.719219848457
+      },
+      "targets": {
+        "rd300": {
+          "rating": 1336.910677517483,
+          "rd": 210.00738488197152,
+          "games": 8
+        },
+        "no_position": {
+          "rating": 1287.8510347846852,
+          "rd": 205.36180427398006,
+          "games": 8
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.5 (xhigh)",
+      "family": "gpt-5.5",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 3.225806451612903,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 936.0306887081433,
+        "trajectory_hazard_cap": 936.0306887081433,
+        "deduplicated_move_exposure_cap": 936.0306887081433,
+        "two_affected_trajectory_gate": 936.0306887081433,
+        "repeated_forfeit_only": 936.0306887081433,
+        "no_hard_cap": 936.0306887081433
+      },
+      "targets": {
+        "rd300": {
+          "rating": 556.1589818623293,
+          "rd": 67.46615348999498,
+          "games": 55
+        },
+        "no_position": {
+          "rating": 532.054176180371,
+          "rd": 62.03357799724726,
+          "games": 55
+        }
+      }
+    },
+    {
+      "player_id": "deepseek-v4-flash (max)",
+      "family": "deepseek-v4-flash",
+      "score_depth": 30,
+      "current_cap": 575.0,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 3.125,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 0,
+      "affected_positions": 1,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 29,
+      "raw_catastrophe_moves": 3,
+      "catastrophe_hazard_pct": 3.4482758620689653,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 575.0,
+        "trajectory_hazard_cap": 867.384401402149,
+        "deduplicated_move_exposure_cap": 867.384401402149,
+        "two_affected_trajectory_gate": 867.384401402149,
+        "repeated_forfeit_only": 867.384401402149,
+        "no_hard_cap": 867.384401402149
+      },
+      "targets": {
+        "rd300": {
+          "rating": 676.8761872055463,
+          "rd": 113.33956911835268,
+          "games": 11
+        },
+        "no_position": {
+          "rating": 987.9139152776565,
+          "rd": 218.01155916987057,
+          "games": 11
+        }
+      }
+    }
+  ]
+}

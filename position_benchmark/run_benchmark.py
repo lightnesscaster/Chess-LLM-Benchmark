@@ -1282,6 +1282,19 @@ async def main():
             f"${retry_upper_bound_cost:.4f} conditional-retry upper bound"
             f"{unknown_suffix}"
         )
+        for player_id, player_config in players_to_test.items():
+            if config_is_engine(player_config):
+                continue
+            estimate = cost_calculator.position_benchmark_token_estimate(
+                player_id,
+                model_name=player_config.get("model_name"),
+                reasoning=config_uses_reasoning(player_config),
+            )
+            print(
+                f"  {player_id}: {estimate['prompt_tokens_per_call']} prompt + "
+                f"{estimate['completion_tokens_per_call']} completion tokens/call "
+                f"({estimate['source']}, n={estimate['samples']})"
+            )
     if args.max_estimated_cost is not None:
         if retry_upper_bound_cost > args.max_estimated_cost:
             raise SystemExit(

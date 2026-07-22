@@ -17,9 +17,9 @@ DEFAULT_MIN_BLUNDER_POSITIONS = 25
 DEFAULT_MIN_GAME_LIKE_POSITIONS = 48
 DEFAULT_MIN_STABILITY_POSITIONS = 8
 DEFAULT_MIN_STABILITY_SCORED_MOVES = 24
-DEFAULT_MIN_STABILITY_SCORE_DEPTH = 10
+DEFAULT_MIN_STABILITY_SCORE_DEPTH = 30
 DEFAULT_MIN_STOCKFISH_DEPTH = 30
-CURRENT_STABILITY_PROBE_VERSION = "stratified-v2"
+CURRENT_STABILITY_PROBE_VERSION = "stratified-depth30-v3"
 CURRENT_STABILITY_SELECTION_POLICY = "category-round-robin-v1"
 CURRENT_STABILITY_POSITION_INDICES = (0, 12, 24, 36, 1, 13, 25, 37)
 DEFAULT_GAME_LIKE_CPL_CAP = 5000.0
@@ -75,6 +75,7 @@ class StabilityProbeMetrics:
     avg_cpl: float | None
     p90_cpl: float | None
     catastrophe_pct: float
+    deduplicated_catastrophe_pct: float
 
 
 @dataclass(frozen=True)
@@ -457,9 +458,21 @@ def collect_stability_probe_metrics(model_data: dict[str, Any]) -> StabilityProb
     """Collect continuation-probe summary metrics, accepting either full or compact data."""
     summary = model_data.get("summary", model_data)
     try:
+        scored_moves = int(summary.get("model_scored_moves") or 0)
+        catastrophe_pct = float(
+            summary.get("model_1000cp_catastrophe_pct") or 0.0
+        )
+        catastrophe_positions = summary.get(
+            "model_1000cp_catastrophe_positions"
+        )
+        deduplicated_catastrophe_pct = catastrophe_pct
+        if catastrophe_positions is not None and scored_moves:
+            deduplicated_catastrophe_pct = (
+                100.0 * int(catastrophe_positions) / scored_moves
+            )
         return StabilityProbeMetrics(
             attempted_positions=int(summary.get("attempted_positions") or 0),
-            scored_moves=int(summary.get("model_scored_moves") or 0),
+            scored_moves=scored_moves,
             legal_moves=int(summary.get("model_legal_moves") or 0),
             attempts=int(summary.get("model_attempts") or 0),
             legal_pct=float(summary.get("model_legal_pct") or 0.0),
@@ -474,7 +487,8 @@ def collect_stability_probe_metrics(model_data: dict[str, Any]) -> StabilityProb
                 if summary.get("model_p90_cpl") is not None
                 else None
             ),
-            catastrophe_pct=float(summary.get("model_1000cp_catastrophe_pct") or 0.0),
+            catastrophe_pct=catastrophe_pct,
+            deduplicated_catastrophe_pct=deduplicated_catastrophe_pct,
         )
     except (TypeError, ValueError):
         return None
@@ -525,14 +539,20 @@ def stability_probe_prediction_cap(model_data: dict[str, Any]) -> float | None:
     if metrics is None:
         return None
 
-    material_risk = metrics.forfeit_pct + metrics.catastrophe_pct
+    # Once a move loses at catastrophe scale, later catastrophe-scale moves in
+    # that same continuation are correlated consequences rather than independent
+    # risk events. Count at most one event per starting trajectory while retaining
+    # the original scored-move exposure and cap coefficients. This correction can
+    # only make the downside cap less severe.
+    catastrophe_risk = metrics.deduplicated_catastrophe_pct
+    material_risk = metrics.forfeit_pct + catastrophe_risk
     if material_risk < STABILITY_RISK_TRIGGER:
         return None
 
     cap = (
         STABILITY_CAP_BASE
         - STABILITY_FORFEIT_PENALTY * metrics.forfeit_pct
-        - STABILITY_CATASTROPHE_PENALTY * metrics.catastrophe_pct
+        - STABILITY_CATASTROPHE_PENALTY * catastrophe_risk
     )
     return max(STABILITY_CAP_FLOOR, min(STABILITY_CAP_BASE, cap))
 

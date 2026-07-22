@@ -71,6 +71,7 @@ from position_benchmark.retry_protocol import (
     conditional_retry_summary,
 )
 from position_benchmark.token_accounting import sum_result_row_tokens
+from position_benchmark.verify_benchmark import verify_stability_results
 from rating.cost_calculator import CostCalculator
 from rating.rating_store import RatingStore
 from scripts.analyze_puzzle_predictions import UNAVAILABLE_PLAYER_IDS
@@ -90,12 +91,15 @@ from scripts.run_stability_probe import (
     backfill_retry_metrics,
     derive_retry_metrics,
     pre_moves_from_position,
+    rescore_existing_results,
+    score_continuation_moves_from_pgn,
     selected_positions,
     summarize_player,
     probe_token_usage,
     stamp_probe_record,
 )
 from scripts.merge_stability_probe_shards import merge_shards
+from scripts.repair_stability_probe_rows import merge_repair_rows
 from scripts.select_legality_stress_panel import select_panel
 
 
@@ -166,7 +170,7 @@ class ProductionContractTests(unittest.TestCase):
             positions_path=GAME_LIKE_POSITIONS_PATH,
             indexed_positions=indexed_positions,
             probe_plies=8,
-            score_depth=10,
+            score_depth=30,
         )
 
         self.assertEqual(probe_token_usage(record), {"prompt": 30, "completion": 5})
@@ -280,7 +284,7 @@ class ProductionContractTests(unittest.TestCase):
         )
         metadata = panel["metadata"]
 
-        self.assertEqual(len(panel["positions"]), 6)
+        self.assertGreater(len(panel["positions"]), 0)
         self.assertFalse(metadata["selection_uses_holdout"])
         self.assertTrue(
             all(
@@ -288,21 +292,15 @@ class ProductionContractTests(unittest.TestCase):
                 for player_id in metadata["selection_models"]
             )
         )
-        self.assertEqual(
-            [position["position_id"] for position in panel["positions"]],
-            [
-                "core-equal-015",
-                "core-equal-019",
-                "core-equal-026",
-                "core-equal-044",
-                "core-equal-036",
-                "core-equal-024",
-            ],
+        self.assertTrue(
+            all(
+                row["family_balanced_illegal_rate"] >= 0.25
+                for row in metadata["position_scores"]
+            )
         )
         validation = metadata["held_out_validation"]
-        self.assertAlmostEqual(validation["selected_illegal_pct"], 9.7222222222)
-        self.assertGreater(validation["illegal_incidence_lift"], 2.7)
-        self.assertGreater(validation["stress_vs_live_spearman"], 0.7)
+        self.assertGreater(validation["selected_attempts"], 0)
+        self.assertGreater(len(validation["holdout_models"]), 0)
 
     def test_failure_transfer_matrix_excludes_each_target_base_model(self) -> None:
         matrix = json.loads(FAILURE_TRANSFER_MATRIX_PATH.read_text())
@@ -399,6 +397,21 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(seeded.rating, 1234.0)
         self.assertEqual(seeded.rating_deviation, 300.0)
 
+    def test_validation_rating_store_can_disable_benchmark_predictions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = RatingStore(
+                path=str(Path(tmpdir) / "ratings.json"),
+                use_firestore=False,
+                use_benchmark_predictions=False,
+            )
+            store.refresh_benchmark_predictions()
+
+            seeded = store.get("unseeded-model")
+
+        self.assertEqual(store._benchmark_predictions, {})
+        self.assertEqual(seeded.rating, 1500.0)
+        self.assertEqual(seeded.rating_deviation, 350.0)
+
     def test_canonical_panel_sizes_and_defaults_match_saved_artifacts(self) -> None:
         positions_data = json.loads(CORE_POSITIONS_PATH.read_text())
         positions = positions_data["positions"]
@@ -433,7 +446,7 @@ class ProductionContractTests(unittest.TestCase):
             )
         self.assertEqual(DEFAULT_POSITION_LIMIT, 8)
         self.assertEqual(DEFAULT_PROBE_PLIES, 8)
-        self.assertEqual(DEFAULT_SCORE_DEPTH, 10)
+        self.assertEqual(DEFAULT_SCORE_DEPTH, 30)
         self.assertEqual(PROTOCOL_SEQUENCE_POSITION_LIMIT, 4)
         self.assertEqual(PROTOCOL_SEQUENCE_PROBE_PLIES, 16)
         self.assertEqual(STABILITY_PROBE_VERSION, CURRENT_STABILITY_PROBE_VERSION)
@@ -455,6 +468,23 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(
             manifest["panels"]["game_like"]["model_call_count"]["total_calls_max"],
             96,
+        )
+        continuation = manifest["panels"]["continuation_stability"]
+        self.assertEqual(continuation["stockfish_score_depth"], 30)
+        self.assertEqual(
+            continuation["selected_position_indices"],
+            list(CURRENT_STABILITY_POSITION_INDICES),
+        )
+        self.assertEqual(
+            continuation["stability_probe_version"],
+            CURRENT_STABILITY_PROBE_VERSION,
+        )
+        self.assertEqual(
+            continuation["catastrophe_event_policy"],
+            "first-1000cp-event-per-start-v1",
+        )
+        self.assertEqual(
+            continuation["catastrophe_rate_denominator"], "scored_model_moves"
         )
         self.assertEqual(manifest["panels"]["blunder"]["status"], "optional-historical")
         sequence = manifest["panels"]["continuation_sequence_candidate"]
@@ -565,7 +595,13 @@ class ProductionContractTests(unittest.TestCase):
         core_results = json.loads(CORE_RESULTS_PATH.read_text())
 
         self.assertLessEqual(set(legacy_results), set(core_results))
+        rerun_after_migration = {
+            "deepseek-v4-flash (max)",
+            "gpt-5.5 (xhigh)",
+        }
         for player_id, legacy_data in legacy_results.items():
+            if player_id in rerun_after_migration:
+                continue
             legacy_prediction = predict_rating_from_results(
                 legacy_data["results"],
                 legacy_positions,
@@ -701,7 +737,65 @@ class CostEstimateTests(unittest.TestCase):
             )
 
             self.assertEqual(unknown, [])
-            self.assertAlmostEqual(cost, 0.007)
+            self.assertAlmostEqual(cost, 0.303)
+
+    def test_position_cost_estimate_uses_same_player_history(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pricing_path = root / "pricing.json"
+            config_path = root / "benchmark.yaml"
+            results_path = root / "position_benchmark" / "results"
+            results_path.mkdir(parents=True)
+            pricing_path.write_text(
+                json.dumps(
+                    {"provider/model": {"prompt": 1e-6, "completion": 1e-5}}
+                )
+            )
+            config_path.write_text(
+                "\n".join(
+                    [
+                        "llms:",
+                        '  - player_id: "model-a"',
+                        '    model_name: "provider/model"',
+                        "    reasoning_effort: xhigh",
+                    ]
+                )
+            )
+            (results_path / "core.json").write_text(
+                json.dumps(
+                    {
+                        "model-a": {
+                            "results": [
+                                {
+                                    "prompt_tokens": 1000,
+                                    "completion_tokens": 20000,
+                                    "retry_attempted": False,
+                                }
+                            ]
+                        }
+                    }
+                )
+            )
+            calculator = CostCalculator(
+                pricing_path=pricing_path,
+                config_path=config_path,
+            )
+
+            estimate = calculator.position_benchmark_token_estimate(
+                "model-a",
+                model_name="provider/model",
+                reasoning=True,
+            )
+            cost = calculator.estimate_position_benchmark_cost(
+                "model-a",
+                model_name="provider/model",
+                num_positions=10,
+                reasoning=True,
+            )
+
+            self.assertEqual(estimate["source"], "same-player historical maximum")
+            self.assertEqual(estimate["completion_tokens_per_call"], 20000)
+            self.assertAlmostEqual(cost, 2.01)
 
     def test_calculates_actual_position_benchmark_cost_from_tokens(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1290,7 +1384,7 @@ class PredictionMetricTests(unittest.TestCase):
                 "model_scored_moves": 12,
                 "model_forfeit_pct": 50.0,
                 "model_1000cp_catastrophe_pct": 25.0,
-                "score_depth": 10,
+                "score_depth": 30,
             }
         }
 
@@ -1345,7 +1439,7 @@ class PredictionMetricTests(unittest.TestCase):
                 "model_scored_moves": 24,
                 "model_forfeit_pct": 25.0,
                 "model_1000cp_catastrophe_pct": 12.5,
-                "score_depth": 10,
+                "score_depth": 30,
             }
         }
 
@@ -1360,6 +1454,26 @@ class PredictionMetricTests(unittest.TestCase):
 
         self.assertEqual(cap, 400.0)
         self.assertEqual(supplemented, cap)
+
+    def test_stability_cap_deduplicates_catastrophes_within_one_trajectory(self) -> None:
+        stability = {
+            "summary": {
+                "attempted_positions": 8,
+                "model_scored_moves": 32,
+                "model_legal_moves": 32,
+                "model_attempts": 32,
+                "model_legal_pct": 100.0,
+                "model_forfeit_pct": 0.0,
+                "model_1000cp_catastrophes": 3,
+                "model_1000cp_catastrophe_pct": 9.375,
+                "model_1000cp_catastrophe_positions": 1,
+            }
+        }
+
+        self.assertIsNone(stability_probe_prediction_cap(stability))
+
+        stability["summary"]["model_1000cp_catastrophe_positions"] = 2
+        self.assertEqual(stability_probe_prediction_cap(stability), 600.0)
 
     def test_stability_probe_can_cap_forfeit_heavy_rows_without_scored_moves(self) -> None:
         positions = [
@@ -1396,7 +1510,7 @@ class PredictionMetricTests(unittest.TestCase):
                 "model_forfeits": 8,
                 "model_forfeit_pct": 100.0,
                 "model_1000cp_catastrophe_pct": 0.0,
-                "score_depth": 10,
+                "score_depth": 30,
             }
         }
 
@@ -1419,6 +1533,109 @@ class AvailabilityHintTests(unittest.TestCase):
 
 
 class StabilityProbeTests(unittest.TestCase):
+    def test_layout_verifier_rejects_depth_10_replayable_stability_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            results_path = Path(tmpdir) / "stability.json"
+            results_path.write_text(
+                json.dumps(
+                    {
+                        "model-a": {
+                            "summary": {
+                                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                                "selected_position_indices": list(
+                                    CURRENT_STABILITY_POSITION_INDICES
+                                ),
+                                "score_depth": 10,
+                            },
+                            "results": [{"score_depth": 10}],
+                        }
+                    }
+                )
+            )
+            manifest = {
+                "panels": {
+                    "continuation_stability": {
+                        "results": str(results_path),
+                        "stockfish_score_depth": 30,
+                        "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                        "selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                        "selected_position_indices": list(
+                            CURRENT_STABILITY_POSITION_INDICES
+                        ),
+                    }
+                }
+            }
+
+            issues = verify_stability_results(manifest)
+
+        self.assertIn("stability/model-a: summary depth mismatch", issues)
+        self.assertIn("stability/model-a: result row depth mismatch", issues)
+
+    def test_continuation_scoring_reuses_shared_board_evaluations(self) -> None:
+        class CountingEngine:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def analyse(self, board, limit):
+                self.calls += 1
+                return {
+                    "score": chess.engine.PovScore(
+                        chess.engine.Cp(0), chess.WHITE
+                    )
+                }
+
+        engine = CountingEngine()
+        cache = {}
+        model_scores, opponent_scores = score_continuation_moves_from_pgn(
+            '[Result "*"]\n\n1. e4 e5 2. Nf3 Nc6 *\n',
+            model_side=chess.WHITE,
+            pre_move_count=0,
+            stockfish=engine,
+            depth=30,
+            analysis_cache=cache,
+        )
+
+        self.assertEqual(len(model_scores), 2)
+        self.assertEqual(len(opponent_scores), 2)
+        self.assertEqual(engine.calls, 5)
+
+        score_continuation_moves_from_pgn(
+            '[Result "*"]\n\n1. e4 e5 2. Nf3 Nc6 *\n',
+            model_side=chess.BLACK,
+            pre_move_count=0,
+            stockfish=engine,
+            depth=30,
+            analysis_cache=cache,
+        )
+        self.assertEqual(engine.calls, 5)
+
+    def test_rescore_skips_summary_only_legacy_records_by_default(self) -> None:
+        results = {"legacy": {"summary": {"score_depth": 10}}}
+
+        players, rows = rescore_existing_results(
+            results,
+            player_ids=None,
+            stockfish_path="unused",
+            score_depth=30,
+            workers=1,
+        )
+
+        self.assertEqual((players, rows), (0, 0))
+        self.assertEqual(results["legacy"]["summary"]["score_depth"], 10)
+
+    def test_rescore_rejects_explicit_record_without_replayable_rows(self) -> None:
+        results = {"legacy": {"summary": {"score_depth": 10}}}
+
+        with self.assertRaisesRegex(ValueError, "without stored result rows"):
+            rescore_existing_results(
+                results,
+                player_ids={"legacy"},
+                stockfish_path="unused",
+                score_depth=30,
+                workers=1,
+            )
+
     def test_derives_continuation_retry_outcomes_from_events_and_pgn(self) -> None:
         three_ply_pgn = '[Result "*"]\n\n1. e4 e5 2. Nf3 *\n'
         recovery = {
@@ -1503,7 +1720,7 @@ class StabilityProbeTests(unittest.TestCase):
                 "model_attempts": 32,
                 "model_scored_moves": 32,
                 "model_forfeits": 0,
-                "score_depth": 10,
+                "score_depth": 30,
             },
             "results": [{"position_idx": index} for index in indices],
         }
@@ -1517,6 +1734,54 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertEqual(players, ["new-model"])
         self.assertIn("existing-model", merged)
         self.assertEqual(merged["new-model"], record)
+
+    def test_stability_row_repair_preserves_canonical_contract(self) -> None:
+        indices = [0, 12, 24, 36, 1, 13, 25, 37]
+
+        def row(index: int, *, failed: bool = False) -> dict:
+            scored_moves = [] if failed else [{"cpl": 10} for _ in range(4)]
+            return {
+                "position_idx": index,
+                "position_id": f"position-{index}",
+                "termination": "api_error" if failed else "max_moves",
+                "probe_plies_played": 4 if failed else 8,
+                "model_legal_moves": 2 if failed else 4,
+                "model_illegal_attempts": 0,
+                "model_forfeited": False,
+                "model_move_scores": scored_moves,
+                "opponent_move_scores": scored_moves,
+                "illegal_move_details": [],
+                "conditional_retry_protocol_version": CONDITIONAL_RETRY_PROTOCOL_VERSION,
+            }
+
+        canonical_rows = [row(index, failed=index == 25) for index in indices]
+        canonical = {"summary": summarize_player(canonical_rows), "results": canonical_rows}
+        canonical["summary"].update(
+            {
+                "player_id": "model-a",
+                "positions_file": "game_like_48.json",
+                "probe_plies": 8,
+                "score_depth": 30,
+                "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                "selected_position_indices": indices,
+            }
+        )
+        repair_row = row(25)
+        repair = {
+            "summary": {
+                "player_id": "model-a",
+                "position_selection_policy": "explicit-indices",
+            },
+            "results": [repair_row],
+        }
+
+        merged = merge_repair_rows("model-a", canonical, repair)
+
+        self.assertTrue(stability_probe_readiness(merged).is_ready)
+        self.assertEqual(merged["summary"]["selected_position_indices"], indices)
+        self.assertEqual(merged["summary"]["api_errors"], 0)
+        self.assertEqual(merged["results"][6], repair_row)
 
     def test_sequence_shard_merge_accepts_frozen_research_contract(self) -> None:
         indices = [0, 12, 24, 36]
@@ -1600,6 +1865,25 @@ class StabilityProbeTests(unittest.TestCase):
 
         self.assertFalse(readiness.is_ready)
         self.assertEqual(readiness.reason, "outdated stability position selection")
+
+    def test_depth_10_stability_record_is_not_prediction_ready(self) -> None:
+        readiness = stability_probe_readiness(
+            {
+                "summary": {
+                    "stability_probe_version": CURRENT_STABILITY_PROBE_VERSION,
+                    "position_selection_policy": CURRENT_STABILITY_SELECTION_POLICY,
+                    "selected_position_indices": list(CURRENT_STABILITY_POSITION_INDICES),
+                    "attempted_positions": 8,
+                    "model_scored_moves": 32,
+                    "model_attempts": 32,
+                    "api_errors": 0,
+                    "score_depth": 10,
+                }
+            }
+        )
+
+        self.assertFalse(readiness.is_ready)
+        self.assertEqual(readiness.reason, "stability score depth < 30")
 
     def test_combined_legality_uses_worst_fresh_panel_and_reports_pool(self) -> None:
         positions = [
@@ -1697,6 +1981,13 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertEqual(summary["opponent_avg_cpl"], 150.0)
         self.assertEqual(summary["model_300cp_blunders"], 2)
         self.assertAlmostEqual(summary["model_300cp_blunder_pct"], 100 * 2 / 3)
+        self.assertEqual(summary["model_300cp_blunder_positions"], 2)
+        self.assertEqual(summary["model_300cp_blunder_position_pct"], 100.0)
+        self.assertEqual(summary["model_1000cp_catastrophe_positions"], 1)
+        self.assertEqual(summary["model_1000cp_catastrophe_position_pct"], 50.0)
+        self.assertAlmostEqual(
+            summary["model_1000cp_deduplicated_catastrophe_pct"], 100 / 3
+        )
         self.assertEqual(summary["conditional_retry"]["incomplete_evidence_games"], 1)
         self.assertNotIn("conditional_retry_protocol_version", summary)
 

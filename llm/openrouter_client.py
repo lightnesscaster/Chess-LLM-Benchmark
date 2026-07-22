@@ -658,6 +658,10 @@ Your response (just the UCI move or UNCLEAR):"""
                             self.total_move_time += elapsed
                             return extracted_move
                         # Extraction failed - retry API call with fresh session
+                        # OpenRouter may bill this completed generation even though
+                        # it did not yield a usable move. Retain its usage so actual
+                        # benchmark cost includes failed provider-level attempts.
+                        self._track_usage(data)
                         raise TruncatedResponseError(
                             f"Response truncated and extraction failed: content='{content}'"
                         )

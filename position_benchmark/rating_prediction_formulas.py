@@ -188,8 +188,13 @@ def predict_rating_simple(equal_cpl: float) -> float:
 
 
 # =============================================================================
-# REASONING TOKEN SCALING: predict higher-effort rating from lower-effort
+# DEPRECATED RESEARCH BASELINE: global reasoning-token scaling
 # =============================================================================
+# Do not use this as the current final-rating extrapolator. The July 2026
+# final-game-rating analysis found large lab/release shifts and replaces this
+# global token rule with the release-held hierarchical helpers in
+# rating/reasoning_prediction.py. The function remains for reproducibility.
+#
 # LOFO RMSE: 435 rating points (leave-one-family-out cross-validation)
 # LOFO MAE:  339 rating points
 # LOFO Median AE: 345 rating points
@@ -227,10 +232,11 @@ def predict_higher_effort_rating(
     low_rating: float, low_tokens: float, high_tokens: float
 ) -> float:
     """
-    Predict the rating of a higher-effort variant from a lower-effort variant.
+    Reproduce the deprecated March 2026 global token-scaling baseline.
 
-    Uses the sqrt scaling law: more thinking tokens improve strength, but
-    with diminishing returns captured by the square root.
+    New work should use ``rating.reasoning_prediction`` and validate against
+    final game-benchmark ratings. This function is retained so historical
+    analyses remain reproducible.
 
     Args:
         low_rating: Known rating of the lower-effort variant

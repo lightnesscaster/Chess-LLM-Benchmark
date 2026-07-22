@@ -1,20 +1,20 @@
 {
-  "schema_version": 2,
-  "result_schema_version": 2,
+  "schema_version": 3,
+  "result_schema_version": 3,
   "production_benchmark_version": "history-replay-v2",
   "conditional_retry_protocol_version": "production-game-retry-v1",
   "stable_result_key": "position_id",
   "error_definition": "actual_game_rating - predicted_rating",
   "automatic_acquisition": {
     "enabled": true,
-    "policy_version": "production-supplements-v1",
+    "policy_version": "production-supplements-depth30-v2",
     "eligibility": "selected-configured-non-engine-non-frozen",
     "panel_order": [
       "core",
       "game_like",
       "continuation_stability"
     ],
-    "completion_policy": "current-readiness-v1",
+    "completion_policy": "current-readiness-v2",
     "legacy_static_retry_policy": "additive-does-not-invalidate-ready-rows",
     "resume_policy": "first-missing-panel",
     "budget_policy": "check-before-each-panel",
@@ -67,7 +67,8 @@
       "minimum_starting_positions": 8,
       "default_starting_positions": 8,
       "selection_policy": "category-round-robin-v1",
-      "stability_probe_version": "stratified-v2",
+      "stability_probe_version": "stratified-depth30-v3",
+      "selected_position_indices": [0, 12, 24, 36, 1, 13, 25, 37],
       "conditional_retry_protocol_version": "production-game-retry-v1",
       "positions_per_category": 2,
       "category_order": [
@@ -79,7 +80,17 @@
       "probe_plies": 8,
       "planned_base_first_attempt_calls": 32,
       "random_seed": 1729,
-      "stockfish_score_depth": 10
+      "stockfish_score_depth": 30,
+      "catastrophe_event_policy": "first-1000cp-event-per-start-v1",
+      "catastrophe_rate_denominator": "scored_model_moves",
+      "catastrophe_cap_coefficients": {
+        "risk_trigger_pct": 5,
+        "base": 650,
+        "forfeit_penalty": 6,
+        "catastrophe_penalty": 8,
+        "floor": -500,
+        "application_deadband_elo": 150
+      }
     },
     "continuation_sequence_candidate": {
       "status": "research-candidate",
@@ -95,7 +106,7 @@
       "planned_base_first_attempt_calls": 32,
       "opponent_policy": "seeded-random-legal-v1",
       "random_seed": 1729,
-      "stockfish_score_depth": 10,
+      "stockfish_score_depth": 30,
       "production_effect": "none"
     },
     "legality_stress_candidate": {
@@ -196,6 +207,13 @@
   "supplemental_predictor_validation": "position_benchmark/validation/2026-07-17-supplemental-predictor-analysis.md",
   "supplemental_predictor_validation_data": "position_benchmark/validation/2026-07-17-supplemental-predictor-analysis.json",
   "supplemental_predictor_validation_target": "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json",
+  "reasoning_rating_validation": "position_benchmark/validation/2026-07-17-reasoning-rating-analysis.md",
+  "reasoning_rating_validation_data": "position_benchmark/validation/2026-07-17-reasoning-rating-analysis.json",
+  "position_seed_counterfactual": "position_benchmark/validation/2026-07-17-position-seed-counterfactual.md",
+  "position_seed_counterfactual_data": "position_benchmark/validation/2026-07-17-position-seed-counterfactual.json",
+  "position_seed_counterfactual_ratings": "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json",
+  "depth30_stability_cap_validation": "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.md",
+  "depth30_stability_cap_validation_data": "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json",
   "gpt56_game_retry_audit": "position_benchmark/validation/2026-07-14-gpt56-game-retry-audit.json",
   "legality_stress_pilot": "position_benchmark/validation/2026-07-14-legality-stress-pilot.md",
   "gpt56_targeted_games": "position_benchmark/validation/2026-07-14-gpt56-targeted-games.md",
