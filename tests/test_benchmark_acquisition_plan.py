@@ -45,6 +45,12 @@ class AcquisitionPreflightTests(unittest.TestCase):
                     "api": "codex",
                     "reasoning_effort": "high",
                 },
+                {
+                    "player_id": "unavailable-codex-model",
+                    "model_name": "gpt-unavailable",
+                    "api": "codex",
+                    "unavailable": True,
+                },
                 {"player_id": "other-model", "model_name": "other/test"},
             ]
         }

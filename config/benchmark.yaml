@@ -358,6 +358,8 @@ llms:
   - player_id: "mimo-v2-flash (no thinking)"
     model_name: "xiaomi/mimo-v2-flash"
     temperature: 0.0
+    unavailable: true
+    unavailable_reason: "OpenRouter returned API failures for all 50 acquisition-core positions on 2026-07-23"
 
   # mimo-v2-flash (medium)
   - player_id: "mimo-v2-flash (medium)"
@@ -542,6 +544,8 @@ llms:
   - player_id: "grok-4.1-fast"
     model_name: "x-ai/grok-4.1-fast"
     temperature: 0.0
+    unavailable: true
+    unavailable_reason: "Deprecated endpoint; all 50 acquisition-core positions failed on 2026-07-23"
 
   # grok-4.3 (medium) - xAI, released 2026-04-30
   - player_id: "grok-4.3 (medium)"

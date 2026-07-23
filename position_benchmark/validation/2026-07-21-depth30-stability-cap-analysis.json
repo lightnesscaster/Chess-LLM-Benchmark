@@ -1,20 +1,29 @@
 {
-  "generated_at": "2026-07-22T17:06:39.996404+00:00",
+  "generated_at": "2026-07-23T07:17:21.564291+00:00",
   "production_effect": "catastrophe-event-deduplication-only",
   "production_rating_store_write": false,
   "model_call_count": 0,
   "score_depth": 30,
-  "configuration_count": 16,
+  "configuration_count": 28,
   "families": [
     "deepseek-v4-flash",
+    "gemini-2.5",
     "gemini-3.1",
+    "gemma-4-31b-it",
+    "glm-4.6",
+    "gpt-3.5-turbo",
     "gpt-3.5-turbo-instruct",
+    "gpt-5.1",
     "gpt-5.5",
     "gpt-5.6-luna",
     "gpt-5.6-sol",
-    "gpt-5.6-terra"
+    "gpt-5.6-terra",
+    "kimi-k2-0905",
+    "llama-4-maverick",
+    "mistral-medium-3",
+    "qwen3-235b-a22b-2507"
   ],
-  "family_count": 7,
+  "family_count": 16,
   "candidate_order": [
     "current_move_cap",
     "deduplicated_move_exposure_cap",
@@ -27,17 +36,17 @@
     "minimum_configurations": 30,
     "minimum_families": 8,
     "configuration_count_passed": false,
-    "family_count_passed": false,
+    "family_count_passed": true,
     "passed": false
   },
   "inputs": {
     "position_benchmark/panels/core_equal_50.json": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
-    "position_benchmark/results/core.json": "544d9de285b3bf7647542bea5d631a2c60aed44079fdae47efdd04336d173334",
+    "position_benchmark/results/core.json": "558798aadc8bbf6f8c13efee849e48474c35725b7ef64330c35979d2d7b153e0",
     "position_benchmark/panels/game_like_48.json": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
-    "position_benchmark/results/game_like.json": "dc26b9b7103f4e5d6f5dc786ffa22c790eed1f7c95037f8ee2f032e1858dea15",
+    "position_benchmark/results/game_like.json": "536a82f42210509b6a3f22dede8c4f21f71913673ba1f7e528d35d3afda090c7",
     "position_benchmark/panels/optional_blunder_25.json": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd",
     "position_benchmark/results/optional_blunder.json": "2a15100368eeb79828d11d375772d2237210a77eaa4efd77c14c6d8a3697f15b",
-    "position_benchmark/results/stability.json": "59fcfe64bb30db629897bac7f8883d09b5f84670f4ec9f0258b44a8cf49006fb",
+    "position_benchmark/results/stability.json": "7f01617d78666d4a1b285a2883ac4a1a88ad2e4fe8a426e95a0c22fd7d02e4ec",
     "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json": "844bf28016fda5a30430d962db997841550c3ae9fb4846d418ad9447299706d5",
     "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json": "520c82d4aec16324b1556edc222234f398e7cdcf4a3d7095b072a95be2473de3"
   },
@@ -49,19 +58,28 @@
       "warning": "Higher RD reduces but does not eliminate shared-prior circularity.",
       "candidates": {
         "current_move_cap": {
-          "mae": 287.26327128127605,
-          "rmse": 396.19628406186143,
-          "bias": 64.12029029893819,
+          "mae": 214.85628941364612,
+          "rmse": 314.7003822245953,
+          "bias": 65.4574949428576,
           "max_absolute_error": 1048.8136851774045,
-          "inverse_variance_weighted_mae": 531.6469104379656,
+          "inverse_variance_weighted_mae": 213.6833250178778,
           "family_mae": {
-            "deepseek-v4-flash": 101.87618720554633,
-            "gemini-3.1": 297.96777879894967,
+            "deepseek-v4-flash": 66.31867198948322,
+            "gemini-2.5": 31.694518579303974,
+            "gemini-3.1": 283.6602232980373,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 1048.8136851774045,
+            "gpt-5.1": 18.337460208910727,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
@@ -77,143 +95,188 @@
           }
         },
         "deduplicated_move_exposure_cap": {
-          "mae": 292.802772968217,
-          "rmse": 398.2350554499562,
-          "bias": 82.3943153865725,
+          "mae": 224.3315413129717,
+          "rmse": 318.5539426657391,
+          "bias": 82.20961735686508,
           "max_absolute_error": 1048.8136851774045,
-          "inverse_variance_weighted_mae": 537.0662889618718,
+          "inverse_variance_weighted_mae": 230.98896616321517,
           "family_mae": {
-            "deepseek-v4-flash": 190.5082141966027,
-            "gemini-3.1": 297.96777879894967,
+            "deepseek-v4-flash": 110.6346854850114,
+            "gemini-2.5": 208.3695447693642,
+            "gemini-3.1": 283.6602232980373,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 1048.8136851774045,
+            "gpt-5.1": 18.337460208910727,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
             "mae_delta_p05": 0.0,
-            "mae_delta_p50": 5.53950168694098,
-            "mae_delta_p95": 20.453544690243746
+            "mae_delta_p50": 8.833751309502986,
+            "mae_delta_p95": 24.092049025917248
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.3475,
-            "mae_delta_p05": -17.602033867250952,
-            "mae_delta_p50": 5.446112107314661,
-            "mae_delta_p95": 18.2740250876343
+            "probability_mae_improves": 0.1322,
+            "mae_delta_p05": -4.1324776861459895,
+            "mae_delta_p50": 9.099670629061848,
+            "mae_delta_p95": 16.752122414007488
           }
         },
         "trajectory_hazard_cap": {
-          "mae": 293.12604883028604,
-          "rmse": 398.6499260185319,
-          "bias": 82.07103952450353,
+          "mae": 223.85489471563545,
+          "rmse": 318.79733082747777,
+          "bias": 81.36351263144999,
           "max_absolute_error": 1050.426588403211,
-          "inverse_variance_weighted_mae": 537.6043323315406,
+          "inverse_variance_weighted_mae": 230.19987726463907,
           "family_mae": {
-            "deepseek-v4-flash": 190.5082141966027,
-            "gemini-3.1": 297.96777879894967,
+            "deepseek-v4-flash": 110.6346854850114,
+            "gemini-2.5": 208.3695447693642,
+            "gemini-3.1": 283.6602232980373,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 1050.426588403211,
+            "gpt-5.1": 9.078200949651489,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 273.16543931736595,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.0,
-            "mae_delta_p05": 0.1240694789082113,
-            "mae_delta_p50": 5.640308138553934,
-            "mae_delta_p95": 20.453544690243803
+            "probability_mae_improves": 0.08055,
+            "mae_delta_p05": -0.5446623093682206,
+            "mae_delta_p50": 8.163404779795627,
+            "mae_delta_p95": 23.629230856416996
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.3397,
-            "mae_delta_p05": -17.699236228160657,
-            "mae_delta_p50": 5.885262083351677,
-            "mae_delta_p95": 18.59730094970331
+            "probability_mae_improves": 0.13645,
+            "mae_delta_p05": -3.634003174182965,
+            "mae_delta_p50": 8.963316553350523,
+            "mae_delta_p95": 17.15645387088523
           }
         },
         "two_affected_trajectory_gate": {
-          "mae": 292.802772968217,
-          "rmse": 398.2350554499562,
-          "bias": 82.3943153865725,
+          "mae": 218.02171894904095,
+          "rmse": 316.1674442319979,
+          "bias": 75.89979499293433,
           "max_absolute_error": 1048.8136851774045,
-          "inverse_variance_weighted_mae": 537.0662889618718,
+          "inverse_variance_weighted_mae": 214.95159201560475,
           "family_mae": {
-            "deepseek-v4-flash": 190.5082141966027,
-            "gemini-3.1": 297.96777879894967,
+            "deepseek-v4-flash": 110.6346854850114,
+            "gemini-2.5": 31.694518579303974,
+            "gemini-3.1": 283.6602232980373,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 1048.8136851774045,
+            "gpt-5.1": 18.337460208910727,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 272.27556167554167,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
             "mae_delta_p05": 0.0,
-            "mae_delta_p50": 5.53950168694098,
-            "mae_delta_p95": 20.453544690243746
+            "mae_delta_p50": 3.056276792795046,
+            "mae_delta_p95": 9.168830378385167
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.34535,
-            "mae_delta_p05": -17.819286264854725,
-            "mae_delta_p50": 5.621551629510634,
-            "mae_delta_p95": 18.2740250876343
+            "probability_mae_improves": 0.3463,
+            "mae_delta_p05": -10.385611020867401,
+            "mae_delta_p50": 3.2424328051679936,
+            "mae_delta_p95": 10.442300050076767
           }
         },
         "repeated_forfeit_only": {
-          "mae": 226.1706408080067,
-          "rmse": 297.74964460991316,
-          "bias": 177.28278533362305,
+          "mae": 193.30513704173845,
+          "rmse": 251.78370819243034,
+          "bias": 143.48070000406662,
           "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 234.96138005978713,
+          "inverse_variance_weighted_mae": 170.04136883470179,
           "family_mae": {
-            "deepseek-v4-flash": 190.5082141966027,
-            "gemini-3.1": 297.96777879894967,
+            "deepseek-v4-flash": 110.6346854850114,
+            "gemini-2.5": 208.3695447693642,
+            "gemini-3.1": 283.6602232980373,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 22.29276027961555,
+            "gpt-5.1": 117.02485769332804,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 262.37726425914764,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.7503,
-            "mae_delta_p05": -233.11722595137593,
-            "mae_delta_p50": -58.1951212752075,
-            "mae_delta_p95": 11.079003373882045
+            "probability_mae_improves": 0.64265,
+            "mae_delta_p05": -99.43752536132212,
+            "mae_delta_p50": -18.96234619875247,
+            "mae_delta_p95": 27.290574859219248
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.99985,
-            "mae_delta_p05": -98.52254247697968,
-            "mae_delta_p50": -61.01192533730267,
-            "mae_delta_p95": -20.6655425648986
+            "probability_mae_improves": 0.9439,
+            "mae_delta_p05": -44.468315189394104,
+            "mae_delta_p50": -22.575314916174875,
+            "mae_delta_p95": 0.5556776969654607
           }
         },
         "no_hard_cap": {
-          "mae": 240.6878074553349,
-          "rmse": 317.2981511221071,
-          "bias": 191.79995198095125,
+          "mae": 201.6006608402117,
+          "rmse": 265.0763537814901,
+          "bias": 151.77622380253985,
           "max_absolute_error": 737.0231597051418,
-          "inverse_variance_weighted_mae": 260.18602783829425,
+          "inverse_variance_weighted_mae": 175.94455278202068,
           "family_mae": {
-            "deepseek-v4-flash": 190.5082141966027,
-            "gemini-3.1": 530.2424451562005,
+            "deepseek-v4-flash": 110.6346854850114,
+            "gemini-2.5": 208.3695447693642,
+            "gemini-3.1": 399.7975564766627,
+            "gemma-4-31b-it": 103.88381769943925,
+            "glm-4.6": 126.42246806178467,
+            "gpt-3.5-turbo": 193.69393072330507,
             "gpt-3.5-turbo-instruct": 22.29276027961555,
+            "gpt-5.1": 117.02485769332804,
             "gpt-5.5": 379.87170684581406,
             "gpt-5.6-luna": 262.37726425914764,
             "gpt-5.6-sol": 142.85716508267865,
-            "gpt-5.6-terra": 276.7880188599551
+            "gpt-5.6-terra": 276.7880188599551,
+            "kimi-k2-0905": 212.58852097111838,
+            "llama-4-maverick": 146.36007237005293,
+            "mistral-medium-3": 37.086606935211535,
+            "qwen3-235b-a22b-2507": 231.24508275309216
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.67735,
-            "mae_delta_p05": -212.20431394961994,
-            "mae_delta_p50": -43.886286747690235,
-            "mae_delta_p95": 41.07692558788602
+            "probability_mae_improves": 0.5988,
+            "mae_delta_p05": -93.06783247565915,
+            "mae_delta_p50": -10.496593283135411,
+            "mae_delta_p95": 38.592956139081565
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.9906,
-            "mae_delta_p05": -84.36024653814383,
-            "mae_delta_p50": -46.47208221852543,
-            "mae_delta_p95": -6.517732867419738
+            "probability_mae_improves": 0.8207,
+            "mae_delta_p05": -35.6744170558344,
+            "mae_delta_p50": -14.478914568324598,
+            "mae_delta_p95": 8.744570402183967
           }
         }
       }
@@ -223,19 +286,28 @@
       "warning": "Independent of the position prior but noisier for low-game configurations.",
       "candidates": {
         "current_move_cap": {
-          "mae": 339.3472380437082,
-          "rmse": 427.55539905715534,
-          "bias": 22.585140464215417,
+          "mae": 273.31664591538,
+          "rmse": 373.0897072917273,
+          "bias": 10.027443677918283,
           "max_absolute_error": 1050.1228755181442,
-          "inverse_variance_weighted_mae": 566.1876405804935,
+          "inverse_variance_weighted_mae": 219.73556380169828,
           "family_mae": {
-            "deepseek-v4-flash": 412.91391527765654,
-            "gemini-3.1": 300.71361145191736,
+            "deepseek-v4-flash": 632.5931359010367,
+            "gemini-2.5": 28.53056187245255,
+            "gemini-3.1": 279.16761799622884,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 1050.1228755181442,
+            "gpt-5.1": 28.84198479029999,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
             "probability_mae_improves": 0.0,
@@ -251,143 +323,188 @@
           }
         },
         "deduplicated_move_exposure_cap": {
-          "mae": 321.0732129560739,
-          "rmse": 415.9993517491881,
-          "bias": 40.85916555184973,
+          "mae": 269.18416822923393,
+          "rmse": 367.5600453343457,
+          "bias": 26.779566091925755,
           "max_absolute_error": 1050.1228755181442,
-          "inverse_variance_weighted_mae": 561.1688231618775,
+          "inverse_variance_weighted_mae": 234.79356735005538,
           "family_mae": {
-            "deepseek-v4-flash": 120.52951387550752,
-            "gemini-3.1": 300.71361145191736,
+            "deepseek-v4-flash": 486.40093519996213,
+            "gemini-2.5": 205.2055880625128,
+            "gemini-3.1": 279.16761799622884,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 1050.1228755181442,
+            "gpt-5.1": 28.84198479029999,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.6618,
-            "mae_delta_p05": -67.47332340049593,
-            "mae_delta_p50": -18.2740250876343,
-            "mae_delta_p95": 0.0
+            "probability_mae_improves": 0.5419,
+            "mae_delta_p05": -25.424730556708653,
+            "mae_delta_p50": -3.732560490712501,
+            "mae_delta_p95": 14.72291884917172
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.8885,
-            "mae_delta_p05": -18.274025087634357,
-            "mae_delta_p50": -18.2740250876343,
-            "mae_delta_p95": 11.322499099201991
+            "probability_mae_improves": 0.8067,
+            "mae_delta_p05": -6.8335606694582225,
+            "mae_delta_p50": -4.132477686146046,
+            "mae_delta_p95": 12.05764972997548
           }
         },
         "trajectory_hazard_cap": {
-          "mae": 321.39648881814287,
-          "rmse": 416.4006764516218,
-          "bias": 40.535889689780774,
+          "mae": 268.7075216318977,
+          "rmse": 367.75687485029596,
+          "bias": 25.93346136651069,
           "max_absolute_error": 1051.7357787439505,
-          "inverse_variance_weighted_mae": 561.7196957713087,
+          "inverse_variance_weighted_mae": 234.0584574486579,
           "family_mae": {
-            "deepseek-v4-flash": 120.52951387550752,
-            "gemini-3.1": 300.71361145191736,
+            "deepseek-v4-flash": 486.40093519996213,
+            "gemini-2.5": 205.2055880625128,
+            "gemini-3.1": 279.16761799622884,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 1051.7357787439505,
+            "gpt-5.1": 19.58272553104075,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 330.1916981894922,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.6595,
-            "mae_delta_p05": -67.07544541641101,
-            "mae_delta_p50": -17.829086266722186,
-            "mae_delta_p95": 0.5457452725250391
+            "probability_mae_improves": 0.63195,
+            "mae_delta_p05": -26.612977297251945,
+            "mae_delta_p50": -4.0053523087426015,
+            "mae_delta_p95": 14.40541477596122
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.8843,
-            "mae_delta_p05": -18.39568804647746,
-            "mae_delta_p50": -17.950749225565346,
-            "mae_delta_p95": 11.946647836166392
+            "probability_mae_improves": 0.8022,
+            "mae_delta_p05": -7.069669980775302,
+            "mae_delta_p50": -4.609124283482231,
+            "mae_delta_p95": 12.056148025232801
           }
         },
         "two_affected_trajectory_gate": {
-          "mae": 321.0732129560739,
-          "rmse": 415.9993517491881,
-          "bias": 40.85916555184973,
+          "mae": 262.8743458653032,
+          "rmse": 365.5482913926251,
+          "bias": 20.46974372799503,
           "max_absolute_error": 1050.1228755181442,
-          "inverse_variance_weighted_mae": 561.1688231618775,
+          "inverse_variance_weighted_mae": 218.5932977693951,
           "family_mae": {
-            "deepseek-v4-flash": 120.52951387550752,
-            "gemini-3.1": 300.71361145191736,
+            "deepseek-v4-flash": 486.40093519996213,
+            "gemini-2.5": 28.53056187245255,
+            "gemini-3.1": 279.16761799622884,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 1050.1228755181442,
+            "gpt-5.1": 28.84198479029999,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 329.30182054766794,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.66045,
-            "mae_delta_p05": -67.47332340049593,
-            "mae_delta_p50": -18.2740250876343,
+            "probability_mae_improves": 0.6435,
+            "mae_delta_p05": -30.24666221401543,
+            "mae_delta_p50": -10.082220738005134,
             "mae_delta_p95": 0.0
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.8909,
-            "mae_delta_p05": -18.274025087634357,
-            "mae_delta_p50": -18.2740250876343,
-            "mae_delta_p95": 11.241216475391184
+            "probability_mae_improves": 0.89135,
+            "mae_delta_p05": -10.442300050076767,
+            "mae_delta_p50": -10.44230005007671,
+            "mae_delta_p95": 6.420433698273968
           }
         },
         "repeated_forfeit_only": {
-          "mae": 253.54359263104328,
-          "rmse": 320.1716307589794,
-          "bias": 135.74763549890028,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 255.0924467734222,
+          "mae": 237.64491357810337,
+          "rmse": 311.130953122918,
+          "bias": 88.05064873912731,
+          "max_absolute_error": 852.2723565244168,
+          "inverse_variance_weighted_mae": 174.3028818251496,
           "family_mae": {
-            "deepseek-v4-flash": 120.52951387550752,
-            "gemini-3.1": 300.71361145191736,
+            "deepseek-v4-flash": 486.40093519996213,
+            "gemini-2.5": 205.2055880625128,
+            "gemini-3.1": 279.16761799622884,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 23.601950620355183,
+            "gpt-5.1": 127.5293822747173,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 315.8135704719926,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.9775,
-            "mae_delta_p05": -263.7810652599876,
-            "mae_delta_p50": -78.96314806906068,
-            "mae_delta_p95": -3.372062518918824
+            "probability_mae_improves": 0.8028,
+            "mae_delta_p05": -117.27292647534486,
+            "mae_delta_p50": -31.23507101781192,
+            "mae_delta_p95": 16.400698027538994
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 1.0,
-            "mae_delta_p05": -113.16249503468487,
-            "mae_delta_p50": -79.55389500292154,
-            "mae_delta_p95": -42.98562094918242
+            "probability_mae_improves": 0.99165,
+            "mae_delta_p05": -51.4387323660344,
+            "mae_delta_p50": -33.213524405437454,
+            "mae_delta_p95": -12.013014153575796
           }
         },
         "no_hard_cap": {
-          "mae": 268.06075927837145,
-          "rmse": 338.54521471062,
-          "bias": 150.26480214622848,
-          "max_absolute_error": 768.0711437894142,
-          "inverse_variance_weighted_mae": 279.7595041742034,
+          "mae": 245.94043737657663,
+          "rmse": 322.0535108555298,
+          "bias": 96.34617253760055,
+          "max_absolute_error": 852.2723565244168,
+          "inverse_variance_weighted_mae": 179.917021459174,
           "family_mae": {
-            "deepseek-v4-flash": 120.52951387550752,
-            "gemini-3.1": 532.9882778091682,
+            "deepseek-v4-flash": 486.40093519996213,
+            "gemini-2.5": 205.2055880625128,
+            "gemini-3.1": 395.30495117485424,
+            "gemma-4-31b-it": 102.2984961488259,
+            "glm-4.6": 114.7768710763164,
+            "gpt-3.5-turbo": 193.6365843151529,
             "gpt-3.5-turbo-instruct": 23.601950620355183,
+            "gpt-5.1": 127.5293822747173,
             "gpt-5.5": 403.97651252777234,
             "gpt-5.6-luna": 315.8135704719926,
             "gpt-5.6-sol": 153.30024239421255,
-            "gpt-5.6-terra": 332.85516053907986
+            "gpt-5.6-terra": 332.85516053907986,
+            "kimi-k2-0905": 207.71165747897697,
+            "llama-4-maverick": 140.6073702363006,
+            "mistral-medium-3": 42.05806962356394,
+            "qwen3-235b-a22b-2507": 226.11271553416094
           },
           "family_bootstrap": {
-            "probability_mae_improves": 0.87545,
-            "mae_delta_p05": -245.66350077238206,
-            "mae_delta_p50": -65.70998215004158,
-            "mae_delta_p95": 16.211060550413606
+            "probability_mae_improves": 0.721,
+            "mae_delta_p05": -108.78383810570264,
+            "mae_delta_p50": -23.415483007636936,
+            "mae_delta_p95": 28.427553491853615
           },
           "rating_uncertainty": {
-            "probability_mae_improves": 0.9984,
-            "mae_delta_p05": -98.6453283873567,
-            "mae_delta_p50": -65.42528079524402,
-            "mae_delta_p95": -28.219345359683416
+            "probability_mae_improves": 0.97105,
+            "mae_delta_p05": -43.235247714528384,
+            "mae_delta_p50": -25.401502527625667,
+            "mae_delta_p95": -3.841282639218207
           }
         }
       }
@@ -401,11 +518,11 @@
         "prediction_before": 803,
         "prediction_after": 547,
         "actual_rating": 368,
-        "repeated_forfeit_only_prediction": 575.0,
-        "forfeits": 2,
+        "repeated_forfeit_only_prediction": 803.0,
+        "forfeits": 1,
         "absolute_errors": {
           "current_historical_cap": 179.0,
-          "repeated_forfeit_only": 207.0,
+          "repeated_forfeit_only": 435.0,
           "no_hard_cap": 435.0
         }
       },
@@ -438,47 +555,86 @@
     ],
     "mae": {
       "current_historical_cap": 107.33333333333333,
-      "repeated_forfeit_only": 222.66666666666666,
+      "repeated_forfeit_only": 298.6666666666667,
       "no_hard_cap": 399.3333333333333
     }
   },
   "rows": [
     {
-      "player_id": "gemini-3.1-flash-lite-preview",
-      "family": "gemini-3.1",
+      "player_id": "gemini-2.5-flash (no thinking)",
+      "family": "gemini-2.5",
       "score_depth": 30,
-      "current_cap": 500.0,
-      "hazard_cap": 500.0,
-      "deduplicated_cap": 500.0,
-      "deduplicated_catastrophe_pct": 0.0,
+      "current_cap": 460.7142857142857,
+      "hazard_cap": 511.0,
+      "deduplicated_cap": 517.8571428571429,
+      "deduplicated_catastrophe_pct": 7.142857142857143,
       "attempted_positions": 8,
-      "scored_moves": 26,
-      "catastrophe_positions": 0,
-      "forfeit_positions": 2,
-      "affected_positions": 2,
-      "catastrophe_episodes": 0,
-      "at_risk_moves": 26,
-      "raw_catastrophe_moves": 0,
-      "catastrophe_hazard_pct": 0.0,
-      "forfeit_pct": 25.0,
+      "scored_moves": 28,
+      "catastrophe_positions": 2,
+      "forfeit_positions": 1,
+      "affected_positions": 3,
+      "catastrophe_episodes": 2,
+      "at_risk_moves": 25,
+      "raw_catastrophe_moves": 4,
+      "catastrophe_hazard_pct": 8.0,
+      "forfeit_pct": 12.5,
       "candidates": {
-        "current_move_cap": 500.0,
-        "trajectory_hazard_cap": 500.0,
-        "deduplicated_move_exposure_cap": 500.0,
-        "two_affected_trajectory_gate": 500.0,
-        "repeated_forfeit_only": 500.0,
-        "no_hard_cap": 732.2746663572508
+        "current_move_cap": 460.7142857142857,
+        "trajectory_hazard_cap": 637.389311904346,
+        "deduplicated_move_exposure_cap": 637.389311904346,
+        "two_affected_trajectory_gate": 460.7142857142857,
+        "repeated_forfeit_only": 637.389311904346,
+        "no_hard_cap": 637.389311904346
       },
       "targets": {
         "rd300": {
-          "rating": 202.03222120105033,
-          "rd": 85.04510594894847,
-          "games": 20
+          "rating": 429.01976713498175,
+          "rd": 45.0,
+          "games": 287
         },
         "no_position": {
-          "rating": 199.28638854808264,
-          "rd": 87.64867793634266,
-          "games": 20
+          "rating": 432.18372384183317,
+          "rd": 45.0,
+          "games": 287
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.1 (no thinking)",
+      "family": "gpt-5.1",
+      "score_depth": 30,
+      "current_cap": 550.0,
+      "hazard_cap": 531.4814814814815,
+      "deduplicated_cap": 550.0,
+      "deduplicated_catastrophe_pct": 12.5,
+      "attempted_positions": 8,
+      "scored_moves": 32,
+      "catastrophe_positions": 4,
+      "forfeit_positions": 0,
+      "affected_positions": 4,
+      "catastrophe_episodes": 4,
+      "at_risk_moves": 27,
+      "raw_catastrophe_moves": 4,
+      "catastrophe_hazard_pct": 14.814814814814815,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 550.0,
+        "trajectory_hazard_cap": 531.4814814814815,
+        "deduplicated_move_exposure_cap": 550.0,
+        "two_affected_trajectory_gate": 550.0,
+        "repeated_forfeit_only": 747.3747949688346,
+        "no_hard_cap": 747.3747949688346
+      },
+      "targets": {
+        "rd300": {
+          "rating": 515.1933172459765,
+          "rd": 60.99344166871476,
+          "games": 59
+        },
+        "no_position": {
+          "rating": 505.84310463869963,
+          "rd": 63.21455731531411,
+          "games": 59
         }
       }
     },
@@ -1029,6 +1185,45 @@
       }
     },
     {
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "family": "gemini-3.1",
+      "score_depth": 30,
+      "current_cap": 500.0,
+      "hazard_cap": 500.0,
+      "deduplicated_cap": 500.0,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 26,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 2,
+      "affected_positions": 2,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 26,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 25.0,
+      "candidates": {
+        "current_move_cap": 500.0,
+        "trajectory_hazard_cap": 500.0,
+        "deduplicated_move_exposure_cap": 500.0,
+        "two_affected_trajectory_gate": 500.0,
+        "repeated_forfeit_only": 500.0,
+        "no_hard_cap": 732.2746663572508
+      },
+      "targets": {
+        "rd300": {
+          "rating": 202.03222120105033,
+          "rd": 85.04510594894847,
+          "games": 20
+        },
+        "no_position": {
+          "rating": 199.28638854808264,
+          "rd": 87.64867793634266,
+          "games": 20
+        }
+      }
+    },
+    {
       "player_id": "gpt-3.5-turbo-instruct",
       "family": "gpt-3.5-turbo-instruct",
       "score_depth": 30,
@@ -1064,6 +1259,396 @@
           "rating": 1650.1228755181442,
           "rd": 52.40154672592653,
           "games": 116
+        }
+      }
+    },
+    {
+      "player_id": "gemma-4-31b-it (no thinking)",
+      "family": "gemma-4-31b-it",
+      "score_depth": 30,
+      "current_cap": 232.89473684210526,
+      "hazard_cap": 232.89473684210526,
+      "deduplicated_cap": 232.89473684210526,
+      "deduplicated_catastrophe_pct": 5.2631578947368425,
+      "attempted_positions": 8,
+      "scored_moves": 19,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 5,
+      "affected_positions": 5,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 19,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 5.2631578947368425,
+      "forfeit_pct": 62.5,
+      "candidates": {
+        "current_move_cap": 121.73931742018107,
+        "trajectory_hazard_cap": 121.73931742018107,
+        "deduplicated_move_exposure_cap": 121.73931742018107,
+        "two_affected_trajectory_gate": 121.73931742018107,
+        "repeated_forfeit_only": 121.73931742018107,
+        "no_hard_cap": 121.73931742018107
+      },
+      "targets": {
+        "rd300": {
+          "rating": 17.85549972074182,
+          "rd": 235.65137298894055,
+          "games": 4
+        },
+        "no_position": {
+          "rating": 19.440821271355162,
+          "rd": 235.24522390202011,
+          "games": 4
+        }
+      }
+    },
+    {
+      "player_id": "qwen3-235b-a22b-2507",
+      "family": "qwen3-235b-a22b-2507",
+      "score_depth": 30,
+      "current_cap": 105.88235294117646,
+      "hazard_cap": 150.0,
+      "deduplicated_cap": 152.94117647058823,
+      "deduplicated_catastrophe_pct": 5.882352941176471,
+      "attempted_positions": 8,
+      "scored_moves": 17,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 6,
+      "affected_positions": 6,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 16,
+      "raw_catastrophe_moves": 2,
+      "catastrophe_hazard_pct": 6.25,
+      "forfeit_pct": 75.0,
+      "candidates": {
+        "current_move_cap": 27.136199235534086,
+        "trajectory_hazard_cap": 27.136199235534086,
+        "deduplicated_move_exposure_cap": 27.136199235534086,
+        "two_affected_trajectory_gate": 27.136199235534086,
+        "repeated_forfeit_only": 27.136199235534086,
+        "no_hard_cap": 27.136199235534086
+      },
+      "targets": {
+        "rd300": {
+          "rating": -204.10888351755807,
+          "rd": 71.60062077269804,
+          "games": 50
+        },
+        "no_position": {
+          "rating": -198.97651629862685,
+          "rd": 71.14141277724164,
+          "games": 50
+        }
+      }
+    },
+    {
+      "player_id": "llama-4-maverick",
+      "family": "llama-4-maverick",
+      "score_depth": 30,
+      "current_cap": 315.2173913043478,
+      "hazard_cap": 311.9047619047619,
+      "deduplicated_cap": 315.2173913043478,
+      "deduplicated_catastrophe_pct": 4.3478260869565215,
+      "attempted_positions": 8,
+      "scored_moves": 23,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 4,
+      "affected_positions": 5,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 21,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 4.761904761904762,
+      "forfeit_pct": 50.0,
+      "candidates": {
+        "current_move_cap": 59.08074880051804,
+        "trajectory_hazard_cap": 59.08074880051804,
+        "deduplicated_move_exposure_cap": 59.08074880051804,
+        "two_affected_trajectory_gate": 59.08074880051804,
+        "repeated_forfeit_only": 59.08074880051804,
+        "no_hard_cap": 59.08074880051804
+      },
+      "targets": {
+        "rd300": {
+          "rating": -87.27932356953488,
+          "rd": 45.0,
+          "games": 392
+        },
+        "no_position": {
+          "rating": -81.52662143578254,
+          "rd": 45.0,
+          "games": 392
+        }
+      }
+    },
+    {
+      "player_id": "mistral-medium-3",
+      "family": "mistral-medium-3",
+      "score_depth": 30,
+      "current_cap": 200.0,
+      "hazard_cap": 200.0,
+      "deduplicated_cap": 200.0,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 11,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 6,
+      "affected_positions": 6,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 11,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 75.0,
+      "candidates": {
+        "current_move_cap": -215.64707306044227,
+        "trajectory_hazard_cap": -215.64707306044227,
+        "deduplicated_move_exposure_cap": -215.64707306044227,
+        "two_affected_trajectory_gate": -215.64707306044227,
+        "repeated_forfeit_only": -215.64707306044227,
+        "no_hard_cap": -215.64707306044227
+      },
+      "targets": {
+        "rd300": {
+          "rating": -178.56046612523073,
+          "rd": 45.0,
+          "games": 279
+        },
+        "no_position": {
+          "rating": -173.58900343687833,
+          "rd": 45.0,
+          "games": 279
+        }
+      }
+    },
+    {
+      "player_id": "kimi-k2-0905",
+      "family": "kimi-k2-0905",
+      "score_depth": 30,
+      "current_cap": 360.8695652173913,
+      "hazard_cap": 380.0,
+      "deduplicated_cap": 395.6521739130435,
+      "deduplicated_catastrophe_pct": 13.043478260869565,
+      "attempted_positions": 8,
+      "scored_moves": 23,
+      "catastrophe_positions": 3,
+      "forfeit_positions": 2,
+      "affected_positions": 5,
+      "catastrophe_episodes": 3,
+      "at_risk_moves": 20,
+      "raw_catastrophe_moves": 4,
+      "catastrophe_hazard_pct": 15.0,
+      "forfeit_pct": 25.0,
+      "candidates": {
+        "current_move_cap": 104.3658549416338,
+        "trajectory_hazard_cap": 104.3658549416338,
+        "deduplicated_move_exposure_cap": 104.3658549416338,
+        "two_affected_trajectory_gate": 104.3658549416338,
+        "repeated_forfeit_only": 104.3658549416338,
+        "no_hard_cap": 104.3658549416338
+      },
+      "targets": {
+        "rd300": {
+          "rating": -108.22266602948457,
+          "rd": 45.0,
+          "games": 277
+        },
+        "no_position": {
+          "rating": -103.34580253734316,
+          "rd": 45.0,
+          "games": 277
+        }
+      }
+    },
+    {
+      "player_id": "gpt-3.5-turbo",
+      "family": "gpt-3.5-turbo",
+      "score_depth": 30,
+      "current_cap": -75.0,
+      "hazard_cap": -141.66666666666669,
+      "deduplicated_cap": -75.0,
+      "deduplicated_catastrophe_pct": 25.0,
+      "attempted_positions": 8,
+      "scored_moves": 4,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 7,
+      "affected_positions": 8,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 3,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 33.333333333333336,
+      "forfeit_pct": 87.5,
+      "candidates": {
+        "current_move_cap": -299.392337372786,
+        "trajectory_hazard_cap": -299.392337372786,
+        "deduplicated_move_exposure_cap": -299.392337372786,
+        "two_affected_trajectory_gate": -299.392337372786,
+        "repeated_forfeit_only": -299.392337372786,
+        "no_hard_cap": -299.392337372786
+      },
+      "targets": {
+        "rd300": {
+          "rating": -493.0862680960911,
+          "rd": 45.0,
+          "games": 299
+        },
+        "no_position": {
+          "rating": -493.0289216879389,
+          "rd": 45.0,
+          "games": 299
+        }
+      }
+    },
+    {
+      "player_id": "deepseek-v4-flash (no thinking)",
+      "family": "deepseek-v4-flash",
+      "score_depth": 30,
+      "current_cap": 146.66666666666666,
+      "hazard_cap": 146.66666666666666,
+      "deduplicated_cap": 146.66666666666666,
+      "deduplicated_catastrophe_pct": 6.666666666666667,
+      "attempted_positions": 8,
+      "scored_moves": 15,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 6,
+      "affected_positions": 6,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 15,
+      "raw_catastrophe_moves": 1,
+      "catastrophe_hazard_pct": 6.666666666666667,
+      "forfeit_pct": 75.0,
+      "candidates": {
+        "current_move_cap": -47.88090555363361,
+        "trajectory_hazard_cap": -47.88090555363361,
+        "deduplicated_move_exposure_cap": -47.88090555363361,
+        "two_affected_trajectory_gate": -47.88090555363361,
+        "repeated_forfeit_only": -47.88090555363361,
+        "no_hard_cap": -47.88090555363361
+      },
+      "targets": {
+        "rd300": {
+          "rating": -78.64206232705374,
+          "rd": 311.0109435189078,
+          "games": 1
+        },
+        "no_position": {
+          "rating": 804.3914509707831,
+          "rd": 348.7236248555165,
+          "games": 1
+        }
+      }
+    },
+    {
+      "player_id": "gemini-3.1-pro-preview (medium)",
+      "family": "gemini-3.1",
+      "score_depth": 30,
+      "current_cap": null,
+      "hazard_cap": null,
+      "deduplicated_cap": null,
+      "deduplicated_catastrophe_pct": 0.0,
+      "attempted_positions": 8,
+      "scored_moves": 31,
+      "catastrophe_positions": 0,
+      "forfeit_positions": 0,
+      "affected_positions": 0,
+      "catastrophe_episodes": 0,
+      "at_risk_moves": 31,
+      "raw_catastrophe_moves": 0,
+      "catastrophe_hazard_pct": 0.0,
+      "forfeit_pct": 0.0,
+      "candidates": {
+        "current_move_cap": 1801.5618012321338,
+        "trajectory_hazard_cap": 1801.5618012321338,
+        "deduplicated_move_exposure_cap": 1801.5618012321338,
+        "two_affected_trajectory_gate": 1801.5618012321338,
+        "repeated_forfeit_only": 1801.5618012321338,
+        "no_hard_cap": 1801.5618012321338
+      },
+      "targets": {
+        "rd300": {
+          "rating": 2070.9144690292587,
+          "rd": 67.71590343090078,
+          "games": 45
+        },
+        "no_position": {
+          "rating": 2059.183425772674,
+          "rd": 66.09887259093765,
+          "games": 45
+        }
+      }
+    },
+    {
+      "player_id": "glm-4.6 (no thinking)",
+      "family": "glm-4.6",
+      "score_depth": 30,
+      "current_cap": 115.78947368421052,
+      "hazard_cap": 155.55555555555554,
+      "deduplicated_cap": 157.89473684210526,
+      "deduplicated_catastrophe_pct": 5.2631578947368425,
+      "attempted_positions": 8,
+      "scored_moves": 19,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 6,
+      "affected_positions": 6,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 18,
+      "raw_catastrophe_moves": 2,
+      "catastrophe_hazard_pct": 5.555555555555555,
+      "forfeit_pct": 75.0,
+      "candidates": {
+        "current_move_cap": -118.15985973525814,
+        "trajectory_hazard_cap": -118.15985973525814,
+        "deduplicated_move_exposure_cap": -118.15985973525814,
+        "two_affected_trajectory_gate": -118.15985973525814,
+        "repeated_forfeit_only": -118.15985973525814,
+        "no_hard_cap": -118.15985973525814
+      },
+      "targets": {
+        "rd300": {
+          "rating": -244.5823277970428,
+          "rd": 45.0,
+          "games": 269
+        },
+        "no_position": {
+          "rating": -232.93673081157453,
+          "rd": 45.0,
+          "games": 269
+        }
+      }
+    },
+    {
+      "player_id": "gpt-5.1-chat",
+      "family": "gpt-5.1",
+      "score_depth": 30,
+      "current_cap": 519.8275862068965,
+      "hazard_cap": 546.4285714285714,
+      "deduplicated_cap": 547.4137931034483,
+      "deduplicated_catastrophe_pct": 3.4482758620689653,
+      "attempted_positions": 8,
+      "scored_moves": 29,
+      "catastrophe_positions": 1,
+      "forfeit_positions": 1,
+      "affected_positions": 2,
+      "catastrophe_episodes": 1,
+      "at_risk_moves": 28,
+      "raw_catastrophe_moves": 2,
+      "catastrophe_hazard_pct": 3.5714285714285716,
+      "forfeit_pct": 12.5,
+      "candidates": {
+        "current_move_cap": 578.6908715020867,
+        "trajectory_hazard_cap": 578.6908715020867,
+        "deduplicated_move_exposure_cap": 578.6908715020867,
+        "two_affected_trajectory_gate": 578.6908715020867,
+        "repeated_forfeit_only": 578.6908715020867,
+        "no_hard_cap": 578.6908715020867
+      },
+      "targets": {
+        "rd300": {
+          "rating": 576.8226338382888,
+          "rd": 45.0,
+          "games": 293
+        },
+        "no_position": {
+          "rating": 565.1637972827871,
+          "rd": 45.0,
+          "games": 293
         }
       }
     }

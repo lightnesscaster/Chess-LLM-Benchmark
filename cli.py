@@ -275,6 +275,8 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
     reasoning_ids = set()
 
     for llm_cfg in config.get("llms", []):
+        if llm_cfg.get("unavailable") is True:
+            continue
         if api_backend == "codex" and llm_cfg.get("api") != "codex":
             continue
 

@@ -41,6 +41,7 @@ position_benchmark/results/*.failures.json
 
 # Generated analysis caches
 data/*_cache/
+data/acquisition_cohort/
 
 # Position benchmark experiment artifacts
 position_benchmark/common_reached_*.json

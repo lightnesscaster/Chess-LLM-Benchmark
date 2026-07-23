@@ -69,6 +69,12 @@ AD_HOC_PLAYER_HINTS = {
         "unavailable": True,
         "availability_note": "deprecated; OpenRouter reports xAI recommends switching to Grok 4.3",
     },
+    "mimo-v2-flash (no thinking)": {
+        "model_name": "xiaomi/mimo-v2-flash",
+        "api": "openrouter",
+        "unavailable": True,
+        "availability_note": "OpenRouter returned API failures for all 50 acquisition-core positions",
+    },
 }
 
 

@@ -58,6 +58,8 @@ def selected_llm_configs(
     """Return the same normalized LLM configuration set selected by ``cli.py run``."""
     selected: dict[str, dict[str, Any]] = {}
     for raw in config.get("llms", []):
+        if raw.get("unavailable") is True:
+            continue
         if api_backend == "codex" and raw.get("api") != "codex":
             continue
         player_id = resolve_player_id(raw["player_id"], raw.get("reasoning_effort"))

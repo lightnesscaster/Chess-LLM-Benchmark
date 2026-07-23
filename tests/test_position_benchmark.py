@@ -604,7 +604,13 @@ class ProductionContractTests(unittest.TestCase):
         self.assertLessEqual(set(legacy_results), set(core_results))
         rerun_after_migration = {
             "deepseek-v4-flash (max)",
+            "gemma-4-31b-it (no thinking)",
+            "gpt-3.5-turbo",
             "gpt-5.5 (xhigh)",
+            "kimi-k2-0905",
+            "llama-4-maverick",
+            "mistral-medium-3",
+            "qwen3-235b-a22b-2507",
         }
         for player_id, legacy_data in legacy_results.items():
             if player_id in rerun_after_migration:
@@ -1534,7 +1540,12 @@ class PredictionMetricTests(unittest.TestCase):
 
 class AvailabilityHintTests(unittest.TestCase):
     def test_deprecated_or_no_endpoint_models_are_not_actionable_reruns(self) -> None:
-        for player_id in ["gemini-2.0-flash-001", "grok-4-fast", "grok-4.1-fast"]:
+        for player_id in [
+            "gemini-2.0-flash-001",
+            "grok-4-fast",
+            "grok-4.1-fast",
+            "mimo-v2-flash (no thinking)",
+        ]:
             self.assertIn(player_id, UNAVAILABLE_PLAYER_IDS)
             self.assertTrue(AD_HOC_PLAYER_HINTS[player_id]["unavailable"])
 

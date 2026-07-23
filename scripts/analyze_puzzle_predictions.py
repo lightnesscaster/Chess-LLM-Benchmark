@@ -47,6 +47,7 @@ UNAVAILABLE_PLAYER_IDS = {
     "gemini-2.0-flash-001": "OpenRouter returned no endpoints for google/gemini-2.0-flash-001",
     "grok-4-fast": "deprecated; OpenRouter reports xAI recommends switching to Grok 4.3",
     "grok-4.1-fast": "deprecated; OpenRouter reports xAI recommends switching to Grok 4.3",
+    "mimo-v2-flash (no thinking)": "OpenRouter returned API failures for all 50 acquisition-core positions",
 }
 
 
