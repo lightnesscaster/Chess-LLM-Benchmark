@@ -3,17 +3,17 @@
 This zero-call audit evaluates the corrected depth-30 continuation artifacts. It
 did not write the production rating store. The accompanying predictor change only
 deduplicates catastrophe events within each trajectory. The cohort has
-28 configurations across
-16 model-line families.
+30 configurations across
+17 model-line families.
 
 ## Result
 
-No hard-cap redesign is validated for production. The two game-rating targets
-disagree: removing the hard cap helps the independent no-position-seed target but
-slightly hurts the higher-RD position-seeded target. Neither direction is robust
-under family resampling and rating uncertainty. The inherited evidence gate needs
-at least 30 configurations and
-8 families; both coverage checks fail.
+The acquisition gate now passes: it requires at least
+30 configurations and
+8 families, and this cohort contains
+30 configurations across
+17 families. Passing that gate makes a redesign eligible
+for review; it is not by itself an acceptance criterion.
 
 The current move-level catastrophe count is structurally wrong for an absorbing
 loss: repeated losing moves in one continuation are correlated and must not be
@@ -24,34 +24,56 @@ and therefore never make a cap harsher. This correction fits no target data.
 `trajectory_hazard_cap` additionally censors later exposures; that more ambitious
 survival-style redesign remains diagnostic rather than validated rating evidence.
 
-The production change is limited to deduplicating catastrophes within each
-trajectory. Existing cap constants, the 150-Elo deadband, continuation legality,
-and forfeit evidence remain unchanged. Any coefficient refit, complete CPL-cap
-removal, or survival-hazard redesign remains blocked until a newly frozen cohort
-passes the evidence gate.
+`repeated_forfeit_only` is the leading fixed redesign. Its MAE is lower than the current cap
+on both targets, but its family-bootstrap improvement probabilities are only
+0.644 (RD-300) and
+0.796
+(no-position), and both family-bootstrap intervals cross zero. Only
+5 configurations receive a different
+prediction. The apparent gain is highly dependent on `gpt-3.5-turbo-instruct`:
+excluding that family changes the candidate-minus-current MAE delta to
++14.6 Elo
+on RD-300 and
++1.0
+Elo on no-position, so the candidate becomes slightly worse.
+
+Lab-level dependence is stronger still. Excluding `openai` changes the
+candidate-minus-current MAE delta to
++20.4 Elo on
+RD-300 and
+-8.9
+Elo on no-position. The lab-bootstrap improvement probabilities are
+0.653 and
+0.856,
+respectively.
+
+Accordingly, the production decision is **hold**. Keep the already deployed
+within-trajectory catastrophe deduplication, but do not replace the remaining CPL
+cap with `repeated_forfeit_only` on this cohort. Existing cap constants, the 150-Elo deadband,
+continuation legality, and forfeit evidence remain unchanged.
 
 ## Current depth-30 comparison
 
 ### Position-seeded validation ratings with RD 300
 
-| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | RD simulation P(improves) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `current_move_cap` | 214.9 | 314.7 | +65.5 | 213.7 | 0.000 | 0.000 |
-| `deduplicated_move_exposure_cap` | 224.3 | 318.6 | +82.2 | 231.0 | 0.000 | 0.132 |
-| `trajectory_hazard_cap` | 223.9 | 318.8 | +81.4 | 230.2 | 0.081 | 0.136 |
-| `two_affected_trajectory_gate` | 218.0 | 316.2 | +75.9 | 215.0 | 0.000 | 0.346 |
-| `repeated_forfeit_only` | 193.3 | 251.8 | +143.5 | 170.0 | 0.643 | 0.944 |
-| `no_hard_cap` | 201.6 | 265.1 | +151.8 | 175.9 | 0.599 | 0.821 |
+| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | Lab bootstrap P(improves) | RD simulation P(improves) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `current_move_cap` | 227.3 | 322.2 | +34.3 | 214.5 | 0.000 | 0.000 | 0.000 |
+| `deduplicated_move_exposure_cap` | 236.2 | 325.7 | +49.9 | 231.7 | 0.000 | 0.000 | 0.135 |
+| `trajectory_hazard_cap` | 235.7 | 325.9 | +49.1 | 230.9 | 0.082 | 0.079 | 0.137 |
+| `two_affected_trajectory_gate` | 230.3 | 323.5 | +44.0 | 215.7 | 0.000 | 0.000 | 0.348 |
+| `repeated_forfeit_only` | 207.2 | 265.6 | +107.1 | 171.0 | 0.644 | 0.653 | 0.945 |
+| `no_hard_cap` | 215.0 | 277.4 | +114.8 | 176.9 | 0.592 | 0.588 | 0.826 |
 ### No-position-seed game ratings
 
-| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | RD simulation P(improves) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `current_move_cap` | 273.3 | 373.1 | +10.0 | 219.7 | 0.000 | 0.000 |
-| `deduplicated_move_exposure_cap` | 269.2 | 367.6 | +26.8 | 234.8 | 0.542 | 0.807 |
-| `trajectory_hazard_cap` | 268.7 | 367.8 | +25.9 | 234.1 | 0.632 | 0.802 |
-| `two_affected_trajectory_gate` | 262.9 | 365.5 | +20.5 | 218.6 | 0.643 | 0.891 |
-| `repeated_forfeit_only` | 237.6 | 311.1 | +88.1 | 174.3 | 0.803 | 0.992 |
-| `no_hard_cap` | 245.9 | 322.1 | +96.3 | 179.9 | 0.721 | 0.971 |
+| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | Lab bootstrap P(improves) | RD simulation P(improves) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `current_move_cap` | 282.6 | 376.5 | +3.9 | 220.6 | 0.000 | 0.000 | 0.000 |
+| `deduplicated_move_exposure_cap` | 278.8 | 371.4 | +19.5 | 235.6 | 0.541 | 0.553 | 0.808 |
+| `trajectory_hazard_cap` | 278.3 | 371.6 | +18.7 | 234.9 | 0.622 | 0.627 | 0.803 |
+| `two_affected_trajectory_gate` | 272.9 | 369.5 | +13.6 | 219.5 | 0.644 | 0.657 | 0.888 |
+| `repeated_forfeit_only` | 249.3 | 319.6 | +76.7 | 175.4 | 0.796 | 0.856 | 0.992 |
+| `no_hard_cap` | 257.1 | 329.6 | +84.5 | 181.0 | 0.722 | 0.758 | 0.971 |
 
 All bootstrap and uncertainty probabilities compare the candidate against
 `current_move_cap`. Candidates are fixed structural alternatives; no coefficients
@@ -81,9 +103,13 @@ while the present cohort does not validate a direct random-reply CPL cap.
 
 ## Decision boundary
 
-- Do not fit new cap coefficients on 28 configurations.
+- The acquisition coverage gate passes, but no statistical acceptance threshold
+  was preregistered; do not invent one after observing these results.
+- `repeated_forfeit_only` advances as the leading candidate for independent holdout review,
+  not as an automatic production change.
+- Do not fit new cap coefficients on 30 configurations.
 - Do not describe RD-300 as independent; it still shares the benchmark prior.
-- Production may deduplicate catastrophes within a trajectory because this cannot
-  increase any penalty and does not fit the validation targets.
+- Keep production catastrophe deduplication within a trajectory because this
+  cannot increase any penalty and did not fit the validation targets.
 - Do not deploy hazard censoring, new coefficients, or cap removal on this cohort.
 - Re-run this fixed audit automatically as current depth-30 supplements accumulate.

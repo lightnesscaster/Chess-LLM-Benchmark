@@ -78,6 +78,25 @@ def model_family(player_id: str) -> str:
     return next((prefix for prefix in prefixes if player.startswith(prefix)), player.split(" (")[0])
 
 
+def model_lab(player_id: str) -> str:
+    """Return the model developer used for correlated-evidence checks."""
+    player = player_id.lower()
+    lab_prefixes = {
+        "openai": ("gpt-",),
+        "google": ("gemini-", "gemma-"),
+        "deepseek": ("deepseek-",),
+        "alibaba": ("qwen",),
+        "meta": ("llama-",),
+        "mistral": ("mistral-",),
+        "moonshot": ("kimi-",),
+        "zhipu": ("glm-",),
+    }
+    for lab, prefixes in lab_prefixes.items():
+        if player.startswith(prefixes):
+            return lab
+    return player.split(" (")[0]
+
+
 def cap_from_rates(forfeit_pct: float, catastrophe_pct: float) -> float | None:
     if forfeit_pct + catastrophe_pct < STABILITY_RISK_TRIGGER:
         return None
@@ -267,6 +286,7 @@ def build_rows() -> list[dict[str, Any]]:
             {
                 "player_id": player_id,
                 "family": model_family(player_id),
+                "lab": model_lab(player_id),
                 "score_depth": int(summary["score_depth"]),
                 "current_cap": current_cap,
                 "hazard_cap": hazard_cap,
@@ -322,17 +342,23 @@ def metrics(rows: list[dict[str, Any]], target: str, candidate: str) -> dict[str
 
 
 def bootstrap_comparison(
-    rows: list[dict[str, Any]], target: str, candidate: str
+    rows: list[dict[str, Any]],
+    target: str,
+    candidate: str,
+    group_key: str = "family",
 ) -> dict[str, float]:
-    rng = random.Random(RANDOM_SEED + sum(ord(char) for char in target + candidate))
-    families: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    rng = random.Random(
+        RANDOM_SEED
+        + sum(ord(char) for char in target + candidate + group_key)
+    )
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        families[row["family"]].append(row)
-    names = sorted(families)
+        groups[row[group_key]].append(row)
+    names = sorted(groups)
     deltas = []
     for _ in range(BOOTSTRAP_RESAMPLES):
         sampled = [rng.choice(names) for _ in names]
-        selected = [row for family in sampled for row in families[family]]
+        selected = [row for group in sampled for row in groups[group]]
         current_mae = sum(
             abs(row["candidates"]["current_move_cap"] - row["targets"][target]["rating"])
             for row in selected
@@ -374,6 +400,113 @@ def uncertainty_comparison(
         "mae_delta_p05": percentile(deltas, 0.05),
         "mae_delta_p50": percentile(deltas, 0.50),
         "mae_delta_p95": percentile(deltas, 0.95),
+    }
+
+
+def group_influence(
+    rows: list[dict[str, Any]],
+    target: str,
+    candidate: str,
+    group_key: str,
+) -> dict[str, Any]:
+    """Measure whether a candidate's apparent gain survives group exclusions."""
+    current = "current_move_cap"
+    groups = sorted({row[group_key] for row in rows})
+    group_deltas: dict[str, float] = {}
+    leave_one_group_out: dict[str, float] = {}
+
+    for group in groups:
+        group_rows = [row for row in rows if row[group_key] == group]
+        group_deltas[group] = sum(
+            abs(row["candidates"][candidate] - row["targets"][target]["rating"])
+            - abs(row["candidates"][current] - row["targets"][target]["rating"])
+            for row in group_rows
+        ) / len(group_rows)
+
+        remaining = [row for row in rows if row[group_key] != group]
+        candidate_mae = sum(
+            abs(row["candidates"][candidate] - row["targets"][target]["rating"])
+            for row in remaining
+        ) / len(remaining)
+        current_mae = sum(
+            abs(row["candidates"][current] - row["targets"][target]["rating"])
+            for row in remaining
+        ) / len(remaining)
+        leave_one_group_out[group] = candidate_mae - current_mae
+
+    row_deltas = [
+        abs(row["candidates"][candidate] - row["targets"][target]["rating"])
+        - abs(row["candidates"][current] - row["targets"][target]["rating"])
+        for row in rows
+    ]
+    return {
+        "affected_configurations": sum(
+            not math.isclose(
+                row["candidates"][candidate],
+                row["candidates"][current],
+                abs_tol=1e-9,
+            )
+            for row in rows
+        ),
+        "configurations_improved": sum(delta < 0.0 for delta in row_deltas),
+        "configurations_tied": sum(
+            math.isclose(delta, 0.0, abs_tol=1e-9) for delta in row_deltas
+        ),
+        "configurations_worsened": sum(delta > 0.0 for delta in row_deltas),
+        "groups_improved": sum(delta < 0.0 for delta in group_deltas.values()),
+        "groups_tied": sum(
+            math.isclose(delta, 0.0, abs_tol=1e-9)
+            for delta in group_deltas.values()
+        ),
+        "groups_worsened": sum(delta > 0.0 for delta in group_deltas.values()),
+        "group_mean_mae_delta": group_deltas,
+        "leave_one_group_out_mae_delta": leave_one_group_out,
+        "leave_one_group_out_improvement_count": sum(
+            delta < 0.0 for delta in leave_one_group_out.values()
+        ),
+        "leave_one_group_out_count": len(leave_one_group_out),
+    }
+
+
+def family_influence(
+    rows: list[dict[str, Any]], target: str, candidate: str
+) -> dict[str, Any]:
+    """Preserve explicit family field names in the serialized audit."""
+    result = group_influence(rows, target, candidate, "family")
+    return {
+        **result,
+        "families_improved": result.pop("groups_improved"),
+        "families_tied": result.pop("groups_tied"),
+        "families_worsened": result.pop("groups_worsened"),
+        "family_mean_mae_delta": result.pop("group_mean_mae_delta"),
+        "leave_one_family_out_mae_delta": result.pop(
+            "leave_one_group_out_mae_delta"
+        ),
+        "leave_one_family_out_improvement_count": result.pop(
+            "leave_one_group_out_improvement_count"
+        ),
+        "leave_one_family_out_count": result.pop("leave_one_group_out_count"),
+    }
+
+
+def lab_influence(
+    rows: list[dict[str, Any]], target: str, candidate: str
+) -> dict[str, Any]:
+    """Preserve explicit lab field names in the serialized audit."""
+    result = group_influence(rows, target, candidate, "lab")
+    return {
+        **result,
+        "labs_improved": result.pop("groups_improved"),
+        "labs_tied": result.pop("groups_tied"),
+        "labs_worsened": result.pop("groups_worsened"),
+        "lab_mean_mae_delta": result.pop("group_mean_mae_delta"),
+        "leave_one_lab_out_mae_delta": result.pop(
+            "leave_one_group_out_mae_delta"
+        ),
+        "leave_one_lab_out_improvement_count": result.pop(
+            "leave_one_group_out_improvement_count"
+        ),
+        "leave_one_lab_out_count": result.pop("leave_one_group_out_count"),
     }
 
 
@@ -428,8 +561,8 @@ def render_report(analysis: dict[str, Any]) -> str:
         lines = [
             f"### {analysis['targets'][target]['label']}",
             "",
-            "| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | RD simulation P(improves) |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| Candidate | MAE | RMSE | Bias | IVW MAE | Family bootstrap P(improves) | Lab bootstrap P(improves) | RD simulation P(improves) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
         for candidate in candidates:
             result = analysis["targets"][target]["candidates"][candidate]
@@ -437,6 +570,7 @@ def render_report(analysis: dict[str, Any]) -> str:
                 f"| `{candidate}` | {result['mae']:.1f} | {result['rmse']:.1f} | "
                 f"{result['bias']:+.1f} | {result['inverse_variance_weighted_mae']:.1f} | "
                 f"{result['family_bootstrap']['probability_mae_improves']:.3f} | "
+                f"{result['lab_bootstrap']['probability_mae_improves']:.3f} | "
                 f"{result['rating_uncertainty']['probability_mae_improves']:.3f} |"
             )
         sections.append("\n".join(lines))
@@ -456,6 +590,16 @@ def render_report(analysis: dict[str, Any]) -> str:
         )
 
     gate = analysis["evidence_gate"]
+    decision = analysis["production_decision"]
+    leading = decision["leading_candidate"]
+    rd_result = analysis["targets"]["rd300"]["candidates"][leading]
+    no_position_result = analysis["targets"]["no_position"]["candidates"][leading]
+    rd_influence = rd_result["family_influence"]
+    no_position_influence = no_position_result["family_influence"]
+    influential_family = decision["influential_family"]
+    rd_lab_influence = rd_result["lab_influence"]
+    no_position_lab_influence = no_position_result["lab_influence"]
+    influential_lab = decision["influential_lab"]
     return f"""# Depth-30 continuation-cap audit — 2026-07-21
 
 This zero-call audit evaluates the corrected depth-30 continuation artifacts. It
@@ -466,12 +610,12 @@ deduplicates catastrophe events within each trajectory. The cohort has
 
 ## Result
 
-No hard-cap redesign is validated for production. The two game-rating targets
-disagree: removing the hard cap helps the independent no-position-seed target but
-slightly hurts the higher-RD position-seeded target. Neither direction is robust
-under family resampling and rating uncertainty. The inherited evidence gate needs
-at least {gate['minimum_configurations']} configurations and
-{gate['minimum_families']} families; both coverage checks fail.
+The acquisition gate now passes: it requires at least
+{gate['minimum_configurations']} configurations and
+{gate['minimum_families']} families, and this cohort contains
+{analysis['configuration_count']} configurations across
+{analysis['family_count']} families. Passing that gate makes a redesign eligible
+for review; it is not by itself an acceptance criterion.
 
 The current move-level catastrophe count is structurally wrong for an absorbing
 loss: repeated losing moves in one continuation are correlated and must not be
@@ -482,11 +626,33 @@ and therefore never make a cap harsher. This correction fits no target data.
 `trajectory_hazard_cap` additionally censors later exposures; that more ambitious
 survival-style redesign remains diagnostic rather than validated rating evidence.
 
-The production change is limited to deduplicating catastrophes within each
-trajectory. Existing cap constants, the 150-Elo deadband, continuation legality,
-and forfeit evidence remain unchanged. Any coefficient refit, complete CPL-cap
-removal, or survival-hazard redesign remains blocked until a newly frozen cohort
-passes the evidence gate.
+`{leading}` is the leading fixed redesign. Its MAE is lower than the current cap
+on both targets, but its family-bootstrap improvement probabilities are only
+{rd_result['family_bootstrap']['probability_mae_improves']:.3f} (RD-300) and
+{no_position_result['family_bootstrap']['probability_mae_improves']:.3f}
+(no-position), and both family-bootstrap intervals cross zero. Only
+{rd_influence['affected_configurations']} configurations receive a different
+prediction. The apparent gain is highly dependent on `{influential_family}`:
+excluding that family changes the candidate-minus-current MAE delta to
+{rd_influence['leave_one_family_out_mae_delta'][influential_family]:+.1f} Elo
+on RD-300 and
+{no_position_influence['leave_one_family_out_mae_delta'][influential_family]:+.1f}
+Elo on no-position, so the candidate becomes slightly worse.
+
+Lab-level dependence is stronger still. Excluding `{influential_lab}` changes the
+candidate-minus-current MAE delta to
+{rd_lab_influence['leave_one_lab_out_mae_delta'][influential_lab]:+.1f} Elo on
+RD-300 and
+{no_position_lab_influence['leave_one_lab_out_mae_delta'][influential_lab]:+.1f}
+Elo on no-position. The lab-bootstrap improvement probabilities are
+{rd_result['lab_bootstrap']['probability_mae_improves']:.3f} and
+{no_position_result['lab_bootstrap']['probability_mae_improves']:.3f},
+respectively.
+
+Accordingly, the production decision is **hold**. Keep the already deployed
+within-trajectory catastrophe deduplication, but do not replace the remaining CPL
+cap with `{leading}` on this cohort. Existing cap constants, the 150-Elo deadband,
+continuation legality, and forfeit evidence remain unchanged.
 
 ## Current depth-30 comparison
 
@@ -515,10 +681,14 @@ while the present cohort does not validate a direct random-reply CPL cap.
 
 ## Decision boundary
 
+- The acquisition coverage gate passes, but no statistical acceptance threshold
+  was preregistered; do not invent one after observing these results.
+- `{leading}` advances as the leading candidate for independent holdout review,
+  not as an automatic production change.
 - Do not fit new cap coefficients on {analysis['configuration_count']} configurations.
 - Do not describe RD-300 as independent; it still shares the benchmark prior.
-- Production may deduplicate catastrophes within a trajectory because this cannot
-  increase any penalty and does not fit the validation targets.
+- Keep production catastrophe deduplication within a trajectory because this
+  cannot increase any penalty and did not fit the validation targets.
 - Do not deploy hazard censoring, new coefficients, or cap removal on this cohort.
 - Re-run this fixed audit automatically as current depth-30 supplements accumulate.
 """
@@ -549,10 +719,31 @@ def main() -> None:
         for candidate in candidate_order:
             result = metrics(rows, target, candidate)
             result["family_bootstrap"] = bootstrap_comparison(rows, target, candidate)
+            result["lab_bootstrap"] = bootstrap_comparison(
+                rows, target, candidate, group_key="lab"
+            )
             result["rating_uncertainty"] = uncertainty_comparison(rows, target, candidate)
+            result["family_influence"] = family_influence(rows, target, candidate)
+            result["lab_influence"] = lab_influence(rows, target, candidate)
             target_result["candidates"][candidate] = result
 
     families = sorted({row["family"] for row in rows})
+    labs = sorted({row["lab"] for row in rows})
+    leading_candidate = "repeated_forfeit_only"
+    leading_rd_influence = targets["rd300"]["candidates"][leading_candidate][
+        "family_influence"
+    ]
+    influential_family = max(
+        leading_rd_influence["leave_one_family_out_mae_delta"],
+        key=leading_rd_influence["leave_one_family_out_mae_delta"].get,
+    )
+    leading_rd_lab_influence = targets["rd300"]["candidates"][leading_candidate][
+        "lab_influence"
+    ]
+    influential_lab = max(
+        leading_rd_lab_influence["leave_one_lab_out_mae_delta"],
+        key=leading_rd_lab_influence["leave_one_lab_out_mae_delta"].get,
+    )
     analysis = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "production_effect": "catastrophe-event-deduplication-only",
@@ -562,6 +753,8 @@ def main() -> None:
         "configuration_count": len(rows),
         "families": families,
         "family_count": len(families),
+        "labs": labs,
+        "lab_count": len(labs),
         "candidate_order": candidate_order,
         "evidence_gate": {
             "minimum_configurations": 30,
@@ -569,6 +762,17 @@ def main() -> None:
             "configuration_count_passed": len(rows) >= 30,
             "family_count_passed": len(families) >= 8,
             "passed": len(rows) >= 30 and len(families) >= 8,
+        },
+        "production_decision": {
+            "status": "hold_current_production",
+            "leading_candidate": leading_candidate,
+            "influential_family": influential_family,
+            "influential_lab": influential_lab,
+            "reason": (
+                "The coverage gate passes and the leading candidate lowers aggregate "
+                "MAE on both targets, but its family- and lab-bootstrap intervals "
+                "cross zero and correlated-group exclusions reverse the gain."
+            ),
         },
         "inputs": {
             str(path.relative_to(ROOT)): sha256(path)

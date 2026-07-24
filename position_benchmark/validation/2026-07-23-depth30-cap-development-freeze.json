@@ -1,0 +1,65 @@
+{
+  "experiment_id": "depth30-cap-prospective-validation-v1",
+  "status": "frozen-development",
+  "frozen_at": "2026-07-24T01:06:00.660126+00:00",
+  "production_effect": "none",
+  "purpose": "Freeze every configuration used to select continuation-cap candidates before prospective holdout predictions are recorded.",
+  "development_audit": {
+    "path": "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json",
+    "sha256": "bd95407fcac4549e1b76624c5ed2f6b243a23dc3b339f60f4e19d9af28a586fd"
+  },
+  "frozen_inputs": {
+    "position_benchmark/results/core.json": "b83967d73a6e0499bf5d65679c92966f54dad7402ede1202fa930e4355a6b556",
+    "position_benchmark/results/game_like.json": "a955e681519ab207215917d78e73f3f4d904dc0ac320fb398b181b20b47c733e",
+    "position_benchmark/results/stability.json": "37b1d16931daa6a8e247558731861d4960048f0a319538e28061a43f597dbca9",
+    "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json": "844bf28016fda5a30430d962db997841550c3ae9fb4846d418ad9447299706d5",
+    "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json": "520c82d4aec16324b1556edc222234f398e7cdcf4a3d7095b072a95be2473de3"
+  },
+  "candidate_order": [
+    "current_move_cap",
+    "deduplicated_move_exposure_cap",
+    "trajectory_hazard_cap",
+    "two_affected_trajectory_gate",
+    "repeated_forfeit_only",
+    "no_hard_cap"
+  ],
+  "leading_development_candidate": "repeated_forfeit_only",
+  "development_decision": "hold_current_production",
+  "development_configuration_ids": [
+    "gemini-2.5-flash (no thinking)",
+    "gpt-5.1 (no thinking)",
+    "gpt-5.6-sol (low)",
+    "gpt-5.6-sol (medium)",
+    "gpt-5.6-sol (high)",
+    "gpt-5.6-sol (xhigh)",
+    "gpt-5.6-terra (low)",
+    "gpt-5.6-terra (medium)",
+    "gpt-5.6-terra (high)",
+    "gpt-5.6-terra (xhigh)",
+    "gpt-5.6-luna (low)",
+    "gpt-5.6-luna (medium)",
+    "gpt-5.6-luna (high)",
+    "gpt-5.6-luna (xhigh)",
+    "gpt-5.5 (xhigh)",
+    "deepseek-v4-flash (max)",
+    "gemini-3.1-flash-lite-preview",
+    "gpt-3.5-turbo-instruct",
+    "gemma-4-31b-it (no thinking)",
+    "qwen3-235b-a22b-2507",
+    "llama-4-maverick",
+    "mistral-medium-3",
+    "kimi-k2-0905",
+    "gpt-3.5-turbo",
+    "deepseek-v4-flash (no thinking)",
+    "gemini-3.1-pro-preview (medium)",
+    "glm-4.6 (no thinking)",
+    "gpt-5.1-chat",
+    "deepseek-v4-pro (no thinking)",
+    "gemma-4-31b-it (high)"
+  ],
+  "holdout_rule": {
+    "eligible_if": "The configuration is absent from development_configuration_ids and its first complete current-contract core, game-like, and continuation suite is shadow-recorded after frozen_at.",
+    "primary_target": "no-position-seed game rating",
+    "production_rating_effect": "none"
+  }
+}

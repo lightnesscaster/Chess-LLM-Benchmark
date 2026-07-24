@@ -124,9 +124,19 @@ async def run(args: argparse.Namespace) -> int:
             "panels": [],
         },
     )
-    if ledger.get("players") != players or float(ledger.get("max_cost")) != args.max_cost:
+    if float(ledger.get("max_cost")) != args.max_cost:
         raise SystemExit(
             f"Existing ledger does not match this cohort/budget: {ledger_path}"
+        )
+    ledger_players = list(ledger.get("players") or [])
+    if ledger_players != players:
+        if not args.extend_ledger:
+            raise SystemExit(
+                f"Existing ledger does not match this cohort: {ledger_path} "
+                "(pass --extend-ledger to append replacement players)"
+            )
+        ledger["players"] = list(
+            dict.fromkeys([*ledger_players, *players])
         )
 
     queued: list[tuple[str, Any, float]] = []
@@ -289,6 +299,11 @@ def main() -> None:
     )
     parser.add_argument("--work-dir", type=Path, default=DEFAULT_WORK_DIR)
     parser.add_argument("--stockfish-path", default="stockfish")
+    parser.add_argument(
+        "--extend-ledger",
+        action="store_true",
+        help="Append --players to an existing cumulative-budget ledger",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     raise SystemExit(asyncio.run(run(args)))

@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 import tempfile
 from types import SimpleNamespace
@@ -419,6 +420,80 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(seeded.rating, 1500.0)
         self.assertEqual(seeded.rating_deviation, 350.0)
 
+    def test_depth30_cap_audit_report_matches_current_evidence_gate(self) -> None:
+        audit_path = (
+            ROOT
+            / "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json"
+        )
+        report_path = audit_path.with_suffix(".md")
+        audit = json.loads(audit_path.read_text())
+        report = report_path.read_text()
+
+        self.assertTrue(audit["evidence_gate"]["passed"])
+        self.assertGreaterEqual(
+            audit["configuration_count"],
+            audit["evidence_gate"]["minimum_configurations"],
+        )
+        self.assertGreaterEqual(
+            audit["family_count"],
+            audit["evidence_gate"]["minimum_families"],
+        )
+        self.assertEqual(
+            audit["production_decision"]["status"],
+            "hold_current_production",
+        )
+        self.assertGreaterEqual(audit["lab_count"], 2)
+        self.assertIn("The acquisition gate now passes", report)
+        self.assertNotIn("both coverage checks fail", report)
+
+        candidate = audit["production_decision"]["leading_candidate"]
+        influential_family = audit["production_decision"]["influential_family"]
+        for target in ("rd300", "no_position"):
+            influence = audit["targets"][target]["candidates"][candidate][
+                "family_influence"
+            ]
+            self.assertGreater(
+                influence["leave_one_family_out_mae_delta"][influential_family],
+                0.0,
+            )
+            lab_result = audit["targets"][target]["candidates"][candidate]
+            self.assertIn("lab_bootstrap", lab_result)
+            self.assertIn("lab_influence", lab_result)
+
+        influential_lab = audit["production_decision"]["influential_lab"]
+        rd_lab_influence = audit["targets"]["rd300"]["candidates"][candidate][
+            "lab_influence"
+        ]
+        self.assertGreater(
+            rd_lab_influence["leave_one_lab_out_mae_delta"][influential_lab],
+            0.0,
+        )
+
+    def test_depth30_cap_development_freeze_matches_audit(self) -> None:
+        freeze_path = (
+            ROOT
+            / "position_benchmark/validation/2026-07-23-depth30-cap-development-freeze.json"
+        )
+        freeze = json.loads(freeze_path.read_text())
+        audit_path = ROOT / freeze["development_audit"]["path"]
+        audit_bytes = audit_path.read_bytes()
+        audit = json.loads(audit_bytes)
+
+        self.assertEqual(freeze["status"], "frozen-development")
+        self.assertEqual(freeze["production_effect"], "none")
+        self.assertEqual(
+            freeze["development_audit"]["sha256"],
+            hashlib.sha256(audit_bytes).hexdigest(),
+        )
+        self.assertEqual(
+            set(freeze["development_configuration_ids"]),
+            {row["player_id"] for row in audit["rows"]},
+        )
+        self.assertEqual(
+            freeze["candidate_order"],
+            audit["candidate_order"],
+        )
+
     def test_canonical_panel_sizes_and_defaults_match_saved_artifacts(self) -> None:
         positions_data = json.loads(CORE_POSITIONS_PATH.read_text())
         positions = positions_data["positions"]
@@ -603,7 +678,9 @@ class ProductionContractTests(unittest.TestCase):
 
         self.assertLessEqual(set(legacy_results), set(core_results))
         rerun_after_migration = {
+            "deepseek-v4-pro (no thinking)",
             "deepseek-v4-flash (max)",
+            "gemma-4-31b-it (high)",
             "gemma-4-31b-it (no thinking)",
             "gpt-3.5-turbo",
             "gpt-5.5 (xhigh)",

@@ -25782,5 +25782,1787 @@
         "score_depth": 30
       }
     ]
+  },
+  "deepseek-v4-pro (no thinking)": {
+    "summary": {
+      "attempted_positions": 8,
+      "model_legal_moves": 22,
+      "model_illegal_attempts": 7,
+      "model_attempts": 29,
+      "model_legal_pct": 75.86206896551724,
+      "model_first_attempt_turns": 25,
+      "model_first_attempt_illegals": 5,
+      "model_first_attempt_illegal_pct": 20.0,
+      "illegal_attempts_per_model_move": 0.3181818181818182,
+      "model_forfeits": 3,
+      "model_forfeit_pct": 37.5,
+      "api_errors": 0,
+      "probe_plies_played": 44,
+      "avg_probe_plies_played": 5.5,
+      "model_scored_moves": 22,
+      "model_avg_cpl": 279.5,
+      "model_first_move_avg_cpl": 257.5,
+      "model_later_move_avg_cpl": 287.75,
+      "model_median_cpl": 169.5,
+      "model_p90_cpl": 686.0,
+      "model_300cp_blunders": 8,
+      "model_300cp_blunder_pct": 36.36363636363637,
+      "model_300cp_blunder_positions": 4,
+      "model_300cp_blunder_position_pct": 50.0,
+      "model_1000cp_catastrophes": 1,
+      "model_1000cp_catastrophe_pct": 4.545454545454546,
+      "model_1000cp_catastrophe_positions": 1,
+      "model_1000cp_catastrophe_position_pct": 12.5,
+      "model_1000cp_deduplicated_catastrophe_pct": 4.545454545454546,
+      "opponent_scored_moves": 22,
+      "opponent_avg_cpl": 412.1363636363636,
+      "model_retry_attempts": 4,
+      "model_retry_recoveries": 2,
+      "model_retry_failures": 2,
+      "model_retry_unknown": 0,
+      "model_retry_recovery_pct": 50.0,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "conditional_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 8,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 4,
+        "retry_recoveries": 2,
+        "retry_failures": 2,
+        "retry_unknown": 0,
+        "known_outcomes": 4,
+        "recovery_pct": 50.0
+      },
+      "player_id": "deepseek-v4-pro (no thinking)",
+      "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
+      "probe_plies": 8,
+      "score_depth": 30,
+      "stability_probe_version": "stratified-depth30-v3",
+      "position_selection_policy": "category-round-robin-v1",
+      "selected_position_indices": [
+        0,
+        12,
+        24,
+        36,
+        1,
+        13,
+        25,
+        37
+      ]
+    },
+    "results": [
+      {
+        "position_idx": 0,
+        "position_id": "game-like-001",
+        "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 0,
+        "termination": "forfeit_illegal_move",
+        "winner": "white",
+        "model_legal_moves": 0,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 661,
+          "completion_tokens": 9,
+          "total_tokens": 670
+        },
+        "illegal_move_details": [
+          {
+            "side": "black",
+            "move_number": 16,
+            "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3\n\n>>> White's last move: c3 (c2c3) <<<\n\n\nCurrent position (FEN):\nr1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8\n\nBoard:\n8 | r . b . k b . r\n7 | . . p . p p p p\n6 | . . . . . . . .\n5 | p p . . P . . .\n4 | . . . . n . . .\n3 | . . P q . . . .\n2 | P P . . . P P P\n1 | R N B Q K . N R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "b4c3",
+            "parsed_move": "b4c3"
+          },
+          {
+            "side": "black",
+            "move_number": 16,
+            "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3\n\n>>> White's last move: c3 (c2c3) <<<\n\n\nCurrent position (FEN):\nr1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8\n\nBoard:\n8 | r . b . k b . r\n7 | . . p . p p p p\n6 | . . . . . . . .\n5 | p p . . P . . .\n4 | . . . . n . . .\n3 | . . P q . . . .\n2 | P P . . . P P P\n1 | R N B Q K . N R\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"b4c3\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "b4c3",
+            "parsed_move": "b4c3"
+          }
+        ],
+        "model_move_scores": [],
+        "opponent_move_scores": [],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"deepseek-v4-pro (no thinking)\"]\n[Result \"1-0\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3 1-0",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 12,
+        "position_id": "game-like-013",
+        "fen": "r1bqk2r/pppp1ppp/2n2n2/8/3p4/6P1/P2KPP1P/RN1Q1BNR w kq - 1 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1331,
+          "completion_tokens": 20,
+          "total_tokens": 1351
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "b1c3",
+            "move_san": "Nc3",
+            "eval_before": -503,
+            "eval_model": -733,
+            "cpl": 230,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e2e4",
+            "move_san": "e4",
+            "eval_before": -568,
+            "eval_model": -733,
+            "cpl": 165,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 165
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "e4e5",
+            "move_san": "e5",
+            "eval_before": -552,
+            "eval_model": -726,
+            "cpl": 174,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 181
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "e5f6",
+            "move_san": "exf6",
+            "eval_before": -528,
+            "eval_model": -574,
+            "cpl": 46,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 198
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "a7a6",
+            "move_san": "a6",
+            "eval_before": 733,
+            "eval_model": 568,
+            "cpl": 165,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "a6a5",
+            "move_san": "a5",
+            "eval_before": 733,
+            "eval_model": 552,
+            "cpl": 181,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "a8b8",
+            "move_san": "Rb8",
+            "eval_before": 726,
+            "eval_model": 528,
+            "cpl": 198,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "d4d3",
+            "move_san": "d3",
+            "eval_before": 574,
+            "eval_model": -272,
+            "cpl": 846,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"deepseek-v4-pro (no thinking)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. b4 Nf6 2. g3 e5 3. d4 exd4 4. Bf4 Bxb4+ 5. c3 Bxc3+ 6. Bd2 Bxd2+ 7. Kxd2 Nc6 8. Nc3 a6 9. e4 a5 10. e5 Rb8 11. exf6 d3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 24,
+        "position_id": "game-like-025",
+        "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+        "model_side": "black",
+        "pre_moves": 19,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 0,
+        "termination": "forfeit_illegal_move",
+        "winner": "white",
+        "model_legal_moves": 0,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 685,
+          "completion_tokens": 9,
+          "total_tokens": 694
+        },
+        "illegal_move_details": [
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5\n\n>>> White's last move: Nxe5 (f3e5) <<<\n\n\nCurrent position (FEN):\nr1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10\n\nBoard:\n8 | r . b q . r k .\n7 | . . p . b p p p\n6 | p . . . . n . .\n5 | n p . P N . . .\n4 | . . . . . . . .\n3 | . B P . . . . .\n2 | P P . P . P P P\n1 | R N B Q R . K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "e5d4",
+            "parsed_move": "e5d4"
+          },
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5\n\n>>> White's last move: Nxe5 (f3e5) <<<\n\n\nCurrent position (FEN):\nr1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10\n\nBoard:\n8 | r . b q . r k .\n7 | . . p . b p p p\n6 | p . . . . n . .\n5 | n p . P N . . .\n4 | . . . . . . . .\n3 | . B P . . . . .\n2 | P P . P . P P P\n1 | R N B Q R . K .\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"e5d4\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "Nxe5",
+            "parsed_move": "Nxe5"
+          }
+        ],
+        "model_move_scores": [],
+        "opponent_move_scores": [],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"deepseek-v4-pro (no thinking)\"]\n[Result \"1-0\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5 1-0",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 36,
+        "position_id": "game-like-037",
+        "fen": "r1b1kb1r/ppppqppp/2n5/4P3/3Qn3/2P2N2/P1P2PPP/R1B1KB1R w KQkq - 3 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1319,
+          "completion_tokens": 20,
+          "total_tokens": 1339
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "e5e6",
+            "move_san": "e6",
+            "eval_before": -27,
+            "eval_model": -713,
+            "cpl": 686,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e6d7",
+            "move_san": "exd7+",
+            "eval_before": -128,
+            "eval_model": -521,
+            "cpl": 393,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 585
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "c3c4",
+            "move_san": "c4",
+            "eval_before": -508,
+            "eval_model": -557,
+            "cpl": 49,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 13
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "c4c5",
+            "move_san": "c5",
+            "eval_before": 589,
+            "eval_model": -487,
+            "cpl": 1076,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 1146
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "c6b8",
+            "move_san": "Nb8",
+            "eval_before": 713,
+            "eval_model": 128,
+            "cpl": 585,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "c8d7",
+            "move_san": "Bxd7",
+            "eval_before": 521,
+            "eval_model": 508,
+            "cpl": 13,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "e7a3",
+            "move_san": "Qa3",
+            "eval_before": 557,
+            "eval_model": -589,
+            "cpl": 1146,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "a3d3",
+            "move_san": "Qd3",
+            "eval_before": 487,
+            "eval_model": -554,
+            "cpl": 1041,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"deepseek-v4-pro (no thinking)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. e5 dxc3 6. bxc3 Ne4 7. Qd4 Qe7 8. e6 Nb8 9. exd7+ Bxd7 10. c4 Qa3 11. c5 Qd3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 1,
+        "position_id": "game-like-002",
+        "fen": "rnbqkbnr/ppp2pp1/8/4p3/Q1p5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 1 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 4,
+        "termination": "forfeit_illegal_move",
+        "winner": "white",
+        "model_legal_moves": 2,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 1345,
+          "completion_tokens": 20,
+          "total_tokens": 1365
+        },
+        "illegal_move_details": [
+          {
+            "side": "black",
+            "move_number": 18,
+            "fen": "r1bqkbnr/ppp2pp1/2n5/4p3/1Qp5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 3 9",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4\n\n>>> White's last move: Qb4 (a4b4) <<<\n\n\nCurrent position (FEN):\nr1bqkbnr/ppp2pp1/2n5/4p3/1Qp5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 3 9\n\nBoard:\n8 | r . b q k b n r\n7 | p p p . . p p .\n6 | . . n . . . . .\n5 | . . . . p . . .\n4 | . Q p . . . . .\n3 | . . . . . . . P\n2 | P P . P P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "b8d7",
+            "parsed_move": "b8d7"
+          },
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "r1b1kbnr/pppq1pp1/2n5/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Qd7 10. d4\n\n>>> White's last move: d4 (d2d4) <<<\n\n\nCurrent position (FEN):\nr1b1kbnr/pppq1pp1/2n5/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10\n\nBoard:\n8 | r . b . k b n r\n7 | p p p q . p p .\n6 | . . n . . . . .\n5 | . . . . p . . .\n4 | . Q p P . . . .\n3 | . . . . . . . P\n2 | P P . . P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "c3d1",
+            "parsed_move": "c3d1"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "b8c6",
+            "move_san": "Nc6",
+            "eval_before": 901,
+            "eval_model": 903,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "d8d7",
+            "move_san": "Qd7",
+            "eval_before": 1358,
+            "eval_model": 1015,
+            "cpl": 343,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 455
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "a4b4",
+            "move_san": "Qb4",
+            "eval_before": -903,
+            "eval_model": -1358,
+            "cpl": 455,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "d2d4",
+            "move_san": "d4",
+            "eval_before": -1015,
+            "eval_model": -1200,
+            "cpl": 185,
+            "opponent_turn_index": 2
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"deepseek-v4-pro (no thinking)\"]\n[Result \"1-0\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ Nc6 9. Qb4 Qd7 10. d4 1-0",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 1,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 13,
+        "position_id": "game-like-014",
+        "fen": "r1b1kb1r/pppq1pp1/2np1n1p/8/4P3/1P4p1/P1PP3P/RNBQK1NR w KQkq - 1 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1348,
+          "completion_tokens": 20,
+          "total_tokens": 1368
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "h2g3",
+            "move_san": "hxg3",
+            "eval_before": -676,
+            "eval_model": -688,
+            "cpl": 12,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "d2d4",
+            "move_san": "d4",
+            "eval_before": -637,
+            "eval_model": -707,
+            "cpl": 70,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 51
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "e4d5",
+            "move_san": "exd5",
+            "eval_before": -640,
+            "eval_model": -755,
+            "cpl": 115,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 67
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "d1d2",
+            "move_san": "Qd2",
+            "eval_before": -466,
+            "eval_model": -677,
+            "cpl": 211,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 289
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": 688,
+            "eval_model": 637,
+            "cpl": 51,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "d6d5",
+            "move_san": "d5",
+            "eval_before": 707,
+            "eval_model": 640,
+            "cpl": 67,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "f6h7",
+            "move_san": "Nh7",
+            "eval_before": 755,
+            "eval_model": 466,
+            "cpl": 289,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "d7d6",
+            "move_san": "Qd6",
+            "eval_before": 677,
+            "eval_model": 496,
+            "cpl": 181,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"deepseek-v4-pro (no thinking)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. g3 e5 2. Bh3 d6 3. f3 Nc6 4. Bg4 h6 5. Bd7+ Qxd7 6. f4 exf4 7. e4 fxg3 8. b3 Nf6 9. hxg3 Be7 10. d4 d5 11. exd5 Nh7 12. Qd2 Qd6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 25,
+        "position_id": "game-like-026",
+        "fen": "r1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11",
+        "model_side": "white",
+        "pre_moves": 20,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 1,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1770,
+          "completion_tokens": 25,
+          "total_tokens": 1795
+        },
+        "illegal_move_details": [
+          {
+            "side": "white",
+            "move_number": 21,
+            "fen": "r1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7\n\n>>> Black's last move: Ne7 (c6e7) <<<\n\n\nCurrent position (FEN):\nr1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11\n\nBoard:\n8 | r . b q . r k .\n7 | . p p . n p p .\n6 | . b . p . n . p\n5 | p P . . p . . .\n4 | P . B . P . . .\n3 | . . P P . N . P\n2 | . . . . . P P .\n1 | R N B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "d4d5",
+            "parsed_move": "d4d5"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 1,
+            "move": "d3d4",
+            "move_san": "d4",
+            "eval_before": 0,
+            "eval_model": -77,
+            "cpl": 77,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 3,
+            "move": "d4d5",
+            "move_san": "d5",
+            "eval_before": 420,
+            "eval_model": -52,
+            "cpl": 472,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 497
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 5,
+            "move": "g2h3",
+            "move_san": "gxh3",
+            "eval_before": 318,
+            "eval_model": 226,
+            "cpl": 92,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 370
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 7,
+            "move": "b1d2",
+            "move_san": "Nbd2",
+            "eval_before": 495,
+            "eval_model": 374,
+            "cpl": 121,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 269
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 22,
+            "continuation_ply": 2,
+            "move": "a8a6",
+            "move_san": "Ra6",
+            "eval_before": 77,
+            "eval_model": -420,
+            "cpl": 497,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 4,
+            "move": "c8h3",
+            "move_san": "Bxh3",
+            "eval_before": 52,
+            "eval_model": -318,
+            "cpl": 370,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 6,
+            "move": "h6h5",
+            "move_san": "h5",
+            "eval_before": -226,
+            "eval_model": -495,
+            "cpl": 269,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 28,
+            "continuation_ply": 8,
+            "move": "f6d7",
+            "move_san": "Nd7",
+            "eval_before": -374,
+            "eval_model": -537,
+            "cpl": 163,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"deepseek-v4-pro (no thinking)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. d4 Ra6 12. d5 Bxh3 13. gxh3 h5 14. Nbd2 Nd7 1/2-1/2",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 1,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 37,
+        "position_id": "game-like-038",
+        "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1349,
+          "completion_tokens": 20,
+          "total_tokens": 1369
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "d4b5",
+            "move_san": "Ndb5",
+            "eval_before": -13,
+            "eval_model": -553,
+            "cpl": 540,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "d1e1",
+            "move_san": "Ke1",
+            "eval_before": -507,
+            "eval_model": -566,
+            "cpl": 59,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 46
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "e4e5",
+            "move_san": "e5",
+            "eval_before": 128,
+            "eval_model": -581,
+            "cpl": 709,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 694
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "e5d6",
+            "move_san": "exd6+",
+            "eval_before": 92,
+            "eval_model": -417,
+            "cpl": 509,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 673
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "b8a6",
+            "move_san": "Na6",
+            "eval_before": 553,
+            "eval_model": 507,
+            "cpl": 46,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "a6c7",
+            "move_san": "Nc7",
+            "eval_before": 566,
+            "eval_model": -128,
+            "cpl": 694,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "a7a6",
+            "move_san": "a6",
+            "eval_before": 581,
+            "eval_model": -92,
+            "cpl": 673,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "g4e6",
+            "move_san": "Be6",
+            "eval_before": 417,
+            "eval_model": -535,
+            "cpl": 952,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"deepseek-v4-pro (no thinking)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4 9. Ndb5 Na6 10. Ke1 Nc7 11. e5 a6 12. exd6+ Be6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      }
+    ]
+  },
+  "gemma-4-31b-it (high)": {
+    "summary": {
+      "attempted_positions": 8,
+      "model_legal_moves": 27,
+      "model_illegal_attempts": 5,
+      "model_attempts": 32,
+      "model_legal_pct": 84.375,
+      "model_first_attempt_turns": 29,
+      "model_first_attempt_illegals": 3,
+      "model_first_attempt_illegal_pct": 10.344827586206897,
+      "illegal_attempts_per_model_move": 0.18518518518518517,
+      "model_forfeits": 2,
+      "model_forfeit_pct": 25.0,
+      "api_errors": 0,
+      "probe_plies_played": 54,
+      "avg_probe_plies_played": 6.75,
+      "model_scored_moves": 27,
+      "model_avg_cpl": 482.8888888888889,
+      "model_first_move_avg_cpl": 199.25,
+      "model_later_move_avg_cpl": 602.3157894736842,
+      "model_median_cpl": 36.0,
+      "model_p90_cpl": 600.0,
+      "model_300cp_blunders": 7,
+      "model_300cp_blunder_pct": 25.925925925925927,
+      "model_300cp_blunder_positions": 5,
+      "model_300cp_blunder_position_pct": 62.5,
+      "model_1000cp_catastrophes": 1,
+      "model_1000cp_catastrophe_pct": 3.7037037037037037,
+      "model_1000cp_catastrophe_positions": 1,
+      "model_1000cp_catastrophe_position_pct": 12.5,
+      "model_1000cp_deduplicated_catastrophe_pct": 3.7037037037037037,
+      "opponent_scored_moves": 27,
+      "opponent_avg_cpl": 599.1111111111111,
+      "model_retry_attempts": 3,
+      "model_retry_recoveries": 1,
+      "model_retry_failures": 2,
+      "model_retry_unknown": 0,
+      "model_retry_recovery_pct": 33.333333333333336,
+      "conditional_retry_protocol_version": "production-game-retry-v1",
+      "conditional_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 8,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 3,
+        "retry_recoveries": 1,
+        "retry_failures": 2,
+        "retry_unknown": 0,
+        "known_outcomes": 3,
+        "recovery_pct": 33.333333333333336
+      },
+      "player_id": "gemma-4-31b-it (high)",
+      "positions_file": "/Volumes/MainStorage/Programming/chess_llm_benchmark/position_benchmark/panels/game_like_48.json",
+      "probe_plies": 8,
+      "score_depth": 30,
+      "stability_probe_version": "stratified-depth30-v3",
+      "position_selection_policy": "category-round-robin-v1",
+      "selected_position_indices": [
+        0,
+        12,
+        24,
+        36,
+        1,
+        13,
+        25,
+        37
+      ]
+    },
+    "results": [
+      {
+        "position_idx": 0,
+        "position_id": "game-like-001",
+        "fen": "r1b1kb1r/2p1pppp/8/pp2P3/4n3/2Pq4/PP3PPP/RNBQK1NR b KQkq - 0 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1379,
+          "completion_tokens": 8505,
+          "total_tokens": 9884
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "d3d1",
+            "move_san": "Qxd1+",
+            "eval_before": 494,
+            "eval_model": 476,
+            "cpl": 18,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "e4c3",
+            "move_san": "Nxc3+",
+            "eval_before": 468,
+            "eval_model": -309,
+            "cpl": 777,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 0.0
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 5,
+            "move": "e7e6",
+            "move_san": "e6",
+            "eval_before": -316,
+            "eval_model": -398,
+            "cpl": 82,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 0.0
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 7,
+            "move": "c8b7",
+            "move_san": "Bb7",
+            "eval_before": -359,
+            "eval_model": -366,
+            "cpl": 7,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 39
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "e1d1",
+            "move_san": "Kxd1",
+            "eval_before": -476,
+            "eval_model": -468,
+            "cpl": 0.0,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "b1c3",
+            "move_san": "Nxc3",
+            "eval_before": 309,
+            "eval_model": 316,
+            "cpl": 0.0,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 6,
+            "move": "c1e3",
+            "move_san": "Be3",
+            "eval_before": 398,
+            "eval_model": 359,
+            "cpl": 39,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 8,
+            "move": "a2a3",
+            "move_san": "a3",
+            "eval_before": 366,
+            "eval_model": -188,
+            "cpl": 554,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemma-4-31b-it (high)\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 Nf6 2. e5 Nc6 3. d4 b5 4. d5 Ne4 5. dxc6 a5 6. cxd7+ Qxd7 7. Bd3 Qxd3 8. c3 Qxd1+ 9. Kxd1 Nxc3+ 10. Nxc3 e6 11. Be3 Bb7 12. a3 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 12,
+        "position_id": "game-like-013",
+        "fen": "r1bqk2r/pppp1ppp/2n2n2/8/3p4/6P1/P2KPP1P/RN1Q1BNR w kq - 1 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1387,
+          "completion_tokens": 8066,
+          "total_tokens": 9453
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "g1f3",
+            "move_san": "Nf3",
+            "eval_before": -514,
+            "eval_model": -530,
+            "cpl": 16,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "e2d3",
+            "move_san": "exd3",
+            "eval_before": -424,
+            "eval_model": -446,
+            "cpl": 22,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 106
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "f3e5",
+            "move_san": "Ne5",
+            "eval_before": -299,
+            "eval_model": -516,
+            "cpl": 217,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 147
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "b1c3",
+            "move_san": "Nc3",
+            "eval_before": -342,
+            "eval_model": -429,
+            "cpl": 87,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 174
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "d4d3",
+            "move_san": "d3",
+            "eval_before": 530,
+            "eval_model": 424,
+            "cpl": 106,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "g7g5",
+            "move_san": "g5",
+            "eval_before": 446,
+            "eval_model": 299,
+            "cpl": 147,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "a8b8",
+            "move_san": "Rb8",
+            "eval_before": 516,
+            "eval_model": 342,
+            "cpl": 174,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "d7d6",
+            "move_san": "d6",
+            "eval_before": 429,
+            "eval_model": 289,
+            "cpl": 140,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"gemma-4-31b-it (high)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. b4 Nf6 2. g3 e5 3. d4 exd4 4. Bf4 Bxb4+ 5. c3 Bxc3+ 6. Bd2 Bxd2+ 7. Kxd2 Nc6 8. Nf3 d3 9. exd3 g5 10. Ne5 Rb8 11. Nc3 d6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 24,
+        "position_id": "game-like-025",
+        "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+        "model_side": "black",
+        "pre_moves": 19,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1475,
+          "completion_tokens": 6328,
+          "total_tokens": 7803
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 20,
+            "continuation_ply": 1,
+            "move": "a5c4",
+            "move_san": "Nc4",
+            "eval_before": -101,
+            "eval_model": -517,
+            "cpl": 416,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 3,
+            "move": "d8d7",
+            "move_san": "Qd7",
+            "eval_before": -516,
+            "eval_model": -552,
+            "cpl": 36,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 1
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 5,
+            "move": "c4d2",
+            "move_san": "Nxd2",
+            "eval_before": 31,
+            "eval_model": -597,
+            "cpl": 628,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 583
+          },
+          {
+            "ply": 26,
+            "continuation_ply": 7,
+            "move": "f7e6",
+            "move_san": "fxe6",
+            "eval_before": 333,
+            "eval_model": 328,
+            "cpl": 5,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 930
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 2,
+            "move": "e5c6",
+            "move_san": "Nc6",
+            "eval_before": 517,
+            "eval_model": 516,
+            "cpl": 1,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 4,
+            "move": "g2g4",
+            "move_san": "g4",
+            "eval_before": 552,
+            "eval_model": -31,
+            "cpl": 583,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 25,
+            "continuation_ply": 6,
+            "move": "e1e6",
+            "move_san": "Re6",
+            "eval_before": 597,
+            "eval_model": -333,
+            "cpl": 930,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 27,
+            "continuation_ply": 8,
+            "move": "h2h4",
+            "move_san": "h4",
+            "eval_before": -328,
+            "eval_model": -767,
+            "cpl": 439,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemma-4-31b-it (high)\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Na5 10. Nxe5 Nc4 11. Nc6 Qd7 12. g4 Nxd2 13. Re6 fxe6 14. h4 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 36,
+        "position_id": "game-like-037",
+        "fen": "r1b1kb1r/ppppqppp/2n5/4P3/3Qn3/2P2N2/P1P2PPP/R1B1KB1R w KQkq - 3 8",
+        "model_side": "white",
+        "pre_moves": 14,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 1,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1728,
+          "completion_tokens": 9845,
+          "total_tokens": 11573
+        },
+        "illegal_move_details": [
+          {
+            "side": "white",
+            "move_number": 17,
+            "fen": "r1bnkb1r/ppppqppp/8/4P3/3Qn3/2PB1N2/P1P2PPP/R1B1K2R w KQkq - 5 9",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. e5 dxc3 6. bxc3 Ne4 7. Qd4 Qe7 8. Bd3 Nd8\n\n>>> Black's last move: Nd8 (c6d8) <<<\n\n\nCurrent position (FEN):\nr1bnkb1r/ppppqppp/8/4P3/3Qn3/2PB1N2/P1P2PPP/R1B1K2R w KQkq - 5 9\n\nBoard:\n8 | r . b n k b . r\n7 | p p p p q p p p\n6 | . . . . . . . .\n5 | . . . . P . . .\n4 | . . . Q n . . .\n3 | . . P B . N . .\n2 | P . P . . P P P\n1 | R . B . K . . R\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "f2f3",
+            "parsed_move": "f2f3"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 15,
+            "continuation_ply": 1,
+            "move": "f1d3",
+            "move_san": "Bd3",
+            "eval_before": -36,
+            "eval_model": -636,
+            "cpl": 600,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 17,
+            "continuation_ply": 3,
+            "move": "d3e4",
+            "move_san": "Bxe4",
+            "eval_before": 113,
+            "eval_model": 50,
+            "cpl": 63,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 749
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 5,
+            "move": "e4d3",
+            "move_san": "Bd3",
+            "eval_before": 173,
+            "eval_model": 46,
+            "cpl": 127,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 123
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 7,
+            "move": "d4e5",
+            "move_san": "Qxe5+",
+            "eval_before": 699,
+            "eval_model": 713,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 653
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 2,
+            "move": "c6d8",
+            "move_san": "Nd8",
+            "eval_before": 636,
+            "eval_model": -113,
+            "cpl": 749,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 4,
+            "move": "d7d5",
+            "move_san": "d5",
+            "eval_before": -50,
+            "eval_model": -173,
+            "cpl": 123,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 6,
+            "move": "e7e5",
+            "move_san": "Qxe5+",
+            "eval_before": -46,
+            "eval_model": -699,
+            "cpl": 653,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 8,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": -713,
+            "eval_model": -793,
+            "cpl": 80,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"gemma-4-31b-it (high)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. e5 dxc3 6. bxc3 Ne4 7. Qd4 Qe7 8. Bd3 Nd8 9. Bxe4 d5 10. Bd3 Qxe5+ 11. Qxe5+ Be7 1/2-1/2",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 1,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 1,
+        "position_id": "game-like-002",
+        "fen": "rnbqkbnr/ppp2pp1/8/4p3/Q1p5/7P/PP1PPPp1/RNB1K1R1 b Qkq - 1 8",
+        "model_side": "black",
+        "pre_moves": 15,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 4,
+        "termination": "forfeit_illegal_move",
+        "winner": "white",
+        "model_legal_moves": 2,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 1406,
+          "completion_tokens": 14504,
+          "total_tokens": 15910
+        },
+        "illegal_move_details": [
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "rnbqkb1r/pp3pp1/2p2n2/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ c6 9. Qb4 Nf6 10. d4\n\n>>> White's last move: d4 (d2d4) <<<\n\n\nCurrent position (FEN):\nrnbqkb1r/pp3pp1/2p2n2/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10\n\nBoard:\n8 | r n b q k b . r\n7 | p p . . . p p .\n6 | . . p . . n . .\n5 | . . . . p . . .\n4 | . Q p P . . . .\n3 | . . . . . . . P\n2 | P P . . P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "f6d4",
+            "parsed_move": "f6d4"
+          },
+          {
+            "side": "black",
+            "move_number": 20,
+            "fen": "rnbqkb1r/pp3pp1/2p2n2/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10",
+            "prompt": "You are playing chess as Black.\n\nMove history:\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ c6 9. Qb4 Nf6 10. d4\n\n>>> White's last move: d4 (d2d4) <<<\n\n\nCurrent position (FEN):\nrnbqkb1r/pp3pp1/2p2n2/4p3/1QpP4/7P/PP2PPp1/RNB1K1R1 b Qkq d3 0 10\n\nBoard:\n8 | r n b q k b . r\n7 | p p . . . p p .\n6 | . . p . . n . .\n5 | . . . . p . . .\n4 | . Q p P . . . .\n3 | . . . . . . . P\n2 | P P . . P P p .\n1 | R N B . K . R .\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"f6d4\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for Black.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "g2g1=Q",
+            "parsed_move": "g2g1"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 16,
+            "continuation_ply": 1,
+            "move": "c7c6",
+            "move_san": "c6",
+            "eval_before": 830,
+            "eval_model": 823,
+            "cpl": 7,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 18,
+            "continuation_ply": 3,
+            "move": "g8f6",
+            "move_san": "Nf6",
+            "eval_before": 9820,
+            "eval_model": 957,
+            "cpl": 8863,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 8997
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 2,
+            "move": "a4b4",
+            "move_san": "Qb4",
+            "eval_before": -823,
+            "eval_model": -9820,
+            "cpl": 8997,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 4,
+            "move": "d2d4",
+            "move_san": "d4",
+            "eval_before": -957,
+            "eval_model": -1121,
+            "cpl": 164,
+            "opponent_turn_index": 2
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"stability-random\"]\n[Black \"gemma-4-31b-it (high)\"]\n[Result \"1-0\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. g3 d5 2. c4 dxc4 3. h3 e5 4. g4 h5 5. Bg2 hxg4 6. Nf3 gxf3 7. Rg1 fxg2 8. Qa4+ c6 9. Qb4 Nf6 10. d4 1-0",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 13,
+        "position_id": "game-like-014",
+        "fen": "r1b1kb1r/pppq1pp1/2np1n1p/8/4P3/1P4p1/P1PP3P/RNBQK1NR w KQkq - 1 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1404,
+          "completion_tokens": 10755,
+          "total_tokens": 12159
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "h2g3",
+            "move_san": "hxg3",
+            "eval_before": -686,
+            "eval_model": -684,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "g1f3",
+            "move_san": "Nf3",
+            "eval_before": -633,
+            "eval_model": -729,
+            "cpl": 96,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 51
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "e4d5",
+            "move_san": "exd5",
+            "eval_before": -632,
+            "eval_model": -626,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 97
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "d5c6",
+            "move_san": "dxc6",
+            "eval_before": -456,
+            "eval_model": -458,
+            "cpl": 2,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 170
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "f8e7",
+            "move_san": "Be7",
+            "eval_before": 684,
+            "eval_model": 633,
+            "cpl": 51,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "d6d5",
+            "move_san": "d5",
+            "eval_before": 729,
+            "eval_model": 632,
+            "cpl": 97,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "f6h7",
+            "move_san": "Nh7",
+            "eval_before": 626,
+            "eval_model": 456,
+            "cpl": 170,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "d7d6",
+            "move_san": "Qd6",
+            "eval_before": 458,
+            "eval_model": 387,
+            "cpl": 71,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"gemma-4-31b-it (high)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. g3 e5 2. Bh3 d6 3. f3 Nc6 4. Bg4 h6 5. Bd7+ Qxd7 6. f4 exf4 7. e4 fxg3 8. b3 Nf6 9. hxg3 Be7 10. Nf3 d5 11. exd5 Nh7 12. dxc6 Qd6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 25,
+        "position_id": "game-like-026",
+        "fen": "r1bq1rk1/1pp1npp1/1b1p1n1p/pP2p3/P1B1P3/2PP1N1P/5PP1/RNBQ1RK1 w - - 1 11",
+        "model_side": "white",
+        "pre_moves": 20,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 2,
+        "termination": "forfeit_illegal_move",
+        "winner": "black",
+        "model_legal_moves": 1,
+        "model_illegal_attempts": 2,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": true,
+        "tokens": {
+          "prompt_tokens": 1135,
+          "completion_tokens": 5320,
+          "total_tokens": 6455
+        },
+        "illegal_move_details": [
+          {
+            "side": "white",
+            "move_number": 23,
+            "fen": "2bq1rk1/1pp1npp1/rb1p1n1p/pP2p3/P1B1P3/2PP1N1P/3N1PP1/R1BQ1RK1 w - - 3 12",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. Nbd2 Ra6\n\n>>> Black's last move: Ra6 (a8a6) <<<\n\n\nCurrent position (FEN):\n2bq1rk1/1pp1npp1/rb1p1n1p/pP2p3/P1B1P3/2PP1N1P/3N1PP1/R1BQ1RK1 w - - 3 12\n\nBoard:\n8 | . . b q . r k .\n7 | . p p . n p p .\n6 | r b . p . n . p\n5 | p P . . p . . .\n4 | P . B . P . . .\n3 | . . P P . N . P\n2 | . . . N . P P .\n1 | R . B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour task:\n- Play exactly ONE legal move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "d2f1",
+            "parsed_move": "d2f1"
+          },
+          {
+            "side": "white",
+            "move_number": 23,
+            "fen": "2bq1rk1/1pp1npp1/rb1p1n1p/pP2p3/P1B1P3/2PP1N1P/3N1PP1/R1BQ1RK1 w - - 3 12",
+            "prompt": "You are playing chess as White.\n\nMove history:\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. Nbd2 Ra6\n\n>>> Black's last move: Ra6 (a8a6) <<<\n\n\nCurrent position (FEN):\n2bq1rk1/1pp1npp1/rb1p1n1p/pP2p3/P1B1P3/2PP1N1P/3N1PP1/R1BQ1RK1 w - - 3 12\n\nBoard:\n8 | . . b q . r k .\n7 | . p p . n p p .\n6 | r b . p . n . p\n5 | p P . . p . . .\n4 | P . B . P . . .\n3 | . . P P . N . P\n2 | . . . N . P P .\n1 | R . B Q . R K .\n  +-----------------\n    a b c d e f g h\n\nYour previous attempted move \"d2f1\" was ILLEGAL. Please try again.\n\nYour task:\n- Play exactly ONE LEGAL move for White.\n- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n- Do NOT include any commentary, explanations, or additional text.\n\nOutput format:\n- Only the move in UCI, e.g.:\nb1c3",
+            "raw_response": "c1e3",
+            "parsed_move": "c1e3"
+          }
+        ],
+        "model_move_scores": [
+          {
+            "ply": 21,
+            "continuation_ply": 1,
+            "move": "b1d2",
+            "move_san": "Nbd2",
+            "eval_before": 0,
+            "eval_model": 0,
+            "cpl": 0.0,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 22,
+            "continuation_ply": 2,
+            "move": "a8a6",
+            "move_san": "Ra6",
+            "eval_before": 0,
+            "eval_model": -425,
+            "cpl": 425,
+            "opponent_turn_index": 1
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"gemma-4-31b-it (high)\"]\n[Black \"stability-random\"]\n[Result \"0-1\"]\n[Termination \"forfeit_illegal_move\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Bc5 5. O-O d6 6. h3 h6 7. c3 O-O 8. b4 Bb6 9. a4 a5 10. b5 Ne7 11. Nbd2 Ra6 0-1",
+        "model_retry_attempts": 1,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 1,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      },
+      {
+        "position_idx": 37,
+        "position_id": "game-like-038",
+        "fen": "rn1qkb1r/pp3ppp/3p1n2/8/2pNP1b1/2N5/PPPPQ1PP/1RBK1B1R w kq - 0 9",
+        "model_side": "white",
+        "pre_moves": 16,
+        "probe_plies_requested": 8,
+        "probe_plies_played": 8,
+        "termination": "max_moves",
+        "winner": "draw",
+        "model_legal_moves": 4,
+        "model_illegal_attempts": 0,
+        "opponent_illegal_attempts": 0,
+        "model_forfeited": false,
+        "tokens": {
+          "prompt_tokens": 1406,
+          "completion_tokens": 11246,
+          "total_tokens": 12652
+        },
+        "illegal_move_details": [],
+        "model_move_scores": [
+          {
+            "ply": 17,
+            "continuation_ply": 1,
+            "move": "d2d3",
+            "move_san": "d3",
+            "eval_before": -10,
+            "eval_model": -547,
+            "cpl": 537,
+            "model_turn_index": 1,
+            "preceding_opponent_cpl": null
+          },
+          {
+            "ply": 19,
+            "continuation_ply": 3,
+            "move": "h2h3",
+            "move_san": "h3",
+            "eval_before": -96,
+            "eval_model": -528,
+            "cpl": 432,
+            "model_turn_index": 2,
+            "preceding_opponent_cpl": 451
+          },
+          {
+            "ply": 21,
+            "continuation_ply": 5,
+            "move": "h3g4",
+            "move_san": "hxg4",
+            "eval_before": 476,
+            "eval_model": 488,
+            "cpl": 0.0,
+            "model_turn_index": 3,
+            "preceding_opponent_cpl": 1004
+          },
+          {
+            "ply": 23,
+            "continuation_ply": 7,
+            "move": "g4g5",
+            "move_san": "g5",
+            "eval_before": 478,
+            "eval_model": 488,
+            "cpl": 0.0,
+            "model_turn_index": 4,
+            "preceding_opponent_cpl": 0.0
+          }
+        ],
+        "opponent_move_scores": [
+          {
+            "ply": 18,
+            "continuation_ply": 2,
+            "move": "b8a6",
+            "move_san": "Na6",
+            "eval_before": 547,
+            "eval_model": 96,
+            "cpl": 451,
+            "opponent_turn_index": 1
+          },
+          {
+            "ply": 20,
+            "continuation_ply": 4,
+            "move": "a6c7",
+            "move_san": "Nc7",
+            "eval_before": 528,
+            "eval_model": -476,
+            "cpl": 1004,
+            "opponent_turn_index": 2
+          },
+          {
+            "ply": 22,
+            "continuation_ply": 6,
+            "move": "f6d7",
+            "move_san": "Nd7",
+            "eval_before": -488,
+            "eval_model": -478,
+            "cpl": 0.0,
+            "opponent_turn_index": 3
+          },
+          {
+            "ply": 24,
+            "continuation_ply": 8,
+            "move": "h7h6",
+            "move_san": "h6",
+            "eval_before": -488,
+            "eval_model": -516,
+            "cpl": 28,
+            "opponent_turn_index": 4
+          }
+        ],
+        "pgn": "[Event \"LLM Chess Benchmark\"]\n[Site \"Local\"]\n[Date \"2026.07.23\"]\n[Round \"1\"]\n[White \"gemma-4-31b-it (high)\"]\n[Black \"stability-random\"]\n[Result \"1/2-1/2\"]\n[Termination \"max_moves\"]\n\n1. Nc3 e5 2. f4 exf4 3. e4 f3 4. Rb1 Nf6 5. Nxf3 d6 6. Nd4 c5 7. Qe2 Bg4 8. Kd1 c4 9. d3 Na6 10. h3 Nc7 11. hxg4 Nd7 12. g5 h6 1/2-1/2",
+        "model_retry_attempts": 0,
+        "model_retry_recoveries": 0,
+        "model_retry_failures": 0,
+        "model_retry_unknown": 0,
+        "conditional_retry_protocol_version": "production-game-retry-v1",
+        "score_depth": 30
+      }
+    ]
   }
 }
