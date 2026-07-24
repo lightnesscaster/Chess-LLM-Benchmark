@@ -429,7 +429,10 @@ def create_llm_player(
             working_dir=player_config.get("codex_working_dir"),
         )
 
-    if api_backend == "gemini":
+    if (
+        (respect_config_api and player_config.get("api") == "gemini")
+        or api_backend == "gemini"
+    ):
         model_name = player_config.get("model_name", "")
         if model_name.startswith("google/"):
             model_name = model_name[len("google/") :]

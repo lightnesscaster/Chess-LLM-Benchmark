@@ -277,7 +277,15 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
     for llm_cfg in config.get("llms", []):
         if llm_cfg.get("unavailable") is True:
             continue
-        if api_backend == "codex" and llm_cfg.get("api") != "codex":
+        configured_api = llm_cfg.get("api", "openrouter")
+        if api_backend == "codex" and configured_api != "codex":
+            continue
+        if api_backend == "gemini" and configured_api != "gemini":
+            continue
+        if (
+            api_backend == "openrouter"
+            and configured_api in {"codex", "gemini"}
+        ):
             continue
 
         player_id = llm_cfg["player_id"]
@@ -315,7 +323,7 @@ def create_llm_players(config: dict, api_key: str = None, api_backend: str = "op
                 extra_args=llm_cfg.get("codex_extra_args"),
                 working_dir=llm_cfg.get("codex_working_dir"),
             )
-        elif api_backend == "gemini":
+        elif configured_api == "gemini" or api_backend == "gemini":
             # Strip google/ prefix for direct Gemini API
             gemini_model = model_name.removeprefix("google/")
             players[player_id] = GeminiPlayer(

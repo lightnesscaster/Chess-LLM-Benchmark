@@ -1057,17 +1057,42 @@ class MatchScheduler:
                         f"{player.player_id}"
                     )
 
+            white = (
+                task.white.clone_for_game()
+                if isinstance(task.white, BaseLLMPlayer)
+                else task.white
+            )
+            black = (
+                task.black.clone_for_game()
+                if isinstance(task.black, BaseLLMPlayer)
+                else task.black
+            )
             if self.verbose:
-                print(f"[{task.game_num}/{task.total_games}] {task.white.player_id} vs {task.black.player_id}")
+                print(
+                    f"[{task.game_num}/{task.total_games}] "
+                    f"{white.player_id} vs {black.player_id}"
+                )
 
             runner = GameRunner(
-                white=task.white,
-                black=task.black,
+                white=white,
+                black=black,
                 max_moves=self.max_moves,
                 verbose=self.verbose,
             )
 
-            result, pgn_str = await runner.play_game()
+            try:
+                result, pgn_str = await runner.play_game()
+            finally:
+                for template, player in (
+                    (task.white, white),
+                    (task.black, black),
+                ):
+                    if player is template or not isinstance(
+                        player,
+                        BaseLLMPlayer,
+                    ):
+                        continue
+                    await player.close()
 
             # Don't save games that ended due to API errors
             if result.termination == "api_error":

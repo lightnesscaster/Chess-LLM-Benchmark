@@ -16,6 +16,15 @@ from .openrouter_client import TransientAPIError
 from .prompts import build_chess_prompt
 
 
+def billed_completion_tokens(usage_metadata) -> int:
+    """Return all Gemini tokens billed at the output rate."""
+    visible_tokens = usage_metadata.candidates_token_count or 0
+    thinking_tokens = (
+        getattr(usage_metadata, "thoughts_token_count", 0) or 0
+    )
+    return int(visible_tokens) + int(thinking_tokens)
+
+
 class GeminiPlayer(BaseLLMPlayer):
     """
     LLM player using the Google Gemini API directly.
@@ -141,9 +150,14 @@ class GeminiPlayer(BaseLLMPlayer):
         self.last_raw_response = ""
 
         # Build config
-        config_kwargs = {
-            "temperature": self.temperature,
-        }
+        # Gemini 3.6 and later reject deprecated sampling parameters, so send
+        # only its supported thinking configuration.
+        supports_sampling_parameters = not self.model_name.startswith(
+            "gemini-3.6"
+        )
+        config_kwargs = {}
+        if supports_sampling_parameters:
+            config_kwargs["temperature"] = self.temperature
 
         # Configure thinking/reasoning
         # Gemini 3.x uses thinking_level (string), Gemini 2.5 uses thinking_budget (token count)
@@ -169,8 +183,9 @@ class GeminiPlayer(BaseLLMPlayer):
                 config_kwargs["thinking_config"] = self._genai.types.ThinkingConfig(
                     thinking_budget=thinking_budget,
                 )
-            # Gemini API requires temperature=0 when thinking is enabled
-            config_kwargs["temperature"] = 0.0
+            if supports_sampling_parameters:
+                # Older Gemini APIs require temperature=0 with thinking.
+                config_kwargs["temperature"] = 0.0
 
         config = self._genai.types.GenerateContentConfig(**config_kwargs)
 
@@ -192,7 +207,10 @@ class GeminiPlayer(BaseLLMPlayer):
                 # Track token usage
                 if response.usage_metadata:
                     self._last_prompt_tokens = response.usage_metadata.prompt_token_count or 0
-                    self._last_completion_tokens = response.usage_metadata.candidates_token_count or 0
+                    # Gemini output pricing includes hidden thinking tokens.
+                    self._last_completion_tokens = billed_completion_tokens(
+                        response.usage_metadata
+                    )
                     self.prompt_tokens += self._last_prompt_tokens
                     self.completion_tokens += self._last_completion_tokens
                     self.total_tokens += response.usage_metadata.total_token_count or 0

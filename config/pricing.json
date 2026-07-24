@@ -355,6 +355,10 @@
     "completion": 9e-06,
     "prompt": 1.5e-06
   },
+  "google/gemini-3.6-flash": {
+    "completion": 7.5e-06,
+    "prompt": 1.5e-06
+  },
   "google/gemma-2-27b-it": {
     "completion": 6.5e-07,
     "prompt": 6.5e-07

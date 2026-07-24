@@ -60,6 +60,36 @@ class AcquisitionPreflightTests(unittest.TestCase):
         self.assertEqual(set(selected), {"codex-model (high)"})
         self.assertEqual(reasoning_player_ids(selected), {"codex-model (high)"})
 
+    def test_backend_preflight_keeps_direct_gemini_provider_isolated(self) -> None:
+        config = {
+            "llms": [
+                {
+                    "player_id": "direct-gemini",
+                    "model_name": "google/gemini-test",
+                    "api": "gemini",
+                    "reasoning_effort": "medium",
+                },
+                {
+                    "player_id": "openrouter-gemini",
+                    "model_name": "google/gemini-test",
+                },
+                {
+                    "player_id": "codex-model",
+                    "model_name": "openai/gpt-test",
+                    "api": "codex",
+                },
+            ]
+        }
+
+        self.assertEqual(
+            set(selected_llm_configs(config, "gemini")),
+            {"direct-gemini (medium)"},
+        )
+        self.assertEqual(
+            set(selected_llm_configs(config, "openrouter")),
+            {"openrouter-gemini"},
+        )
+
     def test_budget_plan_is_ordered_resumable_and_zero_call(self) -> None:
         policy = load_acquisition_policy()
         configs = {

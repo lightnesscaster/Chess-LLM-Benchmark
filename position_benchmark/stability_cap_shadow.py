@@ -81,6 +81,7 @@ def model_family(player_id: str) -> str:
     """Return a model-line family for correlated-evidence checks."""
     player = player_id.lower()
     prefixes = (
+        "gemini-3.6",
         "gpt-5.6-luna",
         "gpt-5.6-terra",
         "gpt-5.6-sol",

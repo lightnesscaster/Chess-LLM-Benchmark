@@ -60,7 +60,15 @@ def selected_llm_configs(
     for raw in config.get("llms", []):
         if raw.get("unavailable") is True:
             continue
-        if api_backend == "codex" and raw.get("api") != "codex":
+        configured_api = raw.get("api", "openrouter")
+        if api_backend == "codex" and configured_api != "codex":
+            continue
+        if api_backend == "gemini" and configured_api != "gemini":
+            continue
+        if (
+            api_backend == "openrouter"
+            and configured_api in {"codex", "gemini"}
+        ):
             continue
         player_id = resolve_player_id(raw["player_id"], raw.get("reasoning_effort"))
         selected[player_id] = raw

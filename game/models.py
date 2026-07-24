@@ -61,6 +61,8 @@ class GameResult(BaseModel):
     # {"total_time", "move_count", "avg_time", "move_times"}
     timing_white: Optional[dict] = None
     timing_black: Optional[dict] = None
+    accounting_status_white: Optional[str] = None
+    accounting_status_black: Optional[str] = None
     # Details about illegal moves for debugging (prompt, response, parsed move)
     illegal_move_details: Optional[List[dict]] = None
 

@@ -19,6 +19,11 @@
     "created_timestamp": 1779148800,
     "created_date": "2026-05-19"
   },
+  "gemini-3.6-flash (medium)": {
+    "model_id": "google/gemini-3.6-flash",
+    "created_timestamp": 1784592000,
+    "created_date": "2026-07-21"
+  },
   "o3": {
     "model_id": "openai/o3",
     "created_timestamp": 1744823457,

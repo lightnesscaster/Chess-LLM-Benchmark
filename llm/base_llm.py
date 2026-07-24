@@ -3,6 +3,7 @@ Base class for LLM player wrappers.
 """
 
 import abc
+import copy
 from typing import Optional
 
 import chess
@@ -50,6 +51,25 @@ class BaseLLMPlayer(abc.ABC):
         """Reset timing counters (call at start of each game)."""
         self.move_times = []
         self.total_move_time = 0.0
+
+    def clone_for_game(self) -> "BaseLLMPlayer":
+        """Return isolated mutable request/accounting state for one game."""
+        clone = copy.copy(self)
+        # HTTP sessions must not be shared with a clone that will be closed
+        # independently after its game.
+        if hasattr(clone, "_session"):
+            clone._session = None
+        if hasattr(clone, "_prefetched_response"):
+            clone._prefetched_response = None
+        if hasattr(clone, "last_api_error"):
+            clone.last_api_error = ""
+        clone.reset_token_usage()
+        clone.reset_timing()
+        if hasattr(clone, "_last_prompt_tokens"):
+            clone._last_prompt_tokens = 0
+        if hasattr(clone, "_last_completion_tokens"):
+            clone._last_completion_tokens = 0
+        return clone
 
     def mark_move_successful(self) -> None:
         """Mark the last response as successful (called after a legal move)."""

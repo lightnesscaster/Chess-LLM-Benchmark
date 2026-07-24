@@ -6,8 +6,8 @@ No mature affected holdout configuration is available yet. Production remains un
 
 ## Coverage
 
-- Prospective configurations: 0
-- Mature configurations: 0
+- Prospective configurations: 1
+- Mature configurations: 1
 - Affected mature configurations: 0
 - Affected families: 0
 - Affected labs: 0

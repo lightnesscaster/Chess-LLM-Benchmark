@@ -2,5 +2,62 @@
   "schema_version": "depth30-cap-shadow-v1",
   "production_effect": "none",
   "exclusions": {},
-  "entries": {}
+  "entries": {
+    "gemini-3.6-flash (medium)": {
+      "schema_version": "depth30-cap-shadow-v1",
+      "player_id": "gemini-3.6-flash (medium)",
+      "family": "gemini-3.6",
+      "lab": "google",
+      "recorded_at": "2026-07-24T07:00:25.729886+00:00",
+      "prediction_locked": true,
+      "production_effect": "none",
+      "policy_version": "depth30-cap-prospective-v1",
+      "policy_sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d",
+      "eligibility": {
+        "status": "prospective-holdout",
+        "prospective_holdout": true,
+        "game_snapshot": {
+          "games_played": 0,
+          "games_rd": 350.0,
+          "rating_deviation": 350.0
+        }
+      },
+      "production_reference_candidate": "deduplicated_move_exposure_cap",
+      "production_prediction": 1989.4199134151672,
+      "candidates": {
+        "current_move_cap": 1989.4199134151672,
+        "deduplicated_move_exposure_cap": 1989.4199134151672,
+        "trajectory_hazard_cap": 1989.4199134151672,
+        "two_affected_trajectory_gate": 1989.4199134151672,
+        "repeated_forfeit_only": 1989.4199134151672,
+        "no_hard_cap": 1989.4199134151672
+      },
+      "evidence": {
+        "attempted_positions": 8,
+        "scored_moves": 31,
+        "catastrophe_positions": 0,
+        "forfeit_positions": 0,
+        "affected_positions": 0,
+        "catastrophe_episodes": 0,
+        "at_risk_moves": 31,
+        "raw_catastrophe_moves": 0,
+        "catastrophe_hazard_pct": 0.0,
+        "forfeit_pct": 0.0,
+        "score_depth": 30,
+        "current_cap": null,
+        "hazard_cap": null,
+        "deduplicated_cap": null,
+        "deduplicated_catastrophe_pct": 0.0
+      },
+      "source_fingerprints": {
+        "core_record_sha256": "c2825d14813f9e5107259c9940186fb6f68ea87e6889d23c1854446a78a71fc1",
+        "game_like_record_sha256": "7b7ff079dd1d3854b8379de68dafaa1424de02fc537f37dff96359d22ea5a151",
+        "stability_record_sha256": "988bc5350e5dab26420a7718c5311977eee4c098d68cbaa17c7175fedfd87c74",
+        "blunder_record_sha256": null,
+        "core_positions_sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+        "game_like_positions_sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+        "blunder_positions_sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+      }
+    }
+  }
 }

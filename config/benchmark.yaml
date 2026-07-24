@@ -534,6 +534,12 @@ llms:
     temperature: 0.0
     reasoning_effort: medium
 
+  # gemini-3.6-flash (reasoning model; direct Gemini API)
+  - player_id: "gemini-3.6-flash (medium)"
+    model_name: "google/gemini-3.6-flash"
+    api: gemini
+    reasoning_effort: medium
+
   # grok-4-fast
   - player_id: "grok-4-fast"
     model_name: "x-ai/grok-4-fast"

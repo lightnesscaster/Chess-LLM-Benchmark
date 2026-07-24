@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-24T03:42:55.540736+00:00",
+  "generated_at": "2026-07-24T07:08:22.551097+00:00",
   "policy_version": "depth30-cap-prospective-v1",
   "production_effect": "none",
   "status": "collecting",
@@ -10,16 +10,16 @@
     },
     "ledger": {
       "path": "position_benchmark/results/stability_cap_shadow.json",
-      "sha256": "25b280546353856f3ff62cc4f762abea7401fb33266fcc3648a18345a97cfd65"
+      "sha256": "44bc78a20542f2081525e035cb953de958493f91646f7245f7a30c123d5c4236"
     },
     "ratings": {
       "path": "position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json",
-      "sha256": "28bbc666cde69447289a8bec61d9ad696fe3aa474cb507d5b69133c8b7483efd"
+      "sha256": "63d1396561b45f9b25868ab4be1cdeaa82fdbbbbb5e241c61eb51877d0780cd5"
     }
   },
   "coverage": {
-    "prospective_holdout_configurations": 0,
-    "mature_holdout_configurations": 0,
+    "prospective_holdout_configurations": 1,
+    "mature_holdout_configurations": 1,
     "affected_mature_configurations": 0,
     "affected_families": [],
     "affected_labs": [],
@@ -34,5 +34,24 @@
   "comparison": null,
   "promotion_checks": {},
   "promotion_passed": false,
-  "rows": []
+  "rows": [
+    {
+      "player_id": "gemini-3.6-flash (medium)",
+      "family": "gemini-3.6",
+      "lab": "google",
+      "recorded_at": "2026-07-24T07:00:25.729886+00:00",
+      "predictions": {
+        "deduplicated_move_exposure_cap": 1989.4199134151672,
+        "repeated_forfeit_only": 1989.4199134151672
+      },
+      "affected": false,
+      "target": {
+        "rating": 2042.400160612397,
+        "games": 15,
+        "games_rd": 158.5790172755039
+      },
+      "mature": true,
+      "maturity_reason": "ready"
+    }
+  ]
 }

@@ -777,7 +777,19 @@ class ProductionContractTests(unittest.TestCase):
         )
         self.assertEqual(ledger["production_effect"], "none")
         self.assertEqual(ledger["exclusions"], {})
-        self.assertEqual(ledger["entries"], {})
+        for player_id, entry in ledger["entries"].items():
+            self.assertEqual(entry["player_id"], player_id)
+            self.assertTrue(entry["prediction_locked"])
+            self.assertEqual(entry["production_effect"], "none")
+            self.assertEqual(
+                entry["policy_version"],
+                policy["policy_version"],
+            )
+        gemini36 = ledger["entries"]["gemini-3.6-flash (medium)"]
+        self.assertEqual(gemini36["family"], "gemini-3.6")
+        self.assertTrue(
+            gemini36["eligibility"]["prospective_holdout"]
+        )
 
     def test_shadow_holdout_requires_and_can_pass_fixed_gates(self) -> None:
         policy = {

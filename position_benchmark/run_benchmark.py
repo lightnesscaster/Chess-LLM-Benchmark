@@ -564,7 +564,7 @@ async def run_benchmark(
                     working_dir=player_config.get("codex_working_dir"),
                 )
 
-            if api_backend == "gemini":
+            if player_config.get("api") == "gemini" or api_backend == "gemini":
                 # Strip provider prefix for direct Gemini API
                 model_name = player_config.get("model_name", "")
                 if model_name.startswith("google/"):
@@ -599,8 +599,13 @@ async def run_benchmark(
         # provider concurrency.
         if player_config.get("api") == "codex" or api_backend == "codex":
             max_concurrent = player_config.get("codex_position_max_concurrent", 1)
+        elif player_config.get("api") == "gemini" or api_backend == "gemini":
+            max_concurrent = player_config.get(
+                "gemini_position_max_concurrent",
+                1,
+            )
         else:
-            max_concurrent = 1 if api_backend == "gemini" else 10
+            max_concurrent = 10
         semaphore = asyncio.Semaphore(max_concurrent)
         completed = [0]  # Use list to allow modification in nested function
         results = [None] * len(positions)  # Pre-allocate to maintain order
