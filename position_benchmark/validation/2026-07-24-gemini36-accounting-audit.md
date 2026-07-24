@@ -18,5 +18,11 @@ cost. The affected game-side token and timing fields were cleared in Firestore
 and marked unavailable by `scripts/repair_gemini36_accounting.py`; game results
 were preserved.
 
+For dashboard display only, the 31 continuation calls whose complete
+`total_tokens` values survived cost $0.23577 at published pricing, or
+$0.007605 per call. Extrapolating that observed rate across 343 model turns in
+15 games gives an explicitly marked estimate of approximately $0.174 per game.
+This is not an authoritative reconstruction of the original bill.
+
 Future runs clone the configured LLM player for each game and count Gemini
 candidate plus thought tokens as billed completion tokens.

@@ -130,6 +130,7 @@ class Leaderboard:
         for i, rating in enumerate(ratings, 1):
             # 95% confidence interval
             ci = 1.96 * rating.rating_deviation
+            date_info = publish_dates.get(rating.player_id, {})
 
             entry = {
                 "rank": i,
@@ -149,8 +150,7 @@ class Leaderboard:
             }
 
             # Add publish date if available
-            if rating.player_id in publish_dates:
-                date_info = publish_dates[rating.player_id]
+            if date_info:
                 # Format as MM/YY from YYYY-MM-DD
                 date_str = date_info.get("created_date", "")
                 if date_str and len(date_str) == 10:  # YYYY-MM-DD is always 10 chars
@@ -175,6 +175,16 @@ class Leaderboard:
                     "total_cost": cost_stats.get("total_cost", 0.0),
                     "avg_cost_per_game": cost_stats.get("avg_cost_per_game", 0.0),
                     "games_with_cost": cost_stats.get("games_with_cost", 0),
+                })
+            elif date_info.get("display_cost_per_game") is not None:
+                entry.update({
+                    "avg_cost_per_game": float(
+                        date_info["display_cost_per_game"]
+                    ),
+                    "cost_estimated": bool(
+                        date_info.get("display_cost_estimated", True)
+                    ),
+                    "cost_basis": date_info.get("display_cost_basis", ""),
                 })
 
             leaderboard.append(entry)
@@ -238,7 +248,8 @@ class Leaderboard:
             # Format cost per game
             avg_cost = entry.get("avg_cost_per_game")
             if avg_cost is not None:
-                cost_str = f"${avg_cost:.4f}"
+                prefix = "~" if entry.get("cost_estimated") else ""
+                cost_str = f"{prefix}${avg_cost:.4f}"
             else:
                 cost_str = "-"
 

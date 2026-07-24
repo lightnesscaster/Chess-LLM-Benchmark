@@ -62,7 +62,7 @@
                 <td class="record">{{ entry.wins|default(0) }}-{{ entry.losses|default(0) }}-{{ entry.draws|default(0) }}</td>
                 <td class="legal">{{ "%.1f"|format((entry.legal_move_rate|default(1.0)) * 100) }}%</td>
                 <td class="released">{{ entry.publish_date|default('-', true) }}</td>
-                <td class="cost">{% if entry.get('avg_cost_per_game') is not none %}${{ "%.4f"|format(entry.avg_cost_per_game) }}{% else %}-{% endif %}</td>
+                <td class="cost" {% if entry.get('cost_basis') %}title="{{ entry.cost_basis }}"{% endif %}>{% if entry.get('avg_cost_per_game') is not none %}{% if entry.get('cost_estimated') %}~{% endif %}${{ "%.4f"|format(entry.avg_cost_per_game) }}{% else %}-{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -78,7 +78,7 @@
     <p><strong>RD</strong> = Rating Deviation (uncertainty in rating)</p>
     <p><strong>95% CI</strong> = 95% Confidence Interval</p>
     <p><strong>Legal%</strong> = Percentage of moves that were legal on first attempt</p>
-    <p><strong>$/Game</strong> = Average cost per game based on OpenRouter pricing</p>
+    <p><strong>$/Game</strong> = Average cost per game based on provider pricing; ~ marks an estimate</p>
 </div>
 {% else %}
 <div class="empty-state">
