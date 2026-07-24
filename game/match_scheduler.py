@@ -266,6 +266,37 @@ class MatchScheduler:
             if required <= completed
         }
 
+    def _record_stability_cap_shadow(self, player_id: str) -> None:
+        """Lock research-only cap predictions before this run schedules games."""
+        from position_benchmark.stability_cap_shadow import (
+            record_shadow_prediction,
+        )
+
+        rating = self.rating_store.get(player_id)
+        game_snapshot = {
+            "games_played": int(getattr(rating, "games_played", 0) or 0),
+            "games_rd": float(getattr(rating, "games_rd", 350.0) or 350.0),
+            "rating_deviation": float(
+                getattr(rating, "rating_deviation", 350.0) or 350.0
+            ),
+        }
+        try:
+            record, created = record_shadow_prediction(
+                player_id,
+                game_snapshot=game_snapshot,
+            )
+        except (OSError, TypeError, ValueError) as error:
+            print(
+                f"  Warning: could not record stability-cap shadow for "
+                f"{player_id}: {error}"
+            )
+            return
+        if created and record is not None:
+            print(
+                f"  Locked stability-cap shadow for {player_id}: "
+                f"{record['eligibility']['status']} (production effect: none)"
+            )
+
     def _needs_position_benchmark(self, player_id: str) -> bool:
         """Check if a player needs any automatic benchmark acquisition panel."""
         # Engines don't need benchmarks
@@ -377,6 +408,7 @@ class MatchScheduler:
             if not missing:
                 acquisition_complete.append(llm_id)
                 self._benchmark_completed.add(llm_id)
+                self._record_stability_cap_shadow(llm_id)
                 continue
 
             rating = self.rating_store.get(llm_id)
@@ -544,6 +576,7 @@ class MatchScheduler:
                     self._acquisition_state,
                 ):
                     self._benchmark_completed.add(llm_id)
+                    self._record_stability_cap_shadow(llm_id)
 
         finally:
             if stockfish is not None:

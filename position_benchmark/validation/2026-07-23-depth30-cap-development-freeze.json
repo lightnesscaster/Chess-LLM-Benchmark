@@ -6,7 +6,7 @@
   "purpose": "Freeze every configuration used to select continuation-cap candidates before prospective holdout predictions are recorded.",
   "development_audit": {
     "path": "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json",
-    "sha256": "bd95407fcac4549e1b76624c5ed2f6b243a23dc3b339f60f4e19d9af28a586fd"
+    "sha256": "47ea53cdd5516b456c64a6fef0f9104ec3e1d730d0fa6c63b3fe089d5255b107"
   },
   "frozen_inputs": {
     "position_benchmark/results/core.json": "b83967d73a6e0499bf5d65679c92966f54dad7402ede1202fa930e4355a6b556",

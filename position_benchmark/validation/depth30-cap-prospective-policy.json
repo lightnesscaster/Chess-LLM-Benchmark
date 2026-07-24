@@ -1,0 +1,43 @@
+{
+  "policy_version": "depth30-cap-prospective-v1",
+  "status": "active-collecting",
+  "production_effect": "none",
+  "development_freeze": {
+    "path": "position_benchmark/validation/2026-07-23-depth30-cap-development-freeze.json",
+    "sha256": "8c80cb7d1b6d68c00f343cf746f018fb8bbb64af91faacd27668dc260659178a"
+  },
+  "shadow_ledger": "position_benchmark/results/stability_cap_shadow.json",
+  "evaluation_output": "position_benchmark/validation/depth30-cap-prospective-evaluation.json",
+  "evaluation_report": "position_benchmark/validation/depth30-cap-prospective-evaluation.md",
+  "primary_target": {
+    "name": "no-position-seed game rating",
+    "default_path": "position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json",
+    "refresh_command": "python cli.py recalculate -c config/benchmark.yaml --validation-output position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json --validation-seed-rd 350 --validation-disable-benchmark-seeds",
+    "minimum_games": 8,
+    "maximum_games_rd": 200
+  },
+  "comparison": {
+    "reference_candidate": "deduplicated_move_exposure_cap",
+    "challenger_candidate": "repeated_forfeit_only",
+    "evaluate_affected_configurations_only": true
+  },
+  "coverage_gate": {
+    "minimum_mature_holdout_configurations": 12,
+    "minimum_affected_holdout_configurations": 8,
+    "minimum_affected_families": 6,
+    "minimum_affected_labs": 4
+  },
+  "promotion_gate": {
+    "minimum_family_bootstrap_probability_mae_improves": 0.95,
+    "minimum_lab_bootstrap_probability_mae_improves": 0.95,
+    "minimum_mae_improvement_elo": 10,
+    "maximum_rmse_delta_elo": 0,
+    "maximum_absolute_bias_increase_elo": 25,
+    "maximum_leave_one_lab_out_mae_delta_elo": 10
+  },
+  "bootstrap": {
+    "resamples": 20000,
+    "random_seed": 2718
+  },
+  "decision_rule": "Promotion requires every coverage and promotion check to pass. The shadow ledger is append-only: predictions are locked before eligible game outcomes are evaluated."
+}

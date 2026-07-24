@@ -113,6 +113,13 @@ run, preserving the existing one-benchmark-contribution scheduling behavior.
 Historical blunders and every research-candidate panel are explicitly excluded
 from automatic acquisition.
 
+When all three automatic panels first become ready, the scheduler also locks the
+fixed continuation-cap candidate predictions in
+`results/stability_cap_shadow.json` before scheduling that configuration's first
+game. This shadow record has `production_effect: none`; it cannot seed or modify a
+rating. Configurations already used in the frozen development audit are excluded
+from prospective enrollment.
+
 ## Rating formula
 
 For the 50 equal positions, calculate:
@@ -241,14 +248,57 @@ This trajectory deduplication is a conservative counting correction: it preserve
 the original exposure denominator and coefficients and can never make the cap more
 severe. A July 21 depth-30 audit compared the old move count, this correction,
 survival-style hazard censoring, repeated-forfeit-only protection, and no hard cap
-against both RD-300 and no-position-seed game ratings. The targets disagreed, and
-the 14-configuration/five-family cohort failed the existing 30/eight evidence
-gate, so no coefficient refit, hazard redesign, or cap removal was adopted. See
-`validation/2026-07-21-depth30-stability-cap-analysis.md`.
+against both RD-300 and no-position-seed game ratings. The final development
+cohort contains 30 configurations, 17 model-line families, and eight labs, so its
+30/eight acquisition gate passes. However, the leading
+`repeated_forfeit_only` candidate changes only three configurations, all from
+OpenAI. Its family- and lab-bootstrap intervals cross zero, and excluding the
+influential GPT-3.5 Turbo Instruct family makes it slightly worse than the actual
+production reference, `deduplicated_move_exposure_cap`, on both targets.
+Therefore no coefficient refit, hazard redesign, or cap removal was adopted. See
+`validation/2026-07-21-depth30-stability-cap-analysis.md` and the immutable
+development-cohort declaration in
+`validation/2026-07-23-depth30-cap-development-freeze.json`.
 
 As with the game-like panel, the cap is applied only when it is more than 150 Elo
 below the current estimate. Eight starting positions require up to 32 ordinary
 model turns, plus any illegal-move retries.
+
+### Prospective continuation-cap holdout
+
+Future configurations are evaluated under the fixed
+`validation/depth30-cap-prospective-policy.json` contract. A configuration is
+eligible only when it was not in the development cohort and its candidate
+predictions were locked after all three current automatic panels became ready and
+before its first game. The append-only shadow ledger preserves the predictions and
+input fingerprints; later game outcomes never rewrite them.
+
+The primary outcome is an isolated no-position-seed game rating with at least
+eight games and games RD no greater than 200. The comparison includes only mature
+configurations whose challenger prediction differs from production. Evaluation
+does not open until it has at least 12 mature holdouts, eight affected holdouts,
+six affected families, and four affected labs. Promotion then requires every
+predeclared MAE, RMSE, bias, family-bootstrap, lab-bootstrap, and
+leave-one-lab-out check to pass. Validation recalculation sorts source games and
+players deterministically, uses a local seeded shuffle, normalizes timestamps to
+the latest included game, and serializes rating keys in sorted order.
+
+Refresh the isolated target and evaluate the locked ledger with:
+
+```bash
+python cli.py recalculate \
+  -c config/benchmark.yaml \
+  --validation-output position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json \
+  --validation-seed-rd 350 \
+  --validation-disable-benchmark-seeds
+```
+
+That exact isolated recalculation automatically runs the evaluator. It can also be
+rerun without recalculating ratings via
+`python scripts/evaluate_stability_cap_holdout.py`. The evaluator writes the
+current machine-readable decision and report under
+`position_benchmark/validation/`. Every status remains research-only unless the
+fixed promotion gate passes and a separate production change is explicitly made.
 
 ### Family-held-out supplemental predictor audit
 

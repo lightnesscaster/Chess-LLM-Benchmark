@@ -627,7 +627,7 @@ class RatingStore:
             for player_id, rating in self._ratings.items()
         }
         with open(self.path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, sort_keys=True)
 
     def get(self, player_id: str) -> PlayerRating:
         """

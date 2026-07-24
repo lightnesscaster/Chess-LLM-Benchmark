@@ -28,6 +28,19 @@
       "failure_transfer_heldout"
     ]
   },
+  "prospective_stability_cap_validation": {
+    "status": "collecting",
+    "production_effect": "none",
+    "development_freeze": "position_benchmark/validation/2026-07-23-depth30-cap-development-freeze.json",
+    "policy": "position_benchmark/validation/depth30-cap-prospective-policy.json",
+    "shadow_ledger": "position_benchmark/results/stability_cap_shadow.json",
+    "game_only_target": "position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json",
+    "evaluation": "position_benchmark/validation/depth30-cap-prospective-evaluation.json",
+    "report": "position_benchmark/validation/depth30-cap-prospective-evaluation.md",
+    "recording_timing": "after-current-automatic-suite-before-first-game",
+    "reference_candidate": "deduplicated_move_exposure_cap",
+    "challenger_candidate": "repeated_forfeit_only"
+  },
   "panels": {
     "core": {
       "status": "required",

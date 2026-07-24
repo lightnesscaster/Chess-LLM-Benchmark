@@ -72,12 +72,21 @@ from position_benchmark.retry_protocol import (
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
     conditional_retry_summary,
 )
+from position_benchmark.stability_cap_shadow import (
+    POLICY_PATH as STABILITY_CAP_SHADOW_POLICY_PATH,
+    SHADOW_LEDGER_PATH as STABILITY_CAP_SHADOW_LEDGER_PATH,
+    calculate_candidate_predictions,
+    record_shadow_prediction,
+)
 from position_benchmark.token_accounting import sum_result_row_tokens
 from position_benchmark.verify_benchmark import verify_stability_results
 from rating.cost_calculator import CostCalculator
+from rating.glicko2 import PlayerRating
 from rating.rating_store import RatingStore
 from scripts.analyze_puzzle_predictions import UNAVAILABLE_PLAYER_IDS
 from scripts.audit_position_benchmark_readiness import AD_HOC_PLAYER_HINTS, inspect_player_results
+from scripts.analyze_depth30_stability_cap import main as run_depth30_cap_audit
+from scripts.evaluate_stability_cap_holdout import evaluate as evaluate_cap_holdout
 from scripts.promote_position_benchmark_overlays import merge_overlays, refresh_summary
 from scripts.reevaluate_position_result_overlays import filter_results
 from scripts.reevaluate_position_result_overlays import recalculate_summary
@@ -202,6 +211,7 @@ class ProductionContractTests(unittest.TestCase):
             get=lambda _player_id: SimpleNamespace(
                 rating=1000,
                 rating_deviation=300,
+                games_rd=350,
                 games_played=0,
                 wins=0,
                 losses=0,
@@ -219,6 +229,8 @@ class ProductionContractTests(unittest.TestCase):
         )
 
         calls: list[str] = []
+        shadow_calls: list[str] = []
+        scheduler._record_stability_cap_shadow = shadow_calls.append
 
         async def fake_positions(**kwargs):
             calls.append(kwargs["results_path"].name)
@@ -270,6 +282,7 @@ class ProductionContractTests(unittest.TestCase):
             set(SUPPORTED_AUTOMATIC_PANELS),
         )
         self.assertIn("core-only", scheduler._benchmark_completed)
+        self.assertEqual(shadow_calls, ["core-only"])
 
     def test_legality_stress_candidate_is_selected_without_gpt56_leakage(self) -> None:
         positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
@@ -420,6 +433,35 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(seeded.rating, 1500.0)
         self.assertEqual(seeded.rating_deviation, 350.0)
 
+    def test_local_rating_store_serialization_is_order_deterministic(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = [
+                Path(tmpdir) / "ratings-a.json",
+                Path(tmpdir) / "ratings-b.json",
+            ]
+            orders = [
+                ("model-b", "model-a"),
+                ("model-a", "model-b"),
+            ]
+            for path, order in zip(paths, orders):
+                store = RatingStore(
+                    path=str(path),
+                    use_firestore=False,
+                    use_benchmark_predictions=False,
+                )
+                for player_id in order:
+                    store.set(
+                        PlayerRating(
+                            player_id=player_id,
+                            rating=1000,
+                            last_updated="2026-01-01T00:00:00+00:00",
+                        ),
+                        auto_save=False,
+                    )
+                store.save()
+
+            self.assertEqual(paths[0].read_bytes(), paths[1].read_bytes())
+
     def test_depth30_cap_audit_report_matches_current_evidence_gate(self) -> None:
         audit_path = (
             ROOT
@@ -464,7 +506,7 @@ class ProductionContractTests(unittest.TestCase):
         rd_lab_influence = audit["targets"]["rd300"]["candidates"][candidate][
             "lab_influence"
         ]
-        self.assertGreater(
+        self.assertAlmostEqual(
             rd_lab_influence["leave_one_lab_out_mae_delta"][influential_lab],
             0.0,
         )
@@ -492,6 +534,188 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(
             freeze["candidate_order"],
             audit["candidate_order"],
+        )
+
+    def test_frozen_depth30_development_audit_refuses_implicit_overwrite(self) -> None:
+        with patch("sys.argv", ["analyze_depth30_stability_cap.py"]):
+            with self.assertRaisesRegex(
+                SystemExit,
+                "development cohort is frozen",
+            ):
+                run_depth30_cap_audit()
+
+    def test_shadow_cap_candidates_match_frozen_development_audit(self) -> None:
+        audit_path = (
+            ROOT
+            / "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json"
+        )
+        audit = json.loads(audit_path.read_text())
+        core_results = json.loads(CORE_RESULTS_PATH.read_text())
+        core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+        game_results = json.loads(GAME_LIKE_RESULTS_PATH.read_text())
+        game_positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
+        stability_results = json.loads(STABILITY_RESULTS_PATH.read_text())
+        blunder_results = json.loads(BLUNDER_RESULTS_PATH.read_text())
+        blunder_positions = json.loads(BLUNDER_POSITIONS_PATH.read_text())["positions"]
+
+        self.assertEqual(
+            audit["production_reference_candidate"],
+            "deduplicated_move_exposure_cap",
+        )
+        for row in audit["rows"]:
+            player_id = row["player_id"]
+            shadow = calculate_candidate_predictions(
+                core_record=core_results[player_id],
+                core_positions=core_positions,
+                game_like_record=game_results[player_id],
+                game_like_positions=game_positions,
+                stability_record=stability_results[player_id],
+                blunder_record=blunder_results.get(player_id),
+                blunder_positions=blunder_positions,
+            )
+            for candidate, expected in row["candidates"].items():
+                self.assertAlmostEqual(
+                    shadow["candidates"][candidate],
+                    expected,
+                )
+
+    def test_shadow_prediction_ledger_is_append_only(self) -> None:
+        frozen = {
+            "development_configuration_ids": [],
+        }
+        first_record = {
+            "player_id": "future-model",
+            "prediction_locked": True,
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ledger_path = Path(tmpdir) / "shadow.json"
+            with (
+                patch(
+                    "position_benchmark.stability_cap_shadow._load_policy_and_freeze",
+                    return_value=({}, frozen),
+                ),
+                patch(
+                    "position_benchmark.stability_cap_shadow.build_shadow_record",
+                    return_value=first_record,
+                ) as build,
+            ):
+                saved, created = record_shadow_prediction(
+                    "future-model",
+                    ledger_path=ledger_path,
+                )
+                repeated, repeated_created = record_shadow_prediction(
+                    "future-model",
+                    ledger_path=ledger_path,
+                )
+
+        self.assertTrue(created)
+        self.assertFalse(repeated_created)
+        self.assertEqual(saved, first_record)
+        self.assertEqual(repeated, first_record)
+        build.assert_called_once()
+
+    def test_shadow_policy_is_prospective_and_has_no_production_effect(self) -> None:
+        policy = json.loads(STABILITY_CAP_SHADOW_POLICY_PATH.read_text())
+        ledger = json.loads(STABILITY_CAP_SHADOW_LEDGER_PATH.read_text())
+        freeze_path = ROOT / policy["development_freeze"]["path"]
+
+        self.assertEqual(policy["production_effect"], "none")
+        self.assertEqual(
+            policy["comparison"]["reference_candidate"],
+            "deduplicated_move_exposure_cap",
+        )
+        self.assertEqual(
+            policy["comparison"]["challenger_candidate"],
+            "repeated_forfeit_only",
+        )
+        self.assertTrue(
+            policy["comparison"]["evaluate_affected_configurations_only"]
+        )
+        self.assertGreaterEqual(
+            policy["coverage_gate"]["minimum_affected_labs"],
+            4,
+        )
+        self.assertEqual(
+            hashlib.sha256(freeze_path.read_bytes()).hexdigest(),
+            policy["development_freeze"]["sha256"],
+        )
+        self.assertEqual(ledger["production_effect"], "none")
+        self.assertEqual(ledger["entries"], {})
+
+    def test_shadow_holdout_requires_and_can_pass_fixed_gates(self) -> None:
+        policy = {
+            "policy_version": "test-v1",
+            "primary_target": {
+                "minimum_games": 8,
+                "maximum_games_rd": 200,
+            },
+            "comparison": {
+                "reference_candidate": "production",
+                "challenger_candidate": "challenger",
+                "evaluate_affected_configurations_only": True,
+            },
+            "coverage_gate": {
+                "minimum_mature_holdout_configurations": 12,
+                "minimum_affected_holdout_configurations": 8,
+                "minimum_affected_families": 6,
+                "minimum_affected_labs": 4,
+            },
+            "promotion_gate": {
+                "minimum_family_bootstrap_probability_mae_improves": 0.95,
+                "minimum_lab_bootstrap_probability_mae_improves": 0.95,
+                "minimum_mae_improvement_elo": 10,
+                "maximum_rmse_delta_elo": 0,
+                "maximum_absolute_bias_increase_elo": 25,
+                "maximum_leave_one_lab_out_mae_delta_elo": 10,
+            },
+            "bootstrap": {
+                "resamples": 100,
+                "random_seed": 42,
+            },
+        }
+        ledger = {
+            "entries": {},
+        }
+        ratings = {}
+        for index in range(12):
+            player_id = f"holdout-{index}"
+            affected = index < 8
+            ledger["entries"][player_id] = {
+                "family": f"family-{index % 6}",
+                "lab": f"lab-{index % 4}",
+                "recorded_at": "2026-07-24T00:00:00+00:00",
+                "eligibility": {"prospective_holdout": True},
+                "candidates": {
+                    "production": 1000.0,
+                    "challenger": 1100.0 if affected else 1000.0,
+                },
+            }
+            ratings[player_id] = {
+                "rating": 1100.0 if affected else 1000.0,
+                "games_played": 10,
+                "games_rd": 100.0,
+            }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            policy_path = tmpdir_path / "policy.json"
+            ledger_path = tmpdir_path / "ledger.json"
+            ratings_path = tmpdir_path / "ratings.json"
+            policy_path.write_text(json.dumps(policy))
+            ledger_path.write_text(json.dumps(ledger))
+            ratings_path.write_text(json.dumps(ratings))
+            analysis = evaluate_cap_holdout(
+                policy_path=policy_path,
+                ledger_path=ledger_path,
+                ratings_path=ratings_path,
+            )
+
+        self.assertEqual(analysis["status"], "promotion-candidate")
+        self.assertTrue(analysis["coverage"]["passed"])
+        self.assertTrue(analysis["promotion_passed"])
+        self.assertEqual(
+            analysis["coverage"]["affected_mature_configurations"],
+            8,
         )
 
     def test_canonical_panel_sizes_and_defaults_match_saved_artifacts(self) -> None:
@@ -590,6 +814,16 @@ class ProductionContractTests(unittest.TestCase):
             ["core", "game_like", "continuation_stability"],
         )
         self.assertTrue(acquisition["defer_games_after_acquisition"])
+        prospective = manifest["prospective_stability_cap_validation"]
+        self.assertEqual(prospective["production_effect"], "none")
+        self.assertEqual(
+            prospective["recording_timing"],
+            "after-current-automatic-suite-before-first-game",
+        )
+        self.assertEqual(
+            prospective["reference_candidate"],
+            "deduplicated_move_exposure_cap",
+        )
         self.assertEqual(
             manifest["panels"]["continuation_stability"][
                 "planned_base_first_attempt_calls"

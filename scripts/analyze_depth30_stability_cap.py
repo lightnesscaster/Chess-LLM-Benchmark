@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import copy
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -44,9 +45,14 @@ RD300_TARGET = ROOT / "position_benchmark/validation/2026-07-17-supplemental-pre
 NO_POSITION_TARGET = ROOT / "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json"
 OUTPUT_JSON = ROOT / "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json"
 OUTPUT_MD = ROOT / "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.md"
+DEVELOPMENT_FREEZE = (
+    ROOT
+    / "position_benchmark/validation/2026-07-23-depth30-cap-development-freeze.json"
+)
 BOOTSTRAP_RESAMPLES = 20_000
 MONTE_CARLO_DRAWS = 20_000
 RANDOM_SEED = 1729
+PRODUCTION_REFERENCE_CANDIDATE = "deduplicated_move_exposure_cap"
 
 
 def load(path: Path) -> Any:
@@ -359,15 +365,18 @@ def bootstrap_comparison(
     for _ in range(BOOTSTRAP_RESAMPLES):
         sampled = [rng.choice(names) for _ in names]
         selected = [row for group in sampled for row in groups[group]]
-        current_mae = sum(
-            abs(row["candidates"]["current_move_cap"] - row["targets"][target]["rating"])
+        reference_mae = sum(
+            abs(
+                row["candidates"][PRODUCTION_REFERENCE_CANDIDATE]
+                - row["targets"][target]["rating"]
+            )
             for row in selected
         ) / len(selected)
         candidate_mae = sum(
             abs(row["candidates"][candidate] - row["targets"][target]["rating"])
             for row in selected
         ) / len(selected)
-        deltas.append(candidate_mae - current_mae)
+        deltas.append(candidate_mae - reference_mae)
     return {
         "probability_mae_improves": sum(delta < 0.0 for delta in deltas) / len(deltas),
         "mae_delta_p05": percentile(deltas, 0.05),
@@ -382,18 +391,21 @@ def uncertainty_comparison(
     rng = random.Random(RANDOM_SEED * 3 + sum(ord(char) for char in target + candidate))
     deltas = []
     for _ in range(MONTE_CARLO_DRAWS):
-        current_errors = []
+        reference_errors = []
         candidate_errors = []
         for row in rows:
             evidence = row["targets"][target]
             sampled_rating = rng.gauss(evidence["rating"], evidence["rd"])
-            current_errors.append(
-                abs(row["candidates"]["current_move_cap"] - sampled_rating)
+            reference_errors.append(
+                abs(
+                    row["candidates"][PRODUCTION_REFERENCE_CANDIDATE]
+                    - sampled_rating
+                )
             )
             candidate_errors.append(abs(row["candidates"][candidate] - sampled_rating))
         deltas.append(
             sum(candidate_errors) / len(candidate_errors)
-            - sum(current_errors) / len(current_errors)
+            - sum(reference_errors) / len(reference_errors)
         )
     return {
         "probability_mae_improves": sum(delta < 0.0 for delta in deltas) / len(deltas),
@@ -410,7 +422,7 @@ def group_influence(
     group_key: str,
 ) -> dict[str, Any]:
     """Measure whether a candidate's apparent gain survives group exclusions."""
-    current = "current_move_cap"
+    reference = PRODUCTION_REFERENCE_CANDIDATE
     groups = sorted({row[group_key] for row in rows})
     group_deltas: dict[str, float] = {}
     leave_one_group_out: dict[str, float] = {}
@@ -419,7 +431,7 @@ def group_influence(
         group_rows = [row for row in rows if row[group_key] == group]
         group_deltas[group] = sum(
             abs(row["candidates"][candidate] - row["targets"][target]["rating"])
-            - abs(row["candidates"][current] - row["targets"][target]["rating"])
+            - abs(row["candidates"][reference] - row["targets"][target]["rating"])
             for row in group_rows
         ) / len(group_rows)
 
@@ -428,22 +440,22 @@ def group_influence(
             abs(row["candidates"][candidate] - row["targets"][target]["rating"])
             for row in remaining
         ) / len(remaining)
-        current_mae = sum(
-            abs(row["candidates"][current] - row["targets"][target]["rating"])
+        reference_mae = sum(
+            abs(row["candidates"][reference] - row["targets"][target]["rating"])
             for row in remaining
         ) / len(remaining)
-        leave_one_group_out[group] = candidate_mae - current_mae
+        leave_one_group_out[group] = candidate_mae - reference_mae
 
     row_deltas = [
         abs(row["candidates"][candidate] - row["targets"][target]["rating"])
-        - abs(row["candidates"][current] - row["targets"][target]["rating"])
+        - abs(row["candidates"][reference] - row["targets"][target]["rating"])
         for row in rows
     ]
     return {
         "affected_configurations": sum(
             not math.isclose(
                 row["candidates"][candidate],
-                row["candidates"][current],
+                row["candidates"][reference],
                 abs_tol=1e-9,
             )
             for row in rows
@@ -626,21 +638,22 @@ and therefore never make a cap harsher. This correction fits no target data.
 `trajectory_hazard_cap` additionally censors later exposures; that more ambitious
 survival-style redesign remains diagnostic rather than validated rating evidence.
 
-`{leading}` is the leading fixed redesign. Its MAE is lower than the current cap
-on both targets, but its family-bootstrap improvement probabilities are only
+`{leading}` is the leading fixed redesign. Its MAE is lower than the actual
+production cap on both targets, but its family-bootstrap improvement probabilities are only
 {rd_result['family_bootstrap']['probability_mae_improves']:.3f} (RD-300) and
 {no_position_result['family_bootstrap']['probability_mae_improves']:.3f}
 (no-position), and both family-bootstrap intervals cross zero. Only
 {rd_influence['affected_configurations']} configurations receive a different
 prediction. The apparent gain is highly dependent on `{influential_family}`:
-excluding that family changes the candidate-minus-current MAE delta to
+excluding that family changes the candidate-minus-production MAE delta to
 {rd_influence['leave_one_family_out_mae_delta'][influential_family]:+.1f} Elo
 on RD-300 and
 {no_position_influence['leave_one_family_out_mae_delta'][influential_family]:+.1f}
 Elo on no-position, so the candidate becomes slightly worse.
 
-Lab-level dependence is stronger still. Excluding `{influential_lab}` changes the
-candidate-minus-current MAE delta to
+Lab-level dependence is stronger still: every affected configuration is from
+`{influential_lab}`. Excluding that lab changes the
+candidate-minus-production MAE delta to
 {rd_lab_influence['leave_one_lab_out_mae_delta'][influential_lab]:+.1f} Elo on
 RD-300 and
 {no_position_lab_influence['leave_one_lab_out_mae_delta'][influential_lab]:+.1f}
@@ -658,9 +671,9 @@ continuation legality, and forfeit evidence remain unchanged.
 
 {chr(10).join(sections)}
 
-All bootstrap and uncertainty probabilities compare the candidate against
-`current_move_cap`. Candidates are fixed structural alternatives; no coefficients
-were fitted to these targets.
+All bootstrap and uncertainty probabilities compare the candidate against the
+actual production reference, `{PRODUCTION_REFERENCE_CANDIDATE}`. Candidates are
+fixed structural alternatives; no coefficients were fitted to these targets.
 
 ## Rows whose rating is currently changed by the hard cap
 
@@ -690,11 +703,30 @@ while the present cohort does not validate a direct random-reply CPL cap.
 - Keep production catastrophe deduplication within a trajectory because this
   cannot increase any penalty and did not fit the validation targets.
 - Do not deploy hazard censoring, new coefficients, or cap removal on this cohort.
-- Re-run this fixed audit automatically as current depth-30 supplements accumulate.
+- Treat this cohort as frozen development evidence. New configurations belong in
+  the prospective shadow ledger and must not be appended to this audit.
 """
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--overwrite-frozen-development",
+        action="store_true",
+        help="Explicitly replace the frozen development audit (normally forbidden)",
+    )
+    args = parser.parse_args()
+    if (
+        DEVELOPMENT_FREEZE.exists()
+        and OUTPUT_JSON.exists()
+        and not args.overwrite_frozen_development
+    ):
+        raise SystemExit(
+            "The depth-30 development cohort is frozen. New configurations "
+            "must use the prospective shadow ledger. Pass "
+            "--overwrite-frozen-development only for an explicitly authorized "
+            "replacement of the frozen audit."
+        )
     rows = build_rows()
     candidate_order = [
         "current_move_cap",
@@ -756,6 +788,7 @@ def main() -> None:
         "labs": labs,
         "lab_count": len(labs),
         "candidate_order": candidate_order,
+        "production_reference_candidate": PRODUCTION_REFERENCE_CANDIDATE,
         "evidence_gate": {
             "minimum_configurations": 30,
             "minimum_families": 8,
@@ -771,7 +804,7 @@ def main() -> None:
             "reason": (
                 "The coverage gate passes and the leading candidate lowers aggregate "
                 "MAE on both targets, but its family- and lab-bootstrap intervals "
-                "cross zero and correlated-group exclusions reverse the gain."
+                "cross zero and all affected configurations come from one lab."
             ),
         },
         "inputs": {

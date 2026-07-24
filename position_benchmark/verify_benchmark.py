@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -199,6 +200,87 @@ def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
     if int(continuation.get("planned_base_first_attempt_calls", 0)) != expected_calls:
         issues.append("automatic_acquisition: continuation call count mismatch")
     print(f"  automatic_acquisition: {', '.join(expected_order)}")
+    return issues
+
+
+def verify_prospective_stability_cap(
+    manifest: dict[str, Any],
+) -> list[str]:
+    """Verify that shadow predictions stay prospective and research-only."""
+    issues: list[str] = []
+    config = manifest.get("prospective_stability_cap_validation", {})
+    if config.get("production_effect") != "none":
+        issues.append("stability_cap_shadow: production_effect must remain none")
+    if (
+        config.get("recording_timing")
+        != "after-current-automatic-suite-before-first-game"
+    ):
+        issues.append("stability_cap_shadow: recording timing mismatch")
+
+    required_paths = (
+        "development_freeze",
+        "policy",
+        "shadow_ledger",
+        "game_only_target",
+        "evaluation",
+        "report",
+    )
+    resolved = {}
+    for key in required_paths:
+        value = config.get(key)
+        if not isinstance(value, str) or not value:
+            issues.append(f"stability_cap_shadow: missing {key} manifest path")
+            continue
+        path = resolve_manifest_path(value)
+        resolved[key] = path
+        if not path.exists():
+            issues.append(f"stability_cap_shadow: missing {key} file {path}")
+    if issues:
+        return issues
+
+    policy = load_json(resolved["policy"])
+    ledger = load_json(resolved["shadow_ledger"])
+    if policy.get("production_effect") != "none":
+        issues.append("stability_cap_shadow: policy can affect production")
+    if ledger.get("production_effect") != "none":
+        issues.append("stability_cap_shadow: ledger can affect production")
+    if ledger.get("schema_version") != "depth30-cap-shadow-v1":
+        issues.append("stability_cap_shadow: ledger schema mismatch")
+    comparison = policy.get("comparison", {})
+    if comparison.get("reference_candidate") != config.get(
+        "reference_candidate"
+    ):
+        issues.append("stability_cap_shadow: reference candidate mismatch")
+    if comparison.get("challenger_candidate") != config.get(
+        "challenger_candidate"
+    ):
+        issues.append("stability_cap_shadow: challenger candidate mismatch")
+
+    freeze_config = policy.get("development_freeze", {})
+    if freeze_config.get("path") != config.get("development_freeze"):
+        issues.append("stability_cap_shadow: development freeze path mismatch")
+    actual_freeze_hash = hashlib.sha256(
+        resolved["development_freeze"].read_bytes()
+    ).hexdigest()
+    if freeze_config.get("sha256") != actual_freeze_hash:
+        issues.append("stability_cap_shadow: development freeze hash mismatch")
+    if any(
+        entry.get("production_effect") != "none"
+        or entry.get("prediction_locked") is not True
+        for entry in ledger.get("entries", {}).values()
+    ):
+        issues.append("stability_cap_shadow: unlocked or production-active entry")
+    policy_hash = hashlib.sha256(resolved["policy"].read_bytes()).hexdigest()
+    if any(
+        entry.get("policy_version") != policy.get("policy_version")
+        or entry.get("policy_sha256") != policy_hash
+        for entry in ledger.get("entries", {}).values()
+    ):
+        issues.append("stability_cap_shadow: entry policy fingerprint mismatch")
+    print(
+        "  stability_cap_shadow: "
+        f"{len(ledger.get('entries', {}))} locked prospective record(s)"
+    )
     return issues
 
 
@@ -419,6 +501,7 @@ def main() -> None:
     print("POSITION BENCHMARK LAYOUT VERIFICATION")
     issues: list[str] = []
     issues.extend(verify_automatic_acquisition(manifest))
+    issues.extend(verify_prospective_stability_cap(manifest))
     issues.extend(verify_panel("core", manifest["panels"]["core"], require_complete_results=True))
     issues.extend(
         verify_panel("game_like", manifest["panels"]["game_like"], require_complete_results=True)

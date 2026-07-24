@@ -160,7 +160,7 @@ class PGNLogger:
                     if verbose:
                         print(f"Warning: Skipping invalid result doc {doc.id}: {e}")
         else:
-            for path in self.results_dir.glob("*.json"):
+            for path in sorted(self.results_dir.glob("*.json")):
                 try:
                     with open(path) as f:
                         data = json.load(f)

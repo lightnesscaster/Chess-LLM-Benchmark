@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-07-24T01:28:12.409731+00:00",
+  "policy_version": "depth30-cap-prospective-v1",
+  "production_effect": "none",
+  "status": "collecting",
+  "inputs": {
+    "policy": {
+      "path": "position_benchmark/validation/depth30-cap-prospective-policy.json",
+      "sha256": "032cf68f24c653f1b6d49c2addb75a1da2f6fb953b0322fd3df2cf95b8dd5003"
+    },
+    "ledger": {
+      "path": "position_benchmark/results/stability_cap_shadow.json",
+      "sha256": "322412a39ad67aedc01deb65a2dfdf1271404d14495db78c01d627ef5a8fbdd3"
+    },
+    "ratings": {
+      "path": "position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json",
+      "sha256": "28bbc666cde69447289a8bec61d9ad696fe3aa474cb507d5b69133c8b7483efd"
+    }
+  },
+  "coverage": {
+    "prospective_holdout_configurations": 0,
+    "mature_holdout_configurations": 0,
+    "affected_mature_configurations": 0,
+    "affected_families": [],
+    "affected_labs": [],
+    "checks": {
+      "mature_holdout_configurations": false,
+      "affected_holdout_configurations": false,
+      "affected_families": false,
+      "affected_labs": false
+    },
+    "passed": false
+  },
+  "comparison": null,
+  "promotion_checks": {},
+  "promotion_passed": false,
+  "rows": []
+}

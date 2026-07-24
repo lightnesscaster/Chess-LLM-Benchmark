@@ -593,7 +593,12 @@ async def recalculate_ratings(args):
         invalid_timestamps.append(r.game_id)
         return datetime.min  # Put invalid timestamps first
 
-    results.sort(key=parse_timestamp)
+    results.sort(key=lambda result: (parse_timestamp(result), result.game_id or ""))
+    validation_as_of = (
+        results[-1].created_at
+        if results and results[-1].created_at
+        else "1970-01-01T00:00:00+00:00"
+    )
 
     if invalid_timestamps and args.verbose:
         print(f"Warning: {len(invalid_timestamps)} result(s) with invalid timestamps (sorted to beginning)")
@@ -677,7 +682,7 @@ async def recalculate_ratings(args):
 
     # Rating period configuration
     BATCH_SIZE = 1  # Games per rating period
-    random.seed(42)  # Fixed seed for reproducible results
+    rating_rng = random.Random(42)
 
     # Count actual games and W-L-D per player, get all unique player IDs
     all_players = set()
@@ -723,7 +728,7 @@ async def recalculate_ratings(args):
     med_legal_count = 0
     reasoning_count = 0
     non_reasoning_count = 0
-    for player_id in all_players:
+    for player_id in sorted(all_players):
         if not rating_store.is_anchor(player_id):
             # Check benchmark predictions first
             if player_id in benchmark_preds:
@@ -785,8 +790,8 @@ async def recalculate_ratings(args):
             llm_games.append(game)
 
     # Shuffle games within each category for fairness
-    random.shuffle(anchor_games)
-    random.shuffle(llm_games)
+    rating_rng.shuffle(anchor_games)
+    rating_rng.shuffle(llm_games)
 
     # Multi-pass convergence settings. Between passes we snapshot ratings and
     # reset non-anchor/non-configured-engine ratings so new pass re-seeds with
@@ -811,7 +816,9 @@ async def recalculate_ratings(args):
             return
 
         # Snapshot current ratings for this period
-        period_ratings = {pid: rating_store.get(pid) for pid in all_players}
+        period_ratings = {
+            pid: rating_store.get(pid) for pid in sorted(all_players)
+        }
 
         # Collect games per player
         player_games = defaultdict(lambda: {'opponents': [], 'scores': []})
@@ -854,12 +861,21 @@ async def recalculate_ratings(args):
         # non-anchor/non-engine ratings so seeding re-runs with updated
         # lower-effort sibling info.
         if pass_num > 1:
-            previous_pass_end = {pid: rating_store.get(pid).rating for pid in all_players}
+            previous_pass_end = {
+                pid: rating_store.get(pid).rating
+                for pid in sorted(all_players)
+            }
             rating_store.snapshot_for_pass(preserve_ids)
 
         # Store ratings and RDs at start of pass (post-reset/reseed)
-        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
-        pass_start_rds = {pid: rating_store.get(pid).rating_deviation for pid in all_players}
+        pass_start_ratings = {
+            pid: rating_store.get(pid).rating
+            for pid in sorted(all_players)
+        }
+        pass_start_rds = {
+            pid: rating_store.get(pid).rating_deviation
+            for pid in sorted(all_players)
+        }
 
         # Run all rating periods for this pass
         run_rating_periods()
@@ -873,7 +889,7 @@ async def recalculate_ratings(args):
         max_change = 0.0
         max_change_player = None
         max_change_details = {}
-        for pid in all_players:
+        for pid in sorted(all_players):
             if rating_store.is_anchor(pid):
                 continue
             player = rating_store.get(pid)
@@ -915,13 +931,18 @@ async def recalculate_ratings(args):
     rating_store.clear_pass_snapshot()
 
     # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
-    for pid in all_players:
+    for pid in sorted(all_players):
         player = rating_store.get(pid)
         player.games_played = actual_game_counts.get(pid, 0)
         wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
         player.wins = wld['wins']
         player.losses = wld['losses']
         player.draws = wld['draws']
+        if validation_mode:
+            # Validation snapshots must be byte-reproducible. Rating updates
+            # otherwise stamp wall-clock time even when every game and seed is
+            # identical.
+            player.last_updated = validation_as_of
         rating_store.set(player, auto_save=False)
     rating_store.save()
 
@@ -957,6 +978,27 @@ async def recalculate_ratings(args):
         invalidate_remote_cache()
     else:
         print(f"Validation ratings saved locally to {ratings_path}; production ratings were unchanged.")
+        if disable_benchmark_seeds:
+            from position_benchmark.stability_cap_shadow import POLICY_PATH
+            from scripts.evaluate_stability_cap_holdout import (
+                evaluate_and_write,
+            )
+
+            with POLICY_PATH.open() as handle:
+                shadow_policy = json.load(handle)
+            expected_target = (
+                Path(__file__).resolve().parent
+                / shadow_policy["primary_target"]["default_path"]
+            ).resolve()
+            if ratings_path.resolve() == expected_target:
+                shadow_analysis = evaluate_and_write(
+                    ratings_path=ratings_path,
+                )
+                print(
+                    "Prospective stability-cap holdout updated: "
+                    f"{shadow_analysis['status']} "
+                    "(production effect: none)."
+                )
 
     return 0
 
