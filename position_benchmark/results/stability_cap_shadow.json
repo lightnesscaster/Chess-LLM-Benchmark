@@ -1,5 +1,6 @@
 {
   "schema_version": "depth30-cap-shadow-v1",
   "production_effect": "none",
+  "exclusions": {},
   "entries": {}
 }

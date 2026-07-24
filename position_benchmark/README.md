@@ -273,6 +273,13 @@ predictions were locked after all three current automatic panels became ready an
 before its first game. The append-only shadow ledger preserves the predictions and
 input fingerprints; later game outcomes never rewrite them.
 
+This timing is enforced, not advisory. Both normal scheduling and saved manual
+games fail closed for a zero-game configuration if the shadow record cannot be
+written. Configurations with pre-existing games remain legacy/non-prospective.
+An intentional saved-manual-game exception requires
+`--allow-nonprospective-save`, which writes a persistent exclusion before the
+game starts; `--no-save` creates no rating evidence and needs no exception.
+
 The primary outcome is an isolated no-position-seed game rating with at least
 eight games and games RD no greater than 200. The comparison includes only mature
 configurations whose challenger prediction differs from production. Evaluation
@@ -282,6 +289,15 @@ predeclared MAE, RMSE, bias, family-bootstrap, lab-bootstrap, and
 leave-one-lab-out check to pass. Validation recalculation sorts source games and
 players deterministically, uses a local seeded shuffle, normalizes timestamps to
 the latest included game, and serializes rating keys in sorted order.
+
+Affected prospective configurations receive a fixed 2x scheduling-priority
+multiplier until they reach the eight-game/RD-200 maturity gate. The priority uses
+only locked prediction disagreement, game count, and games RD—never wins, losses,
+scores, or rating movement. Inspect current progress without changing production:
+
+```bash
+python cli.py cap-holdout-status
+```
 
 Refresh the isolated target and evaluate the locked ledger with:
 

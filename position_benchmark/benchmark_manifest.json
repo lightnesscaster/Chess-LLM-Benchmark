@@ -38,6 +38,10 @@
     "evaluation": "position_benchmark/validation/depth30-cap-prospective-evaluation.json",
     "report": "position_benchmark/validation/depth30-cap-prospective-evaluation.md",
     "recording_timing": "after-current-automatic-suite-before-first-game",
+    "saved_game_lock": "fail-closed",
+    "manual_opt_out": "--allow-nonprospective-save",
+    "affected_immature_priority": "2x-outcome-blind",
+    "status_command": "python cli.py cap-holdout-status",
     "reference_candidate": "deduplicated_move_exposure_cap",
     "challenger_candidate": "repeated_forfeit_only"
   },

@@ -76,6 +76,8 @@ from position_benchmark.stability_cap_shadow import (
     POLICY_PATH as STABILITY_CAP_SHADOW_POLICY_PATH,
     SHADOW_LEDGER_PATH as STABILITY_CAP_SHADOW_LEDGER_PATH,
     calculate_candidate_predictions,
+    ensure_shadow_lock_before_saved_game,
+    record_nonprospective_exclusion,
     record_shadow_prediction,
 )
 from position_benchmark.token_accounting import sum_result_row_tokens
@@ -230,7 +232,9 @@ class ProductionContractTests(unittest.TestCase):
 
         calls: list[str] = []
         shadow_calls: list[str] = []
-        scheduler._record_stability_cap_shadow = shadow_calls.append
+        scheduler._record_stability_cap_shadow = (
+            lambda player_id: not shadow_calls.append(player_id)
+        )
 
         async def fake_positions(**kwargs):
             calls.append(kwargs["results_path"].name)
@@ -283,6 +287,29 @@ class ProductionContractTests(unittest.TestCase):
         )
         self.assertIn("core-only", scheduler._benchmark_completed)
         self.assertEqual(shadow_calls, ["core-only"])
+
+    def test_scheduler_defers_games_when_shadow_lock_fails(self) -> None:
+        policy = load_acquisition_policy()
+        scheduler = object.__new__(MatchScheduler)
+        scheduler.players = {"future-model": object()}
+        scheduler._llm_configs = {"future-model": {}}
+        scheduler._acquisition_policy = policy
+        scheduler._acquisition_state = {
+            "future-model": set(SUPPORTED_AUTOMATIC_PANELS)
+        }
+        scheduler._benchmark_completed = set()
+        scheduler.verbose = False
+        scheduler._record_stability_cap_shadow = lambda _player_id: False
+
+        deferred = asyncio.run(
+            scheduler._run_position_benchmarks(
+                ["future-model"],
+                {"total_cost": 0.0},
+                max_cost=10.0,
+            )
+        )
+
+        self.assertEqual(deferred, {"future-model"})
 
     def test_legality_stress_candidate_is_selected_without_gpt56_leakage(self) -> None:
         positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
@@ -614,6 +641,105 @@ class ProductionContractTests(unittest.TestCase):
         self.assertEqual(repeated, first_record)
         build.assert_called_once()
 
+    def test_shadow_guard_fails_closed_before_first_game(self) -> None:
+        frozen = {"development_configuration_ids": []}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ledger_path = Path(tmpdir) / "shadow.json"
+            with (
+                patch(
+                    "position_benchmark.stability_cap_shadow._load_policy_and_freeze",
+                    return_value=({}, frozen),
+                ),
+                patch(
+                    "position_benchmark.stability_cap_shadow.record_shadow_prediction",
+                    side_effect=ValueError("missing continuation result"),
+                ),
+            ):
+                decision = ensure_shadow_lock_before_saved_game(
+                    "future-model",
+                    game_snapshot={"games_played": 0},
+                    ledger_path=ledger_path,
+                )
+
+        self.assertFalse(decision.allowed)
+        self.assertEqual(decision.status, "shadow-lock-failed")
+        self.assertIn("missing continuation", decision.message)
+
+    def test_shadow_guard_allows_legacy_games_without_reenrollment(self) -> None:
+        frozen = {"development_configuration_ids": []}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ledger_path = Path(tmpdir) / "shadow.json"
+            with (
+                patch(
+                    "position_benchmark.stability_cap_shadow._load_policy_and_freeze",
+                    return_value=({}, frozen),
+                ),
+                patch(
+                    "position_benchmark.stability_cap_shadow.record_shadow_prediction",
+                ) as record,
+            ):
+                decision = ensure_shadow_lock_before_saved_game(
+                    "legacy-model",
+                    game_snapshot={"games_played": 3},
+                    ledger_path=ledger_path,
+                )
+
+        self.assertTrue(decision.allowed)
+        self.assertEqual(decision.status, "games-already-observed")
+        record.assert_not_called()
+
+    def test_manual_shadow_opt_out_is_persistent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ledger_path = Path(tmpdir) / "shadow.json"
+            first = record_nonprospective_exclusion(
+                "manual-model",
+                reason="test opt-out",
+                ledger_path=ledger_path,
+                recorded_at="2026-07-24T00:00:00+00:00",
+            )
+            repeated = record_nonprospective_exclusion(
+                "manual-model",
+                reason="different reason",
+                ledger_path=ledger_path,
+            )
+            ledger = json.loads(ledger_path.read_text())
+
+        self.assertEqual(first, repeated)
+        self.assertEqual(
+            ledger["exclusions"]["manual-model"]["reason"],
+            "test opt-out",
+        )
+
+    def test_affected_immature_shadow_gets_outcome_blind_priority(self) -> None:
+        scheduler = object.__new__(MatchScheduler)
+        scheduler._shadow_priority_ids = {"affected"}
+        scheduler._shadow_minimum_games = 8
+        scheduler._shadow_maximum_games_rd = 200
+        scheduler._shadow_priority_multiplier = 2.0
+        scheduler._estimated_rd = {}
+        scheduler._freeze_checker = SimpleNamespace(
+            get_player_cost=lambda _player_id: 0.0
+        )
+        ratings = {
+            "affected": SimpleNamespace(
+                rating_deviation=250,
+                games_rd=250,
+                games_played=4,
+            ),
+            "control": SimpleNamespace(
+                rating_deviation=250,
+                games_rd=250,
+                games_played=4,
+            ),
+        }
+        scheduler.rating_store = SimpleNamespace(get=ratings.get)
+
+        self.assertEqual(scheduler._calculate_priority("affected"), 500)
+        self.assertEqual(scheduler._calculate_priority("control"), 250)
+        ratings["affected"].games_played = 8
+        ratings["affected"].games_rd = 190
+        self.assertEqual(scheduler._calculate_priority("affected"), 250)
+
     def test_shadow_policy_is_prospective_and_has_no_production_effect(self) -> None:
         policy = json.loads(STABILITY_CAP_SHADOW_POLICY_PATH.read_text())
         ledger = json.loads(STABILITY_CAP_SHADOW_LEDGER_PATH.read_text())
@@ -631,6 +757,16 @@ class ProductionContractTests(unittest.TestCase):
         self.assertTrue(
             policy["comparison"]["evaluate_affected_configurations_only"]
         )
+        collection = policy["collection_control"]
+        self.assertEqual(
+            collection["saved_game_lock"],
+            "fail-closed-before-first-game",
+        )
+        self.assertEqual(
+            collection["affected_immature_priority_multiplier"],
+            2.0,
+        )
+        self.assertFalse(collection["priority_uses_game_outcomes"])
         self.assertGreaterEqual(
             policy["coverage_gate"]["minimum_affected_labs"],
             4,
@@ -640,6 +776,7 @@ class ProductionContractTests(unittest.TestCase):
             policy["development_freeze"]["sha256"],
         )
         self.assertEqual(ledger["production_effect"], "none")
+        self.assertEqual(ledger["exclusions"], {})
         self.assertEqual(ledger["entries"], {})
 
     def test_shadow_holdout_requires_and_can_pass_fixed_gates(self) -> None:

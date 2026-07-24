@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -42,6 +43,16 @@ SHADOW_LEDGER_PATH = (
 )
 SHADOW_SCHEMA_VERSION = "depth30-cap-shadow-v1"
 PRODUCTION_REFERENCE_CANDIDATE = "deduplicated_move_exposure_cap"
+
+
+@dataclass(frozen=True)
+class ShadowGameGuard:
+    """Decision returned before a configuration may create saved game evidence."""
+
+    allowed: bool
+    status: str
+    message: str
+    record: dict[str, Any] | None = None
 
 
 def _load_json(path: Path) -> Any:
@@ -468,6 +479,7 @@ def record_shadow_prediction(
         ledger = {
             "schema_version": SHADOW_SCHEMA_VERSION,
             "production_effect": "none",
+            "exclusions": {},
             "entries": {},
         }
     if ledger.get("schema_version") != SHADOW_SCHEMA_VERSION:
@@ -481,9 +493,168 @@ def record_shadow_prediction(
         recorded_at=recorded_at,
         game_snapshot=game_snapshot,
     )
+    exclusion = ledger.setdefault("exclusions", {}).get(player_id)
+    if exclusion is not None:
+        record["eligibility"] = {
+            **record["eligibility"],
+            "status": "manual-save-opt-out",
+            "prospective_holdout": False,
+            "exclusion": exclusion,
+        }
     entries[player_id] = record
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = ledger_path.with_suffix(ledger_path.suffix + ".tmp")
     temporary.write_text(json.dumps(ledger, indent=2) + "\n")
     temporary.replace(ledger_path)
     return record, True
+
+
+def record_nonprospective_exclusion(
+    player_id: str,
+    *,
+    reason: str,
+    ledger_path: Path = SHADOW_LEDGER_PATH,
+    recorded_at: str | None = None,
+) -> dict[str, Any]:
+    """Persist an explicit opt-out before a saved manual game is played."""
+    if ledger_path.exists():
+        ledger = _load_json(ledger_path)
+    else:
+        ledger = {
+            "schema_version": SHADOW_SCHEMA_VERSION,
+            "production_effect": "none",
+            "exclusions": {},
+            "entries": {},
+        }
+    if ledger.get("schema_version") != SHADOW_SCHEMA_VERSION:
+        raise ValueError(f"unexpected shadow ledger schema: {ledger_path}")
+    if player_id in ledger.setdefault("entries", {}):
+        return ledger["entries"][player_id].get("eligibility", {}).get(
+            "exclusion",
+            {},
+        )
+    exclusions = ledger.setdefault("exclusions", {})
+    if player_id in exclusions:
+        return exclusions[player_id]
+    exclusion = {
+        "recorded_at": recorded_at or datetime.now(timezone.utc).isoformat(),
+        "reason": reason,
+        "production_effect": "none",
+    }
+    exclusions[player_id] = exclusion
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = ledger_path.with_suffix(ledger_path.suffix + ".tmp")
+    temporary.write_text(json.dumps(ledger, indent=2) + "\n")
+    temporary.replace(ledger_path)
+    return exclusion
+
+
+def ensure_shadow_lock_before_saved_game(
+    player_id: str,
+    *,
+    game_snapshot: dict[str, Any],
+    ledger_path: Path = SHADOW_LEDGER_PATH,
+) -> ShadowGameGuard:
+    """Fail closed for a future configuration's first saved rated game."""
+    try:
+        _, freeze = _load_policy_and_freeze()
+        if player_id in set(freeze["development_configuration_ids"]):
+            return ShadowGameGuard(
+                True,
+                "development-excluded",
+                "configuration belongs to the frozen development cohort",
+            )
+
+        ledger = (
+            _load_json(ledger_path)
+            if ledger_path.exists()
+            else {
+                "schema_version": SHADOW_SCHEMA_VERSION,
+                "production_effect": "none",
+                "exclusions": {},
+                "entries": {},
+            }
+        )
+        if ledger.get("schema_version") != SHADOW_SCHEMA_VERSION:
+            raise ValueError(f"unexpected shadow ledger schema: {ledger_path}")
+        existing = ledger.get("entries", {}).get(player_id)
+        if existing is not None:
+            if not existing.get("prediction_locked"):
+                raise ValueError("existing shadow entry is not prediction-locked")
+            return ShadowGameGuard(
+                True,
+                existing["eligibility"]["status"],
+                "immutable shadow prediction already exists",
+                existing,
+            )
+        if player_id in ledger.get("exclusions", {}):
+            return ShadowGameGuard(
+                True,
+                "manual-save-opt-out",
+                "configuration was explicitly excluded from prospective evidence",
+            )
+
+        games_played = int(game_snapshot.get("games_played", 0) or 0)
+        if games_played > 0:
+            return ShadowGameGuard(
+                True,
+                "games-already-observed",
+                "configuration predates prospective shadow enrollment",
+            )
+
+        record, _ = record_shadow_prediction(
+            player_id,
+            ledger_path=ledger_path,
+            game_snapshot=game_snapshot,
+        )
+        if record is None or not record.get("prediction_locked"):
+            raise ValueError("shadow prediction was not locked")
+        return ShadowGameGuard(
+            True,
+            record["eligibility"]["status"],
+            "immutable shadow prediction locked before first saved game",
+            record,
+        )
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+        return ShadowGameGuard(
+            False,
+            "shadow-lock-failed",
+            str(error),
+        )
+
+
+def affected_prospective_player_ids(
+    *,
+    policy_path: Path = POLICY_PATH,
+    ledger_path: Path = SHADOW_LEDGER_PATH,
+) -> set[str]:
+    """Return affected prospective IDs without inspecting any game outcome."""
+    policy = _load_json(policy_path)
+    ledger = _load_json(ledger_path)
+    reference = policy["comparison"]["reference_candidate"]
+    challenger = policy["comparison"]["challenger_candidate"]
+    return {
+        player_id
+        for player_id, record in ledger.get("entries", {}).items()
+        if record.get("eligibility", {}).get("prospective_holdout")
+        and not math.isclose(
+            float(record["candidates"][reference]),
+            float(record["candidates"][challenger]),
+            abs_tol=1e-9,
+        )
+    }
+
+
+def shadow_priority_settings(
+    *,
+    policy_path: Path = POLICY_PATH,
+) -> tuple[int, float, float]:
+    """Return the fixed maturity gate and collection-priority multiplier."""
+    policy = _load_json(policy_path)
+    target = policy["primary_target"]
+    collection = policy["collection_control"]
+    return (
+        int(target["minimum_games"]),
+        float(target["maximum_games_rd"]),
+        float(collection["affected_immature_priority_multiplier"]),
+    )

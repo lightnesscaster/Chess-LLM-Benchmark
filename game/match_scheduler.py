@@ -32,6 +32,11 @@ from position_benchmark.acquisition import (
     missing_panels,
     panel_readiness,
 )
+from position_benchmark.stability_cap_shadow import (
+    affected_prospective_player_ids,
+    ensure_shadow_lock_before_saved_game,
+    shadow_priority_settings,
+)
 
 
 Player = Union[BaseEngine, BaseLLMPlayer]
@@ -194,6 +199,12 @@ class MatchScheduler:
         self._acquisition_state = load_acquisition_state(self._acquisition_policy)
         # Retain the historical attribute, now meaning the full automatic suite.
         self._benchmark_completed = self._load_existing_benchmark_results()
+        self._shadow_priority_ids = affected_prospective_player_ids()
+        (
+            self._shadow_minimum_games,
+            self._shadow_maximum_games_rd,
+            self._shadow_priority_multiplier,
+        ) = shadow_priority_settings()
 
         # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(max_concurrent)
@@ -266,36 +277,48 @@ class MatchScheduler:
             if required <= completed
         }
 
-    def _record_stability_cap_shadow(self, player_id: str) -> None:
-        """Lock research-only cap predictions before this run schedules games."""
-        from position_benchmark.stability_cap_shadow import (
-            record_shadow_prediction,
-        )
-
+    def _game_snapshot(self, player_id: str) -> dict[str, Any]:
+        """Return an outcome-free snapshot robust to a stale rating file."""
         rating = self.rating_store.get(player_id)
-        game_snapshot = {
-            "games_played": int(getattr(rating, "games_played", 0) or 0),
+        historical_games = int(
+            self.stats_collector.get_player_stats()
+            .get(player_id, {})
+            .get("games_played", 0)
+            or 0
+        )
+        return {
+            "games_played": max(
+                int(getattr(rating, "games_played", 0) or 0),
+                historical_games,
+            ),
             "games_rd": float(getattr(rating, "games_rd", 350.0) or 350.0),
             "rating_deviation": float(
                 getattr(rating, "rating_deviation", 350.0) or 350.0
             ),
         }
-        try:
-            record, created = record_shadow_prediction(
-                player_id,
-                game_snapshot=game_snapshot,
-            )
-        except (OSError, TypeError, ValueError) as error:
+
+    def _record_stability_cap_shadow(self, player_id: str) -> bool:
+        """Require a research-only lock before this run schedules saved games."""
+        decision = ensure_shadow_lock_before_saved_game(
+            player_id,
+            game_snapshot=self._game_snapshot(player_id),
+        )
+        if not decision.allowed:
             print(
-                f"  Warning: could not record stability-cap shadow for "
-                f"{player_id}: {error}"
+                f"  Blocking saved games for {player_id}: stability-cap "
+                f"shadow lock failed ({decision.message})"
             )
-            return
-        if created and record is not None:
+            return False
+        if (
+            decision.record is not None
+            and decision.message.startswith("immutable shadow prediction locked")
+        ):
             print(
                 f"  Locked stability-cap shadow for {player_id}: "
-                f"{record['eligibility']['status']} (production effect: none)"
+                f"{decision.status} (production effect: none)"
             )
+            self._shadow_priority_ids = affected_prospective_player_ids()
+        return True
 
     def _needs_position_benchmark(self, player_id: str) -> bool:
         """Check if a player needs any automatic benchmark acquisition panel."""
@@ -387,6 +410,7 @@ class MatchScheduler:
         from scripts.run_stability_probe import run_probe_for_scheduler
 
         benchmarked = set()
+        shadow_blocked = set()
 
         acquisition_complete = []
         missing_config = []
@@ -408,7 +432,8 @@ class MatchScheduler:
             if not missing:
                 acquisition_complete.append(llm_id)
                 self._benchmark_completed.add(llm_id)
-                self._record_stability_cap_shadow(llm_id)
+                if not self._record_stability_cap_shadow(llm_id):
+                    shadow_blocked.add(llm_id)
                 continue
 
             rating = self.rating_store.get(llm_id)
@@ -442,7 +467,7 @@ class MatchScheduler:
         if not eligible:
             print("  No automatic benchmark panels to acquire.")
             print()
-            return benchmarked
+            return shadow_blocked
 
         print(
             f"Phase 1: Automatic benchmark acquisition "
@@ -576,7 +601,8 @@ class MatchScheduler:
                     self._acquisition_state,
                 ):
                     self._benchmark_completed.add(llm_id)
-                    self._record_stability_cap_shadow(llm_id)
+                    if not self._record_stability_cap_shadow(llm_id):
+                        shadow_blocked.add(llm_id)
 
         finally:
             if stockfish is not None:
@@ -588,8 +614,8 @@ class MatchScheduler:
 
         print()
         if self._acquisition_policy.defer_games_after_acquisition:
-            return benchmarked
-        return set()
+            return benchmarked | shadow_blocked
+        return shadow_blocked
 
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game
@@ -726,7 +752,27 @@ class MatchScheduler:
         """
         rd = self._get_estimated_rd(player_id)
         cost = self._freeze_checker.get_player_cost(player_id)
-        return rd / (1 + self.COST_SENSITIVITY * cost)
+        priority = rd / (1 + self.COST_SENSITIVITY * cost)
+        rating = self.rating_store.get(player_id)
+        shadow_target_is_mature = (
+            int(getattr(rating, "games_played", 0) or 0)
+            >= self._shadow_minimum_games
+            and float(
+                getattr(
+                    rating,
+                    "games_rd",
+                    getattr(rating, "rating_deviation", 350.0),
+                )
+                or 350.0
+            )
+            <= self._shadow_maximum_games_rd
+        )
+        if (
+            player_id in self._shadow_priority_ids
+            and not shadow_target_is_mature
+        ):
+            priority *= self._shadow_priority_multiplier
+        return priority
 
     def _estimate_rd_after_game(self, player_id: str, opponent_id: str, current_rd: float) -> float:
         """
@@ -1002,6 +1048,15 @@ class MatchScheduler:
             GameResult if game completes normally, None if API error
         """
         async with self._semaphore:
+            for player in (task.white, task.black):
+                if isinstance(player, BaseEngine):
+                    continue
+                if not self._record_stability_cap_shadow(player.player_id):
+                    raise RuntimeError(
+                        f"saved game blocked: no stability-cap shadow lock for "
+                        f"{player.player_id}"
+                    )
+
             if self.verbose:
                 print(f"[{task.game_num}/{task.total_games}] {task.white.player_id} vs {task.black.player_id}")
 
@@ -1629,6 +1684,14 @@ class MatchScheduler:
         print(f"Lost to weaker freeze: lost to model {self.LOST_TO_WEAKER_RATING_GAP}+ pts lower "
               f"(within {self.LOST_TO_WEAKER_TIME_WINDOW}mo) unless {self.LOST_TO_WEAKER_COST_RATIO}x cheaper")
         print(f"Cost budget: ${max_cost:.2f}")
+        if self._shadow_priority_ids:
+            print(
+                "Outcome-blind cap-holdout priority: "
+                f"{len(self._shadow_priority_ids)} affected prospective "
+                f"configuration(s), {self._shadow_priority_multiplier:g}x "
+                f"until {self._shadow_minimum_games} games and games RD <= "
+                f"{self._shadow_maximum_games_rd:.0f}"
+            )
         print()
 
         # Shared state for workers
@@ -1646,9 +1709,22 @@ class MatchScheduler:
         # Phase 1: Position benchmarks for models missing results
         benchmarked_this_run = await self._run_position_benchmarks(llm_ids, counters, max_cost)
 
-        # Exclude models that just ran position benchmarks from game pairing.
-        # Their benchmark counts as their contribution for this run.
-        game_llm_ids = [lid for lid in llm_ids if lid not in benchmarked_this_run]
+        # Enforce the lock again at the final phase boundary. This also covers
+        # frozen or missing-config players that did not enter acquisition.
+        shadow_blocked = set()
+        for llm_id in llm_ids:
+            if llm_id in benchmarked_this_run:
+                continue
+            if not self._record_stability_cap_shadow(llm_id):
+                shadow_blocked.add(llm_id)
+
+        # Models that acquired a suite are deferred for this run; lock failures
+        # are always excluded from saved game pairing.
+        game_llm_ids = [
+            lid
+            for lid in llm_ids
+            if lid not in benchmarked_this_run and lid not in shadow_blocked
+        ]
 
         # Phase 2: Game workers
         workers = [

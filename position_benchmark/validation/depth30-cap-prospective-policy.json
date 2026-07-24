@@ -21,6 +21,20 @@
     "challenger_candidate": "repeated_forfeit_only",
     "evaluate_affected_configurations_only": true
   },
+  "collection_control": {
+    "saved_game_lock": "fail-closed-before-first-game",
+    "normal_scheduler": "automatic",
+    "manual_saved_games": "automatic-with-explicit-persistent-opt-out",
+    "manual_unsaved_games": "not-applicable",
+    "affected_immature_priority_multiplier": 2.0,
+    "priority_inputs": [
+      "prospective eligibility",
+      "reference/challenger prediction disagreement",
+      "games played",
+      "games RD"
+    ],
+    "priority_uses_game_outcomes": false
+  },
   "coverage_gate": {
     "minimum_mature_holdout_configurations": 12,
     "minimum_affected_holdout_configurations": 8,

@@ -499,6 +499,74 @@ async def show_leaderboard(args):
     return 0
 
 
+def show_cap_holdout_status(args):
+    """Show read-only progress toward the prospective stability-cap decision."""
+    from position_benchmark.stability_cap_shadow import (
+        POLICY_PATH,
+        SHADOW_LEDGER_PATH,
+    )
+    from scripts.evaluate_stability_cap_holdout import evaluate
+
+    policy = json.loads(POLICY_PATH.read_text())
+    ratings_path = (
+        args.ratings
+        or Path(__file__).resolve().parent
+        / policy["primary_target"]["default_path"]
+    )
+    if not ratings_path.exists():
+        print("Prospective stability-cap holdout: awaiting game-only ratings")
+        print(f"Production effect: none")
+        print(f"Missing target: {ratings_path}")
+        print(f"Refresh: {policy['primary_target']['refresh_command']}")
+        return 0
+
+    analysis = evaluate(
+        policy_path=POLICY_PATH,
+        ledger_path=SHADOW_LEDGER_PATH,
+        ratings_path=ratings_path,
+    )
+    if args.json:
+        print(json.dumps(analysis, indent=2))
+        return 0
+
+    coverage = analysis["coverage"]
+    rows = analysis["rows"]
+    affected = [row for row in rows if row["affected"]]
+    pending_affected = [row for row in affected if not row["mature"]]
+    gates = policy["coverage_gate"]
+    print(f"Prospective stability-cap holdout: {analysis['status']}")
+    print("Production effect: none")
+    print(
+        "Coverage: "
+        f"{coverage['mature_holdout_configurations']}/"
+        f"{gates['minimum_mature_holdout_configurations']} mature; "
+        f"{coverage['affected_mature_configurations']}/"
+        f"{gates['minimum_affected_holdout_configurations']} affected mature; "
+        f"{len(coverage['affected_families'])}/"
+        f"{gates['minimum_affected_families']} affected families; "
+        f"{len(coverage['affected_labs'])}/"
+        f"{gates['minimum_affected_labs']} affected labs"
+    )
+    print(
+        f"Ledger: {len(rows)} prospective, {len(affected)} affected, "
+        f"{len(pending_affected)} affected and still prioritized"
+    )
+    for row in sorted(
+        pending_affected,
+        key=lambda item: (
+            int((item["target"] or {}).get("games", 0)),
+            item["player_id"],
+        ),
+    ):
+        target = row["target"] or {}
+        print(
+            f"  {row['player_id']}: games={target.get('games', 0)}, "
+            f"games_rd={float(target.get('games_rd', 350.0)):.0f} "
+            f"({row['maturity_reason']})"
+        )
+    return 0
+
+
 async def recalculate_ratings(args):
     """Recalculate ratings from stored game results."""
     from datetime import datetime
@@ -1114,15 +1182,38 @@ async def run_manual_game(args):
     except Exception:
         pass
 
+    def manual_player_id(
+        model_name,
+        reasoning=None,
+        reasoning_effort=None,
+        reasoning_max_tokens=None,
+        custom_name=None,
+    ):
+        """Resolve the exact persisted player ID without starting a client."""
+        if custom_name:
+            return custom_name
+        player_id = resolve_player_id(
+            model_name.split("/")[-1],
+            reasoning_effort,
+        )
+        if (
+            not reasoning_effort
+            and not reasoning_max_tokens
+            and reasoning is False
+            and "(no thinking)" not in player_id.lower()
+        ):
+            player_id = f"{player_id} (no thinking)"
+        return player_id
+
     # Helper to create LLM player
     def create_llm(model_name, reasoning=None, reasoning_effort=None, reasoning_max_tokens=None, custom_name=None):
-        if custom_name:
-            player_id = custom_name
-        else:
-            player_id = model_name.split("/")[-1]
-            player_id = resolve_player_id(player_id, reasoning_effort)
-            if not reasoning_effort and not reasoning_max_tokens and reasoning is False and "(no thinking)" not in player_id.lower():
-                player_id = f"{player_id} (no thinking)"
+        player_id = manual_player_id(
+            model_name,
+            reasoning,
+            reasoning_effort,
+            reasoning_max_tokens,
+            custom_name,
+        )
         if api_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
             return GeminiPlayer(
@@ -1160,6 +1251,105 @@ async def run_manual_game(args):
     total_illegal_black = 0
     api_error_count = 0
     pgn_logger = PGNLogger() if args.save else None
+
+    if pgn_logger:
+        from position_benchmark.stability_cap_shadow import (
+            ensure_shadow_lock_before_saved_game,
+            record_nonprospective_exclusion,
+        )
+
+        llm_player_ids = []
+        if not args.white_engine:
+            llm_player_ids.append(
+                manual_player_id(
+                    args.white_model,
+                    args.white_reasoning,
+                    args.white_reasoning_effort,
+                    args.white_reasoning_max_tokens,
+                    args.white_name,
+                )
+            )
+        if not args.black_engine:
+            llm_player_ids.append(
+                manual_player_id(
+                    args.black_model,
+                    args.black_reasoning,
+                    args.black_reasoning_effort,
+                    args.black_reasoning_max_tokens,
+                    args.black_name,
+                )
+            )
+        llm_player_ids = list(dict.fromkeys(llm_player_ids))
+
+        historical_counts = defaultdict(int)
+        for result in pgn_logger.load_all_results():
+            historical_counts[result.white_id] += 1
+            historical_counts[result.black_id] += 1
+        manual_rating_store = RatingStore(path="data/ratings.json")
+
+        if getattr(args, "allow_nonprospective_save", False):
+            for player_id in llm_player_ids:
+                try:
+                    exclusion = record_nonprospective_exclusion(
+                        player_id,
+                        reason=(
+                            "explicit --allow-nonprospective-save before a "
+                            "saved manual game"
+                        ),
+                    )
+                except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+                    print(
+                        f"Error: could not persist prospective opt-out for "
+                        f"{player_id}: {error}"
+                    )
+                    return 1
+                if exclusion:
+                    print(
+                        f"Prospective cap holdout disabled for {player_id} by "
+                        "explicit saved-manual-game opt-out."
+                    )
+                else:
+                    print(
+                        f"Stability-cap prediction for {player_id} was already "
+                        "locked; the manual opt-out does not alter it."
+                    )
+        else:
+            for player_id in llm_player_ids:
+                rating = manual_rating_store.get(player_id)
+                game_snapshot = {
+                    "games_played": max(
+                        int(getattr(rating, "games_played", 0) or 0),
+                        historical_counts[player_id],
+                    ),
+                    "games_rd": float(
+                        getattr(rating, "games_rd", 350.0) or 350.0
+                    ),
+                    "rating_deviation": float(
+                        getattr(rating, "rating_deviation", 350.0) or 350.0
+                    ),
+                }
+                decision = ensure_shadow_lock_before_saved_game(
+                    player_id,
+                    game_snapshot=game_snapshot,
+                )
+                if not decision.allowed:
+                    print(
+                        f"Error: saved manual game blocked for {player_id}; "
+                        f"stability-cap shadow lock failed: {decision.message}"
+                    )
+                    print(
+                        "Run the automatic position suite first, use --no-save, "
+                        "or intentionally exclude this configuration with "
+                        "--allow-nonprospective-save."
+                    )
+                    return 1
+                if decision.record is not None and decision.message.startswith(
+                    "immutable shadow prediction locked"
+                ):
+                    print(
+                        f"Locked stability-cap shadow for {player_id}: "
+                        f"{decision.status} (production effect: none)"
+                    )
 
     try:
         for game_num in range(args.games):
@@ -1376,6 +1566,21 @@ def main():
         ),
     )
 
+    holdout_parser = subparsers.add_parser(
+        "cap-holdout-status",
+        help="Show prospective stability-cap holdout progress",
+    )
+    holdout_parser.add_argument(
+        "--ratings",
+        type=Path,
+        help="Alternate game-only ratings target",
+    )
+    holdout_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the complete current analysis as JSON",
+    )
+
     # Manual game command
     manual_parser = subparsers.add_parser("manual", help="Run a manual game")
     manual_parser.add_argument(
@@ -1514,6 +1719,14 @@ def main():
     )
     manual_parser.set_defaults(save=True)
     manual_parser.add_argument(
+        "--allow-nonprospective-save",
+        action="store_true",
+        help=(
+            "Intentionally save without prospective cap enrollment and "
+            "persistently exclude the LLM configuration(s) from that holdout"
+        ),
+    )
+    manual_parser.add_argument(
         "--games",
         type=int,
         default=1,
@@ -1545,6 +1758,8 @@ def main():
         return asyncio.run(show_leaderboard(args))
     elif args.command == "recalculate":
         return asyncio.run(recalculate_ratings(args))
+    elif args.command == "cap-holdout-status":
+        return show_cap_holdout_status(args)
     elif args.command == "manual":
         return asyncio.run(run_manual_game(args))
     else:

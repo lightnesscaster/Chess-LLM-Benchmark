@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-07-24T01:28:12.409731+00:00",
+  "generated_at": "2026-07-24T03:42:55.540736+00:00",
   "policy_version": "depth30-cap-prospective-v1",
   "production_effect": "none",
   "status": "collecting",
   "inputs": {
     "policy": {
       "path": "position_benchmark/validation/depth30-cap-prospective-policy.json",
-      "sha256": "032cf68f24c653f1b6d49c2addb75a1da2f6fb953b0322fd3df2cf95b8dd5003"
+      "sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d"
     },
     "ledger": {
       "path": "position_benchmark/results/stability_cap_shadow.json",
-      "sha256": "322412a39ad67aedc01deb65a2dfdf1271404d14495db78c01d627ef5a8fbdd3"
+      "sha256": "25b280546353856f3ff62cc4f762abea7401fb33266fcc3648a18345a97cfd65"
     },
     "ratings": {
       "path": "position_benchmark/validation/depth30-cap-prospective-no-position-ratings.json",
