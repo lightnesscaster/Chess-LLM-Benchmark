@@ -270,6 +270,15 @@ llms:
     provider_ignore: ["deepinfra"]
     timeout: 1200
 
+  # deepseek-v4-flash-0731 (no thinking) - re-post-trained 2026-07-31 checkpoint
+  - player_id: "deepseek-v4-flash-0731 (no thinking)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
+    temperature: 0.0
+    reasoning: false
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
@@ -413,6 +422,22 @@ llms:
 
   - player_id: "deepseek-v4-flash (max)"
     model_name: "deepseek/deepseek-v4-flash"
+    temperature: 0.0
+    reasoning_effort: xhigh
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash-0731 (high)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash-0731 (max)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
     temperature: 0.0
     reasoning_effort: xhigh
     provider_order: ["deepseek", "novita", "siliconflow"]

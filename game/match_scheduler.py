@@ -12,7 +12,7 @@ import json
 import math
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any, Union, Tuple, Optional
+from typing import Awaitable, Callable, List, Dict, Any, Union, Tuple, Optional
 from dataclasses import dataclass
 
 from engines.base_engine import BaseEngine
@@ -49,6 +49,10 @@ class GameTask:
     black: Player
     game_num: int
     total_games: int
+
+
+class GameCancelledBeforeStart(RuntimeError):
+    """Raised when a reserved game becomes ineligible before its first call."""
 
 
 class MatchScheduler:
@@ -981,6 +985,35 @@ class MatchScheduler:
             return self.REASONING_HIGH_RATING_CAP
         return self.REASONING_BASE_CAP
 
+    def _is_near_freeze_inflight_blocked(
+        self,
+        player_id: str,
+        current_rd: float,
+        player_stats: Dict[str, Any],
+        prospective_opponent_id: Optional[str] = None,
+    ) -> bool:
+        """Limit near-freeze players to one in-flight game.
+
+        When an opponent is provided, evaluate the RD projected after reserving
+        that additional game. This prevents a second reservation from slipping
+        through when the player's current estimated RD is just outside the
+        near-freeze margin but the new reservation would cross it.
+        """
+        if not self._inflight_opponents.get(player_id):
+            return False
+        rd_to_check = current_rd
+        if prospective_opponent_id is not None:
+            rd_to_check = self._estimate_rd_after_game(
+                player_id,
+                prospective_opponent_id,
+                current_rd,
+            )
+        return self._freeze_checker.should_limit_inflight_near_freeze(
+            player_id,
+            rd_to_check,
+            player_stats,
+        )
+
     def generate_pairings(
         self,
         llm_ids: List[str],
@@ -1034,7 +1067,11 @@ class MatchScheduler:
 
         return pairings
 
-    async def run_single_game(self, task: GameTask) -> Optional[GameResult]:
+    async def run_single_game(
+        self,
+        task: GameTask,
+        pre_start_check: Optional[Callable[[], Awaitable[bool]]] = None,
+    ) -> Optional[GameResult]:
         """
         Run a single game with concurrency control.
 
@@ -1043,11 +1080,20 @@ class MatchScheduler:
 
         Args:
             task: The game task
+            pre_start_check: Optional final eligibility check, executed after
+                acquiring an execution slot and before cloning players or
+                making a model call.
 
         Returns:
             GameResult if game completes normally, None if API error
+
+        Raises:
+            GameCancelledBeforeStart: If the final eligibility check fails.
         """
         async with self._semaphore:
+            if pre_start_check is not None and not await pre_start_check():
+                raise GameCancelledBeforeStart("game cancelled before start")
+
             for player in (task.white, task.black):
                 if isinstance(player, BaseEngine):
                     continue
@@ -1191,12 +1237,14 @@ class MatchScheduler:
         Check if an LLM needs to play against random-bot.
 
         Returns True if:
-        - LLM has no stats (new model)
+        - LLM has no stats and no lower-effort sibling clearance
         - LLM has legal_move_rate below 98% AND rating > -200 AND
           (played < 5 games vs random-bot OR lost at least one to random-bot)
 
         Models are exempt if they've played at least 5 games against random-bot
-        without losing any (wins and draws both count as not losing).
+        without losing any (wins and draws both count as not losing), or if a
+        strictly lower-effort sibling of the same model has done so and this
+        variant has no contrary random-bot loss.
 
         Args:
             llm_id: The LLM to check
@@ -1205,7 +1253,11 @@ class MatchScheduler:
         if player_stats is None:
             player_stats = self.stats_collector.get_player_stats()
         if llm_id not in player_stats:
-            return True  # New model with no games
+            return not self._freeze_checker.has_lower_effort_random_bot_clearance(
+                llm_id,
+                self.RANDOM_BOT_ID,
+                self.RANDOM_BOT_MIN_GAMES,
+            )
         stats = player_stats[llm_id]
         legal_rate = stats.get("legal_move_rate", 1.0)
         # Only enforce low accuracy requirement for models rated above -200
@@ -1217,8 +1269,22 @@ class MatchScheduler:
             h2h = self.stats_collector.get_head_to_head(llm_id, self.RANDOM_BOT_ID)
             games_vs_random = h2h["games"]
             losses_to_random = h2h["player_b_wins"]  # random-bot is player_b
-            # Exempt if played >= 5 games and won all of them
+            # Exempt after at least five games with no random-bot losses.
+            # Draws are allowed.
             if games_vs_random >= self.RANDOM_BOT_MIN_GAMES and losses_to_random == 0:
+                return False
+            # A strictly lower-effort sibling of the same underlying model can
+            # establish competence for higher efforts. Direct contrary evidence
+            # wins: a higher-effort variant with its own random-bot loss cannot
+            # inherit clearance.
+            if (
+                losses_to_random == 0
+                and self._freeze_checker.has_lower_effort_random_bot_clearance(
+                    llm_id,
+                    self.RANDOM_BOT_ID,
+                    self.RANDOM_BOT_MIN_GAMES,
+                )
+            ):
                 return False
             return True
         return False
@@ -1351,6 +1417,12 @@ class MatchScheduler:
         for llm_id in llms_by_priority:
             current_games = self._games_played.get(llm_id, 0)
             current_rd = self._get_estimated_rd(llm_id)
+            if self._is_near_freeze_inflight_blocked(
+                llm_id,
+                current_rd,
+                player_stats,
+            ):
+                continue
             if self._freeze_checker.is_frozen(llm_id, current_rd, player_stats):
                 continue
             if current_rd < self.LOW_RD_THRESHOLD and current_games >= self.LOW_RD_CAP:
@@ -1375,6 +1447,13 @@ class MatchScheduler:
                 )
                 if already_in_flight:
                     freeze_test_pending.add(llm_id)
+                elif self._is_near_freeze_inflight_blocked(
+                    llm_id,
+                    current_rd,
+                    player_stats,
+                    prospective_opponent_id=freeze_opp,
+                ):
+                    continue
                 else:
                     ft = games_vs_anchor_per_color if freeze_opp in anchor_set else games_vs_llm_per_color
                     for w, b in [(llm_id, freeze_opp), (freeze_opp, llm_id)]:
@@ -1395,6 +1474,13 @@ class MatchScheduler:
 
                 current_games = self._games_played.get(llm_id, 0)
                 current_rd = self._get_estimated_rd(llm_id)
+
+                if self._is_near_freeze_inflight_blocked(
+                    llm_id,
+                    current_rd,
+                    player_stats,
+                ):
+                    continue
 
                 # Check if this LLM is frozen (RD too low or old model with stable rating)
                 if self._freeze_checker.is_frozen(llm_id, current_rd, player_stats):
@@ -1432,13 +1518,34 @@ class MatchScheduler:
                     if phase == "other" and is_random_bot:
                         continue
 
+                    if self._is_near_freeze_inflight_blocked(
+                        llm_id,
+                        current_rd,
+                        player_stats,
+                        prospective_opponent_id=opp_id,
+                    ):
+                        continue
+
                     # Check if LLM opponent has hit their caps
                     if not is_anchor:
                         opp_current = self._games_played.get(opp_id, 0)
                         opp_rd = self._get_estimated_rd(opp_id)
+                        opp_frozen = self._freeze_checker.is_frozen(
+                            opp_id,
+                            opp_rd,
+                            player_stats,
+                        )
 
                         # Frozen models can always be challenged - no cap
-                        if not self._freeze_checker.is_frozen(opp_id, opp_rd, player_stats):
+                        if not opp_frozen:
+                            if self._is_near_freeze_inflight_blocked(
+                                opp_id,
+                                opp_rd,
+                                player_stats,
+                                prospective_opponent_id=llm_id,
+                            ):
+                                continue
+
                             # Check low RD cap (60 <= RD < 70)
                             if opp_rd < self.LOW_RD_THRESHOLD and opp_current >= self.LOW_RD_CAP:
                                 continue  # Skip - rating is stable enough
@@ -1509,6 +1616,18 @@ class MatchScheduler:
                     return  # No more games
 
                 white_id, black_id = pairing
+                player_stats = self.stats_collector.get_player_stats()
+                recheck_before_start = []
+                for player_id in (white_id, black_id):
+                    if player_id not in llm_set:
+                        continue
+                    current_rd = self._get_estimated_rd(player_id)
+                    if not self._freeze_checker.is_frozen(
+                        player_id,
+                        current_rd,
+                        player_stats,
+                    ):
+                        recheck_before_start.append(player_id)
 
                 # Estimate cost BEFORE reserving to check budget
                 estimated_cost, estimate_source = self._estimate_game_cost_detail(white_id, black_id)
@@ -1579,8 +1698,34 @@ class MatchScheduler:
             # Create and run game task
             task = GameTask(white=white, black=black, game_num=game_num, total_games=0)
 
+            async def reservation_still_eligible() -> bool:
+                async with scheduler_lock:
+                    current_stats = self.stats_collector.get_player_stats()
+                    for player_id in recheck_before_start:
+                        rating = self.rating_store.get(player_id)
+                        actual_rd = rating.rating_deviation
+                        if self._freeze_checker.is_frozen(
+                            player_id,
+                            actual_rd,
+                            current_stats,
+                        ):
+                            return False
+                        current_games = self._games_played.get(player_id, 0)
+                        if (
+                            actual_rd < self.LOW_RD_THRESHOLD
+                            and current_games > self.LOW_RD_CAP
+                        ):
+                            return False
+                        cap = self._get_game_cap(player_id)
+                        if cap is not None and current_games > cap:
+                            return False
+                    return True
+
             try:
-                result = await self.run_single_game(task)
+                result = await self.run_single_game(
+                    task,
+                    pre_start_check=reservation_still_eligible,
+                )
 
                 if result is None:
                     # API error - release the slots and pending cost
@@ -1618,6 +1763,30 @@ class MatchScheduler:
                                 print(f"  Budget exceeded: ${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending >= ${max_cost:.2f}")
                     results.append(result)
 
+            except GameCancelledBeforeStart:
+                if self.verbose:
+                    print(
+                        f"  Cancelled before start: {white_id} vs {black_id} "
+                        f"(freeze/cap changed)"
+                    )
+                async with scheduler_lock:
+                    games_per_pairing[(white_id, black_id)] -= 1
+                    for player_id in (white_id, black_id):
+                        if player_id in llm_set:
+                            self._games_played[player_id] = max(
+                                0,
+                                self._games_played.get(player_id, 0) - 1,
+                            )
+                            self._inflight_opponents.get(player_id, {}).pop(
+                                game_num,
+                                None,
+                            )
+                            self._recompute_estimated_rd(player_id)
+                    estimate = counters["pending_estimates"].pop(game_num, 0)
+                    counters["pending_cost"] -= estimate
+                    counters["cancelled_before_start"] = (
+                        counters.get("cancelled_before_start", 0) + 1
+                    )
             except Exception as e:
                 if self.verbose:
                     print(f"  Game error: {e}")
@@ -1725,6 +1894,7 @@ class MatchScheduler:
             "game_num": 0,
             "errors": 0,
             "api_errors": 0,
+            "cancelled_before_start": 0,
             "total_cost": 0.0,
             "pending_cost": 0.0,  # Estimated cost of running games
             "pending_estimates": {},  # game_num -> estimated cost
@@ -1782,7 +1952,11 @@ class MatchScheduler:
             print(f"\nBenchmark stopped: cost budget exceeded (${counters['total_cost']:.2f} / ${max_cost:.2f})")
         else:
             print(f"\nBenchmark complete: {len(results)} games, ${counters['total_cost']:.2f} spent")
-        print(f"Errors: {counters['errors']}, API errors: {counters['api_errors']}")
+        print(
+            f"Errors: {counters['errors']}, "
+            f"API errors: {counters['api_errors']}, "
+            f"cancelled before start: {counters['cancelled_before_start']}"
+        )
 
         # Show final ratings for all LLMs
         print("\nFinal ratings:")
@@ -1796,6 +1970,7 @@ class MatchScheduler:
             "completed_games": len(results),
             "errors": counters["errors"],
             "api_errors": counters["api_errors"],
+            "cancelled_before_start": counters["cancelled_before_start"],
             "total_cost": counters["total_cost"],
             "budget_exceeded": counters["budget_exceeded"],
             "results": results,

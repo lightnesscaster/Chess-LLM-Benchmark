@@ -77,6 +77,9 @@ class FreezeChecker:
     LOST_TO_WEAKER_TIME_WINDOW = 3
     LOST_TO_WEAKER_COST_RATIO = 5.0
 
+    # Serialize games as a model approaches an applicable freeze boundary.
+    INFLIGHT_FREEZE_MARGIN = 20
+
     # Cost estimation
     UNKNOWN_MODEL_DEFAULT_COST = 1.0
 
@@ -206,6 +209,81 @@ class FreezeChecker:
             tag = player_id[start + 1:end]
             return self.EFFORT_LEVELS.get(tag)
         return None
+
+    def has_lower_effort_random_bot_clearance(
+        self,
+        player_id: str,
+        random_bot_id: str,
+        min_games: int,
+    ) -> bool:
+        """Return whether a lower-effort sibling has cleared random-bot."""
+        model_id = self._player_model_ids.get(player_id)
+        effort = self._get_effort_level(player_id)
+        if not model_id or effort is None:
+            return False
+
+        for sibling_id in self._models_by_model_id.get(model_id, []):
+            if sibling_id == player_id:
+                continue
+            sibling_effort = self._get_effort_level(sibling_id)
+            if sibling_effort is None or sibling_effort >= effort:
+                continue
+            h2h = self.stats_collector.get_head_to_head(
+                sibling_id,
+                random_bot_id,
+            )
+            if h2h["games"] >= min_games and h2h["player_b_wins"] == 0:
+                return True
+        return False
+
+    def should_limit_inflight_near_freeze(
+        self,
+        player_id: str,
+        current_rd: float,
+        player_stats: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Return whether this model is close to an applicable RD freeze."""
+        thresholds = [self.FROZEN_RD_THRESHOLD]
+        publish_timestamp = self._publish_dates.get(player_id)
+        rating = self.rating_store.get(player_id).rating
+
+        if publish_timestamp is not None:
+            now = datetime.now(timezone.utc).timestamp()
+            age_months = (now - publish_timestamp) / (30.44 * 24 * 60 * 60)
+            if age_months > self.FROZEN_AGE_MONTHS_6M:
+                thresholds.append(self.FROZEN_AGE_RD_THRESHOLD_6M)
+            if age_months > self.FROZEN_AGE_MONTHS_1Y:
+                thresholds.append(self.FROZEN_AGE_RD_THRESHOLD_1Y)
+            if (
+                publish_timestamp >= self.WITHIN_YEAR_WEAK_CUTOFF
+                and rating < self.WITHIN_YEAR_WEAK_RATING_THRESHOLD
+            ):
+                thresholds.append(self.WITHIN_YEAR_WEAK_RD_THRESHOLD)
+            if publish_timestamp >= self.RECENT_WEAK_CUTOFF:
+                if (
+                    player_id in self.reasoning_ids
+                    and rating < self.RECENT_WEAK_REASONING_RATING_THRESHOLD
+                ):
+                    thresholds.append(self.RECENT_WEAK_REASONING_RD_THRESHOLD)
+                elif (
+                    player_id not in self.reasoning_ids
+                    and rating < self.RECENT_WEAK_NONREASONING_RATING_THRESHOLD
+                ):
+                    thresholds.append(self.RECENT_WEAK_NONREASONING_RD_THRESHOLD)
+
+        if player_stats is not None:
+            losses = player_stats.get(player_id, {}).get("losses", 0)
+            if losses >= self.PROVEN_WORSE_MIN_LOSSES:
+                if self.is_proven_worse(player_id, player_stats):
+                    thresholds.append(self.PROVEN_WORSE_RD_THRESHOLD)
+                if self.is_inferior_effort_variant(player_id, player_stats):
+                    thresholds.append(self.EFFORT_VARIANT_RD_THRESHOLD)
+                if self.is_inferior_to_provider_sibling(player_id):
+                    thresholds.append(self.PROVIDER_INFERIOR_RD_THRESHOLD)
+                if self.is_expensive_inferior(player_id):
+                    thresholds.append(self.EXPENSIVE_INFERIOR_RD_THRESHOLD)
+
+        return current_rd < max(thresholds) + self.INFLIGHT_FREEZE_MARGIN
 
     def is_proven_worse(self, player_id: str,
                         player_stats: Dict[str, Any]) -> bool:
