@@ -845,6 +845,11 @@ async def recalculate_ratings(args):
                 games_rd=350.0,
             ), auto_save=False)
     rating_store.save()
+    initial_player_ratings = {
+        player_id: PlayerRating.from_dict(rating_store.get(player_id).to_dict())
+        for player_id in sorted(all_players)
+        if not rating_store.is_anchor(player_id)
+    }
     if args.verbose:
         print(f"Initialized ratings:")
         if benchmark_count:
@@ -941,7 +946,10 @@ async def recalculate_ratings(args):
                 pid: rating_store.get(pid).rating
                 for pid in sorted(all_players)
             }
-            rating_store.snapshot_for_pass(preserve_ids)
+            rating_store.snapshot_for_pass(
+                preserve_ids,
+                reset_ratings=initial_player_ratings,
+            )
 
         # Store ratings and RDs at start of pass (post-reset/reseed)
         pass_start_ratings = {

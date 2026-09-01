@@ -201,7 +201,11 @@ class RatingStore:
                     best = sib.rating
         return best
 
-    def snapshot_for_pass(self, preserve_ids: Set[str]) -> None:
+    def snapshot_for_pass(
+        self,
+        preserve_ids: Set[str],
+        reset_ratings: Optional[Dict[str, PlayerRating]] = None,
+    ) -> None:
         """
         Save current ratings as the previous-pass snapshot, then reset non-
         anchor ratings so they can be re-seeded with updated sibling info.
@@ -209,6 +213,10 @@ class RatingStore:
         Args:
             preserve_ids: player IDs whose ratings should NOT be reset
                 (e.g. anchor IDs and configured non-anchor engine IDs).
+            reset_ratings: Calculated initial ratings to restore for reset
+                players. Higher-effort variants are then raised only when a
+                lower-effort sibling finished the previous pass above that
+                baseline.
         """
         self._previous_pass_ratings = {
             pid: PlayerRating(
@@ -226,6 +234,20 @@ class RatingStore:
             for pid, p in self._ratings.items()
         }
         self._ratings = {pid: p for pid, p in self._ratings.items() if pid in preserve_ids}
+
+        if reset_ratings is None:
+            return
+
+        for player_id in sorted(reset_ratings):
+            if player_id in preserve_ids:
+                continue
+            restored = PlayerRating.from_dict(reset_ratings[player_id].to_dict())
+            sibling_rating = self._lower_effort_max_rating(player_id)
+            if sibling_rating is not None and sibling_rating > restored.rating:
+                restored.rating = sibling_rating
+                restored.rating_deviation = self._benchmark_seed_rd
+                restored.games_rd = BENCHMARK_SEED_GAMES_RD
+            self._ratings[player_id] = restored
 
     def clear_pass_snapshot(self) -> None:
         """

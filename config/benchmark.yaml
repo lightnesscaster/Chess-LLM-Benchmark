@@ -565,11 +565,11 @@ llms:
     api: gemini
     reasoning_effort: medium
 
-  # grok-4-fast
-  - player_id: "grok-4-fast"
-    model_name: "x-ai/grok-4-fast"
-    temperature: 0.0
-    reasoning: true
+  # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
+  # - player_id: "grok-4-fast"
+  #   model_name: "x-ai/grok-4-fast"
+  #   temperature: 0.0
+  #   reasoning: true
 
   # grok-4.1-fast
   - player_id: "grok-4.1-fast"

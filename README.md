@@ -108,6 +108,39 @@ Features:
 - **Cost vs Rating chart** with efficiency frontier
 - **Methodology page** explaining the rating system
 - **JSON API** at `/api/leaderboard`, `/api/games`, `/api/game/<id>`
+- **Google login** for site accounts through Firebase Authentication
+- **Admin play arena** for playing configured LLMs without affecting benchmark ratings
+
+### Login and Admin Play Setup
+
+The web app uses Firebase Authentication for Google sign-in. Any Google user
+with a verified email can log in, but `/admin/play` and its APIs are restricted
+to the comma-separated `ADMIN_EMAILS` allowlist. The Render blueprint designates
+`johnstondaniel4@gmail.com` as the initial administrator.
+
+1. In the Firebase console for the existing project, open **Authentication →
+   Sign-in method** and enable **Google**.
+2. Under **Authentication → Settings → Authorized domains**, add the production
+   Render hostname (currently `chessbenchllm.onrender.com`). Firebase includes
+   `localhost` for local development by default.
+3. In **Project settings → General → Your apps**, create or select a Web app and
+   copy its public `apiKey` value into `FIREBASE_WEB_API_KEY`.
+4. Configure these environment variables in Render:
+
+   - `FIREBASE_CREDENTIALS_JSON`: existing Firebase service-account JSON
+   - `FIREBASE_WEB_API_KEY`: public API key from the Firebase Web app
+   - `FLASK_SECRET_KEY`: long random value used to sign login/game sessions
+   - `ADMIN_EMAILS`: comma-separated verified admin emails
+   - `OPENROUTER_API_KEY`: enables configured OpenRouter and completion models
+   - `GEMINI_API_KEY`: optional; enables entries configured with `api: gemini`
+
+For local development, set the same variables and run `python web/app.py`.
+The Firebase project ID and default auth domain are derived from the service
+account; set `FIREBASE_PROJECT_ID` or `FIREBASE_AUTH_DOMAIN` only when an
+override is needed.
+
+Interactive human games live only in the administrator's signed browser session.
+They are not saved as benchmark games and never update Glicko ratings.
 
 ## Configuration
 

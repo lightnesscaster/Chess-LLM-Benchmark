@@ -332,5 +332,232 @@ class PreStartCancellationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(scheduler._inflight_opponents[TERRA_MEDIUM], {})
 
 
+class BudgetReservationRecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_api_error_releases_budget_and_scheduling_resumes(self) -> None:
+        scheduler = MatchScheduler.__new__(MatchScheduler)
+        scheduler.players = {
+            TERRA_MEDIUM: CountingPlayer(),
+            "anchor-one": RandomEngine("anchor-one", 400, seed=1),
+            "anchor-two": RandomEngine("anchor-two", 400, seed=2),
+        }
+        scheduler.rating_store = SchedulerRatingStoreStub(
+            {
+                TERRA_MEDIUM: SimpleNamespace(
+                    rating=600,
+                    rating_deviation=100,
+                ),
+                "anchor-one": SimpleNamespace(
+                    rating=400,
+                    rating_deviation=0,
+                ),
+                "anchor-two": SimpleNamespace(
+                    rating=400,
+                    rating_deviation=0,
+                ),
+            }
+        )
+        scheduler.stats_collector = StatsCollector()
+        scheduler.verbose = False
+        scheduler._games_played = {}
+        scheduler._estimated_rd = {}
+        scheduler._inflight_opponents = {}
+        scheduler._freeze_checker = SimpleNamespace(
+            is_frozen=lambda *_args: False,
+        )
+        scheduler._get_estimated_rd = lambda _player_id: 100
+        scheduler._estimate_rd_after_game = (
+            lambda _player_id, _opponent_id, current_rd: current_rd - 1
+        )
+        scheduler._recompute_estimated_rd = lambda _player_id: None
+        scheduler._estimate_game_cost_detail = (
+            lambda *_args: (0.6, "test estimate")
+        )
+        scheduler._calculate_game_cost = lambda _result: 0.1
+
+        choices = [
+            (TERRA_MEDIUM, "anchor-one"),
+            (TERRA_MEDIUM, "anchor-two"),
+            (TERRA_MEDIUM, "anchor-two"),
+            None,
+        ]
+        scheduler._pick_next_game = lambda **_kwargs: choices.pop(0)
+
+        first_game_started = asyncio.Event()
+        release_first_game = asyncio.Event()
+        calls = 0
+
+        async def run_game(_task: GameTask, pre_start_check=None):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                first_game_started.set()
+                await release_first_game.wait()
+                return None
+            return SimpleNamespace(game_id="completed-after-retry")
+
+        scheduler.run_single_game = run_game
+        games_per_pairing = {}
+        results = []
+        counters = {
+            "game_num": 0,
+            "errors": 0,
+            "api_errors": 0,
+            "cancelled_before_start": 0,
+            "total_cost": 0.0,
+            "pending_cost": 0.0,
+            "pending_estimates": {},
+            "budget_exceeded": False,
+        }
+        worker_args = {
+            "llm_ids": [TERRA_MEDIUM],
+            "anchor_ids": ["anchor-one", "anchor-two"],
+            "games_per_pairing": games_per_pairing,
+            "scheduler_lock": asyncio.Lock(),
+            "games_vs_anchor_per_color": 5,
+            "games_vs_llm_per_color": 2,
+            "rating_threshold": 600,
+            "results": results,
+            "counters": counters,
+            "max_cost": 1.0,
+        }
+
+        first_worker = asyncio.create_task(
+            scheduler._game_worker(worker_id=0, **worker_args)
+        )
+        await first_game_started.wait()
+        second_worker = asyncio.create_task(
+            scheduler._game_worker(worker_id=1, **worker_args)
+        )
+        await second_worker
+        release_first_game.set()
+        await first_worker
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(counters["api_errors"], 1)
+        self.assertAlmostEqual(counters["total_cost"], 0.1)
+        self.assertAlmostEqual(counters["pending_cost"], 0.0)
+        self.assertFalse(counters["budget_exceeded"])
+
+    async def test_completed_game_does_not_commit_pending_estimates(self) -> None:
+        scheduler = MatchScheduler.__new__(MatchScheduler)
+        anchors = ["anchor-one", "anchor-two", "anchor-three"]
+        scheduler.players = {
+            TERRA_MEDIUM: CountingPlayer(),
+            **{
+                anchor: RandomEngine(anchor, 400, seed=index)
+                for index, anchor in enumerate(anchors, start=1)
+            },
+        }
+        scheduler.rating_store = SchedulerRatingStoreStub(
+            {
+                TERRA_MEDIUM: SimpleNamespace(
+                    rating=600,
+                    rating_deviation=100,
+                ),
+                **{
+                    anchor: SimpleNamespace(
+                        rating=400,
+                        rating_deviation=0,
+                    )
+                    for anchor in anchors
+                },
+            }
+        )
+        scheduler.stats_collector = StatsCollector()
+        scheduler.verbose = False
+        scheduler._games_played = {}
+        scheduler._estimated_rd = {}
+        scheduler._inflight_opponents = {}
+        scheduler._freeze_checker = SimpleNamespace(
+            is_frozen=lambda *_args: False,
+        )
+        scheduler._get_estimated_rd = lambda _player_id: 100
+        scheduler._estimate_rd_after_game = (
+            lambda _player_id, _opponent_id, current_rd: current_rd - 1
+        )
+        scheduler._recompute_estimated_rd = lambda _player_id: None
+
+        estimates = iter([0.4, 0.4, 0.2, 0.2])
+        scheduler._estimate_game_cost_detail = (
+            lambda *_args: (next(estimates), "test estimate")
+        )
+        scheduler._calculate_game_cost = lambda result: result.cost
+        choices = [
+            (TERRA_MEDIUM, "anchor-one"),
+            (TERRA_MEDIUM, "anchor-two"),
+            (TERRA_MEDIUM, "anchor-three"),
+            (TERRA_MEDIUM, "anchor-three"),
+            None,
+        ]
+        scheduler._pick_next_game = lambda **_kwargs: choices.pop(0)
+
+        first_game_started = asyncio.Event()
+        second_game_started = asyncio.Event()
+        release_first_game = asyncio.Event()
+        release_second_game = asyncio.Event()
+        calls = 0
+
+        async def run_game(task: GameTask, pre_start_check=None):
+            nonlocal calls
+            calls += 1
+            if task.black.player_id == "anchor-one":
+                first_game_started.set()
+                await release_first_game.wait()
+                return SimpleNamespace(cost=0.7)
+            if task.black.player_id == "anchor-two":
+                second_game_started.set()
+                await release_second_game.wait()
+                return None
+            return SimpleNamespace(cost=0.1)
+
+        scheduler.run_single_game = run_game
+        games_per_pairing = {}
+        results = []
+        counters = {
+            "game_num": 0,
+            "errors": 0,
+            "api_errors": 0,
+            "cancelled_before_start": 0,
+            "total_cost": 0.0,
+            "pending_cost": 0.0,
+            "pending_estimates": {},
+            "budget_exceeded": False,
+        }
+        worker_args = {
+            "llm_ids": [TERRA_MEDIUM],
+            "anchor_ids": anchors,
+            "games_per_pairing": games_per_pairing,
+            "scheduler_lock": asyncio.Lock(),
+            "games_vs_anchor_per_color": 5,
+            "games_vs_llm_per_color": 2,
+            "rating_threshold": 600,
+            "results": results,
+            "counters": counters,
+            "max_cost": 1.0,
+        }
+
+        first_worker = asyncio.create_task(
+            scheduler._game_worker(worker_id=0, **worker_args)
+        )
+        await first_game_started.wait()
+        second_worker = asyncio.create_task(
+            scheduler._game_worker(worker_id=1, **worker_args)
+        )
+        await second_game_started.wait()
+
+        release_first_game.set()
+        await first_worker
+        release_second_game.set()
+        await second_worker
+
+        self.assertEqual(calls, 3)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(counters["api_errors"], 1)
+        self.assertAlmostEqual(counters["total_cost"], 0.8)
+        self.assertAlmostEqual(counters["pending_cost"], 0.0)
+        self.assertFalse(counters["budget_exceeded"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -18,7 +18,7 @@ import yaml
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from flask import Flask, render_template, jsonify, abort, request
+from flask import Flask, render_template, jsonify, abort, request, redirect, session, url_for
 
 from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
@@ -27,8 +27,37 @@ from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
 from utils import is_reasoning_model
+from web.auth import (
+    admin_api_required,
+    admin_required,
+    current_user,
+    ensure_csrf_token,
+    firebase_web_config,
+    is_admin,
+    safe_next_url,
+    validate_csrf,
+    verify_firebase_token,
+)
+from web.play_service import (
+    ConfigurationError as PlayConfigurationError,
+    GameStateError,
+    ProviderError,
+    game_view,
+    list_playable_models,
+    play_human_move,
+    start_game,
+)
 
 app = Flask(__name__)
+app.config.update(
+    SECRET_KEY=os.environ.get("FLASK_SECRET_KEY"),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "").lower()
+    in ("1", "true", "yes")
+    or bool(os.environ.get("RENDER")),
+    PERMANENT_SESSION_LIFETIME=43200,
+)
 
 # Register custom Jinja filter for reasoning model detection
 app.jinja_env.filters['is_reasoning'] = is_reasoning_model
@@ -277,6 +306,152 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
+
+
+@app.context_processor
+def inject_auth_context():
+    """Expose only safe authentication state to templates."""
+    return {
+        "auth_user": current_user(),
+        "auth_is_admin": is_admin(),
+        "csrf_token": ensure_csrf_token() if app.secret_key else None,
+    }
+
+
+@app.route("/login")
+def login():
+    """Show Firebase Google login."""
+    if not app.secret_key:
+        abort(503, description="Login is not configured.")
+    next_url = safe_next_url(request.args.get("next"))
+    if current_user() is not None:
+        return redirect(next_url)
+    return render_template(
+        "login.html",
+        firebase_config=firebase_web_config(),
+        next_url=next_url,
+    )
+
+
+@app.route("/api/auth/session", methods=["POST"])
+def create_auth_session():
+    """Exchange a verified Firebase ID token for a signed site session."""
+    validate_csrf()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Send a valid login token."}), 400
+    claims = verify_firebase_token(payload.get("id_token"))
+    if not claims:
+        return jsonify({"error": "Invalid or expired login token."}), 401
+
+    email = str(claims.get("email") or "").strip().casefold()
+    if claims.get("email_verified") is not True or not email:
+        return jsonify({"error": "A verified email address is required."}), 403
+
+    user = {
+        "uid": str(claims.get("uid") or claims.get("sub") or ""),
+        "email": email,
+        "email_verified": True,
+        "name": str(claims.get("name") or "")[:200],
+        "picture": str(claims.get("picture") or "")[:1000],
+    }
+    if not user["uid"]:
+        return jsonify({"error": "Login token is missing a user identifier."}), 401
+
+    session.clear()
+    session["user"] = user
+    session["csrf_token"] = ensure_csrf_token()
+    session.permanent = True
+    return jsonify({
+        "user": {
+            "email": user["email"],
+            "is_admin": is_admin(user),
+            "name": user["name"],
+            "picture": user["picture"],
+        }
+    })
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    """Clear the signed site session."""
+    validate_csrf()
+    session.clear()
+    session["csrf_token"] = ensure_csrf_token()
+    return redirect(url_for("index"))
+
+
+@app.route("/admin/play")
+@admin_required
+def admin_play():
+    """Admin-only interactive play page."""
+    models = list_playable_models(CONFIG_PATH, os.environ)
+    current_game = None
+    if session.get("admin_play_game"):
+        try:
+            current_game = game_view(session["admin_play_game"])
+        except GameStateError:
+            session.pop("admin_play_game", None)
+    return render_template(
+        "play.html",
+        models=models,
+        current_game=current_game,
+    )
+
+
+@app.route("/api/admin/play/start", methods=["POST"])
+@admin_api_required
+def api_admin_play_start():
+    """Start a new signed-session human-versus-LLM game."""
+    validate_csrf()
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Send a valid game setup."}), 400
+    try:
+        state = start_game(
+            payload.get("model_id"),
+            payload.get("human_color"),
+            CONFIG_PATH,
+            os.environ,
+        )
+    except PlayConfigurationError as error:
+        status = 503 if not list_playable_models(CONFIG_PATH, os.environ) else 400
+        return jsonify({"error": str(error)}), status
+    except GameStateError as error:
+        return jsonify({"error": str(error)}), 400
+    except ProviderError as error:
+        return jsonify({"error": str(error)}), 502
+
+    session["admin_play_game"] = state
+    return jsonify({"game": game_view(state)})
+
+
+@app.route("/api/admin/play/move", methods=["POST"])
+@admin_api_required
+def api_admin_play_move():
+    """Apply one human move and return the authoritative resulting position."""
+    validate_csrf()
+    state = session.get("admin_play_game")
+    if not isinstance(state, dict):
+        return jsonify({"error": "Start a new game first."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Send a valid move."}), 400
+    try:
+        updated_state = play_human_move(
+            state,
+            payload.get("move"),
+            CONFIG_PATH,
+            os.environ,
+        )
+    except (PlayConfigurationError, GameStateError) as error:
+        return jsonify({"error": str(error)}), 400
+    except ProviderError as error:
+        return jsonify({"error": str(error)}), 502
+
+    session["admin_play_game"] = updated_state
+    return jsonify({"game": game_view(updated_state)})
 
 
 @app.route("/")

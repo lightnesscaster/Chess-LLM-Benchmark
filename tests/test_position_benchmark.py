@@ -1066,6 +1066,7 @@ class ProductionContractTests(unittest.TestCase):
             "gemma-4-31b-it (high)",
             "gemma-4-31b-it (no thinking)",
             "gpt-3.5-turbo",
+            "gpt-oss-120b (low)",
             "gpt-5.5 (xhigh)",
             "kimi-k2-0905",
             "llama-4-maverick",

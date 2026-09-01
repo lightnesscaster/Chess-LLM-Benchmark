@@ -19,6 +19,18 @@
         <div class="nav-brand">
             <a href="/">LLM Chess Benchmark</a>
         </div>
+        <div class="account-nav">
+            {% if auth_user %}
+                {% if auth_is_admin %}<a href="{{ url_for('admin_play') }}">Play an LLM</a>{% endif %}
+                <span class="account-email">{{ auth_user.email }}</span>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="account-link" type="submit">Log out</button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login') }}">Log in</a>
+            {% endif %}
+        </div>
     </nav>
 
     <main class="container">

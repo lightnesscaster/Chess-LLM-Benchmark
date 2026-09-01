@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Log in - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<section class="login-shell">
+    <div class="login-card">
+        <p class="auth-eyebrow">Account access</p>
+        <h1>Log in to Chess Benchmark</h1>
+        <p class="login-copy">Use your Google account to continue.</p>
+        {% if firebase_config %}
+        <button id="google-login" class="auth-button" type="button">Continue with Google</button>
+        <p id="login-status" class="auth-status" role="status" aria-live="polite"></p>
+        {% else %}
+        <p class="auth-status auth-error">Login is not configured on this deployment.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if firebase_config %}
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+const button = document.getElementById("google-login");
+const status = document.getElementById("login-status");
+const app = initializeApp({{ firebase_config|tojson }});
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+button.addEventListener("click", async () => {
+    button.disabled = true;
+    status.classList.remove("auth-error");
+    status.textContent = "Opening Google sign-in…";
+    try {
+        const credential = await signInWithPopup(auth, provider);
+        const idToken = await credential.user.getIdToken();
+        const response = await fetch("{{ url_for('create_auth_session') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": {{ csrf_token|tojson }},
+            },
+            body: JSON.stringify({id_token: idToken}),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Login failed.");
+        window.location.assign({{ next_url|tojson }});
+    } catch (error) {
+        status.classList.add("auth-error");
+        status.textContent = error.message || "Login failed.";
+        button.disabled = false;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

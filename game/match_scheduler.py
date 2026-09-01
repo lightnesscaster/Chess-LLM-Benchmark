@@ -1635,7 +1635,11 @@ class MatchScheduler:
 
                 # Pre-flight budget check: don't start game if it would exceed budget
                 if effective_cost >= max_cost:
-                    counters["budget_exceeded"] = True
+                    # Pending reservations can still fail or be cancelled and
+                    # release their estimates. Only make budget exhaustion
+                    # terminal when no in-flight cost can be released.
+                    if counters["pending_cost"] <= 0:
+                        counters["budget_exceeded"] = True
                     if self.verbose:
                         print(
                             f"  Budget would be exceeded by {white_id} vs {black_id}: "
@@ -1755,12 +1759,15 @@ class MatchScheduler:
                             if player_id in llm_set:
                                 self._inflight_opponents.get(player_id, {}).pop(game_num, None)
                                 self._recompute_estimated_rd(player_id)
-                        # Check budget (actual + estimated pending)
-                        effective_cost = counters["total_cost"] + counters["pending_cost"]
-                        if effective_cost >= max_cost:
+                        # Pending estimates are not committed spend and can be
+                        # released by API errors or pre-start cancellation.
+                        if counters["total_cost"] >= max_cost:
                             counters["budget_exceeded"] = True
                             if self.verbose:
-                                print(f"  Budget exceeded: ${counters['total_cost']:.2f} + ${counters['pending_cost']:.2f} pending >= ${max_cost:.2f}")
+                                print(
+                                    f"  Budget exceeded: ${counters['total_cost']:.2f} "
+                                    f"spent >= ${max_cost:.2f}"
+                                )
                     results.append(result)
 
             except GameCancelledBeforeStart:

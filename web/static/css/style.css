@@ -36,9 +36,335 @@ body {
     background-color: var(--bg-secondary);
     padding: 1rem 2rem;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border);
+}
+
+.account-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.875rem;
+}
+
+.account-nav a,
+.account-link {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+.account-nav form { margin: 0; }
+
+.account-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+}
+
+.account-nav a:hover,
+.account-link:hover { text-decoration: underline; }
+
+.account-email { color: var(--text-secondary); }
+
+/* Login */
+.login-shell {
+    min-height: 58vh;
+    display: grid;
+    place-items: center;
+}
+
+.login-card {
+    width: min(100%, 460px);
+    padding: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-secondary);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.auth-eyebrow,
+.play-kicker,
+.console-label {
+    color: var(--accent-light);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.login-card h1 { margin: 0.35rem 0 0.6rem; }
+.login-copy { color: var(--text-secondary); }
+
+.auth-button {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.auth-status { min-height: 1.5rem; margin-top: 1rem; color: var(--text-secondary); }
+.auth-error { color: var(--accent-light); }
+
+/* Admin play arena */
+.play-page { max-width: 1120px; margin: 0 auto; }
+
+.play-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.play-header h1 {
+    margin: 0.15rem 0 0.25rem;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(2.3rem, 5vw, 4.3rem);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 1;
+}
+
+.play-header p:last-child { max-width: 650px; color: var(--text-secondary); }
+
+.private-badge {
+    flex: none;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid rgba(233, 69, 96, 0.55);
+    border-radius: 99px;
+    color: var(--accent-light);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.play-setup {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1.4rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+}
+
+.setup-heading > span { color: var(--text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; }
+.setup-heading h2 { margin-top: 0.1rem; font-size: 1.2rem; }
+
+.setup-controls {
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) auto auto;
+    align-items: end;
+    gap: 1rem;
+}
+
+.setup-field,
+.color-choice { display: flex; flex-direction: column; gap: 0.4rem; }
+.setup-field > span,
+.color-choice legend { color: var(--text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.setup-field select {
+    min-height: 42px;
+    padding: 0 2.3rem 0 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.color-choice { border: 0; }
+.color-choice-buttons { display: flex; }
+.color-choice label { display: inline-block; }
+.color-choice input { position: absolute; opacity: 0; }
+.color-choice label span {
+    display: inline-block;
+    min-width: 68px;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-align: center;
+    cursor: pointer;
+}
+.color-choice label:first-of-type span { border-radius: 6px 0 0 6px; }
+.color-choice label:last-of-type span { margin-left: -1px; border-radius: 0 6px 6px 0; }
+.color-choice input:checked + span { position: relative; border-color: var(--accent); background: rgba(233, 69, 96, 0.14); color: var(--text-primary); }
+.color-choice input:focus-visible + span {
+    position: relative;
+    outline: 3px solid rgba(255, 107, 107, 0.55);
+    outline-offset: 3px;
+}
+
+.start-game-button {
+    min-height: 42px;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.play-empty { display: flex; flex-direction: column; justify-content: center; color: var(--text-secondary); }
+.play-empty strong { color: var(--text-primary); }
+
+.arena-layout {
+    display: grid;
+    grid-template-columns: minmax(400px, 600px) minmax(280px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.arena-board-column { min-width: 0; }
+
+.board-nameplate {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 40px;
+    padding: 0.6rem 0.75rem;
+    color: var(--text-primary);
+    font-weight: 650;
+}
+
+.piece-dot { width: 13px; height: 13px; border-radius: 50%; }
+.piece-dot-white { border: 1px solid #a9b7c8; background: #edf2f7; }
+.piece-dot-black { border: 1px solid #53677f; background: #202c3d; }
+
+.play-board-frame {
+    position: relative;
+    padding: 10px;
+    border: 1px solid #334967;
+    border-radius: 10px;
+    background: #0b1729;
+    box-shadow: 0 22px 65px rgba(0, 0, 0, 0.34);
+}
+
+.play-board { width: 100%; }
+.play-board .white-1e1d7 { background-color: #dbe4ee; color: #344a65; }
+.play-board .black-3c85d { background-color: #617b99; color: #dbe4ee; }
+
+.thinking-rail {
+    position: absolute;
+    inset: auto 10px 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 42px;
+    padding: 0.55rem 0.8rem;
+    background: rgba(15, 52, 96, 0.95);
+    border-top: 2px solid var(--accent);
+    backdrop-filter: blur(8px);
+}
+
+.thinking-rail[hidden] { display: none; }
+.thinking-rail span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-light); animation: think-pulse 1s ease-in-out infinite; }
+.thinking-rail span:nth-child(2) { animation-delay: 0.12s; }
+.thinking-rail span:nth-child(3) { animation-delay: 0.24s; }
+.thinking-rail strong { margin-left: 0.3rem; font-size: 0.8rem; }
+
+.keyboard-move-form {
+    margin-top: 0.55rem;
+    padding: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+}
+
+.keyboard-move-form > label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.keyboard-move-form > div { display: flex; }
+.keyboard-move-form input {
+    min-width: 0;
+    flex: 1;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px 0 0 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: 1rem 'Consolas', 'Monaco', monospace;
+    text-transform: lowercase;
+}
+.keyboard-move-form button {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    background: transparent;
+    color: var(--accent-light);
+    cursor: pointer;
+    font-weight: 700;
+}
+.keyboard-move-form button:disabled,
+.keyboard-move-form input:disabled { cursor: not-allowed; opacity: 0.5; }
+.keyboard-move-form > span { display: block; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.75rem; }
+
+@keyframes think-pulse { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+.game-console { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.turn-card,
+.move-ledger { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); }
+.turn-card { display: flex; flex-direction: column; gap: 0.35rem; padding: 1.2rem; }
+.turn-card strong { font-size: 1.25rem; }
+.turn-card > span:last-child { color: var(--text-secondary); font-size: 0.875rem; }
+
+.move-ledger { overflow: hidden; }
+.ledger-header { display: flex; align-items: end; justify-content: space-between; padding: 1rem 1.1rem; border-bottom: 1px solid var(--border); }
+.ledger-header h2 { margin-top: 0.1rem; font-family: Georgia, 'Times New Roman', serif; font-size: 1.45rem; font-weight: 500; }
+.ledger-header > span { color: var(--text-secondary); font: 0.75rem 'Consolas', monospace; }
+.move-list { max-height: 490px; min-height: 260px; overflow-y: auto; }
+.ledger-empty { padding: 1.25rem; color: var(--text-secondary); font-style: italic; }
+.ledger-row { display: grid; grid-template-columns: 46px 1fr 1fr; border-bottom: 1px solid rgba(42, 58, 90, 0.65); font-family: 'Consolas', 'Monaco', monospace; }
+.ledger-row > span { padding: 0.68rem 0.75rem; }
+.ledger-number { border-right: 1px solid var(--border); color: var(--accent-light); font-size: 0.75rem; }
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 3px solid rgba(255, 107, 107, 0.55);
+    outline-offset: 3px;
+}
+
+@media (max-width: 850px) {
+    .play-setup { grid-template-columns: 1fr; }
+    .setup-controls { grid-template-columns: 1fr; }
+    .arena-layout { grid-template-columns: 1fr; }
+    .move-list { max-height: 300px; min-height: 180px; }
+}
+
+@media (max-width: 600px) {
+    .navbar { padding: 0.8rem 1rem; }
+    .nav-brand a { font-size: 1.05rem; }
+    .account-email { display: none; }
+    .container { padding: 1.25rem 0.8rem; }
+    .play-header { align-items: flex-start; flex-direction: column; gap: 0.8rem; }
+    .play-header h1 { font-size: 2.7rem; }
+    .arena-layout { display: block; }
+    .game-console { margin-top: 1rem; }
+    .play-board-frame { padding: 6px; }
+    .thinking-rail { inset: auto 6px 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thinking-rail span { animation: none; opacity: 1; }
 }
 
 .nav-brand a {

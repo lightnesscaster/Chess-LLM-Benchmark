@@ -210,6 +210,30 @@ class FreezeChecker:
             return self.EFFORT_LEVELS.get(tag)
         return None
 
+    def _external_loss_opponents(self, player_id: str) -> List[str]:
+        """Return loss opponents outside the player's model family.
+
+        Games between effort variants do not calibrate their shared rating
+        component against anchors or unrelated models. Those games remain
+        available to the dedicated effort-variant rule, but must not trigger
+        generic cross-model performance freezes.
+        """
+        model_id = self._player_model_ids.get(player_id)
+        opponents = []
+        for result in self.stats_collector.results:
+            opponent_id = None
+            if result.winner == "white" and result.black_id == player_id:
+                opponent_id = result.white_id
+            elif result.winner == "black" and result.white_id == player_id:
+                opponent_id = result.black_id
+            if opponent_id is None:
+                continue
+            opponent_model_id = self._player_model_ids.get(opponent_id)
+            if model_id and opponent_model_id == model_id:
+                continue
+            opponents.append(opponent_id)
+        return opponents
+
     def has_lower_effort_random_bot_clearance(
         self,
         player_id: str,
@@ -272,16 +296,20 @@ class FreezeChecker:
                     thresholds.append(self.RECENT_WEAK_NONREASONING_RD_THRESHOLD)
 
         if player_stats is not None:
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.PROVEN_WORSE_MIN_LOSSES:
+            external_losses = len(self._external_loss_opponents(player_id))
+            total_losses = player_stats.get(player_id, {}).get("losses", 0)
+            if external_losses >= self.PROVEN_WORSE_MIN_LOSSES:
                 if self.is_proven_worse(player_id, player_stats):
                     thresholds.append(self.PROVEN_WORSE_RD_THRESHOLD)
-                if self.is_inferior_effort_variant(player_id, player_stats):
-                    thresholds.append(self.EFFORT_VARIANT_RD_THRESHOLD)
                 if self.is_inferior_to_provider_sibling(player_id):
                     thresholds.append(self.PROVIDER_INFERIOR_RD_THRESHOLD)
                 if self.is_expensive_inferior(player_id):
                     thresholds.append(self.EXPENSIVE_INFERIOR_RD_THRESHOLD)
+            if (
+                total_losses >= self.EFFORT_VARIANT_MIN_LOSSES
+                and self.is_inferior_effort_variant(player_id, player_stats)
+            ):
+                thresholds.append(self.EFFORT_VARIANT_RD_THRESHOLD)
 
         return current_rd < max(thresholds) + self.INFLIGHT_FREEZE_MARGIN
 
@@ -416,12 +444,7 @@ class FreezeChecker:
         my_cost = self.get_player_cost(player_id)
         three_months = self.LOST_TO_WEAKER_TIME_WINDOW * 30.44 * 24 * 60 * 60
 
-        lost_to = set()
-        for result in self.stats_collector.results:
-            if result.winner == "white" and result.black_id == player_id:
-                lost_to.add(result.white_id)
-            elif result.winner == "black" and result.white_id == player_id:
-                lost_to.add(result.black_id)
+        lost_to = set(self._external_loss_opponents(player_id))
 
         if not lost_to:
             return False
@@ -538,8 +561,8 @@ class FreezeChecker:
         if current_rd < self.PROVEN_WORSE_RD_THRESHOLD:
             if player_stats is None:
                 player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.PROVEN_WORSE_MIN_LOSSES:
+            external_losses = len(self._external_loss_opponents(player_id))
+            if external_losses >= self.PROVEN_WORSE_MIN_LOSSES:
                 if self.is_proven_worse(player_id, player_stats):
                     return True
 
@@ -556,8 +579,8 @@ class FreezeChecker:
         if current_rd < self.PROVIDER_INFERIOR_RD_THRESHOLD:
             if player_stats is None:
                 player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.PROVIDER_INFERIOR_MIN_LOSSES:
+            external_losses = len(self._external_loss_opponents(player_id))
+            if external_losses >= self.PROVIDER_INFERIOR_MIN_LOSSES:
                 if self.is_inferior_to_provider_sibling(player_id):
                     return True
 
@@ -569,8 +592,8 @@ class FreezeChecker:
         if current_rd < self.EXPENSIVE_INFERIOR_RD_THRESHOLD:
             if player_stats is None:
                 player_stats = self.stats_collector.get_player_stats()
-            losses = player_stats.get(player_id, {}).get("losses", 0)
-            if losses >= self.EXPENSIVE_INFERIOR_MIN_LOSSES:
+            external_losses = len(self._external_loss_opponents(player_id))
+            if external_losses >= self.EXPENSIVE_INFERIOR_MIN_LOSSES:
                 if self.is_expensive_inferior(player_id):
                     return True
 

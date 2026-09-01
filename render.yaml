@@ -3,11 +3,21 @@ services:
     name: chess-llm-benchmark
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn web.app:app --bind 0.0.0.0:$PORT
+    startCommand: gunicorn web.app:app --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 620
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
       - key: FIREBASE_ENABLED
         value: "true"
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAILS
+        value: "johnstondaniel4@gmail.com"
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
       # FIREBASE_CREDENTIALS_JSON must be set manually in Render dashboard
       # Copy the contents of firebase-key.json as the value
