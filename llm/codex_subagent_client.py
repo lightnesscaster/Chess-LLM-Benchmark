@@ -28,6 +28,31 @@ class CodexSubagentPlayer(BaseLLMPlayer):
 
     VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
     NON_TOOL_ITEM_TYPES = {"agent_message", "reasoning"}
+    SUBPROCESS_ENV_ALLOWLIST = {
+        "CODEX_HOME",
+        "HOME",
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TERM",
+        "NO_COLOR",
+        "TMPDIR",
+        "TMP",
+        "TEMP",
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "REQUESTS_CA_BUNDLE",
+        "CURL_CA_BUNDLE",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "no_proxy",
+    }
     _GLOBAL_SEMAPHORE: Optional[asyncio.Semaphore] = None
     _GLOBAL_LIMIT: Optional[int] = None
 
@@ -44,6 +69,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         ignore_rules: bool = True,
         ephemeral: bool = True,
         include_legal_moves: bool = False,
+        subscription_only: bool = False,
         extra_args: Optional[list[str]] = None,
         working_dir: Optional[str] = None,
         **_: object,
@@ -65,6 +91,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         self.ignore_rules = ignore_rules
         self.ephemeral = ephemeral
         self.include_legal_moves = include_legal_moves
+        self.subscription_only = subscription_only
         self.extra_args = extra_args or []
         self.working_dir = working_dir
         self._last_prompt_tokens = 0
@@ -125,6 +152,22 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             self.model_name,
             "-c",
             f"model_reasoning_effort={self.reasoning_effort}",
+            "-c",
+            "features.shell_tool=false",
+            "-c",
+            'web_search="disabled"',
+            "-c",
+            "tools.web_search=false",
+            "-c",
+            "tools.view_image=false",
+            "-c",
+            "apps._default.enabled=false",
+            "-c",
+            "features.multi_agent=false",
+            "-c",
+            "features.skill_mcp_dependency_install=false",
+            "-c",
+            "shell_environment_policy.inherit=none",
             "--json",
             "--ignore-user-config",
             "--skip-git-repo-check",
@@ -137,6 +180,18 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         cmd.extend(self.extra_args)
         cmd.append(prompt)
         return cmd
+
+    def _subprocess_environment(
+        self,
+        environ: dict[str, str],
+    ) -> dict[str, str]:
+        if not self.subscription_only:
+            return dict(environ)
+        return {
+            key: value
+            for key, value in environ.items()
+            if key in self.SUBPROCESS_ENV_ALLOWLIST
+        }
 
     async def select_move(
         self,
@@ -217,6 +272,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                     process = await asyncio.create_subprocess_exec(
                         *cmd,
                         cwd=self.working_dir or isolated_dir,
+                        env=self._subprocess_environment(dict(os.environ)),
                         stdin=subprocess.DEVNULL,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,

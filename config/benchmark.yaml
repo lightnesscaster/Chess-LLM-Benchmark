@@ -620,6 +620,9 @@ llms:
   # claude-opus-4.7 (no thinking) - Anthropic, released 2026-04-16
   - player_id: "claude-opus-4.7 (no thinking)"
     model_name: "anthropic/claude-opus-4.7"
+    web_api: claude_code
+    web_model_name: opus
+    web_reasoning_effort: low
     temperature: 0.0
     reasoning: false
 

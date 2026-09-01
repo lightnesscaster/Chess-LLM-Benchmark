@@ -133,6 +133,16 @@ to the comma-separated `ADMIN_EMAILS` allowlist. The Render blueprint designates
    - `ADMIN_EMAILS`: comma-separated verified admin emails
    - `OPENROUTER_API_KEY`: enables configured OpenRouter and completion models
    - `GEMINI_API_KEY`: optional; enables entries configured with `api: gemini`
+   - `CODEX_AUTH_JSON_B64`: base64-encoded Codex CLI `auth.json` used only by
+     the admin play arena
+   - `CLAUDE_CODE_OAUTH_TOKEN`: long-lived token from `claude setup-token`
+     used only by the admin play arena
+
+The Render service installs the official Codex and Claude Code CLIs during its
+build. Codex credentials are seeded into the private `/var/data/codex` disk so
+token refreshes survive deploys. Claude Code runs in print mode with tools,
+plugins, browser access, and session persistence disabled. Subscription-backed
+CLI models remain subject to the usage limits of their respective plans.
 
 For local development, set the same variables and run `python web/app.py`.
 The Firebase project ID and default auth domain are derived from the service

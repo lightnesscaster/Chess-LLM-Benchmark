@@ -36,6 +36,12 @@ def config_path(tmp_path):
                         "api": "codex",
                     },
                     {
+                        "player_id": "claude-code-local",
+                        "model_name": "anthropic/claude-opus-4.7",
+                        "web_api": "claude_code",
+                        "reasoning_effort": "high",
+                    },
+                    {
                         "player_id": "unknown-backend",
                         "model_name": "provider/unknown",
                         "api": "unsupported",
@@ -89,6 +95,21 @@ def test_model_list_adds_direct_gemini_when_its_key_is_configured(config_path):
         "chat-model",
         "completion-model",
         "gemini-direct",
+    ]
+
+
+def test_model_list_adds_subscription_clis_only_with_render_credentials(config_path):
+    models = _service().list_playable_models(
+        config_path,
+        {
+            "CODEX_AUTH_JSON_B64": "encoded-codex-login",
+            "CLAUDE_CODE_OAUTH_TOKEN": "claude-subscription-token",
+        },
+    )
+
+    assert [model["id"] for model in models] == [
+        "codex-local",
+        "claude-code-local",
     ]
 
 
@@ -365,3 +386,109 @@ def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
     assert move == "e2e4"
     assert captured["model_name"] == "gemini-direct"
     assert captured["closed"] is True
+
+
+@pytest.mark.parametrize(
+    (
+        "backend",
+        "backend_field",
+        "class_name",
+        "model_name",
+        "credential",
+        "expected_effort",
+    ),
+    [
+        (
+            "codex",
+            "api",
+            "CodexSubagentPlayer",
+            "openai/gpt-5.6-sol",
+            {"CODEX_AUTH_JSON_B64": "encoded-login"},
+            "high",
+        ),
+        (
+            "claude_code",
+            "web_api",
+            "ClaudeCodePlayer",
+            "anthropic/claude-opus-4.7",
+            {"CLAUDE_CODE_OAUTH_TOKEN": "subscription-token"},
+            "low",
+        ),
+    ],
+)
+def test_subscription_cli_provider_constructs_configured_player(
+    monkeypatch,
+    backend,
+    backend_field,
+    class_name,
+    model_name,
+    credential,
+    expected_effort,
+):
+    service = _service()
+    captured = {}
+
+    class FakeCLIPlayer:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        async def close(self):
+            captured["closed"] = True
+
+    async def fake_request(_player, _board, **_kwargs):
+        return "e2e4"
+
+    monkeypatch.setattr(service, class_name, FakeCLIPlayer, raising=False)
+    monkeypatch.setattr(service, "request_llm_move", fake_request)
+
+    move = asyncio.run(service._request_model_move(
+        dict({
+            "player_id": f"{backend}-model",
+            "model_name": model_name,
+            "reasoning_effort": "high",
+            "web_reasoning_effort": "low",
+        }, **{backend_field: backend}),
+        __import__("chess").Board(),
+        False,
+        None,
+        credential,
+    ))
+
+    assert move == "e2e4"
+    assert captured["model_name"] == model_name
+    assert captured["reasoning_effort"] == expected_effort
+    assert captured.get("subscription_only", False) is (backend == "codex")
+    assert captured["closed"] is True
+
+
+def test_claude_code_provider_can_use_a_cli_model_alias(monkeypatch):
+    service = _service()
+    captured = {}
+
+    class FakeClaudeCodePlayer:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        async def close(self):
+            return None
+
+    async def fake_request(_player, _board, **_kwargs):
+        return "e2e4"
+
+    monkeypatch.setattr(service, "ClaudeCodePlayer", FakeClaudeCodePlayer)
+    monkeypatch.setattr(service, "request_llm_move", fake_request)
+
+    asyncio.run(service._request_model_move(
+        {
+            "player_id": "latest-opus",
+            "model_name": "anthropic/claude-opus-4.7",
+            "web_model_name": "opus",
+            "web_api": "claude_code",
+        },
+        __import__("chess").Board(),
+        False,
+        None,
+        {"CLAUDE_CODE_OAUTH_TOKEN": "subscription-token"},
+    ))
+
+    assert captured["model_name"] == "opus"

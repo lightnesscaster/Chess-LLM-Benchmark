@@ -11,7 +11,14 @@ from pathlib import Path
 import chess
 import yaml
 
-from llm import GeminiPlayer, OpenRouterPlayer, TransientAPIError, request_llm_move
+from llm import (
+    ClaudeCodePlayer,
+    CodexSubagentPlayer,
+    GeminiPlayer,
+    OpenRouterPlayer,
+    TransientAPIError,
+    request_llm_move,
+)
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 
 
@@ -41,10 +48,24 @@ def _load_config(config_path: Path) -> dict:
     return config
 
 
+def _web_backend(model: dict) -> str:
+    return str(model.get("web_api") or model.get("api") or "openrouter")
+
+
 def _backend_is_configured(model: dict, environ: Mapping[str, str]) -> bool:
-    backend = model.get("api", "openrouter")
-    if backend not in {"openrouter", "completion", "gemini"}:
+    backend = _web_backend(model)
+    if backend not in {
+        "openrouter",
+        "completion",
+        "gemini",
+        "codex",
+        "claude_code",
+    }:
         return False
+    if backend == "codex":
+        return bool(environ.get("CODEX_AUTH_JSON_B64"))
+    if backend == "claude_code":
+        return bool(environ.get("CLAUDE_CODE_OAUTH_TOKEN"))
     if backend == "gemini":
         return bool(environ.get("GEMINI_API_KEY"))
     return bool(environ.get("OPENROUTER_API_KEY"))
@@ -182,13 +203,29 @@ async def _request_model_move(
     last_illegal_move: str | None,
     environ: Mapping[str, str],
 ) -> str | None:
-    backend = model.get("api", "openrouter")
+    backend = _web_backend(model)
     common = {
         "player_id": model["player_id"],
         "temperature": model.get("temperature", 0.0),
         "timeout": model.get("timeout", 300),
     }
-    if backend == "gemini":
+    if backend == "codex":
+        player = CodexSubagentPlayer(
+            **common,
+            model_name=model["model_name"],
+            reasoning_effort=model.get("reasoning_effort", "medium"),
+            subscription_only=True,
+        )
+    elif backend == "claude_code":
+        player = ClaudeCodePlayer(
+            **common,
+            model_name=model.get("web_model_name", model["model_name"]),
+            reasoning_effort=model.get(
+                "web_reasoning_effort",
+                model.get("reasoning_effort", "medium"),
+            ),
+        )
+    elif backend == "gemini":
         player = GeminiPlayer(
             **common,
             model_name=model["model_name"].removeprefix("google/"),

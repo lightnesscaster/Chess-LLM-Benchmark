@@ -17,6 +17,7 @@ class CodexSubagentPlayerTests(unittest.TestCase):
             model_name="openai/gpt-5.6-sol",
             reasoning_effort="low",
             max_concurrent=1,
+            subscription_only=True,
         )
 
     def test_builds_isolated_ephemeral_command(self) -> None:
@@ -28,6 +29,32 @@ class CodexSubagentPlayerTests(unittest.TestCase):
         self.assertIn("--ephemeral", command)
         self.assertIn("--json", command)
         self.assertIn("read-only", command)
+        self.assertIn("features.shell_tool=false", command)
+        self.assertIn('web_search="disabled"', command)
+        self.assertIn("shell_environment_policy.inherit=none", command)
+
+    def test_subscription_environment_is_allowlisted_and_ignores_billing_keys(self) -> None:
+        environment = self.player._subprocess_environment({
+            "OPENAI_API_KEY": "usage-billed-key",
+            "CODEX_API_KEY": "alternate-usage-billed-key",
+            "OPENROUTER_API_KEY": "unrelated-secret",
+            "CLAUDE_CODE_OAUTH_TOKEN": "unrelated-secret",
+            "FIREBASE_WEB_API_KEY": "unrelated-secret",
+            "CODEX_HOME": "/var/data/codex",
+            "PATH": "/usr/bin",
+            "HOME": "/opt/render/project",
+            "LANG": "C.UTF-8",
+        })
+
+        self.assertEqual(
+            environment,
+            {
+                "CODEX_HOME": "/var/data/codex",
+                "PATH": "/usr/bin",
+                "HOME": "/opt/render/project",
+                "LANG": "C.UTF-8",
+            },
+        )
 
     def test_accepts_agent_message_and_reasoning_items(self) -> None:
         stdout = "\n".join(

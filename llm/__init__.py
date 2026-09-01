@@ -3,6 +3,7 @@ from .base_llm import BaseLLMPlayer, request_llm_move
 from .openrouter_client import OpenRouterPlayer, TransientAPIError
 from .gemini_client import GeminiPlayer
 from .codex_subagent_client import CodexSubagentPlayer
+from .claude_code_client import ClaudeCodePlayer
 
 __all__ = [
     "BaseLLMPlayer",
@@ -10,5 +11,6 @@ __all__ = [
     "OpenRouterPlayer",
     "GeminiPlayer",
     "CodexSubagentPlayer",
+    "ClaudeCodePlayer",
     "TransientAPIError",
 ]
