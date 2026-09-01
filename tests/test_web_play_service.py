@@ -1,6 +1,7 @@
 import copy
 import asyncio
 import importlib
+import json
 
 import pytest
 import yaml
@@ -14,6 +15,20 @@ def config_path(tmp_path):
     path.write_text(
         yaml.safe_dump(
             {
+                "web_play_models": [
+                    {
+                        "player_id": "claude-fable-5.1",
+                        "model_name": "claude-fable-5-1",
+                        "web_api": "claude_code",
+                        "web_model_name": "claude-fable-5-1",
+                    },
+                    {
+                        "player_id": "claude-fable-5",
+                        "model_name": "claude-fable-5",
+                        "web_api": "claude_code",
+                        "web_model_name": "claude-fable-5",
+                    },
+                ],
                 "llms": [
                     {
                         "player_id": "chat-model",
@@ -39,12 +54,18 @@ def config_path(tmp_path):
                         "player_id": "claude-code-local",
                         "model_name": "anthropic/claude-opus-4.7",
                         "web_api": "claude_code",
+                        "web_model_name": "opus",
                         "reasoning_effort": "high",
                     },
                     {
                         "player_id": "unknown-backend",
                         "model_name": "provider/unknown",
                         "api": "unsupported",
+                    },
+                    {
+                        "player_id": "benchmark-only-model",
+                        "model_name": "provider/benchmark-only",
+                        "web_hidden": True,
                     },
                     {
                         "player_id": "offline-model",
@@ -98,19 +119,59 @@ def test_model_list_adds_direct_gemini_when_its_key_is_configured(config_path):
     ]
 
 
-def test_model_list_adds_subscription_clis_only_with_render_credentials(config_path):
+def test_model_list_hides_unverified_claude_models(config_path, tmp_path):
     models = _service().list_playable_models(
         config_path,
         {
             "CODEX_AUTH_JSON_B64": "encoded-codex-login",
             "CLAUDE_CODE_OAUTH_TOKEN": "claude-subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(tmp_path / "missing-catalog.json"),
+        },
+    )
+
+    assert [model["id"] for model in models] == ["codex-local"]
+
+
+def test_model_list_adds_only_claude_models_verified_for_subscription(
+    config_path,
+    tmp_path,
+):
+    catalog_path = tmp_path / "claude-models.json"
+    catalog_path.write_text(json.dumps({
+        "models": ["claude-fable-5-1", "opus"],
+    }))
+
+    models = _service().list_playable_models(
+        config_path,
+        {
+            "CLAUDE_CODE_OAUTH_TOKEN": "claude-subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(catalog_path),
         },
     )
 
     assert [model["id"] for model in models] == [
-        "codex-local",
+        "claude-fable-5.1",
         "claude-code-local",
     ]
+
+
+def test_verified_web_only_claude_model_can_start_game(config_path, tmp_path):
+    catalog_path = tmp_path / "claude-models.json"
+    catalog_path.write_text(json.dumps({"models": ["claude-fable-5-1"]}))
+
+    state = _service().start_game(
+        "claude-fable-5.1",
+        "white",
+        config_path,
+        {
+            "CLAUDE_CODE_OAUTH_TOKEN": "claude-subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(catalog_path),
+        },
+        move_provider=lambda *_args: pytest.fail("LLM should not move first"),
+    )
+
+    assert state["model_id"] == "claude-fable-5.1"
+    assert state["model_name"] == "claude-fable-5-1"
 
 
 def test_start_game_with_white_pieces_waits_for_human(config_path):

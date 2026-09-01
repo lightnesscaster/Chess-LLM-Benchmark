@@ -143,6 +143,10 @@ build. Codex credentials are seeded into the private `/var/data/codex` disk so
 token refreshes survive deploys. Claude Code runs in print mode with tools,
 plugins, browser access, and session persistence disabled. Subscription-backed
 CLI models remain subject to the usage limits of their respective plans.
+At startup, the service makes one minimal, tool-free request to each configured
+Claude web opponent and writes an availability catalog. The admin dropdown
+fails closed and lists only models that the deployed subscription successfully
+accessed during that check.
 
 For local development, set the same variables and run `python web/app.py`.
 The Firebase project ID and default auth domain are derived from the service

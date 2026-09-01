@@ -46,6 +46,39 @@ engines:
     anchor: false  # Rating is updated like LLMs, not fixed
     ghost: true    # Opponents don't get rating/RD updates from games against survival-bot
 
+# Admin-only subscription models. These never enter benchmark scheduling and
+# are displayed only after the deployed CLI successfully probes model access.
+web_play_models:
+  - player_id: "claude-fable-5.1"
+    model_name: "anthropic/claude-fable-5-1"
+    web_api: claude_code
+    web_model_name: claude-fable-5-1
+    web_reasoning_effort: low
+
+  - player_id: "claude-fable-5"
+    model_name: "anthropic/claude-fable-5"
+    web_api: claude_code
+    web_model_name: claude-fable-5
+    web_reasoning_effort: low
+
+  - player_id: "claude-opus-5"
+    model_name: "anthropic/claude-opus-5"
+    web_api: claude_code
+    web_model_name: opus
+    web_reasoning_effort: low
+
+  - player_id: "claude-sonnet-5"
+    model_name: "anthropic/claude-sonnet-5"
+    web_api: claude_code
+    web_model_name: sonnet
+    web_reasoning_effort: low
+
+  - player_id: "claude-haiku-4.5"
+    model_name: "anthropic/claude-haiku-4.5"
+    web_api: claude_code
+    web_model_name: haiku
+    web_reasoning_effort: low
+
 # LLM players - budget models only
 llms:
   - player_id: "gpt-5.1-chat"
@@ -602,27 +635,28 @@ llms:
   # claude-opus-4.5 (high)
   - player_id: "claude-opus-4.5 (high)"
     model_name: "anthropic/claude-opus-4.5"
+    web_hidden: true
     temperature: 0.0
     reasoning_effort: high
 
   # claude-opus-4.6 (no thinking)
   - player_id: "claude-opus-4.6 (no thinking)"
     model_name: "anthropic/claude-opus-4.6"
+    web_hidden: true
     temperature: 0.0
     reasoning: false
 
   # claude-opus-4.6 (medium)
   - player_id: "claude-opus-4.6 (medium)"
     model_name: "anthropic/claude-opus-4.6"
+    web_hidden: true
     temperature: 0.0
     reasoning_effort: medium
 
   # claude-opus-4.7 (no thinking) - Anthropic, released 2026-04-16
   - player_id: "claude-opus-4.7 (no thinking)"
     model_name: "anthropic/claude-opus-4.7"
-    web_api: claude_code
-    web_model_name: opus
-    web_reasoning_effort: low
+    web_hidden: true
     temperature: 0.0
     reasoning: false
 

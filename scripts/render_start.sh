@@ -5,6 +5,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export CODEX_HOME="${CODEX_HOME:-/var/data/codex}"
 
 python -m web.cli_runtime
+python -m web.claude_catalog
 
 exec gunicorn web.app:app \
     --bind "0.0.0.0:$PORT" \

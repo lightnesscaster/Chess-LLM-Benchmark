@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 import os
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -52,6 +53,29 @@ def _web_backend(model: dict) -> str:
     return str(model.get("web_api") or model.get("api") or "openrouter")
 
 
+def _configured_models(config: dict) -> list:
+    return list(config.get("web_play_models", []) or []) + list(
+        config.get("llms", []) or []
+    )
+
+
+def _verified_claude_models(environ: Mapping[str, str]) -> set[str]:
+    catalog_path = Path(
+        environ.get(
+            "CLAUDE_MODEL_CATALOG_PATH",
+            "/tmp/chessbench_claude_models.json",
+        )
+    )
+    try:
+        payload = json.loads(catalog_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return set()
+    models = payload.get("models") if isinstance(payload, dict) else None
+    if not isinstance(models, list):
+        return set()
+    return {str(model) for model in models if isinstance(model, str)}
+
+
 def _backend_is_configured(model: dict, environ: Mapping[str, str]) -> bool:
     backend = _web_backend(model)
     if backend not in {
@@ -65,7 +89,10 @@ def _backend_is_configured(model: dict, environ: Mapping[str, str]) -> bool:
     if backend == "codex":
         return bool(environ.get("CODEX_AUTH_JSON_B64"))
     if backend == "claude_code":
-        return bool(environ.get("CLAUDE_CODE_OAUTH_TOKEN"))
+        model_name = str(model.get("web_model_name") or model.get("model_name") or "")
+        return bool(environ.get("CLAUDE_CODE_OAUTH_TOKEN")) and (
+            model_name in _verified_claude_models(environ)
+        )
     if backend == "gemini":
         return bool(environ.get("GEMINI_API_KEY"))
     return bool(environ.get("OPENROUTER_API_KEY"))
@@ -78,8 +105,12 @@ def list_playable_models(
     """List configured LLMs the deployed web process can call."""
     models = []
     seen_ids = set()
-    for model in _load_config(config_path).get("llms", []) or []:
-        if not isinstance(model, dict) or model.get("unavailable") is True:
+    for model in _configured_models(_load_config(config_path)):
+        if (
+            not isinstance(model, dict)
+            or model.get("unavailable") is True
+            or model.get("web_hidden") is True
+        ):
             continue
         model_id = str(model.get("player_id") or "").strip()
         model_name = str(model.get("model_name") or "").strip()
@@ -113,7 +144,7 @@ def _select_model(
     if model_id not in playable_ids:
         raise ConfigurationError("That model is not available for web play.")
 
-    for model in _load_config(config_path).get("llms", []) or []:
+    for model in _configured_models(_load_config(config_path)):
         if isinstance(model, dict) and model.get("player_id") == model_id:
             return copy.deepcopy(model)
     raise ConfigurationError("That model is not available for web play.")
