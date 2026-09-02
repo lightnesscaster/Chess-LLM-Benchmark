@@ -131,6 +131,10 @@ to the comma-separated `ADMIN_EMAILS` allowlist. The Render blueprint designates
    - `FIREBASE_WEB_API_KEY`: public API key from the Firebase Web app
    - `FLASK_SECRET_KEY`: long random value used to sign login/game sessions
    - `ADMIN_EMAILS`: comma-separated verified admin emails
+   - `HUMAN_GAME_DISPLAY_ALIASES`: optional JSON object mapping account emails
+     to public names in the game library, for example
+     `{"player@example.com":"chess_handle"}`. This changes presentation and
+     filtering only; saved Lichess identities and rating inputs stay unchanged.
    - `OPENROUTER_API_KEY`: enables configured OpenRouter and completion models
    - `GEMINI_API_KEY`: optional; enables entries configured with `api: gemini`
    - `CODEX_AUTH_JSON_B64`: base64-encoded Codex CLI `auth.json` used only by

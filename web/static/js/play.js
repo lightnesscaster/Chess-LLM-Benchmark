@@ -9,6 +9,11 @@
     const detailElement = document.getElementById("game-detail");
     const moveList = document.getElementById("move-list");
     const moveCount = document.getElementById("move-count");
+    const moveStartButton = document.getElementById("move-start");
+    const movePreviousButton = document.getElementById("move-previous");
+    const moveNextButton = document.getElementById("move-next");
+    const moveLiveButton = document.getElementById("move-live");
+    const movePosition = document.getElementById("move-position");
     const thinkingRail = document.getElementById("thinking-rail");
     const setupForm = document.getElementById("game-setup-form");
     const startButton = document.getElementById("start-game");
@@ -29,7 +34,43 @@
     const playableModels = modelsNode ? JSON.parse(modelsNode.textContent || "[]") : [];
     let busy = false;
     let pendingFen = null;
+    let viewedPly = null;
+    let ledgerMoveButtons = [];
     let board;
+
+    function totalPlies() {
+        return game && Array.isArray(game.moves) ? game.moves.length : 0;
+    }
+
+    function currentViewedPly() {
+        return viewedPly === null ? totalPlies() : viewedPly;
+    }
+
+    function isViewingLive() {
+        return viewedPly === null;
+    }
+
+    function fenAtPly(ply) {
+        if (!game || !Array.isArray(game.moves) || typeof window.Chess !== "function") {
+            return game ? game.fen : null;
+        }
+        const replay = new window.Chess();
+        for (const uciMove of game.moves.slice(0, ply)) {
+            const move = replay.move({
+                from: uciMove.slice(0, 2),
+                to: uciMove.slice(2, 4),
+                promotion: uciMove.slice(4) || "q",
+            });
+            if (!move) return game.fen;
+        }
+        return replay.fen();
+    }
+
+    function displayedFen() {
+        if (!game) return null;
+        if (isViewingLive()) return pendingFen || game.fen;
+        return fenAtPly(viewedPly);
+    }
 
     function humanPiece(piece) {
         if (!game) return false;
@@ -37,11 +78,11 @@
     }
 
     function canMove(piece) {
-        return !busy && game && game.status === "active" && game.turn === "human" && humanPiece(piece);
+        return !busy && isViewingLive() && game && game.status === "active" && game.turn === "human" && humanPiece(piece);
     }
 
     function keyboardMoveEnabled() {
-        return !busy && game && game.status === "active" && game.turn === "human";
+        return !busy && isViewingLive() && game && game.status === "active" && game.turn === "human";
     }
 
     function syncMoveControls() {
@@ -65,11 +106,13 @@
 
     function syncExportControls() {
         if (!fenValue || !copyFenButton || !copyPgnButton || !downloadPgnButton) return;
-        const available = Boolean(game && game.fen && game.pgn) && !busy;
-        fenValue.textContent = game && game.fen ? game.fen : "No game yet";
-        copyFenButton.disabled = !available;
-        copyPgnButton.disabled = !available;
-        downloadPgnButton.disabled = !available;
+        const visibleFen = displayedFen();
+        const fenAvailable = Boolean(visibleFen) && !busy;
+        const pgnAvailable = Boolean(game && game.pgn) && !busy;
+        fenValue.textContent = visibleFen || "No game yet";
+        copyFenButton.disabled = !fenAvailable;
+        copyPgnButton.disabled = !pgnAvailable;
+        downloadPgnButton.disabled = !pgnAvailable;
     }
 
     function setExportFeedback(message, isError) {
@@ -85,7 +128,7 @@
     }
 
     async function copyGameData(kind) {
-        const value = game && (kind === "FEN" ? game.fen : game.pgn);
+        const value = game && (kind === "FEN" ? displayedFen() : game.pgn);
         if (!value) return;
         try {
             await navigator.clipboard.writeText(value);
@@ -185,6 +228,7 @@
 
     function renderLedger() {
         moveList.replaceChildren();
+        ledgerMoveButtons = [];
         const moves = game ? game.san_moves : [];
         moveCount.textContent = moves.length + (moves.length === 1 ? " ply" : " plies");
         if (!moves.length) {
@@ -200,19 +244,72 @@
             const number = document.createElement("span");
             number.className = "ledger-number";
             number.textContent = String(index / 2 + 1).padStart(2, "0");
-            const white = document.createElement("span");
+            const white = document.createElement("button");
+            white.type = "button";
+            white.className = "ledger-move";
             white.textContent = moves[index] || "";
-            const black = document.createElement("span");
+            white.dataset.ply = String(index + 1);
+            white.setAttribute("aria-label", "View position after " + white.textContent);
+            white.addEventListener("click", () => navigateToPly(index + 1));
+            ledgerMoveButtons.push(white);
+            const black = document.createElement("button");
+            black.type = "button";
+            black.className = "ledger-move";
             black.textContent = moves[index + 1] || "";
+            if (moves[index + 1]) {
+                black.dataset.ply = String(index + 2);
+                black.setAttribute("aria-label", "View position after " + black.textContent);
+                black.addEventListener("click", () => navigateToPly(index + 2));
+                ledgerMoveButtons.push(black);
+            } else {
+                black.disabled = true;
+                black.setAttribute("aria-hidden", "true");
+            }
             row.append(number, white, black);
             moveList.appendChild(row);
         }
         moveList.scrollTop = moveList.scrollHeight;
+        syncHistoryControls();
+    }
+
+    function syncLedgerSelection() {
+        const selectedPly = currentViewedPly();
+        ledgerMoveButtons.forEach((button) => {
+            const selected = Number(button.dataset.ply) === selectedPly;
+            button.className = "ledger-move" + (selected ? " is-current" : "");
+            if (selected) button.setAttribute("aria-current", "step");
+            else button.removeAttribute("aria-current");
+        });
+    }
+
+    function syncHistoryControls() {
+        const total = totalPlies();
+        const current = currentViewedPly();
+        if (moveStartButton) moveStartButton.disabled = !game || current === 0;
+        if (movePreviousButton) movePreviousButton.disabled = !game || current === 0;
+        if (moveNextButton) moveNextButton.disabled = !game || current >= total;
+        if (moveLiveButton) moveLiveButton.disabled = !game || isViewingLive();
+        if (movePosition) {
+            movePosition.textContent = (isViewingLive() ? "Live · " : "") + current + " / " + total;
+        }
+        syncLedgerSelection();
+    }
+
+    function navigateToPly(ply) {
+        if (!game) return;
+        const total = totalPlies();
+        const target = Math.max(0, Math.min(total, Number(ply)));
+        viewedPly = target === total ? null : target;
+        board.position(displayedFen(), false);
+        syncHistoryControls();
+        syncMoveControls();
+        syncExportControls();
     }
 
     function render() {
         if (game) {
-            board.position(game.fen, false);
+            if (viewedPly !== null && viewedPly > totalPlies()) viewedPly = null;
+            board.position(displayedFen(), false);
             board.orientation(game.human_color);
         } else {
             board.start(false);
@@ -224,6 +321,7 @@
         renderLedger();
         syncMoveControls();
         syncExportControls();
+        syncHistoryControls();
     }
 
     async function postJSON(url, body) {
@@ -260,7 +358,7 @@
             })
             .catch((error) => {
                 pendingFen = null;
-                board.position(game.fen, false);
+                board.position(displayedFen(), false);
                 statusElement.textContent = "Move not completed.";
                 detailElement.textContent = error.message;
             })
@@ -287,7 +385,7 @@
             return undefined;
         },
         onSnapEnd: function () {
-            if (game) board.position(pendingFen || game.fen, false);
+            if (game) board.position(displayedFen(), false);
         },
     });
 
@@ -321,6 +419,10 @@
     if (copyFenButton) copyFenButton.addEventListener("click", () => copyGameData("FEN"));
     if (copyPgnButton) copyPgnButton.addEventListener("click", () => copyGameData("PGN"));
     if (downloadPgnButton) downloadPgnButton.addEventListener("click", downloadPgn);
+    if (moveStartButton) moveStartButton.addEventListener("click", () => navigateToPly(0));
+    if (movePreviousButton) movePreviousButton.addEventListener("click", () => navigateToPly(currentViewedPly() - 1));
+    if (moveNextButton) moveNextButton.addEventListener("click", () => navigateToPly(currentViewedPly() + 1));
+    if (moveLiveButton) moveLiveButton.addEventListener("click", () => navigateToPly(totalPlies()));
 
     if (setupForm) {
         if (modelSelect) modelSelect.addEventListener("change", syncEffortChoices);
@@ -337,6 +439,7 @@
                     lichess_username: formData.get("lichess_username"),
                 });
                 game = payload.game;
+                viewedPly = null;
                 render();
             } catch (error) {
                 statusElement.textContent = "Game not started.";

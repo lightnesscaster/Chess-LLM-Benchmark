@@ -19,7 +19,12 @@ class FakeElement {
     append(...children) { this.children.push(...children); }
     appendChild(child) { this.children.push(child); }
     focus() {}
+    removeAttribute(name) { if (this.attributes) delete this.attributes[name]; }
     replaceChildren(...children) { this.children = children; }
+    setAttribute(name, value) {
+        if (!this.attributes) this.attributes = {};
+        this.attributes[name] = String(value);
+    }
 }
 
 const initialGame = {

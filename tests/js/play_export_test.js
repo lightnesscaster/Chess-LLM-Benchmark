@@ -23,8 +23,13 @@ class FakeElement {
     appendChild(child) { this.children.push(child); }
     click() { this.clicked = true; }
     focus() {}
+    removeAttribute(name) { if (this.attributes) delete this.attributes[name]; }
     remove() { this.removed = true; }
     replaceChildren(...children) { this.children = children; }
+    setAttribute(name, value) {
+        if (!this.attributes) this.attributes = {};
+        this.attributes[name] = String(value);
+    }
 }
 
 (async () => {

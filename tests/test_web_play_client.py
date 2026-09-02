@@ -43,3 +43,14 @@ def test_rated_game_displays_lichess_snapshot_and_model_rating():
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_live_game_move_history_can_be_navigated_without_mutating_live_state():
+    result = subprocess.run(
+        ["node", "tests/js/play_move_navigation_test.js"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr

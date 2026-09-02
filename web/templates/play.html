@@ -77,10 +77,10 @@
             </div>
             <div class="play-board-frame">
                 <div id="play-board" class="play-board" aria-label="Interactive chessboard"></div>
-                <div id="thinking-rail" class="thinking-rail" hidden>
-                    <span></span><span></span><span></span>
-                    <strong>The model is choosing a move</strong>
-                </div>
+            </div>
+            <div id="thinking-rail" class="thinking-rail" role="status" aria-live="polite" hidden>
+                <span></span><span></span><span></span>
+                <strong>The model is choosing a move</strong>
             </div>
             <div class="board-nameplate">
                 <span id="bottom-player-dot" class="piece-dot piece-dot-white" aria-hidden="true"></span>
@@ -111,7 +111,16 @@
                         <span class="console-label">Score sheet</span>
                         <h2>Moves</h2>
                     </div>
-                    <span id="move-count">0 plies</span>
+                    <div class="ledger-tools">
+                        <span id="move-count">0 plies</span>
+                        <div class="move-navigation" aria-label="Move history navigation">
+                            <button id="move-start" type="button" aria-label="Go to starting position" title="Starting position">«</button>
+                            <button id="move-previous" type="button" aria-label="Go to previous move" title="Previous move">‹</button>
+                            <span id="move-position" aria-live="polite">Live · 0 / 0</span>
+                            <button id="move-next" type="button" aria-label="Go to next move" title="Next move">›</button>
+                            <button id="move-live" type="button" aria-label="Go to live position" title="Live position">Live</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="move-list" class="move-list" aria-label="Moves played">
                     <p class="ledger-empty">The score sheet is blank.</p>

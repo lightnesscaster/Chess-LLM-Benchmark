@@ -4,6 +4,7 @@ Flask web application for LLM Chess Benchmark.
 Displays leaderboard and game library with PGN viewer.
 """
 
+import json
 import logging
 import math
 import os
@@ -86,6 +87,47 @@ CONFIG_PATH = Path(__file__).parent.parent / "config" / "benchmark.yaml"
 PRICING_PATH = Path(__file__).parent.parent / "config" / "pricing.json"
 PUBLISH_DATES_PATH = DATA_DIR / "model_publish_dates.json"
 RATINGS_PATH = DATA_DIR / "ratings.json"
+
+
+def _human_game_display_aliases() -> dict[str, str]:
+    """Load email-to-name aliases used only when presenting human games."""
+    raw_aliases = os.environ.get("HUMAN_GAME_DISPLAY_ALIASES", "").strip()
+    if not raw_aliases:
+        return {}
+    try:
+        parsed = json.loads(raw_aliases)
+    except json.JSONDecodeError:
+        app.logger.warning("HUMAN_GAME_DISPLAY_ALIASES is not valid JSON")
+        return {}
+    if not isinstance(parsed, dict):
+        app.logger.warning("HUMAN_GAME_DISPLAY_ALIASES must be a JSON object")
+        return {}
+    return {
+        str(email).strip().casefold(): str(alias).strip()
+        for email, alias in parsed.items()
+        if str(email).strip() and str(alias).strip()
+    }
+
+
+def _display_player_ids(result) -> tuple[str, str]:
+    """Return presentation IDs without changing persisted rating identities."""
+    white_id = result.white_id
+    black_id = result.black_id
+    if getattr(result, "game_type", None) != "human_challenge":
+        return white_id, black_id
+
+    email = str(getattr(result, "human_email", "") or "").strip().casefold()
+    alias = _human_game_display_aliases().get(email)
+    username = str(getattr(result, "human_lichess_username", "") or "").strip()
+    if not alias or not username:
+        return white_id, black_id
+
+    human_id = f"lichess:{username}".casefold()
+    if str(white_id).casefold() == human_id:
+        white_id = alias
+    if str(black_id).casefold() == human_id:
+        black_id = alias
+    return white_id, black_id
 
 
 def _should_invalidate_cache(cache_time: float) -> bool:
@@ -243,10 +285,11 @@ def get_all_games() -> list:
 
         games = []
         for result in results:
+            white_id, black_id = _display_player_ids(result)
             games.append({
                 "game_id": result.game_id,
-                "white": result.white_id,
-                "black": result.black_id,
+                "white": white_id,
+                "black": black_id,
                 "winner": result.winner,
                 "termination": result.termination,
                 "moves": math.ceil((result.moves or 0) / 2),
@@ -286,10 +329,12 @@ def get_game(game_id: str) -> dict | None:
         if not pgn:
             pgn = "[PGN file not found]"
 
+        white_id, black_id = _display_player_ids(result)
+
         return {
             "game_id": result.game_id,
-            "white": result.white_id,
-            "black": result.black_id,
+            "white": white_id,
+            "black": black_id,
             "winner": result.winner,
             "termination": result.termination,
             "moves": math.ceil((result.moves or 0) / 2),

@@ -17,6 +17,8 @@ services:
         generateValue: true
       - key: ADMIN_EMAILS
         value: "johnstondaniel4@gmail.com"
+      - key: HUMAN_GAME_DISPLAY_ALIASES
+        value: '{"johnstondaniel4@gmail.com":"the39clues"}'
       - key: FIREBASE_WEB_API_KEY
         sync: false
       - key: OPENROUTER_API_KEY

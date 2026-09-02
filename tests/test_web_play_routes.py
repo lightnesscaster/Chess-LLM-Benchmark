@@ -1,4 +1,5 @@
 import copy
+from html.parser import HTMLParser
 
 import pytest
 import yaml
@@ -24,6 +25,35 @@ class FakePlayerStore:
 
     def claim_lichess_username(self, email, username, *, allow_missing=False):
         return self.save_lichess_username(email, username)
+
+
+class ParentClassParser(HTMLParser):
+    """Capture each element ID's immediate parent classes."""
+
+    VOID_TAGS = {
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+        "meta", "param", "source", "track", "wbr",
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+        self.parent_classes = {}
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        element_id = attributes.get("id")
+        if element_id:
+            parent = self.stack[-1][1] if self.stack else {}
+            self.parent_classes[element_id] = set(parent.get("class", "").split())
+        if tag not in self.VOID_TAGS:
+            self.stack.append((tag, attributes))
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                return
 
 
 @pytest.fixture
@@ -154,6 +184,29 @@ def test_admin_play_page_offers_position_export_controls(client):
     assert '<button id="copy-fen"' in html
     assert '<button id="copy-pgn"' in html
     assert '<button id="download-pgn"' in html
+
+
+def test_thinking_status_is_outside_the_board_frame(client):
+    _set_user(client)
+
+    html = client.get("/admin/play").get_data(as_text=True)
+    parser = ParentClassParser()
+    parser.feed(html)
+
+    assert "thinking-rail" in parser.parent_classes
+    assert "play-board-frame" not in parser.parent_classes["thinking-rail"]
+
+
+def test_play_page_offers_move_history_controls(client):
+    _set_user(client)
+
+    html = client.get("/admin/play").get_data(as_text=True)
+
+    assert 'id="move-start"' in html
+    assert 'id="move-previous"' in html
+    assert 'id="move-next"' in html
+    assert 'id="move-live"' in html
+    assert 'id="move-position"' in html
 
 
 def test_anonymous_user_cannot_start_game(client):
