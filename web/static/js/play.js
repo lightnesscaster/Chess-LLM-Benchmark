@@ -19,6 +19,7 @@
 
     let game = initialNode ? JSON.parse(initialNode.textContent || "null") : null;
     let busy = false;
+    let pendingFen = null;
     let board;
 
     function humanPiece(piece) {
@@ -142,15 +143,19 @@
         return choices[String(answer || "queen").trim().toLowerCase()] || "q";
     }
 
-    function submitMove(uciMove) {
+    function submitMove(uciMove, optimisticFen) {
+        pendingFen = optimisticFen;
+        board.position(pendingFen, false);
         setBusy(true);
         postJSON(app.dataset.moveUrl, {move: uciMove})
             .then((payload) => {
+                pendingFen = null;
                 game = payload.game;
                 keyboardMoveInput.value = "";
                 render();
             })
             .catch((error) => {
+                pendingFen = null;
                 board.position(game.fen, false);
                 statusElement.textContent = "Move not completed.";
                 detailElement.textContent = error.message;
@@ -174,11 +179,11 @@
             if (!localMove) return "snapback";
 
             const uciMove = source + target + (promotion || (localMove.promotion || ""));
-            submitMove(uciMove);
+            submitMove(uciMove, chess.fen());
             return undefined;
         },
         onSnapEnd: function () {
-            if (game) board.position(game.fen, false);
+            if (game) board.position(pendingFen || game.fen, false);
         },
     });
 
@@ -206,7 +211,7 @@
             keyboardMoveInput.focus();
             return;
         }
-        submitMove(uciMove);
+        submitMove(uciMove, chess.fen());
     });
 
     if (setupForm) {
