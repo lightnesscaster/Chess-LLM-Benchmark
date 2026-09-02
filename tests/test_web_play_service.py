@@ -1,8 +1,10 @@
 import copy
 import asyncio
 import importlib
+import io
 import json
 
+import chess.pgn
 import pytest
 import yaml
 
@@ -374,6 +376,34 @@ def test_legal_human_move_and_llm_reply_advance_authoritative_state(config_path)
     assert service.game_view(updated)["turn"] == "human"
 
 
+def test_game_view_exports_a_standard_pgn(config_path):
+    service = _service()
+    state = service.start_game(
+        "chat-model",
+        "white",
+        config_path,
+        {"OPENROUTER_API_KEY": "key"},
+        move_provider=lambda *_args: "unused",
+    )
+    updated = service.play_human_move(
+        state,
+        "e2e4",
+        config_path,
+        {"OPENROUTER_API_KEY": "key"},
+        move_provider=lambda *_args: "e7e5",
+    )
+
+    view = service.game_view(updated)
+    exported = chess.pgn.read_game(io.StringIO(view["pgn"]))
+
+    assert exported is not None
+    assert exported.headers["Event"] == "Human vs LLM"
+    assert exported.headers["White"] == "You"
+    assert exported.headers["Black"] == "chat-model"
+    assert exported.headers["Result"] == "*"
+    assert [move.uci() for move in exported.mainline_moves()] == ["e2e4", "e7e5"]
+
+
 @pytest.mark.parametrize("move", ["e2e5", "not-a-move", ""])
 def test_illegal_human_move_is_rejected_without_mutating_state(config_path, move):
     service = _service()
@@ -472,7 +502,11 @@ def test_llm_checkmate_marks_game_finished(config_path):
     assert updated["status"] == "finished"
     assert updated["winner"] == "llm"
     assert updated["termination"] == "checkmate"
-    assert service.game_view(updated)["turn"] == "finished"
+    view = service.game_view(updated)
+    exported = chess.pgn.read_game(io.StringIO(view["pgn"]))
+    assert view["turn"] == "finished"
+    assert exported is not None
+    assert exported.headers["Result"] == "0-1"
 
 
 def test_llm_gets_one_retry_after_first_illegal_move(config_path):

@@ -21,3 +21,14 @@ def test_model_effort_choices_are_synced_and_submitted_separately():
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_current_fen_and_pgn_can_be_copied_or_downloaded():
+    result = subprocess.run(
+        ["node", "tests/js/play_export_test.js"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr

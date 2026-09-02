@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import chess
+import chess.pgn
 import yaml
 
 from llm import (
@@ -540,12 +541,36 @@ def game_view(state: dict) -> dict:
     """Serialize signed game state into browser-facing board information."""
     board = chess.Board()
     san_moves = []
+    pgn_game = chess.pgn.Game()
+    pgn_game.headers["Event"] = "Human vs LLM"
+    pgn_game.headers["Site"] = "ChessBench"
+    model_id = str(state.get("model_id") or "LLM")
+    if state.get("human_color") == "black":
+        pgn_game.headers["White"] = model_id
+        pgn_game.headers["Black"] = "You"
+    else:
+        pgn_game.headers["White"] = "You"
+        pgn_game.headers["Black"] = model_id
+    pgn_node = pgn_game
     for move_uci in state.get("moves", []):
         move = chess.Move.from_uci(move_uci)
         if move not in board.legal_moves:
             raise GameStateError("The saved game state is invalid.")
         san_moves.append(board.san(move))
         board.push(move)
+        pgn_node = pgn_node.add_variation(move)
+
+    result = "*"
+    if state.get("status") == "finished":
+        if state.get("winner") == "draw":
+            result = "1/2-1/2"
+        elif state.get("winner") == "human":
+            result = "1-0" if state.get("human_color") == "white" else "0-1"
+        elif state.get("winner") == "llm":
+            result = "0-1" if state.get("human_color") == "white" else "1-0"
+    pgn_game.headers["Result"] = result
+    if state.get("termination"):
+        pgn_game.headers["Termination"] = str(state["termination"])
 
     if state.get("status") == "finished":
         turn = "finished"
@@ -555,6 +580,7 @@ def game_view(state: dict) -> dict:
 
     return {
         "fen": board.fen(),
+        "pgn": str(pgn_game),
         "moves": list(state.get("moves", [])),
         "san_moves": san_moves,
         "model_id": state.get("model_id"),

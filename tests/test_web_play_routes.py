@@ -75,6 +75,17 @@ def test_admin_play_page_offers_effort_separately_from_model(client):
     assert 'name="reasoning_effort"' in html
 
 
+def test_admin_play_page_offers_position_export_controls(client):
+    _set_user(client)
+
+    html = client.get("/admin/play").get_data(as_text=True)
+
+    assert "Position data" in html
+    assert '<button id="copy-fen"' in html
+    assert '<button id="copy-pgn"' in html
+    assert '<button id="download-pgn"' in html
+
+
 def test_anonymous_user_cannot_start_game(client):
     response = client.post(
         "/api/admin/play/start",

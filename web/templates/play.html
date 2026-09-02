@@ -111,6 +111,22 @@
                     <p class="ledger-empty">The score sheet is blank.</p>
                 </div>
             </div>
+
+            <section class="position-data" aria-labelledby="position-data-heading">
+                <div class="position-data-header">
+                    <div>
+                        <span class="console-label">Export</span>
+                        <h2 id="position-data-heading">Position data</h2>
+                    </div>
+                    <span id="export-feedback" role="status" aria-live="polite"></span>
+                </div>
+                <code id="fen-value">No game yet</code>
+                <div class="position-data-actions">
+                    <button id="copy-fen" type="button" disabled>Copy FEN</button>
+                    <button id="copy-pgn" type="button" disabled>Copy PGN</button>
+                    <button id="download-pgn" type="button" disabled>Download PGN</button>
+                </div>
+            </section>
         </aside>
     </section>
 </div>

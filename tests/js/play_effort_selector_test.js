@@ -12,6 +12,7 @@ class FakeElement {
         this.listeners = {};
         this.scrollHeight = 0;
         this.scrollTop = 0;
+        this.style = {display: ""};
         this.textContent = "";
         this.value = "";
     }
@@ -114,6 +115,8 @@ class FakeElement {
 
     const visibleEfforts = effortLabels.filter((label) => !label.hidden);
     assert.deepEqual(visibleEfforts.map((label) => label.dataset.effort), ["low", "high"]);
+    assert.equal(effortLabels.find((label) => label.dataset.effort === "none").style.display, "none");
+    assert.equal(effortLabels.find((label) => label.dataset.effort === "low").style.display, "");
     assert.equal(effortLabels.find((label) => label.dataset.effort === "high").input.checked, true);
 
     await elements.get("game-setup-form").listeners.submit({preventDefault() {}});

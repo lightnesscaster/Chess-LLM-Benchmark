@@ -19,6 +19,11 @@
     const keyboardMoveForm = document.getElementById("keyboard-move-form");
     const keyboardMoveInput = document.getElementById("keyboard-move");
     const keyboardMoveButton = document.getElementById("play-keyboard-move");
+    const fenValue = document.getElementById("fen-value");
+    const copyFenButton = document.getElementById("copy-fen");
+    const copyPgnButton = document.getElementById("copy-pgn");
+    const downloadPgnButton = document.getElementById("download-pgn");
+    const exportFeedback = document.getElementById("export-feedback");
 
     let game = initialNode ? JSON.parse(initialNode.textContent || "null") : null;
     const playableModels = modelsNode ? JSON.parse(modelsNode.textContent || "[]") : [];
@@ -50,10 +55,67 @@
         thinkingRail.hidden = !value;
         if (startButton) startButton.disabled = value;
         syncMoveControls();
+        syncExportControls();
+        if (value) clearExportFeedback();
         if (value) {
             statusElement.textContent = "Waiting for the model…";
             detailElement.textContent = "This can take a little while for reasoning models.";
         }
+    }
+
+    function syncExportControls() {
+        if (!fenValue || !copyFenButton || !copyPgnButton || !downloadPgnButton) return;
+        const available = Boolean(game && game.fen && game.pgn) && !busy;
+        fenValue.textContent = game && game.fen ? game.fen : "No game yet";
+        copyFenButton.disabled = !available;
+        copyPgnButton.disabled = !available;
+        downloadPgnButton.disabled = !available;
+    }
+
+    function setExportFeedback(message, isError) {
+        if (!exportFeedback) return;
+        exportFeedback.textContent = message;
+        exportFeedback.dataset.state = isError ? "error" : "success";
+    }
+
+    function clearExportFeedback() {
+        if (!exportFeedback) return;
+        exportFeedback.textContent = "";
+        delete exportFeedback.dataset.state;
+    }
+
+    async function copyGameData(kind) {
+        const value = game && (kind === "FEN" ? game.fen : game.pgn);
+        if (!value) return;
+        try {
+            await navigator.clipboard.writeText(value);
+            setExportFeedback(kind + " copied.", false);
+        } catch (_error) {
+            setExportFeedback("Could not copy " + kind + ".", true);
+        }
+    }
+
+    function exportFileName() {
+        const model = String(game.model_id || "llm");
+        const effort = String(game.reasoning_effort || "default");
+        const rawName = "chessbench-vs-" + model + (effort === "default" ? "" : "-" + effort);
+        return rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".pgn";
+    }
+
+    function downloadPgn() {
+        if (!game || !game.pgn) return;
+        const blob = new Blob([game.pgn.trimEnd() + "\n"], {
+            type: "application/x-chess-pgn;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = exportFileName();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setExportFeedback("PGN downloaded.", false);
     }
 
     function syncEffortChoices() {
@@ -67,6 +129,7 @@
             const input = label.querySelector("input");
             const isAvailable = available.has(label.dataset.effort);
             label.hidden = !isAvailable;
+            label.style.display = isAvailable ? "" : "none";
             input.disabled = !isAvailable;
             input.checked = false;
         });
@@ -145,6 +208,7 @@
         detailElement.textContent = description[1];
         renderLedger();
         syncMoveControls();
+        syncExportControls();
     }
 
     async function postJSON(url, body) {
@@ -238,6 +302,10 @@
         }
         submitMove(uciMove, chess.fen());
     });
+
+    if (copyFenButton) copyFenButton.addEventListener("click", () => copyGameData("FEN"));
+    if (copyPgnButton) copyPgnButton.addEventListener("click", () => copyGameData("PGN"));
+    if (downloadPgnButton) downloadPgnButton.addEventListener("click", downloadPgn);
 
     if (setupForm) {
         if (modelSelect) modelSelect.addEventListener("change", syncEffortChoices);
