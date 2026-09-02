@@ -31,6 +31,21 @@
                     {% endfor %}
                 </select>
             </label>
+            <fieldset class="effort-choice" id="effort-choice">
+                <legend>Effort</legend>
+                <div class="effort-choice-buttons">
+                    {% for effort_id, effort_name in [
+                        ('default', 'Auto'), ('none', 'None'), ('minimal', 'Minimal'),
+                        ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'),
+                        ('xhigh', 'XHigh'), ('max', 'Max')
+                    ] %}
+                    <label data-effort="{{ effort_id }}" hidden>
+                        <input type="radio" name="reasoning_effort" value="{{ effort_id }}" disabled>
+                        <span>{{ effort_name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
             <fieldset class="color-choice">
                 <legend>Your pieces</legend>
                 <div class="color-choice-buttons">
@@ -100,6 +115,7 @@
     </section>
 </div>
 
+<script id="play-models" type="application/json">{{ models|tojson }}</script>
 <script id="initial-game" type="application/json">{{ current_game|tojson }}</script>
 {% endblock %}
 

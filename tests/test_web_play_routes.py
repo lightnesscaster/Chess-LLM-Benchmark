@@ -65,6 +65,16 @@ def test_admin_play_page_offers_a_labeled_keyboard_move_path(client):
     assert '<button id="play-keyboard-move"' in html
 
 
+def test_admin_play_page_offers_effort_separately_from_model(client):
+    _set_user(client)
+
+    html = client.get("/admin/play").get_data(as_text=True)
+
+    assert '<fieldset class="effort-choice"' in html
+    assert '<legend>Effort</legend>' in html
+    assert 'name="reasoning_effort"' in html
+
+
 def test_anonymous_user_cannot_start_game(client):
     response = client.post(
         "/api/admin/play/start",
@@ -102,6 +112,25 @@ def test_admin_can_start_game_and_state_is_saved_in_session(client):
     assert payload["game"]["model_id"] == "route-model"
     with client.session_transaction() as flask_session:
         assert flask_session["admin_play_game"]["moves"] == []
+
+
+def test_admin_can_choose_reasoning_effort_separately(client):
+    csrf_token = _set_user(client)
+
+    response = client.post(
+        "/api/admin/play/start",
+        json={
+            "model_id": "route-model",
+            "human_color": "white",
+            "reasoning_effort": "default",
+        },
+        headers={"X-CSRF-Token": csrf_token},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["game"]["reasoning_effort"] == "default"
+    with client.session_transaction() as flask_session:
+        assert flask_session["admin_play_game"]["reasoning_effort"] == "default"
 
 
 def test_admin_move_uses_saved_state_and_returns_authoritative_position(

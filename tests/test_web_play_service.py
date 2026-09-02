@@ -94,11 +94,15 @@ def test_model_list_includes_only_configured_web_backends_with_keys(config_path)
             "id": "chat-model",
             "name": "chat-model",
             "model_name": "provider/chat-model",
+            "efforts": [{"id": "default", "name": "Auto"}],
+            "default_effort": "default",
         },
         {
             "id": "completion-model",
             "name": "completion-model",
             "model_name": "provider/completion-model",
+            "efforts": [{"id": "default", "name": "Auto"}],
+            "default_effort": "default",
         },
     ]
 
@@ -117,6 +121,135 @@ def test_model_list_adds_direct_gemini_when_its_key_is_configured(config_path):
         "completion-model",
         "gemini-direct",
     ]
+
+
+def test_model_list_groups_effort_variants_under_one_model(tmp_path):
+    config_path = tmp_path / "benchmark.yaml"
+    config_path.write_text(yaml.safe_dump({
+        "llms": [
+            {
+                "player_id": "reasoner (low)",
+                "model_name": "provider/reasoner",
+                "reasoning_effort": "low",
+            },
+            {
+                "player_id": "reasoner (high)",
+                "model_name": "provider/reasoner",
+                "reasoning_effort": "high",
+            },
+        ],
+    }))
+
+    models = _service().list_playable_models(
+        config_path,
+        {"OPENROUTER_API_KEY": "openrouter-key"},
+    )
+
+    assert models == [{
+        "id": "reasoner",
+        "name": "reasoner",
+        "model_name": "provider/reasoner",
+        "efforts": [
+            {"id": "low", "name": "Low"},
+            {"id": "high", "name": "High"},
+        ],
+        "default_effort": "low",
+    }]
+
+
+def test_model_list_preserves_named_no_thinking_variant(tmp_path):
+    config_path = tmp_path / "benchmark.yaml"
+    config_path.write_text(yaml.safe_dump({
+        "llms": [
+            {
+                "player_id": "reasoner (no thinking)",
+                "model_name": "provider/reasoner",
+            },
+            {
+                "player_id": "reasoner (thinking)",
+                "model_name": "provider/reasoner",
+                "reasoning": True,
+            },
+        ],
+    }))
+
+    models = _service().list_playable_models(
+        config_path,
+        {"OPENROUTER_API_KEY": "openrouter-key"},
+    )
+
+    assert models[0]["efforts"] == [
+        {"id": "none", "name": "None"},
+        {"id": "default", "name": "Auto"},
+    ]
+
+
+def test_explicit_web_efforts_select_requested_claude_effort(tmp_path):
+    config_path = tmp_path / "benchmark.yaml"
+    config_path.write_text(yaml.safe_dump({
+        "web_play_models": [{
+            "player_id": "claude-flex",
+            "model_name": "anthropic/claude-flex",
+            "web_api": "claude_code",
+            "web_model_name": "claude-flex",
+            "web_reasoning_efforts": ["low", "high", "xhigh"],
+            "web_default_reasoning_effort": "high",
+        }],
+    }))
+    catalog_path = tmp_path / "claude-models.json"
+    catalog_path.write_text(json.dumps({"models": ["claude-flex"]}))
+    received = {}
+
+    state = _service().start_game(
+        "claude-flex",
+        "black",
+        config_path,
+        {
+            "CLAUDE_CODE_OAUTH_TOKEN": "subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(catalog_path),
+        },
+        move_provider=lambda model, *_args: (
+            received.update(model) or "e2e4"
+        ),
+        reasoning_effort="xhigh",
+    )
+
+    assert received["web_reasoning_effort"] == "xhigh"
+    assert state["model_id"] == "claude-flex"
+    assert state["reasoning_effort"] == "xhigh"
+
+
+def test_configured_claude_models_offer_separate_effort_choices(tmp_path):
+    catalog_path = tmp_path / "claude-models.json"
+    catalog_path.write_text(json.dumps({
+        "models": ["claude-fable-5-1", "claude-fable-5", "opus", "sonnet", "haiku"],
+    }))
+
+    models = _service().list_playable_models(
+        __import__("pathlib").Path("config/benchmark.yaml"),
+        {
+            "CLAUDE_CODE_OAUTH_TOKEN": "subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(catalog_path),
+        },
+    )
+
+    assert len(models) == 5
+    for model in models:
+        assert [effort["id"] for effort in model["efforts"]] == [
+            "low", "medium", "high", "xhigh", "max",
+        ]
+        assert model["default_effort"] == "high"
+
+
+def test_unavailable_effort_is_rejected_for_model(config_path):
+    with pytest.raises(_service().ConfigurationError, match="effort"):
+        _service().start_game(
+            "chat-model",
+            "white",
+            config_path,
+            {"OPENROUTER_API_KEY": "openrouter-key"},
+            reasoning_effort="high",
+        )
 
 
 def test_model_list_hides_unverified_claude_models(config_path, tmp_path):
@@ -187,6 +320,7 @@ def test_start_game_with_white_pieces_waits_for_human(config_path):
     assert state == {
         "model_id": "chat-model",
         "model_name": "provider/chat-model",
+        "reasoning_effort": "default",
         "human_color": "white",
         "moves": [],
         "status": "active",

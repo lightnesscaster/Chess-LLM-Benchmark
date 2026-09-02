@@ -10,3 +10,14 @@ def test_human_drag_move_is_rendered_before_model_response():
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_model_effort_choices_are_synced_and_submitted_separately():
+    result = subprocess.run(
+        ["node", "tests/js/play_effort_selector_test.js"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr

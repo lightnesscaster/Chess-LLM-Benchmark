@@ -6,6 +6,7 @@ import asyncio
 import copy
 import json
 import os
+import re
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
@@ -36,6 +37,21 @@ class ProviderError(RuntimeError):
 
 
 MoveProvider = Callable[[dict, chess.Board, bool, str | None], str | None]
+
+EFFORT_LABELS = {
+    "default": "Auto",
+    "none": "None",
+    "minimal": "Minimal",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "xhigh": "XHigh",
+    "max": "Max",
+}
+EFFORT_SUFFIX = re.compile(
+    r"\s+\((?:no thinking|thinking|default|minimal|low|medium|high|xhigh|max)\)$",
+    re.IGNORECASE,
+)
 
 
 def _load_config(config_path: Path) -> dict:
@@ -98,55 +114,143 @@ def _backend_is_configured(model: dict, environ: Mapping[str, str]) -> bool:
     return bool(environ.get("OPENROUTER_API_KEY"))
 
 
-def list_playable_models(
+def _configured_efforts(model: dict) -> tuple[list[str], str]:
+    explicit = model.get("web_reasoning_efforts")
+    if isinstance(explicit, list):
+        efforts = []
+        for value in explicit:
+            effort = str(value).strip().lower()
+            if effort in EFFORT_LABELS and effort not in efforts:
+                efforts.append(effort)
+        if efforts:
+            default = str(
+                model.get("web_default_reasoning_effort") or efforts[0]
+            ).strip().lower()
+            return efforts, default if default in efforts else efforts[0]
+
+    if model.get("reasoning") is False:
+        return ["none"], "none"
+    player_id = str(model.get("player_id") or "").strip().lower()
+    if (
+        "reasoning" not in model
+        and not model.get("web_reasoning_effort")
+        and not model.get("reasoning_effort")
+        and player_id.endswith("(no thinking)")
+    ):
+        return ["none"], "none"
+    effort = str(
+        model.get("web_reasoning_effort")
+        or model.get("reasoning_effort")
+        or "default"
+    ).strip().lower()
+    if effort not in EFFORT_LABELS:
+        effort = "default"
+    return [effort], effort
+
+
+def _model_with_effort(model: dict, effort: str) -> dict:
+    selected = copy.deepcopy(model)
+    if effort == "none":
+        selected["reasoning"] = False
+        selected.pop("reasoning_effort", None)
+        selected.pop("web_reasoning_effort", None)
+    elif effort != "default":
+        if _web_backend(selected) == "claude_code":
+            selected["web_reasoning_effort"] = effort
+        else:
+            selected["reasoning_effort"] = effort
+        selected.pop("reasoning", None)
+    selected["_web_effort"] = effort
+    return selected
+
+
+def _playable_model_groups(
     config_path: Path,
-    environ: Mapping[str, str] = os.environ,
+    environ: Mapping[str, str],
 ) -> list[dict]:
-    """List configured LLMs the deployed web process can call."""
-    models = []
-    seen_ids = set()
+    groups_by_model = {}
+    used_ids = set()
     for model in _configured_models(_load_config(config_path)):
         if (
             not isinstance(model, dict)
             or model.get("unavailable") is True
             or model.get("web_hidden") is True
-        ):
-            continue
-        model_id = str(model.get("player_id") or "").strip()
-        model_name = str(model.get("model_name") or "").strip()
-        if (
-            not model_id
-            or not model_name
-            or model_id in seen_ids
             or not _backend_is_configured(model, environ)
         ):
             continue
-        seen_ids.add(model_id)
-        models.append({
-            "id": model_id,
-            "name": model_id,
-            "model_name": model_name,
-        })
-    return models
+        player_id = str(model.get("player_id") or "").strip()
+        model_name = str(model.get("model_name") or "").strip()
+        if not player_id or not model_name:
+            continue
+
+        group = groups_by_model.get(model_name)
+        if group is None:
+            display_name = EFFORT_SUFFIX.sub("", player_id).strip() or player_id
+            group_id = display_name
+            if group_id in used_ids:
+                group_id = f"{display_name} [{model_name}]"
+            used_ids.add(group_id)
+            group = {
+                "id": group_id,
+                "name": display_name,
+                "model_name": model_name,
+                "variants": {},
+                "default_effort": None,
+            }
+            groups_by_model[model_name] = group
+
+        efforts, default_effort = _configured_efforts(model)
+        for effort in efforts:
+            if effort not in group["variants"]:
+                group["variants"][effort] = _model_with_effort(model, effort)
+        if group["default_effort"] is None or model.get(
+            "web_default_reasoning_effort"
+        ):
+            group["default_effort"] = default_effort
+
+    return list(groups_by_model.values())
+
+
+def list_playable_models(
+    config_path: Path,
+    environ: Mapping[str, str] = os.environ,
+) -> list[dict]:
+    """List configured LLMs the deployed web process can call."""
+    return [
+        {
+            "id": group["id"],
+            "name": group["name"],
+            "model_name": group["model_name"],
+            "efforts": [
+                {"id": effort, "name": EFFORT_LABELS[effort]}
+                for effort in group["variants"]
+            ],
+            "default_effort": group["default_effort"],
+        }
+        for group in _playable_model_groups(config_path, environ)
+    ]
 
 
 def _select_model(
     model_id: str,
     config_path: Path,
     environ: Mapping[str, str],
+    reasoning_effort: str | None = None,
 ) -> dict:
     if not isinstance(model_id, str) or not model_id or len(model_id) > 200:
         raise ConfigurationError("Select a valid model.")
 
-    playable_ids = {
-        model["id"] for model in list_playable_models(config_path, environ)
-    }
-    if model_id not in playable_ids:
-        raise ConfigurationError("That model is not available for web play.")
-
-    for model in _configured_models(_load_config(config_path)):
-        if isinstance(model, dict) and model.get("player_id") == model_id:
-            return copy.deepcopy(model)
+    for group in _playable_model_groups(config_path, environ):
+        if group["id"] != model_id:
+            continue
+        effort = str(reasoning_effort or group["default_effort"]).strip().lower()
+        selected = group["variants"].get(effort)
+        if selected is None:
+            raise ConfigurationError("That effort is not available for this model.")
+        selected = copy.deepcopy(selected)
+        selected["player_id"] = group["id"]
+        selected["_web_effort"] = effort
+        return selected
     raise ConfigurationError("That model is not available for web play.")
 
 
@@ -156,6 +260,7 @@ def _new_state(model: dict, human_color: str) -> dict:
     return {
         "model_id": model["player_id"],
         "model_name": model["model_name"],
+        "reasoning_effort": model.get("_web_effort", "default"),
         "human_color": human_color,
         "moves": [],
         "status": "active",
@@ -188,7 +293,12 @@ def _validate_state(
     config_path: Path,
     environ: Mapping[str, str],
 ) -> tuple[dict, chess.Board]:
-    model = _select_model(state.get("model_id"), config_path, environ)
+    model = _select_model(
+        state.get("model_id"),
+        config_path,
+        environ,
+        state.get("reasoning_effort"),
+    )
     if state.get("model_name") != model.get("model_name"):
         raise GameStateError("The saved game state is invalid.")
     if state.get("human_color") not in {"white", "black"}:
@@ -380,9 +490,10 @@ def start_game(
     config_path: Path,
     environ: Mapping[str, str] = os.environ,
     move_provider: MoveProvider | None = None,
+    reasoning_effort: str | None = None,
 ) -> dict:
     """Create a game and make the opening LLM move when the human is black."""
-    model = _select_model(model_id, config_path, environ)
+    model = _select_model(model_id, config_path, environ, reasoning_effort)
     state = _new_state(model, human_color)
     if human_color == "black":
         _apply_llm_turn(state, chess.Board(), model, environ, move_provider)
@@ -448,6 +559,7 @@ def game_view(state: dict) -> dict:
         "san_moves": san_moves,
         "model_id": state.get("model_id"),
         "model_name": state.get("model_name"),
+        "reasoning_effort": state.get("reasoning_effort", "default"),
         "human_color": state.get("human_color"),
         "side_to_move": "white" if board.turn == chess.WHITE else "black",
         "turn": turn,

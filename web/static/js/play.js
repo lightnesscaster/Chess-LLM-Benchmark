@@ -12,12 +12,16 @@
     const thinkingRail = document.getElementById("thinking-rail");
     const setupForm = document.getElementById("game-setup-form");
     const startButton = document.getElementById("start-game");
+    const modelSelect = document.getElementById("model-select");
+    const modelsNode = document.getElementById("play-models");
+    const effortChoice = document.getElementById("effort-choice");
     const initialNode = document.getElementById("initial-game");
     const keyboardMoveForm = document.getElementById("keyboard-move-form");
     const keyboardMoveInput = document.getElementById("keyboard-move");
     const keyboardMoveButton = document.getElementById("play-keyboard-move");
 
     let game = initialNode ? JSON.parse(initialNode.textContent || "null") : null;
+    const playableModels = modelsNode ? JSON.parse(modelsNode.textContent || "[]") : [];
     let busy = false;
     let pendingFen = null;
     let board;
@@ -50,6 +54,27 @@
             statusElement.textContent = "Waiting for the model…";
             detailElement.textContent = "This can take a little while for reasoning models.";
         }
+    }
+
+    function syncEffortChoices() {
+        if (!modelSelect || !effortChoice) return;
+        const model = playableModels.find((candidate) => candidate.id === modelSelect.value);
+        if (!model) return;
+
+        const available = new Set(model.efforts.map((effort) => effort.id));
+        const labels = effortChoice.querySelectorAll("[data-effort]");
+        labels.forEach((label) => {
+            const input = label.querySelector("input");
+            const isAvailable = available.has(label.dataset.effort);
+            label.hidden = !isAvailable;
+            input.disabled = !isAvailable;
+            input.checked = false;
+        });
+
+        const defaultLabel = Array.from(labels).find(
+            (label) => label.dataset.effort === model.default_effort,
+        );
+        if (defaultLabel) defaultLabel.querySelector("input").checked = true;
     }
 
     function playerName(color) {
@@ -215,6 +240,8 @@
     });
 
     if (setupForm) {
+        if (modelSelect) modelSelect.addEventListener("change", syncEffortChoices);
+        syncEffortChoices();
         setupForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             const formData = new FormData(setupForm);
@@ -223,6 +250,7 @@
                 const payload = await postJSON(app.dataset.startUrl, {
                     model_id: formData.get("model_id"),
                     human_color: formData.get("human_color"),
+                    reasoning_effort: formData.get("reasoning_effort"),
                 });
                 game = payload.game;
                 render();

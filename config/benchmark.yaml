@@ -53,31 +53,36 @@ web_play_models:
     model_name: "anthropic/claude-fable-5-1"
     web_api: claude_code
     web_model_name: claude-fable-5-1
-    web_reasoning_effort: low
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
 
   - player_id: "claude-fable-5"
     model_name: "anthropic/claude-fable-5"
     web_api: claude_code
     web_model_name: claude-fable-5
-    web_reasoning_effort: low
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
 
   - player_id: "claude-opus-5"
     model_name: "anthropic/claude-opus-5"
     web_api: claude_code
     web_model_name: opus
-    web_reasoning_effort: low
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
 
   - player_id: "claude-sonnet-5"
     model_name: "anthropic/claude-sonnet-5"
     web_api: claude_code
     web_model_name: sonnet
-    web_reasoning_effort: low
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
 
   - player_id: "claude-haiku-4.5"
     model_name: "anthropic/claude-haiku-4.5"
     web_api: claude_code
     web_model_name: haiku
-    web_reasoning_effort: low
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
 
 # LLM players - budget models only
 llms:

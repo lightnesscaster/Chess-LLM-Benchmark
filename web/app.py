@@ -413,6 +413,7 @@ def api_admin_play_start():
             payload.get("human_color"),
             CONFIG_PATH,
             os.environ,
+            reasoning_effort=payload.get("reasoning_effort"),
         )
     except PlayConfigurationError as error:
         status = 503 if not list_playable_models(CONFIG_PATH, os.environ) else 400
