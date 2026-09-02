@@ -143,7 +143,9 @@
     function playerName(color) {
         if (!game) return color === "white" ? "White" : "Black";
         const isHuman = game.human_color === color;
-        return isHuman ? "You" : game.model_id;
+        if (!isHuman) return game.model_id;
+        const username = game.human_profile && game.human_profile.username;
+        return username ? username + " (you)" : "You";
     }
 
     function renderNameplates() {
@@ -158,14 +160,26 @@
     }
 
     function describeGame() {
-        if (!game) return ["Start a game when you’re ready.", "Human games do not affect benchmark ratings."];
+        if (!game) return [
+            "Start a game when you’re ready.",
+            "Your current Lichess Rapid rating and RD set the weight of this game.",
+        ];
+        const profile = game.human_profile;
+        const snapshot = profile
+            ? "Rapid " + profile.rating + ", RD " + profile.rating_deviation
+                + (profile.provisional ? " (provisional)" : "")
+            : "";
         if (game.status === "finished") {
-            if (game.winner === "human") return ["You won.", game.termination.replaceAll("_", " ")];
-            if (game.winner === "llm") return [game.model_id + " won.", game.termination.replaceAll("_", " ")];
-            return ["Draw.", game.termination.replaceAll("_", " ")];
+            const rating = game.rating_result;
+            const scoreDetail = rating
+                ? snapshot + "; model rating " + rating.model_rating + ", RD " + rating.model_rating_deviation + "."
+                : snapshot;
+            if (game.winner === "human") return ["You won.", scoreDetail];
+            if (game.winner === "llm") return [game.model_id + " won.", scoreDetail];
+            return ["Draw.", scoreDetail];
         }
-        if (game.turn === "human") return ["Your move.", "Drag a piece to a legal square."];
-        return ["The model is choosing a move…", "Keep this tab open while it thinks."];
+        if (game.turn === "human") return ["Your move.", snapshot + " at game start. Drag a piece to a legal square."];
+        return ["The model is choosing a move…", snapshot + " at game start. Keep this tab open while it thinks."];
     }
 
     function renderLedger() {
@@ -319,6 +333,7 @@
                     model_id: formData.get("model_id"),
                     human_color: formData.get("human_color"),
                     reasoning_effort: formData.get("reasoning_effort"),
+                    lichess_username: formData.get("lichess_username"),
                 });
                 game = payload.game;
                 render();

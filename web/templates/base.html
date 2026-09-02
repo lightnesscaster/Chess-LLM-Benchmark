@@ -21,7 +21,8 @@
         </div>
         <div class="account-nav">
             {% if auth_user %}
-                {% if auth_is_admin %}<a href="{{ url_for('admin_play') }}">Play an LLM</a>{% endif %}
+                {% if auth_is_player %}<a href="{{ url_for('admin_play') }}">Play an LLM</a>{% endif %}
+                {% if auth_is_admin %}<a href="{{ url_for('admin_players') }}">Players</a>{% endif %}
                 <span class="account-email">{{ auth_user.email }}</span>
                 <form method="post" action="{{ url_for('logout') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

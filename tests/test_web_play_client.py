@@ -32,3 +32,14 @@ def test_current_fen_and_pgn_can_be_copied_or_downloaded():
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_rated_game_displays_lichess_snapshot_and_model_rating():
+    result = subprocess.run(
+        ["node", "tests/js/play_rating_snapshot_test.js"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr

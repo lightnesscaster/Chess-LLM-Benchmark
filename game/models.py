@@ -65,6 +65,13 @@ class GameResult(BaseModel):
     accounting_status_black: Optional[str] = None
     # Details about illegal moves for debugging (prompt, response, parsed move)
     illegal_move_details: Optional[List[dict]] = None
+    # Human challenge metadata. Defaults preserve all existing benchmark data.
+    game_type: str = "benchmark"
+    human_email: Optional[str] = None
+    human_lichess_username: Optional[str] = None
+    human_rating: Optional[float] = None
+    human_rating_deviation: Optional[float] = None
+    human_rating_provisional: Optional[bool] = None
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""

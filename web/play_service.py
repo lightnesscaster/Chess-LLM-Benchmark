@@ -7,7 +7,9 @@ import copy
 import json
 import os
 import re
+import uuid
 from collections.abc import Callable, Mapping
+from datetime import datetime, timezone
 from pathlib import Path
 
 import chess
@@ -249,16 +251,50 @@ def _select_model(
         if selected is None:
             raise ConfigurationError("That effort is not available for this model.")
         selected = copy.deepcopy(selected)
+        rated_player_id = str(selected["player_id"])
+        if (
+            len(group["variants"]) > 1
+            and effort != "default"
+            and not EFFORT_SUFFIX.search(rated_player_id)
+        ):
+            effort_suffix = "no thinking" if effort == "none" else effort
+            rated_player_id = f"{group['id']} ({effort_suffix})"
+        selected["_rated_player_id"] = rated_player_id
         selected["player_id"] = group["id"]
         selected["_web_effort"] = effort
         return selected
     raise ConfigurationError("That model is not available for web play.")
 
 
-def _new_state(model: dict, human_color: str) -> dict:
+def _validated_human_profile(profile: dict) -> dict:
+    if not isinstance(profile, dict):
+        raise GameStateError("Verify a Lichess Rapid rating before starting.")
+    username = str(profile.get("username") or "").strip()
+    rating = profile.get("rating")
+    rating_deviation = profile.get("rating_deviation")
+    if (
+        not username
+        or len(username) > 64
+        or isinstance(rating, bool)
+        or not isinstance(rating, (int, float))
+        or isinstance(rating_deviation, bool)
+        or not isinstance(rating_deviation, (int, float))
+        or not 0 <= rating <= 4000
+        or not 0 < rating_deviation <= 500
+    ):
+        raise GameStateError("The Lichess Rapid rating snapshot is invalid.")
+    return {
+        "username": username,
+        "rating": round(rating),
+        "rating_deviation": round(rating_deviation),
+        "provisional": bool(profile.get("provisional", False)),
+    }
+
+
+def _new_state(model: dict, human_color: str, human_profile: dict | None = None) -> dict:
     if human_color not in {"white", "black"}:
         raise GameStateError("Choose either white or black pieces.")
-    return {
+    state = {
         "model_id": model["player_id"],
         "model_name": model["model_name"],
         "reasoning_effort": model.get("_web_effort", "default"),
@@ -269,6 +305,14 @@ def _new_state(model: dict, human_color: str) -> dict:
         "termination": None,
         "llm_illegal_moves": 0,
     }
+    if human_profile is not None:
+        state.update(
+            game_id=str(uuid.uuid4()),
+            started_at=datetime.now(timezone.utc).isoformat(),
+            rated_model_id=str(model.get("_rated_player_id") or model["player_id"]),
+            human_profile=_validated_human_profile(human_profile),
+        )
+    return state
 
 
 def _board_from_state(state: dict) -> chess.Board:
@@ -309,6 +353,12 @@ def _validate_state(
     illegal_moves = state.get("llm_illegal_moves")
     if not isinstance(illegal_moves, int) or not 0 <= illegal_moves <= 2:
         raise GameStateError("The saved game state is invalid.")
+    if "human_profile" in state:
+        _validated_human_profile(state.get("human_profile"))
+        if not isinstance(state.get("game_id"), str) or not state["game_id"]:
+            raise GameStateError("The saved game state is invalid.")
+        if not isinstance(state.get("started_at"), str) or not state["started_at"]:
+            raise GameStateError("The saved game state is invalid.")
     return model, _board_from_state(state)
 
 
@@ -492,10 +542,11 @@ def start_game(
     environ: Mapping[str, str] = os.environ,
     move_provider: MoveProvider | None = None,
     reasoning_effort: str | None = None,
+    human_profile: dict | None = None,
 ) -> dict:
     """Create a game and make the opening LLM move when the human is black."""
     model = _select_model(model_id, config_path, environ, reasoning_effort)
-    state = _new_state(model, human_color)
+    state = _new_state(model, human_color, human_profile)
     if human_color == "black":
         _apply_llm_turn(state, chess.Board(), model, environ, move_provider)
     return state
@@ -585,6 +636,7 @@ def game_view(state: dict) -> dict:
         "san_moves": san_moves,
         "model_id": state.get("model_id"),
         "model_name": state.get("model_name"),
+        "rated_model_id": state.get("rated_model_id"),
         "reasoning_effort": state.get("reasoning_effort", "default"),
         "human_color": state.get("human_color"),
         "side_to_move": "white" if board.turn == chess.WHITE else "black",
@@ -594,4 +646,8 @@ def game_view(state: dict) -> dict:
         "termination": state.get("termination"),
         "last_move": state.get("moves", [])[-1] if state.get("moves") else None,
         "llm_illegal_moves": state.get("llm_illegal_moves", 0),
+        "game_id": state.get("game_id"),
+        "started_at": state.get("started_at"),
+        "human_profile": copy.deepcopy(state.get("human_profile")),
+        "rating_result": copy.deepcopy(state.get("rating_result")),
     }

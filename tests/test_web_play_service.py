@@ -219,6 +219,23 @@ def test_explicit_web_efforts_select_requested_claude_effort(tmp_path):
     assert received["web_reasoning_effort"] == "xhigh"
     assert state["model_id"] == "claude-flex"
     assert state["reasoning_effort"] == "xhigh"
+    rated_state = _service().start_game(
+        "claude-flex",
+        "white",
+        config_path,
+        {
+            "CLAUDE_CODE_OAUTH_TOKEN": "subscription-token",
+            "CLAUDE_MODEL_CATALOG_PATH": str(catalog_path),
+        },
+        reasoning_effort="xhigh",
+        human_profile={
+            "username": "Some_Player",
+            "rating": 1847,
+            "rating_deviation": 73,
+            "provisional": False,
+        },
+    )
+    assert rated_state["rated_model_id"] == "claude-flex (xhigh)"
 
 
 def test_configured_claude_models_offer_separate_effort_choices(tmp_path):
@@ -330,6 +347,34 @@ def test_start_game_with_white_pieces_waits_for_human(config_path):
         "termination": None,
         "llm_illegal_moves": 0,
     }
+
+
+def test_start_game_preserves_immutable_lichess_snapshot(config_path):
+    service = _service()
+
+    state = service.start_game(
+        "chat-model",
+        "white",
+        config_path,
+        {"OPENROUTER_API_KEY": "key"},
+        move_provider=lambda *_args: pytest.fail("LLM should not move first"),
+        human_profile={
+            "username": "Some_Player",
+            "rating": 1847,
+            "rating_deviation": 73,
+            "provisional": True,
+        },
+    )
+
+    assert state["game_id"]
+    assert state["started_at"].endswith("+00:00")
+    assert state["human_profile"] == {
+        "username": "Some_Player",
+        "rating": 1847,
+        "rating_deviation": 73,
+        "provisional": True,
+    }
+    assert service.game_view(state)["human_profile"] == state["human_profile"]
 
 
 def test_start_game_with_black_pieces_requests_llm_opening(config_path):

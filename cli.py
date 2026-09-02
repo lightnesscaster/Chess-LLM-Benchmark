@@ -745,11 +745,38 @@ async def recalculate_ratings(args):
         else:
             white_score, black_score = 0.5, 0.5
 
+        fixed_white = None
+        fixed_black = None
+        if result.game_type == "human_challenge":
+            human_id = f"lichess:{result.human_lichess_username or ''}"
+            if (
+                human_id not in {result.white_id, result.black_id}
+                or result.human_rating is None
+                or result.human_rating_deviation is None
+                or not 0 < result.human_rating_deviation <= 500
+            ):
+                if args.verbose:
+                    print(f"Skipping: invalid human snapshot for {result.game_id}")
+                skipped += 1
+                continue
+            fixed_human = PlayerRating(
+                player_id=human_id,
+                rating=float(result.human_rating),
+                rating_deviation=float(result.human_rating_deviation),
+                games_rd=float(result.human_rating_deviation),
+            )
+            if result.white_id == human_id:
+                fixed_white = fixed_human
+            else:
+                fixed_black = fixed_human
+
         valid_games.append({
             'white_id': result.white_id,
             'black_id': result.black_id,
             'white_score': white_score,
             'black_score': black_score,
+            'fixed_white': fixed_white,
+            'fixed_black': fixed_black,
         })
 
     if not valid_games:
@@ -765,31 +792,34 @@ async def recalculate_ratings(args):
     actual_game_counts = {}
     actual_wld = {}  # {player_id: {'wins': N, 'losses': N, 'draws': N}}
     for game in valid_games:
-        all_players.add(game['white_id'])
-        all_players.add(game['black_id'])
-        actual_game_counts[game['white_id']] = actual_game_counts.get(game['white_id'], 0) + 1
-        actual_game_counts[game['black_id']] = actual_game_counts.get(game['black_id'], 0) + 1
+        rated_ids = []
+        if game['fixed_white'] is None:
+            rated_ids.append(game['white_id'])
+        if game['fixed_black'] is None:
+            rated_ids.append(game['black_id'])
+        for player_id in rated_ids:
+            all_players.add(player_id)
+            actual_game_counts[player_id] = actual_game_counts.get(player_id, 0) + 1
+            actual_wld.setdefault(player_id, {'wins': 0, 'losses': 0, 'draws': 0})
 
-        # Initialize W-L-D if needed
-        if game['white_id'] not in actual_wld:
-            actual_wld[game['white_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
-        if game['black_id'] not in actual_wld:
-            actual_wld[game['black_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
-
-        # Track W-L-D from scores
-        if game['white_score'] == 1.0:
-            actual_wld[game['white_id']]['wins'] += 1
-            actual_wld[game['black_id']]['losses'] += 1
-        elif game['white_score'] == 0.0:
-            actual_wld[game['white_id']]['losses'] += 1
-            actual_wld[game['black_id']]['wins'] += 1
-        else:  # draw
-            actual_wld[game['white_id']]['draws'] += 1
-            actual_wld[game['black_id']]['draws'] += 1
+        for player_id, score in (
+            (game['white_id'], game['white_score']),
+            (game['black_id'], game['black_score']),
+        ):
+            if player_id not in actual_wld:
+                continue
+            if score == 1.0:
+                actual_wld[player_id]['wins'] += 1
+            elif score == 0.0:
+                actual_wld[player_id]['losses'] += 1
+            else:
+                actual_wld[player_id]['draws'] += 1
 
     # Create stats collector early to get legal move rates for initial ratings
     stats_collector = StatsCollector()
-    stats_collector.add_results(results)
+    stats_collector.add_results([
+        result for result in results if result.game_type != "human_challenge"
+    ])
     player_stats = stats_collector.get_player_stats()
 
     # Pre-initialize all non-anchor players with appropriate starting ratings
@@ -865,7 +895,12 @@ async def recalculate_ratings(args):
     anchor_games = []
     llm_games = []
     for game in valid_games:
-        if rating_store.is_anchor(game['white_id']) or rating_store.is_anchor(game['black_id']):
+        if (
+            game['fixed_white'] is not None
+            or game['fixed_black'] is not None
+            or rating_store.is_anchor(game['white_id'])
+            or rating_store.is_anchor(game['black_id'])
+        ):
             anchor_games.append(game)
         else:
             llm_games.append(game)
@@ -906,15 +941,25 @@ async def recalculate_ratings(args):
 
         for game in batch_games:
             white_id, black_id = game['white_id'], game['black_id']
+            white_rating = game['fixed_white'] or period_ratings[white_id]
+            black_rating = game['fixed_black'] or period_ratings[black_id]
 
             # Update white's rating if: not an anchor AND opponent is not a ghost
-            if not rating_store.is_anchor(white_id) and not rating_store.is_ghost(black_id):
-                player_games[white_id]['opponents'].append(period_ratings[black_id])
+            if (
+                game['fixed_white'] is None
+                and not rating_store.is_anchor(white_id)
+                and not rating_store.is_ghost(black_id)
+            ):
+                player_games[white_id]['opponents'].append(black_rating)
                 player_games[white_id]['scores'].append(game['white_score'])
 
             # Update black's rating if: not an anchor AND opponent is not a ghost
-            if not rating_store.is_anchor(black_id) and not rating_store.is_ghost(white_id):
-                player_games[black_id]['opponents'].append(period_ratings[white_id])
+            if (
+                game['fixed_black'] is None
+                and not rating_store.is_anchor(black_id)
+                and not rating_store.is_ghost(white_id)
+            ):
+                player_games[black_id]['opponents'].append(white_rating)
                 player_games[black_id]['scores'].append(game['black_score'])
 
         # Update each player with their games from this period

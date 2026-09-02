@@ -114,6 +114,26 @@ body {
 .auth-status { min-height: 1.5rem; margin-top: 1rem; color: var(--text-secondary); }
 .auth-error { color: var(--accent-light); }
 
+/* Approved player administration */
+.players-page { max-width: 820px; margin: 0 auto; }
+.players-header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 1.5rem; }
+.players-header h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 500; letter-spacing: -0.04em; }
+.players-header p { max-width: 580px; margin-top: 0.4rem; color: var(--text-secondary); }
+.players-header a { flex: none; color: var(--accent-light); }
+.player-approval-form { padding: 1.2rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); }
+.player-approval-form label { display: block; margin-bottom: 0.45rem; color: var(--text-secondary); font-size: 0.8rem; }
+.player-approval-form > div { display: flex; }
+.player-approval-form input { min-width: 0; flex: 1; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 6px 0 0 6px; background: var(--bg-primary); color: var(--text-primary); }
+.player-approval-form button { padding: 0.7rem 1rem; border: 1px solid var(--accent); border-radius: 0 6px 6px 0; background: var(--accent); color: white; font-weight: 700; cursor: pointer; }
+.approved-player-list { margin-top: 1rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-secondary); }
+.approved-player-list > p { padding: 1.2rem; color: var(--text-secondary); }
+.approved-player-list article { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
+.approved-player-list article:last-child { border-bottom: 0; }
+.approved-player-list article div { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.approved-player-list article strong { overflow-wrap: anywhere; }
+.approved-player-list article span { color: var(--text-secondary); font-size: 0.82rem; }
+.approved-player-list article button { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--accent-light); cursor: pointer; }
+
 /* Admin play arena */
 .play-page { max-width: 1120px; margin: 0 auto; }
 
@@ -163,7 +183,7 @@ body {
 
 .setup-controls {
     display: grid;
-    grid-template-columns: minmax(190px, 1fr) auto auto auto;
+    grid-template-columns: minmax(150px, 0.75fr) minmax(190px, 1fr) auto auto auto;
     align-items: end;
     gap: 1rem;
 }
@@ -175,7 +195,8 @@ body {
 .color-choice legend,
 .effort-choice legend { color: var(--text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
 
-.setup-field select {
+.setup-field select,
+.setup-field input {
     min-height: 42px;
     padding: 0 2.3rem 0 0.75rem;
     border: 1px solid var(--border);

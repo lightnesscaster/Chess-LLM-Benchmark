@@ -1,6 +1,7 @@
 import pytest
 
 import web.app as web_app
+import web.approved_players as approved_players
 from web.auth import safe_next_url
 
 
@@ -12,6 +13,13 @@ def client(monkeypatch):
         SESSION_COOKIE_SECURE=False,
     )
     monkeypatch.setenv("ADMIN_EMAILS", "johnstondaniel4@gmail.com")
+    denying_store = type(
+        "DenyingPlayerStore",
+        (),
+        {"get_player": lambda self, _email: None},
+    )()
+    monkeypatch.setattr(web_app, "get_approved_player_store", lambda: denying_store)
+    monkeypatch.setattr(approved_players, "get_approved_player_store", lambda: denying_store)
     with web_app.app.test_client() as test_client:
         yield test_client
 

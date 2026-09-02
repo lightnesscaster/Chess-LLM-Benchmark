@@ -38,6 +38,10 @@ from web.auth import (
     validate_csrf,
     verify_firebase_token,
 )
+from web.approved_players import get_approved_player_store
+from web.approved_players import is_approved_player, player_api_required, player_required
+from web.human_challenges import HumanChallengeError, record_human_challenge
+from web.lichess import LichessLookupError, fetch_rapid_snapshot
 from web.play_service import (
     ConfigurationError as PlayConfigurationError,
     GameStateError,
@@ -311,9 +315,15 @@ def set_security_headers(response):
 @app.context_processor
 def inject_auth_context():
     """Expose only safe authentication state to templates."""
+    user = current_user()
+    try:
+        approved = is_approved_player(user, store=get_approved_player_store()) if user else False
+    except Exception:
+        approved = is_admin(user)
     return {
-        "auth_user": current_user(),
+        "auth_user": user,
         "auth_is_admin": is_admin(),
+        "auth_is_player": approved,
         "csrf_token": ensure_csrf_token() if app.secret_key else None,
     }
 
@@ -381,11 +391,60 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/admin/play")
+@app.route("/admin/players")
 @admin_required
+def admin_players():
+    """Manage the Google accounts allowed to play rated games."""
+    players = get_approved_player_store().list_players()
+    return render_template("approved_players.html", players=players)
+
+
+@app.route("/api/admin/players", methods=["POST"])
+@admin_api_required
+def api_admin_players():
+    """Approve one normalized Google account email."""
+    validate_csrf()
+    payload = request.get_json(silent=True) if request.is_json else request.form
+    try:
+        player = get_approved_player_store().approve(
+            payload.get("email") if payload is not None else None,
+            current_user()["email"],
+        )
+    except ValueError as error:
+        if request.is_json:
+            return jsonify({"error": str(error)}), 400
+        abort(400, description=str(error))
+    if request.is_json:
+        return jsonify({"player": player}), 201
+    return redirect(url_for("admin_players"))
+
+
+@app.route("/api/admin/players/<path:email>", methods=["DELETE"])
+@admin_api_required
+def api_admin_remove_player(email):
+    """Remove one account from the rated-player allowlist."""
+    validate_csrf()
+    removed = get_approved_player_store().remove(email)
+    return jsonify({"removed": removed})
+
+
+@app.route("/admin/players/<path:email>/remove", methods=["POST"])
+@admin_required
+def admin_remove_player_form(email):
+    """HTML form fallback for removing an approved player."""
+    validate_csrf()
+    get_approved_player_store().remove(email)
+    return redirect(url_for("admin_players"))
+
+
+@app.route("/play")
+@app.route("/admin/play")
+@player_required
 def admin_play():
-    """Admin-only interactive play page."""
+    """Approved-player interactive arena."""
     models = list_playable_models(CONFIG_PATH, os.environ)
+    user = current_user()
+    player_record = get_approved_player_store().get_player(user["email"])
     current_game = None
     if session.get("admin_play_game"):
         try:
@@ -396,25 +455,43 @@ def admin_play():
         "play.html",
         models=models,
         current_game=current_game,
+        lichess_username=(player_record or {}).get("lichess_username", ""),
     )
 
 
+@app.route("/api/play/start", methods=["POST"])
 @app.route("/api/admin/play/start", methods=["POST"])
-@admin_api_required
+@player_api_required
 def api_admin_play_start():
     """Start a new signed-session human-versus-LLM game."""
     validate_csrf()
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload, dict):
         return jsonify({"error": "Send a valid game setup."}), 400
+    submitted_username = str(payload.get("lichess_username") or "").strip()
+    player_record = get_approved_player_store().get_player(current_user()["email"])
+    linked_username = str((player_record or {}).get("lichess_username") or "").strip()
+    if linked_username and linked_username.casefold() != submitted_username.casefold():
+        return jsonify({
+            "error": "This account is already linked to a different Lichess username. Ask an administrator to reset it."
+        }), 400
     try:
+        snapshot = fetch_rapid_snapshot(submitted_username)
+        get_approved_player_store().claim_lichess_username(
+            current_user()["email"],
+            snapshot.username,
+            allow_missing=is_admin(),
+        )
         state = start_game(
             payload.get("model_id"),
             payload.get("human_color"),
             CONFIG_PATH,
             os.environ,
             reasoning_effort=payload.get("reasoning_effort"),
+            human_profile=snapshot.to_dict(),
         )
+    except LichessLookupError as error:
+        return jsonify({"error": str(error)}), 400
     except PlayConfigurationError as error:
         status = 503 if not list_playable_models(CONFIG_PATH, os.environ) else 400
         return jsonify({"error": str(error)}), status
@@ -422,13 +499,28 @@ def api_admin_play_start():
         return jsonify({"error": str(error)}), 400
     except ProviderError as error:
         return jsonify({"error": str(error)}), 502
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    if state.get("status") == "finished":
+        try:
+            state["rating_result"] = record_human_challenge(
+                state,
+                current_user()["email"],
+            )
+        except HumanChallengeError as error:
+            return jsonify({"error": str(error)}), 400
+        except Exception:
+            app.logger.exception("Could not record rated human challenge")
+            return jsonify({"error": "The game finished but its rating could not be recorded."}), 503
 
     session["admin_play_game"] = state
     return jsonify({"game": game_view(state)})
 
 
+@app.route("/api/play/move", methods=["POST"])
 @app.route("/api/admin/play/move", methods=["POST"])
-@admin_api_required
+@player_api_required
 def api_admin_play_move():
     """Apply one human move and return the authoritative resulting position."""
     validate_csrf()
@@ -450,6 +542,18 @@ def api_admin_play_move():
         return jsonify({"error": str(error)}), 400
     except ProviderError as error:
         return jsonify({"error": str(error)}), 502
+
+    if updated_state.get("status") == "finished":
+        try:
+            updated_state["rating_result"] = record_human_challenge(
+                updated_state,
+                current_user()["email"],
+            )
+        except HumanChallengeError as error:
+            return jsonify({"error": str(error)}), 400
+        except Exception:
+            app.logger.exception("Could not record rated human challenge")
+            return jsonify({"error": "The game finished but its rating could not be recorded."}), 503
 
     session["admin_play_game"] = updated_state
     return jsonify({"game": game_view(updated_state)})
