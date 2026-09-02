@@ -80,3 +80,37 @@ def test_refresh_catalog_fails_closed_when_probes_error(tmp_path):
 
     assert available == []
     assert json.loads(output_path.read_text()) == {"models": []}
+
+
+def test_refresh_catalog_probes_sequentially_for_small_host_memory(tmp_path):
+    from web.claude_catalog import refresh_claude_catalog
+
+    config_path = tmp_path / "benchmark.yaml"
+    config_path.write_text(yaml.safe_dump({
+        "web_play_models": [
+            {
+                "player_id": f"model-{index}",
+                "model_name": f"claude-model-{index}",
+                "web_api": "claude_code",
+            }
+            for index in range(3)
+        ],
+    }))
+    active_probes = 0
+    peak_active_probes = 0
+
+    async def probe(_model_name):
+        nonlocal active_probes, peak_active_probes
+        active_probes += 1
+        peak_active_probes = max(peak_active_probes, active_probes)
+        await asyncio.sleep(0.01)
+        active_probes -= 1
+        return True
+
+    asyncio.run(refresh_claude_catalog(
+        config_path=config_path,
+        output_path=tmp_path / "claude-models.json",
+        probe=probe,
+    ))
+
+    assert peak_active_probes == 1

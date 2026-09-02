@@ -70,7 +70,7 @@ async def refresh_claude_catalog(
     output_path: Path,
     probe: Probe = _probe_model,
 ) -> list[str]:
-    """Probe configured Claude models concurrently and persist successes."""
+    """Probe configured Claude models sequentially and persist successes."""
     model_names = _configured_claude_models(config_path)
 
     async def safe_probe(model_name: str) -> bool:
@@ -79,10 +79,10 @@ async def refresh_claude_catalog(
         except Exception:
             return False
 
-    results = await asyncio.gather(*(safe_probe(name) for name in model_names))
-    available = [
-        name for name, is_available in zip(model_names, results) if is_available
-    ]
+    available = []
+    for model_name in model_names:
+        if await safe_probe(model_name):
+            available.append(model_name)
     _write_catalog(output_path, available)
     return available
 
