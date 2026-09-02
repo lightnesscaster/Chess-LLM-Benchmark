@@ -58,6 +58,12 @@ def test_render_build_installs_codex_non_interactively():
     assert "CODEX_NON_INTERACTIVE=1" in script
 
 
+def test_render_build_tracks_latest_claude_models():
+    script = Path("scripts/render_build.sh").read_text()
+
+    assert "https://claude.ai/install.sh | bash -s latest" in script
+
+
 def test_render_scripts_persist_cli_binaries_in_deploy_artifact():
     build_script = Path("scripts/render_build.sh").read_text()
     start_script = Path("scripts/render_start.sh").read_text()
