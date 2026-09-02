@@ -70,6 +70,7 @@ app.jinja_env.filters['is_reasoning'] = is_reasoning_model
 # Leaderboard cache
 _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
+_leaderboard_cache_min_games: int | None = None
 _leaderboard_lock = threading.Lock()
 _leaderboard_refreshing = False
 _LEADERBOARD_CACHE_TTL = 86400  # 24 hours
@@ -191,20 +192,22 @@ def is_valid_game_id(game_id: str) -> bool:
 
 def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
     """Get leaderboard data from rating store with thread-safe caching."""
-    global _leaderboard_cache, _leaderboard_cache_time, _leaderboard_refreshing
+    global _leaderboard_cache, _leaderboard_cache_time
+    global _leaderboard_cache_min_games, _leaderboard_refreshing
 
     # Check cache under lock
     with _leaderboard_lock:
         cache_age = time.time() - _leaderboard_cache_time
         cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
+        cache_matches = _leaderboard_cache_min_games == min_games
         should_invalidate = _should_invalidate_cache(_leaderboard_cache_time)
 
-        if cache_valid and sort_by == "rating" and not should_invalidate:
+        if cache_valid and cache_matches and sort_by == "rating" and not should_invalidate:
             app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
             return list(_leaderboard_cache)
 
         # Thundering herd prevention: if another thread is refreshing, return stale cache
-        if _leaderboard_refreshing and _leaderboard_cache:
+        if _leaderboard_refreshing and _leaderboard_cache and cache_matches:
             app.logger.debug("Another thread is refreshing leaderboard, returning stale cache")
             return list(_leaderboard_cache)
 
@@ -239,6 +242,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
             if sort_by == "rating":
                 _leaderboard_cache = result
                 _leaderboard_cache_time = time.time()
+                _leaderboard_cache_min_games = min_games
             _leaderboard_refreshing = False
 
         return result
@@ -247,7 +251,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
         with _leaderboard_lock:
             _leaderboard_refreshing = False
             # Return cached data if available, even if expired
-            if _leaderboard_cache:
+            if _leaderboard_cache and _leaderboard_cache_min_games == min_games:
                 app.logger.info("Returning stale cached leaderboard data due to error")
                 return list(_leaderboard_cache)
         return []
@@ -607,13 +611,13 @@ def api_admin_play_move():
 @app.route("/")
 def index():
     """Redirect to leaderboard."""
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=5))
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=1))
 
 
 @app.route("/leaderboard")
 def leaderboard():
     """Show leaderboard page."""
-    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=5))
+    return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=1))
 
 
 @app.route("/games")
