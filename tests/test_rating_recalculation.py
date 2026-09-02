@@ -58,6 +58,7 @@ def _human_challenge(
         human_rating=human_rating,
         human_rating_deviation=human_rd,
         human_rating_provisional=human_rd >= 110,
+        human_rating_pool="classical",
     )
 
 

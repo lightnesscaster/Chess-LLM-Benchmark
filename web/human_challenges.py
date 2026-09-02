@@ -60,6 +60,7 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
     username = str(profile.get("username") or "").strip()
     human_rating = profile.get("rating")
     human_rd = profile.get("rating_deviation")
+    rating_pool = str(profile.get("rating_pool") or "rapid").strip().lower()
     if (
         not username
         or isinstance(human_rating, bool)
@@ -68,6 +69,7 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
         or not isinstance(human_rd, (int, float))
         or not 0 <= human_rating <= 4000
         or not 0 < human_rd <= 500
+        or rating_pool not in {"classical", "rapid"}
     ):
         raise HumanChallengeError("The game has no valid Lichess rating snapshot.")
     model_id = str(state.get("rated_model_id") or state.get("model_id") or "").strip()
@@ -109,6 +111,7 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
         human_rating=float(human_rating),
         human_rating_deviation=float(human_rd),
         human_rating_provisional=bool(profile.get("provisional", False)),
+        human_rating_pool=rating_pool,
     )
 
 
@@ -150,8 +153,16 @@ def _pgn_for_state(state: dict, result: GameResult) -> str:
             "0-1" if result.winner == "black" else "1/2-1/2"
         ),
         "Termination": result.termination,
-        "LichessRapid": str(round(result.human_rating)),
-        "LichessRapidRD": str(round(result.human_rating_deviation)),
+        (
+            "LichessClassical"
+            if result.human_rating_pool == "classical"
+            else "LichessRapid"
+        ): str(round(result.human_rating)),
+        (
+            "LichessClassicalRD"
+            if result.human_rating_pool == "classical"
+            else "LichessRapidRD"
+        ): str(round(result.human_rating_deviation)),
     })
     board = game.board()
     node = game

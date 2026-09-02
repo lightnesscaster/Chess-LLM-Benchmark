@@ -6,7 +6,7 @@ import yaml
 import web.app as web_app
 import web.play_service as play_service
 import web.approved_players as approved_players
-from web.lichess import LichessRapidSnapshot
+from web.lichess import LichessClassicalSnapshot
 
 
 class FakePlayerStore:
@@ -51,8 +51,8 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(approved_players, "get_approved_player_store", lambda: store)
     monkeypatch.setattr(
         web_app,
-        "fetch_rapid_snapshot",
-        lambda username: LichessRapidSnapshot(
+        "fetch_classical_snapshot",
+        lambda username: LichessClassicalSnapshot(
             username=str(username).strip(),
             rating=1847,
             rating_deviation=73,
@@ -110,7 +110,7 @@ def test_player_cannot_switch_linked_lichess_account(client, monkeypatch):
     csrf = _set_user(client, "player@example.com")
     monkeypatch.setattr(
         web_app,
-        "fetch_rapid_snapshot",
+        "fetch_classical_snapshot",
         lambda _username: pytest.fail("locked username must be checked before Lichess lookup"),
     )
 
@@ -196,6 +196,7 @@ def test_admin_can_start_game_and_state_is_saved_in_session(client):
         "rating": 1847,
         "rating_deviation": 73,
         "provisional": False,
+        "rating_pool": "classical",
     }
     with client.session_transaction() as flask_session:
         assert flask_session["admin_play_game"]["moves"] == []

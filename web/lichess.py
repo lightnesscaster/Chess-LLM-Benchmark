@@ -9,24 +9,25 @@ import requests
 
 
 class LichessLookupError(ValueError):
-    """Raised when a Rapid rating snapshot cannot be obtained."""
+    """Raised when a Classical rating snapshot cannot be obtained."""
 
 
 @dataclass(frozen=True)
-class LichessRapidSnapshot:
+class LichessClassicalSnapshot:
     """Immutable values used to score one human challenge."""
 
     username: str
     rating: int
     rating_deviation: int
     provisional: bool
+    rating_pool: str = "classical"
 
     def to_dict(self) -> dict:
         return asdict(self)
 
 
-def fetch_rapid_snapshot(username, session=None) -> LichessRapidSnapshot:
-    """Fetch the current Lichess Rapid rating and RD from a public profile."""
+def fetch_classical_snapshot(username, session=None) -> LichessClassicalSnapshot:
+    """Fetch the current Lichess Classical rating and RD from a public profile."""
     normalized = str(username or "").strip()
     if not normalized or len(normalized) > 64 or any(char.isspace() for char in normalized):
         raise LichessLookupError("Enter a valid Lichess username.")
@@ -53,12 +54,12 @@ def fetch_rapid_snapshot(username, session=None) -> LichessRapidSnapshot:
     if not isinstance(payload, dict):
         raise LichessLookupError("Lichess returned an invalid profile.")
     perfs = payload.get("perfs")
-    rapid = perfs.get("rapid") if isinstance(perfs, dict) else None
-    if not isinstance(rapid, dict):
-        raise LichessLookupError("This Lichess account has no Rapid rating.")
+    classical = perfs.get("classical") if isinstance(perfs, dict) else None
+    if not isinstance(classical, dict):
+        raise LichessLookupError("This Lichess account has no Classical rating.")
 
-    rating = rapid.get("rating")
-    rating_deviation = rapid.get("rd")
+    rating = classical.get("rating")
+    rating_deviation = classical.get("rd")
     canonical_username = payload.get("username")
     if (
         not isinstance(canonical_username, str)
@@ -70,11 +71,11 @@ def fetch_rapid_snapshot(username, session=None) -> LichessRapidSnapshot:
         or not 0 <= rating <= 4000
         or not 0 < rating_deviation <= 500
     ):
-        raise LichessLookupError("Lichess did not return a valid Rapid rating and RD.")
+        raise LichessLookupError("Lichess did not return a valid Classical rating and RD.")
 
-    return LichessRapidSnapshot(
+    return LichessClassicalSnapshot(
         username=canonical_username.strip(),
         rating=round(rating),
         rating_deviation=round(rating_deviation),
-        provisional=bool(rapid.get("prov", False)),
+        provisional=bool(classical.get("prov", False)),
     )

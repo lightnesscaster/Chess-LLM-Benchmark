@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let Firestore-approved Google accounts play rated games against available LLMs using an automatically fetched Lichess Rapid rating and RD snapshot.
+**Goal:** Let Firestore-approved Google accounts play rated games against available LLMs using an automatically fetched Lichess Classical rating and RD snapshot.
 
 **Architecture:** Store approved player records in Firestore keyed by normalized email, with admins implicitly approved. At game start, resolve the player's saved Lichess username through the public Lichess API and place the rating/RD snapshot in signed session state. When a game finishes, persist an idempotent human-challenge result and PGN, update only the LLM through Glicko-2, and teach full recalculation to replay the immutable human snapshot as a fixed opponent.
 
@@ -14,10 +14,10 @@
 
 - Only verified Google accounts in the Firestore approval list may access the arena; configured admins are implicitly approved.
 - Admins can add and remove approved email addresses from the website without a deployment.
-- Players enter a Lichess username; the server fetches Rapid rating and RD at every game start.
+- Players enter a Lichess username; the server fetches Classical rating and RD at every game start.
 - The immutable game-start snapshot, including provisional status, is stored with the completed game.
 - Completed games update only the selected LLM; the human is a fixed one-game opponent.
-- Missing Rapid data, unavailable Lichess profiles, unfinished games, and duplicate finish requests never affect ratings.
+- Missing Classical data, unavailable Lichess profiles, unfinished games, and duplicate finish requests never affect ratings.
 - Existing benchmark results and admin access continue to work.
 - The arena keeps its existing chess-club visual system and remains responsive and keyboard accessible.
 
@@ -44,7 +44,7 @@
 - [ ] Implement Firestore/local-test-compatible approval storage, decorators, routes, page, navigation, and accessible controls.
 - [ ] Run the focused tests and verify they pass.
 
-### Task 2: Lichess Rapid profile snapshots
+### Task 2: Lichess Classical profile snapshots
 
 **Files:**
 - Create: `web/lichess.py`
@@ -53,10 +53,10 @@
 - Test: `tests/test_web_play_service.py`
 
 **Interfaces:**
-- Produces: `LichessRapidSnapshot(username, rating, rating_deviation, provisional)` and `fetch_rapid_snapshot(username)`.
+- Produces: `LichessClassicalSnapshot(username, rating, rating_deviation, provisional, rating_pool)` and `fetch_classical_snapshot(username)`.
 - Extends: `start_game(..., human_profile=...)` and the signed game state/view with the immutable snapshot, UUID, and start timestamp.
 
-- [ ] Write failing tests for valid profile parsing, canonical username use, missing Rapid data, malformed responses, HTTP failures, snapshot validation, and game-state serialization.
+- [ ] Write failing tests for valid profile parsing, canonical username use, missing Classical data, malformed responses, HTTP failures, snapshot validation, and game-state serialization.
 - [ ] Run the focused tests and verify the expected failures.
 - [ ] Implement the Lichess client with explicit timeout/user-agent and state snapshot validation.
 - [ ] Run the focused tests and verify they pass.
@@ -114,7 +114,7 @@
 - Generalizes: `/admin/play` to canonical `/play` while preserving the old URL as a redirect.
 - Adds: `lichess_username` to start-game requests and rating-snapshot/model-rating feedback to responses.
 
-- [ ] Write failing route and client tests for approved access, username submission, visible Rapid snapshot, rated-result messaging, and existing export/effort behavior.
+- [ ] Write failing route and client tests for approved access, username submission, visible Classical snapshot, rated-result messaging, and existing export/effort behavior.
 - [ ] Run the focused tests and verify the expected failures.
 - [ ] Implement the player-facing setup strip, approval-aware navigation, start payload, and scored-game status copy without diluting the board-first layout.
 - [ ] Run Python and JavaScript focused tests and verify they pass.

@@ -268,10 +268,11 @@ def _select_model(
 
 def _validated_human_profile(profile: dict) -> dict:
     if not isinstance(profile, dict):
-        raise GameStateError("Verify a Lichess Rapid rating before starting.")
+        raise GameStateError("Verify a Lichess Classical rating before starting.")
     username = str(profile.get("username") or "").strip()
     rating = profile.get("rating")
     rating_deviation = profile.get("rating_deviation")
+    rating_pool = str(profile.get("rating_pool") or "rapid").strip().lower()
     if (
         not username
         or len(username) > 64
@@ -281,13 +282,15 @@ def _validated_human_profile(profile: dict) -> dict:
         or not isinstance(rating_deviation, (int, float))
         or not 0 <= rating <= 4000
         or not 0 < rating_deviation <= 500
+        or rating_pool not in {"classical", "rapid"}
     ):
-        raise GameStateError("The Lichess Rapid rating snapshot is invalid.")
+        raise GameStateError("The Lichess rating snapshot is invalid.")
     return {
         "username": username,
         "rating": round(rating),
         "rating_deviation": round(rating_deviation),
         "provisional": bool(profile.get("provisional", False)),
+        "rating_pool": rating_pool,
     }
 
 

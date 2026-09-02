@@ -41,7 +41,7 @@ from web.auth import (
 from web.approved_players import get_approved_player_store
 from web.approved_players import is_approved_player, player_api_required, player_required
 from web.human_challenges import HumanChallengeError, record_human_challenge
-from web.lichess import LichessLookupError, fetch_rapid_snapshot
+from web.lichess import LichessLookupError, fetch_classical_snapshot
 from web.play_service import (
     ConfigurationError as PlayConfigurationError,
     GameStateError,
@@ -476,7 +476,7 @@ def api_admin_play_start():
             "error": "This account is already linked to a different Lichess username. Ask an administrator to reset it."
         }), 400
     try:
-        snapshot = fetch_rapid_snapshot(submitted_username)
+        snapshot = fetch_classical_snapshot(submitted_username)
         get_approved_player_store().claim_lichess_username(
             current_user()["email"],
             snapshot.username,

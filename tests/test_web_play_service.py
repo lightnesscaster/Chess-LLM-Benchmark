@@ -233,6 +233,7 @@ def test_explicit_web_efforts_select_requested_claude_effort(tmp_path):
             "rating": 1847,
             "rating_deviation": 73,
             "provisional": False,
+            "rating_pool": "classical",
         },
     )
     assert rated_state["rated_model_id"] == "claude-flex (xhigh)"
@@ -363,6 +364,7 @@ def test_start_game_preserves_immutable_lichess_snapshot(config_path):
             "rating": 1847,
             "rating_deviation": 73,
             "provisional": True,
+            "rating_pool": "classical",
         },
     )
 
@@ -373,6 +375,7 @@ def test_start_game_preserves_immutable_lichess_snapshot(config_path):
         "rating": 1847,
         "rating_deviation": 73,
         "provisional": True,
+        "rating_pool": "classical",
     }
     assert service.game_view(state)["human_profile"] == state["human_profile"]
 

@@ -72,6 +72,8 @@ class GameResult(BaseModel):
     human_rating: Optional[float] = None
     human_rating_deviation: Optional[float] = None
     human_rating_provisional: Optional[bool] = None
+    # None denotes records created before the pool was persisted (Lichess Rapid).
+    human_rating_pool: Optional[str] = None
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""

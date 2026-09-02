@@ -25,6 +25,7 @@ def _finished_state(*, human_rd=70, winner="llm"):
             "rating": 1847,
             "rating_deviation": human_rd,
             "provisional": human_rd >= 110,
+            "rating_pool": "classical",
         },
         "moves": ["f2f3", "e7e5", "g2g4", "d8h4"],
         "status": "finished",
@@ -50,6 +51,7 @@ def test_completed_game_builds_replayable_human_challenge_result():
     assert result.human_rating == 1847
     assert result.human_rating_deviation == 70
     assert result.human_rating_provisional is False
+    assert result.human_rating_pool == "classical"
     assert result.moves == 4
 
 
@@ -145,3 +147,24 @@ def test_recording_same_finished_game_twice_updates_rating_once():
     assert rating_store.set_calls == 1
     assert "[White \"lichess:Some_Player\"]" in logger.pgns["human-game-1"]
     assert "[Black \"reasoner (high)\"]" in logger.pgns["human-game-1"]
+    assert "[LichessClassical \"1847\"]" in logger.pgns["human-game-1"]
+    assert "[LichessClassicalRD \"70\"]" in logger.pgns["human-game-1"]
+    assert "LichessRapid" not in logger.pgns["human-game-1"]
+
+
+def test_legacy_game_without_pool_keeps_rapid_metadata():
+    state = _finished_state()
+    state["human_profile"].pop("rating_pool")
+
+    result = build_human_challenge_result(state, "player@example.com")
+    logger = FakePGNLogger()
+    record_human_challenge(
+        state,
+        "player@example.com",
+        rating_store=FakeRatingStore(),
+        pgn_logger=logger,
+    )
+
+    assert result.human_rating_pool == "rapid"
+    assert "[LichessRapid \"1847\"]" in logger.pgns["human-game-1"]
+    assert "LichessClassical" not in logger.pgns["human-game-1"]

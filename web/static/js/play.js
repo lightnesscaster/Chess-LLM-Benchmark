@@ -162,11 +162,12 @@
     function describeGame() {
         if (!game) return [
             "Start a game when you’re ready.",
-            "Your current Lichess Rapid rating and RD set the weight of this game.",
+            "Your current Lichess Classical rating and RD set the weight of this game.",
         ];
         const profile = game.human_profile;
+        const pool = profile && profile.rating_pool === "classical" ? "Classical" : "Rapid";
         const snapshot = profile
-            ? "Rapid " + profile.rating + ", RD " + profile.rating_deviation
+            ? pool + " " + profile.rating + ", RD " + profile.rating_deviation
                 + (profile.provisional ? " (provisional)" : "")
             : "";
         if (game.status === "finished") {
