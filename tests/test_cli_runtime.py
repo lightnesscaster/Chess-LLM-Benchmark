@@ -56,3 +56,13 @@ def test_render_build_installs_codex_non_interactively():
     script = Path("scripts/render_build.sh").read_text()
 
     assert "CODEX_NON_INTERACTIVE=1" in script
+
+
+def test_render_scripts_persist_cli_binaries_in_deploy_artifact():
+    build_script = Path("scripts/render_build.sh").read_text()
+    start_script = Path("scripts/render_start.sh").read_text()
+
+    assert 'mkdir -p "$PWD/.render/bin"' in build_script
+    assert 'install -m 0755 "$(readlink -f "$(command -v codex)")" "$PWD/.render/bin/codex"' in build_script
+    assert 'install -m 0755 "$(readlink -f "$(command -v claude)")" "$PWD/.render/bin/claude"' in build_script
+    assert 'export PATH="$PWD/.render/bin:$HOME/.local/bin:$PATH"' in start_script

@@ -9,3 +9,7 @@ curl -fsSL https://claude.ai/install.sh | bash -s stable
 export PATH="$HOME/.local/bin:$PATH"
 codex --version
 claude --version
+
+mkdir -p "$PWD/.render/bin"
+install -m 0755 "$(readlink -f "$(command -v codex)")" "$PWD/.render/bin/codex"
+install -m 0755 "$(readlink -f "$(command -v claude)")" "$PWD/.render/bin/claude"
