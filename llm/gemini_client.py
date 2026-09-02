@@ -13,6 +13,7 @@ import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
+from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
@@ -80,6 +81,9 @@ class GeminiPlayer(BaseLLMPlayer):
             return None
 
         text = response_text.strip()
+        resignation = parse_resignation(text)
+        if resignation:
+            return resignation
 
         # Try to find a UCI move pattern
         uci_pattern = r'\b([a-h][1-8][a-h][1-8][qrbn]?)\b'
@@ -145,7 +149,13 @@ class GeminiPlayer(BaseLLMPlayer):
         """
         move_start_time = time.time()
 
-        prompt = build_chess_prompt(board, is_retry, last_move_illegal, self.last_successful_response)
+        prompt = build_chess_prompt(
+            board,
+            is_retry,
+            last_move_illegal,
+            self.last_successful_response,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt
         self.last_raw_response = ""
 

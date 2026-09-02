@@ -13,6 +13,7 @@ class SequencePlayer(BaseLLMPlayer):
         super().__init__(player_id="sequence-player", model_name="test-model")
         self.responses = list(responses)
         self.calls: list[tuple[bool, str | None]] = []
+        self.resignation_options: list[bool] = []
 
     async def select_move(
         self,
@@ -21,6 +22,7 @@ class SequencePlayer(BaseLLMPlayer):
         last_move_illegal: str | None = None,
     ) -> str:
         self.calls.append((is_retry, last_move_illegal))
+        self.resignation_options.append(getattr(self, "allow_resignation", False))
         return self.responses.pop(0)
 
     async def close(self) -> None:
@@ -28,6 +30,19 @@ class SequencePlayer(BaseLLMPlayer):
 
 
 class IllegalMovePolicyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_explicit_resignation_is_a_loss_not_an_illegal_forfeit(self) -> None:
+        white = SequencePlayer(["resign"])
+        black = RandomEngine(player_id="black-random", rating=400, seed=1)
+
+        result, pgn = await GameRunner(white, black, max_moves=4).play_game()
+
+        self.assertEqual(result.winner, "black")
+        self.assertEqual(result.termination, "resignation")
+        self.assertEqual(result.moves, 0)
+        self.assertEqual(result.illegal_moves_white, 0)
+        self.assertEqual(white.resignation_options, [True])
+        self.assertIn('[Termination "resignation"]', pgn)
+
     async def test_failed_same_turn_retry_is_recorded(self) -> None:
         white = SequencePlayer(["a1a1", "a1a1"])
         black = RandomEngine(player_id="black-random", rating=400, seed=1)

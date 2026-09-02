@@ -187,6 +187,10 @@ class GameRunner:
 
             # Valid move received
             move_uci, _ = move_result
+            if move_uci == "resign":
+                winner = "black" if side == chess.WHITE else "white"
+                termination = "resignation"
+                break
             total_moves[side] += 1
 
             try:
@@ -343,6 +347,9 @@ class GameRunner:
                 player, board, is_retry, last_illegal_move
             )
 
+            if isinstance(move_uci, str) and move_uci.strip().casefold() == "resign":
+                return ("resign", is_retry)
+
             # Validate the move
             if move_uci is not None:
                 is_legal, validated_move = self._validate_move(board, move_uci)
@@ -416,6 +423,7 @@ class GameRunner:
                     board,
                     is_retry=is_retry,
                     last_move_illegal=last_illegal_move,
+                    allow_resignation=True,
                 )
                 return move_uci
 

@@ -327,6 +327,7 @@ async def test_llm_on_position(
         board,
         is_retry=False,
         last_move_illegal=None,
+        allow_resignation=False,
     )
     initial_prompt_tokens, initial_completion_tokens = _call_token_delta(
         player,
@@ -341,6 +342,7 @@ async def test_llm_on_position(
             board,
             is_retry=True,
             last_move_illegal=model_move_uci or "invalid",
+            allow_resignation=False,
         )
         retry_prompt_tokens, retry_completion_tokens = _call_token_delta(
             player,

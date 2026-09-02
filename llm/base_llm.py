@@ -34,6 +34,8 @@ class BaseLLMPlayer(abc.ABC):
         self.last_raw_response: str = ""
         # Last successful response (for context in next move's prompt)
         self.last_successful_response: str = ""
+        # Set per request by request_llm_move; position probes leave this disabled.
+        self.allow_resignation: bool = False
 
     def reset_token_usage(self) -> None:
         """Reset token counters and debug state (call at start of each game)."""
@@ -105,7 +107,8 @@ class BaseLLMPlayer(abc.ABC):
             last_move_illegal: The illegal move that was attempted (if retry)
 
         Returns:
-            A move in UCI format (e.g., "e2e4", "g1f3", "e7e8q")
+            A move in UCI format, or ``"resign"`` when the current request
+            explicitly allows resignation.
         """
         ...
 
@@ -128,11 +131,17 @@ async def request_llm_move(
     *,
     is_retry: bool,
     last_move_illegal: Optional[str],
+    allow_resignation: bool,
 ) -> Optional[str]:
     """Request a move using the production game prompt context and normalization."""
-    move_uci = await player.select_move(
-        board,
-        is_retry=is_retry,
-        last_move_illegal=last_move_illegal,
-    )
+    previous_capability = player.allow_resignation
+    player.allow_resignation = bool(allow_resignation)
+    try:
+        move_uci = await player.select_move(
+            board,
+            is_retry=is_retry,
+            last_move_illegal=last_move_illegal,
+        )
+    finally:
+        player.allow_resignation = previous_capability
     return move_uci.strip() if move_uci else None

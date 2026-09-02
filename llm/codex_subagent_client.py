@@ -20,6 +20,7 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
+from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
@@ -121,22 +122,29 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         board: chess.Board,
         is_retry: bool,
         last_move_illegal: Optional[str],
+        allow_resignation: bool = False,
     ) -> str:
         prompt = build_chess_prompt(
             board,
             is_retry=is_retry,
             illegal_move=last_move_illegal,
             previous_response=self.last_successful_response,
+            allow_resignation=allow_resignation,
         )
 
         constraints = [
             "Codex subagent constraints:",
             "- Do not use tools, engines, files, web search, or external sources.",
-            "- Return exactly one line in this format: MOVE: <uci>",
+            (
+                "- Return exactly one line: <uci> or resign"
+                if allow_resignation
+                else "- Return exactly one line containing a legal UCI move"
+            ),
         ]
         if self.include_legal_moves:
             legal_moves = " ".join(move.uci() for move in board.legal_moves)
-            constraints.append(f"- Choose one move from these legal UCI moves: {legal_moves}")
+            prefix = "If choosing a move, choose one" if allow_resignation else "Choose one"
+            constraints.append(f"- {prefix} from these legal UCI moves: {legal_moves}")
 
         return f"{prompt}\n\n" + "\n".join(constraints)
 
@@ -199,7 +207,12 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         is_retry: bool = False,
         last_move_illegal: str = None,
     ) -> str:
-        prompt = self._build_prompt(board, is_retry, last_move_illegal)
+        prompt = self._build_prompt(
+            board,
+            is_retry,
+            last_move_illegal,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt
         self.last_raw_response = ""
         self._last_prompt_tokens = 0
@@ -399,6 +412,9 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         text = response_text.strip().replace("0-0-0", "O-O-O").replace("0-0", "O-O")
         if text.upper().startswith("MOVE:"):
             text = text.split(":", 1)[1].strip()
+        resignation = parse_resignation(text)
+        if resignation:
+            return resignation
 
         uci_pattern = r"\b([a-h][1-8][a-h][1-8][qrbn]?)\b"
         matches = re.findall(uci_pattern, text.lower())

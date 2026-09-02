@@ -577,6 +577,26 @@ def test_llm_gets_one_retry_after_first_illegal_move(config_path):
     assert calls == [(False, None), (True, "a1a1")]
 
 
+def test_llm_can_resign_without_an_illegal_move_penalty(config_path):
+    service = _service()
+
+    state = service.start_game(
+        "chat-model",
+        "black",
+        config_path,
+        {"OPENROUTER_API_KEY": "key"},
+        move_provider=lambda *_args: "resign",
+    )
+
+    assert state["status"] == "finished"
+    assert state["winner"] == "human"
+    assert state["termination"] == "resignation"
+    assert state["moves"] == []
+    assert state["llm_illegal_moves"] == 0
+    assert service.game_view(state)["pgn"].startswith('[Event "Human vs LLM"]')
+    assert '[Termination "resignation"]' in service.game_view(state)["pgn"]
+
+
 def test_second_llm_illegal_move_forfeits_without_another_retry(config_path):
     service = _service()
     replies = iter(["a1a1", "e2e4", "a1a1"])

@@ -18,12 +18,18 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
+from .protocol import parse_resignation
 
 
 class OpenRouterCompletionPlayer(BaseLLMPlayer):
     """LLM player that uses OpenRouter's /completions endpoint with a PGN prompt."""
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/completions"
+    ACTION_INSTRUCTION = (
+        "Continue the chess game with exactly one SAN move, or output resign if you "
+        "independently choose to resign. Resignation is optional and should be based "
+        "only on your assessment of the position. Output no commentary.\n\n"
+    )
 
     # Logit bias workarounds (cl100k_base token IDs):
     #   - Digits '0'..'9' (15..24): suppressed so the model can't emit PGN result
@@ -105,7 +111,11 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             self._session = aiohttp.ClientSession()
         return self._session
 
-    def _build_prompt(self, board: chess.Board) -> str:
+    def _build_prompt(
+        self,
+        board: chess.Board,
+        allow_resignation: bool = False,
+    ) -> str:
         """Build a PGN-continuation prompt ending with the move-number prefix."""
         if board.move_stack:
             replay = chess.Board()
@@ -126,7 +136,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
                 body = f"{body} {next_num}."
             else:
                 body = f"{body} {next_num}..."
-            return f"{self.PGN_HEADERS}\n{body} "
+            instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
+            return f"{instruction}{self.PGN_HEADERS}\n{body} "
 
         # No move history — use FEN setup header so the model knows the position.
         fen_headers = (
@@ -138,7 +149,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             suffix = f"{fullmove}."
         else:
             suffix = f"{fullmove}... "
-        return f"{self.PGN_HEADERS}{fen_headers}\n{suffix} "
+        instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
+        return f"{instruction}{self.PGN_HEADERS}{fen_headers}\n{suffix} "
 
     # Move-number prefixes (e.g. "12", "12.", "12..."), game-result markers, and
     # annotations that may appear before the actual SAN move in a PGN continuation.
@@ -148,6 +160,9 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         """Parse the first SAN move from a completion, return UCI or None."""
         if not completion_text:
             return None
+        resignation = parse_resignation(completion_text)
+        if resignation:
+            return resignation
         tokens = re.split(r"\s+", completion_text.strip())
         for token in tokens:
             token = token.rstrip(".,;:")
@@ -182,7 +197,10 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         move_start_time = time.time()
         session = await self._ensure_session()
 
-        prompt = self._build_prompt(board)
+        prompt = self._build_prompt(
+            board,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt
         self.last_raw_response = ""
         self.last_provider = None
@@ -229,6 +247,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
                 completion_text = first.get("text", "") or ""
             last_completion = completion_text
             move_uci = self._parse_san(completion_text, board)
+            if move_uci == "resign":
+                break
             if move_uci is not None:
                 try:
                     if chess.Move.from_uci(move_uci) in board.legal_moves:

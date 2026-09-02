@@ -36,8 +36,7 @@ class GameResult(BaseModel):
     white_id: str
     black_id: str
     winner: str                 # "white", "black", "draw"
-    termination: str            # "checkmate", "stalemate", "insufficient_material",
-                                # "fifty_moves", "threefold_repetition",
+    termination: str            # "checkmate", "resignation", "stalemate",
                                 # "forfeit_illegal_move", etc.
     moves: int                  # Total half-moves (plies)
     illegal_moves_white: int

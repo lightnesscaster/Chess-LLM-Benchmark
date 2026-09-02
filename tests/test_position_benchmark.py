@@ -1372,9 +1372,12 @@ class FakeSequencePlayer:
         self.calls: list[dict] = []
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        self.allow_resignation = False
+        self.resignation_options: list[bool] = []
 
     async def select_move(self, _board, **kwargs) -> str:
         self.calls.append(kwargs)
+        self.resignation_options.append(self.allow_resignation)
         self._last_prompt_tokens, self._last_completion_tokens = self.usage.pop(0)
         self.prompt_tokens += self._last_prompt_tokens
         self.completion_tokens += self._last_completion_tokens
@@ -1404,6 +1407,7 @@ class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.retry_attempted)
         self.assertFalse(result.retry_is_legal)
         self.assertEqual(len(player.calls), 2)
+        self.assertEqual(player.resignation_options, [False, False])
 
     async def test_illegal_first_move_uses_exact_production_retry_arguments(self) -> None:
         with CORE_POSITIONS_PATH.open() as f:

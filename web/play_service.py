@@ -456,6 +456,7 @@ async def _request_model_move(
             board,
             is_retry=is_retry,
             last_move_illegal=last_illegal_move,
+            allow_resignation=True,
         )
     finally:
         await player.close()
@@ -516,6 +517,13 @@ def _apply_llm_turn(
             raise ProviderError("The LLM could not provide a move.") from error
 
         normalized = str(move_uci or "").strip().lower()
+        if normalized == "resign":
+            state.update(
+                status="finished",
+                winner="human",
+                termination="resignation",
+            )
+            return
         try:
             move = chess.Move.from_uci(normalized)
         except (ValueError, chess.InvalidMoveError):

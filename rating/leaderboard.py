@@ -166,6 +166,7 @@ class Leaderboard:
                     "win_rate": pstats.get("win_rate", 0),
                     "legal_move_rate": pstats.get("legal_move_rate", 1.0),
                     "forfeit_rate": pstats.get("forfeit_rate", 0),
+                    "resignation_rate": pstats.get("resignation_rate", 0),
                 })
 
             # Add cost data if available

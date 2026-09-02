@@ -15,6 +15,7 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
+from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
@@ -42,18 +43,25 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         board: chess.Board,
         is_retry: bool,
         last_move_illegal: Optional[str],
+        allow_resignation: bool = False,
     ) -> str:
         prompt = build_chess_prompt(
             board,
             is_retry=is_retry,
             illegal_move=last_move_illegal,
             previous_response=self.last_successful_response,
+            allow_resignation=allow_resignation,
+        )
+        output_constraint = (
+            "- Return exactly one line: <uci> or resign"
+            if allow_resignation
+            else "- Return exactly one line containing a legal UCI move"
         )
         return (
             f"{prompt}\n\n"
             "Claude Code chess constraints:\n"
             "- Do not use tools, files, web search, or external sources.\n"
-            "- Return exactly one line in this format: MOVE: <uci>"
+            f"{output_constraint}"
         )
 
     def _command(self, prompt: str) -> list[str]:
@@ -81,7 +89,7 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             "--system-prompt",
             (
                 "You are a chess move selector. Analyze only the position in the "
-                "user prompt and return exactly the requested UCI move line."
+                "user prompt and return exactly the requested response line."
             ),
             prompt,
         ]
@@ -99,7 +107,12 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         is_retry: bool = False,
         last_move_illegal: Optional[str] = None,
     ) -> str:
-        prompt = self._build_prompt(board, is_retry, last_move_illegal)
+        prompt = self._build_prompt(
+            board,
+            is_retry,
+            last_move_illegal,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt
         self.last_raw_response = ""
         started = time.time()
@@ -123,6 +136,9 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         self.completion_tokens += completion_tokens
         self.total_tokens += prompt_tokens + completion_tokens
 
+        resignation = parse_resignation(response_text)
+        if resignation:
+            return resignation
         match = re.findall(r"\b([a-h][1-8][a-h][1-8][qrbn]?)\b", response_text.lower())
         if match:
             return match[-1]

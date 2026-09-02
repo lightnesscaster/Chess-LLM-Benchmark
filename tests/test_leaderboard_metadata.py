@@ -24,6 +24,20 @@ class FakeRatingStore:
 
 
 class LeaderboardMetadataTests(unittest.TestCase):
+    def test_exposes_resignation_rate_separately_from_forfeits(self) -> None:
+        stats = SimpleNamespace(results=[], get_player_stats=lambda: {
+            "gemini-3.6-flash (medium)": {
+                "legal_move_rate": 1.0,
+                "forfeit_rate": 0.1,
+                "resignation_rate": 0.25,
+            }
+        })
+
+        entry = Leaderboard(FakeRatingStore(), stats=stats).get_leaderboard()[0]
+
+        self.assertEqual(entry["forfeit_rate"], 0.1)
+        self.assertEqual(entry["resignation_rate"], 0.25)
+
     def test_estimated_cost_and_release_date_fill_missing_game_accounting(
         self,
     ) -> None:

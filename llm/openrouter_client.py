@@ -12,6 +12,7 @@ import aiohttp
 import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
+from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
@@ -135,6 +136,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         # Clean up the response
         text = response_text.strip()
+        resignation = parse_resignation(text)
+        if resignation:
+            return resignation
 
         # Try to find a UCI move pattern
         # Standard moves: e2e4, a1h8
@@ -475,7 +479,13 @@ Your response (just the UCI move or UNCLEAR):"""
 
         # Pass previous successful response for context
         # (use last_successful_response so retries still have context from last good move)
-        prompt = build_chess_prompt(board, is_retry, last_move_illegal, self.last_successful_response)
+        prompt = build_chess_prompt(
+            board,
+            is_retry,
+            last_move_illegal,
+            self.last_successful_response,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt  # Store for debugging illegal moves
         self.last_raw_response = ""  # Clear stale data before API call
         self.last_provider = None  # Clear stale provider before API call

@@ -70,6 +70,20 @@ def test_select_move_parses_result_and_tracks_usage(player, monkeypatch):
     }
 
 
+def test_select_move_accepts_exact_resignation(player, monkeypatch):
+    monkeypatch.setattr(
+        player,
+        "_run_cli",
+        AsyncMock(return_value=(
+            "RESIGN",
+            {"prompt_tokens": 12, "completion_tokens": 1},
+        )),
+        raising=False,
+    )
+
+    assert asyncio.run(player.select_move(chess.Board())) == "resign"
+
+
 def test_cli_failure_is_reported_as_transient_provider_error(player, monkeypatch):
     monkeypatch.setattr(
         player,
