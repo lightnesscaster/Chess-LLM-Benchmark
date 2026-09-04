@@ -608,6 +608,8 @@ llms:
     model_name: "google/gemini-3.8-flash"
     api: gemini
     reasoning_effort: medium
+    web_reasoning_efforts: [low, medium, high]
+    web_default_reasoning_effort: medium
 
   # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
   # - player_id: "grok-4-fast"

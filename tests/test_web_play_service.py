@@ -3,6 +3,7 @@ import asyncio
 import importlib
 import io
 import json
+from pathlib import Path
 
 import chess.pgn
 import pytest
@@ -259,6 +260,21 @@ def test_configured_claude_models_offer_separate_effort_choices(tmp_path):
             "low", "medium", "high", "xhigh", "max",
         ]
         assert model["default_effort"] == "high"
+
+
+def test_gemini_38_web_play_offers_supported_reasoning_efforts():
+    models = _service().list_playable_models(
+        Path("config/benchmark.yaml"),
+        {"GEMINI_API_KEY": "gemini-key"},
+    )
+
+    gemini = next(model for model in models if model["id"] == "gemini-3.8-flash")
+    assert [effort["id"] for effort in gemini["efforts"]] == [
+        "low",
+        "medium",
+        "high",
+    ]
+    assert gemini["default_effort"] == "medium"
 
 
 def test_unavailable_effort_is_rejected_for_model(config_path):
