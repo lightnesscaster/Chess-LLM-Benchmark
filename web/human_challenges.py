@@ -104,6 +104,7 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
         total_moves_white=(move_count + 1) // 2,
         total_moves_black=move_count // 2,
         pgn_path="",
+        illegal_move_details=list(state.get("llm_illegal_move_details") or []) or None,
         created_at=completed_at or datetime.now(timezone.utc).isoformat(),
         game_type="human_challenge",
         human_email=str(email or "").strip().casefold(),

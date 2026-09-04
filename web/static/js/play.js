@@ -202,6 +202,41 @@
         bottomDot.className = "piece-dot piece-dot-" + bottomColor;
     }
 
+    function finishedResultDescription(scoreDetail) {
+        let title = game.winner === "human"
+            ? "You won."
+            : game.winner === "llm"
+                ? game.model_id + " won."
+                : "Draw.";
+        let reason = "";
+
+        if (game.termination === "checkmate") {
+            title = title.slice(0, -1) + " by checkmate.";
+        } else if (game.termination === "resignation") {
+            title = title.slice(0, -1) + " by resignation.";
+            reason = game.winner === "human"
+                ? game.model_id + " resigned."
+                : "The game ended by resignation.";
+        } else if (game.termination === "llm_forfeit_illegal_move") {
+            const count = Number(game.llm_illegal_moves) || 2;
+            title = "You won by forfeit.";
+            reason = game.model_id + " returned " + count + " invalid move response"
+                + (count === 1 ? "." : "s.");
+        } else if (game.termination === "stalemate") {
+            title = "Draw by stalemate.";
+        } else if (game.termination === "insufficient_material") {
+            title = "Draw by insufficient material.";
+        } else if (["threefold_repetition", "fivefold_repetition"].includes(game.termination)) {
+            title = "Draw by repetition.";
+        } else if (["fifty_moves", "seventyfive_moves"].includes(game.termination)) {
+            title = "Draw by the move-count rule.";
+        } else if (game.termination === "max_moves") {
+            title = "Draw by the game move limit.";
+        }
+
+        return [title, [reason, scoreDetail].filter(Boolean).join(" ")];
+    }
+
     function describeGame() {
         if (!game) return [
             "Start a game when you’re ready.",
@@ -218,9 +253,7 @@
             const scoreDetail = rating
                 ? snapshot + "; model rating " + rating.model_rating + ", RD " + rating.model_rating_deviation + "."
                 : snapshot;
-            if (game.winner === "human") return ["You won.", scoreDetail];
-            if (game.winner === "llm") return [game.model_id + " won.", scoreDetail];
-            return ["Draw.", scoreDetail];
+            return finishedResultDescription(scoreDetail);
         }
         if (game.turn === "human") return ["Your move.", snapshot + " at game start. Drag a piece to a legal square."];
         return ["The model is choosing a move…", snapshot + " at game start. Keep this tab open while it thinks."];

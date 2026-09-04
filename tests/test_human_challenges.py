@@ -55,6 +55,24 @@ def test_completed_game_builds_replayable_human_challenge_result():
     assert result.moves == 4
 
 
+def test_completed_game_preserves_invalid_llm_response_forensics():
+    state = _finished_state(winner="human")
+    state["termination"] = "llm_forfeit_illegal_move"
+    state["llm_illegal_move_details"] = [{
+        "attempt_number": 2,
+        "side": "black",
+        "fen": "test-fen",
+        "parsed_move": "a1a8",
+        "raw_response": "I choose a1a8.",
+        "invalid_kind": "illegal_move",
+        "is_retry": True,
+    }]
+
+    result = build_human_challenge_result(state, "player@example.com")
+
+    assert result.illegal_move_details == state["llm_illegal_move_details"]
+
+
 def test_unfinished_game_cannot_be_scored():
     state = _finished_state()
     state.update(status="active", winner=None, termination=None)

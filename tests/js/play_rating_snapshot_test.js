@@ -25,7 +25,7 @@ class FakeElement {
     }
 }
 
-function renderSnapshot(ratingPool) {
+function renderSnapshot(ratingPool, termination = "checkmate", illegalMoveCount = 0) {
     const profile = {
         username: "Some_Player",
         rating: 1847,
@@ -41,7 +41,8 @@ function renderSnapshot(ratingPool) {
         san_moves: [],
         status: "finished",
         winner: "human",
-        termination: "checkmate",
+        termination,
+        llm_illegal_moves: illegalMoveCount,
         turn: "finished",
         human_profile: profile,
         rating_result: {
@@ -86,8 +87,16 @@ function renderSnapshot(ratingPool) {
 
 const classicalElements = renderSnapshot("classical");
 assert.equal(classicalElements.get("bottom-player-name").textContent, "Some_Player (you)");
+assert.equal(classicalElements.get("game-status").textContent, "You won by checkmate.");
 assert.match(classicalElements.get("game-detail").textContent, /Classical 1847, RD 73/);
 assert.match(classicalElements.get("game-detail").textContent, /model rating 1512, RD 168/);
 
 const legacyElements = renderSnapshot();
 assert.match(legacyElements.get("game-detail").textContent, /Rapid 1847, RD 73/);
+
+const forfeitElements = renderSnapshot("classical", "llm_forfeit_illegal_move", 2);
+assert.equal(forfeitElements.get("game-status").textContent, "You won by forfeit.");
+assert.match(
+    forfeitElements.get("game-detail").textContent,
+    /reasoner returned 2 invalid move responses/,
+);

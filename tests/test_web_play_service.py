@@ -626,6 +626,62 @@ def test_second_llm_illegal_move_forfeits_without_another_retry(config_path):
     assert len(calls) == 3
 
 
+def test_invalid_llm_responses_are_logged_and_kept_for_forensics(config_path, caplog):
+    service = _service()
+    attempts = iter([
+        {
+            "move": "e2e5",
+            "raw_response": "I choose e2e5.",
+        },
+        {
+            "move": "I cannot decide",
+            "raw_response": "I cannot decide",
+        },
+    ])
+
+    state = service.start_game(
+        "chat-model",
+        "black",
+        config_path,
+        {"OPENROUTER_API_KEY": "key"},
+        move_provider=lambda *_args: next(attempts),
+        human_profile={
+            "username": "Some_Player",
+            "rating": 1847,
+            "rating_deviation": 73,
+            "provisional": False,
+            "rating_pool": "classical",
+        },
+    )
+
+    assert state["termination"] == "llm_forfeit_illegal_move"
+    assert state["llm_illegal_move_details"] == [
+        {
+            "attempt_number": 1,
+            "side": "white",
+            "fen": chess.STARTING_FEN,
+            "parsed_move": "e2e5",
+            "raw_response": "I choose e2e5.",
+            "invalid_kind": "illegal_move",
+            "is_retry": False,
+        },
+        {
+            "attempt_number": 2,
+            "side": "white",
+            "fen": chess.STARTING_FEN,
+            "parsed_move": "i cannot decide",
+            "raw_response": "I cannot decide",
+            "invalid_kind": "unparseable_response",
+            "is_retry": True,
+        },
+    ]
+    warning_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert state["game_id"] in warning_text
+    assert '"model_id": "chat-model"' in warning_text
+    assert '"raw_response": "I choose e2e5."' in warning_text
+    assert '"invalid_kind": "unparseable_response"' in warning_text
+
+
 def test_provider_error_does_not_mutate_game_state(config_path):
     service = _service()
     state = service.start_game(
@@ -658,17 +714,19 @@ def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
     class FakeGeminiPlayer:
         def __init__(self, **kwargs):
             captured.update(kwargs)
+            self.last_raw_response = ""
 
         async def close(self):
             captured["closed"] = True
 
-    async def fake_request(_player, _board, **_kwargs):
+    async def fake_request(player, _board, **_kwargs):
+        player.last_raw_response = "I choose e2e4."
         return "e2e4"
 
     monkeypatch.setattr(service, "GeminiPlayer", FakeGeminiPlayer)
     monkeypatch.setattr(service, "request_llm_move", fake_request)
 
-    move = asyncio.run(service._request_model_move(
+    attempt = asyncio.run(service._request_model_move(
         {
             "player_id": "gemini-direct",
             "model_name": "google/gemini-direct",
@@ -680,7 +738,10 @@ def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
         {"GEMINI_API_KEY": "gemini-key"},
     ))
 
-    assert move == "e2e4"
+    assert attempt == {
+        "move": "e2e4",
+        "raw_response": "I choose e2e4.",
+    }
     assert captured["model_name"] == "gemini-direct"
     assert captured["closed"] is True
 
@@ -738,7 +799,7 @@ def test_subscription_cli_provider_constructs_configured_player(
     monkeypatch.setattr(service, class_name, FakeCLIPlayer, raising=False)
     monkeypatch.setattr(service, "request_llm_move", fake_request)
 
-    move = asyncio.run(service._request_model_move(
+    attempt = asyncio.run(service._request_model_move(
         dict({
             "player_id": f"{backend}-model",
             "model_name": model_name,
@@ -751,7 +812,7 @@ def test_subscription_cli_provider_constructs_configured_player(
         credential,
     ))
 
-    assert move == "e2e4"
+    assert attempt == {"move": "e2e4", "raw_response": ""}
     assert captured["model_name"] == model_name
     assert captured["reasoning_effort"] == expected_effort
     assert captured.get("subscription_only", False) is (backend == "codex")

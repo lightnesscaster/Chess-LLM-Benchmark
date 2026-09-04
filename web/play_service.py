@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import logging
 import os
 import re
 import uuid
@@ -27,6 +28,10 @@ from llm import (
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 
 
+logger = logging.getLogger(__name__)
+MAX_INVALID_RESPONSE_CHARS = 1000
+
+
 class ConfigurationError(ValueError):
     """Raised when the web play providers or model selection are invalid."""
 
@@ -39,7 +44,8 @@ class ProviderError(RuntimeError):
     """Raised when the selected LLM cannot return a move."""
 
 
-MoveProvider = Callable[[dict, chess.Board, bool, str | None], str | None]
+MoveAttempt = str | None | Mapping[str, object]
+MoveProvider = Callable[[dict, chess.Board, bool, str | None], MoveAttempt]
 
 EFFORT_LABELS = {
     "default": "Auto",
@@ -397,7 +403,7 @@ async def _request_model_move(
     is_retry: bool,
     last_illegal_move: str | None,
     environ: Mapping[str, str],
-) -> str | None:
+) -> dict[str, str | None]:
     backend = _web_backend(model)
     common = {
         "player_id": model["player_id"],
@@ -451,13 +457,17 @@ async def _request_model_move(
         )
 
     try:
-        return await request_llm_move(
+        move = await request_llm_move(
             player,
             board,
             is_retry=is_retry,
             last_move_illegal=last_illegal_move,
             allow_resignation=True,
         )
+        return {
+            "move": move,
+            "raw_response": str(getattr(player, "last_raw_response", "") or ""),
+        }
     finally:
         await player.close()
 
@@ -468,7 +478,7 @@ def _default_move_provider(
     is_retry: bool,
     last_illegal_move: str | None,
     environ: Mapping[str, str],
-) -> str | None:
+) -> dict[str, str | None]:
     try:
         return asyncio.run(
             _request_model_move(
@@ -499,7 +509,7 @@ def _apply_llm_turn(
         is_retry = last_illegal_move is not None
         try:
             if provider is None:
-                move_uci = _default_move_provider(
+                attempt = _default_move_provider(
                     model,
                     board.copy(stack=True),
                     is_retry,
@@ -507,7 +517,7 @@ def _apply_llm_turn(
                     environ,
                 )
             else:
-                move_uci = provider(
+                attempt = provider(
                     copy.deepcopy(model),
                     board.copy(stack=True),
                     is_retry,
@@ -516,6 +526,12 @@ def _apply_llm_turn(
         except TransientAPIError as error:
             raise ProviderError("The LLM could not provide a move.") from error
 
+        if isinstance(attempt, Mapping):
+            move_uci = attempt.get("move")
+            raw_response = str(attempt.get("raw_response") or "")
+        else:
+            move_uci = attempt
+            raw_response = str(attempt or "")
         normalized = str(move_uci or "").strip().lower()
         if normalized == "resign":
             state.update(
@@ -536,6 +552,29 @@ def _apply_llm_turn(
             return
 
         state["llm_illegal_moves"] += 1
+        if len(raw_response) > MAX_INVALID_RESPONSE_CHARS:
+            raw_response = raw_response[:MAX_INVALID_RESPONSE_CHARS] + "…"
+        detail = {
+            "attempt_number": state["llm_illegal_moves"],
+            "side": "white" if board.turn == chess.WHITE else "black",
+            "fen": board.fen(),
+            "parsed_move": normalized,
+            "raw_response": raw_response,
+            "invalid_kind": "unparseable_response" if move is None else "illegal_move",
+            "is_retry": is_retry,
+        }
+        state.setdefault("llm_illegal_move_details", []).append(detail)
+        logger.warning(
+            "Invalid web-play LLM response: %s",
+            json.dumps(
+                {
+                    "game_id": state.get("game_id"),
+                    "model_id": state.get("model_id"),
+                    **detail,
+                },
+                sort_keys=True,
+            ),
+        )
         if state["llm_illegal_moves"] >= 2:
             state.update(
                 status="finished",
@@ -657,6 +696,9 @@ def game_view(state: dict) -> dict:
         "termination": state.get("termination"),
         "last_move": state.get("moves", [])[-1] if state.get("moves") else None,
         "llm_illegal_moves": state.get("llm_illegal_moves", 0),
+        "llm_illegal_move_details": copy.deepcopy(
+            state.get("llm_illegal_move_details", [])
+        ),
         "game_id": state.get("game_id"),
         "started_at": state.get("started_at"),
         "human_profile": copy.deepcopy(state.get("human_profile")),
