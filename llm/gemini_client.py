@@ -162,8 +162,12 @@ class GeminiPlayer(BaseLLMPlayer):
         # Build config
         # Gemini 3.6 and later reject deprecated sampling parameters, so send
         # only its supported thinking configuration.
-        supports_sampling_parameters = not self.model_name.startswith(
-            "gemini-3.6"
+        gemini_3_minor = re.match(
+            r"^gemini-3\.(\d+)(?:-|$)",
+            self.model_name,
+        )
+        supports_sampling_parameters = not (
+            gemini_3_minor and int(gemini_3_minor.group(1)) >= 6
         )
         config_kwargs = {}
         if supports_sampling_parameters:
