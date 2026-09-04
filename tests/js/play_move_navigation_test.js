@@ -5,6 +5,7 @@ const vm = require("node:vm");
 class FakeElement {
     constructor(tag = "div") {
         this.tag = tag;
+        this.tagName = tag.toUpperCase();
         this.children = [];
         this.className = "";
         this.dataset = {};
@@ -46,6 +47,7 @@ for (const id of [
     "top-player-name", "bottom-player-name", "top-player-dot", "bottom-player-dot",
     "copy-fen", "copy-pgn", "download-pgn", "export-feedback", "fen-value",
 ]) elements.set(id, new FakeElement());
+elements.set("keyboard-move", new FakeElement("input"));
 
 const app = new FakeElement();
 app.dataset = {csrfToken: "csrf", moveUrl: "/move", startUrl: "/start"};
@@ -97,6 +99,8 @@ const windowObject = {
     },
 };
 const documentObject = {
+    listeners: {},
+    addEventListener(type, listener) { this.listeners[type] = listener; },
     createElement(tag) { return new FakeElement(tag); },
     getElementById(id) { return elements.get(id) || null; },
 };
@@ -117,6 +121,33 @@ const documentObject = {
 
     assert.equal(boardPositions.at(-1), finalFen);
     assert.equal(elements.get("move-position").textContent, "Live · 2 / 2");
+
+    const pressKey = (key, target = new FakeElement(), modifiers = {}) => {
+        let prevented = false;
+        documentObject.listeners.keydown({
+            key,
+            target,
+            preventDefault() { prevented = true; },
+            ...modifiers,
+        });
+        return prevented;
+    };
+
+    assert.equal(pressKey("ArrowLeft"), true);
+    assert.equal(boardPositions.at(-1), "after-e2e4");
+    assert.equal(elements.get("move-position").textContent, "1 / 2");
+    assert.equal(pressKey("ArrowRight"), true);
+    assert.equal(boardPositions.at(-1), finalFen);
+    assert.equal(elements.get("move-position").textContent, "Live · 2 / 2");
+    assert.equal(pressKey("ArrowUp"), true);
+    assert.equal(boardPositions.at(-1), "start-fen");
+    assert.equal(pressKey("ArrowDown"), true);
+    assert.equal(boardPositions.at(-1), finalFen);
+
+    assert.equal(pressKey("ArrowLeft", elements.get("keyboard-move")), false);
+    assert.equal(boardPositions.at(-1), finalFen);
+    assert.equal(pressKey("ArrowLeft", new FakeElement(), {metaKey: true}), false);
+    assert.equal(boardPositions.at(-1), finalFen);
 
     const firstMove = elements.get("move-list").children[0].children[1];
     firstMove.listeners.click();

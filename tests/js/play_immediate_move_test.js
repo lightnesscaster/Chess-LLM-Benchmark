@@ -89,6 +89,7 @@ const windowObject = {
     prompt() { return "queen"; },
 };
 const documentObject = {
+    addEventListener() {},
     createElement() { return new FakeElement(); },
     getElementById(id) { return elements.get(id) || null; },
 };

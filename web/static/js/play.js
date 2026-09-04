@@ -456,6 +456,22 @@
     if (movePreviousButton) movePreviousButton.addEventListener("click", () => navigateToPly(currentViewedPly() - 1));
     if (moveNextButton) moveNextButton.addEventListener("click", () => navigateToPly(currentViewedPly() + 1));
     if (moveLiveButton) moveLiveButton.addEventListener("click", () => navigateToPly(totalPlies()));
+    document.addEventListener("keydown", (event) => {
+        const tagName = event.target && event.target.tagName;
+        const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(tagName)
+            || Boolean(event.target && event.target.isContentEditable);
+        if (!game || isTyping || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+
+        const destinations = {
+            ArrowLeft: currentViewedPly() - 1,
+            ArrowRight: currentViewedPly() + 1,
+            ArrowUp: 0,
+            ArrowDown: totalPlies(),
+        };
+        if (!(event.key in destinations)) return;
+        event.preventDefault();
+        navigateToPly(destinations[event.key]);
+    });
 
     if (setupForm) {
         if (modelSelect) modelSelect.addEventListener("change", syncEffortChoices);

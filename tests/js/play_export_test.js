@@ -64,6 +64,7 @@ class FakeElement {
 
     const createdLinks = [];
     const documentObject = {
+        addEventListener() {},
         body: new FakeElement(),
         createElement(tag) {
             const element = new FakeElement();

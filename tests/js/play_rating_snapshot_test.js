@@ -67,6 +67,7 @@ function renderSnapshot(ratingPool, termination = "checkmate", illegalMoveCount 
     elements.set("initial-game", initialNode);
 
     const documentObject = {
+        addEventListener() {},
         createElement() { return new FakeElement(); },
         getElementById(id) { return elements.get(id) || null; },
     };
