@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "claude-sonnet-4 (thinking)"]
+[Black "maia-1900"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. f3 e5 7. Ndb5 axb5 8. Nxb5 Be7 9. Nxd6+ Bxd6 10. Qxd6 Qxd6 11. Be3 Qb4+ 12. c3 Qxb2 13. Bb5+ Bd7 14. Bxd7+ Nbxd7 15. Rb1 Qxb1+ 16. Kf2 Qxh1 17. Bd4 Rxa2+ 18. Ke3 exd4+ 19. cxd4 Qe1+ 20. Kf4 Qd2+ 21. Kg3 Qxg2+ 0-1

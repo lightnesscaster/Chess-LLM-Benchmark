@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "random-bot"]
+[Black "gpt-5.1-chat"]
+[Result "1/2-1/2"]
+[Termination "stalemate"]
+
+1. Nf3 Nf6 2. a4 d5 3. Ra3 c5 4. c4 dxc4 5. g4 c3 6. Bh3 cxb2 7. a5 bxc1=Q 8. a6 Qxd1+ 9. Kxd1 Nxg4 10. d4 Nxf2+ 11. Kc1 Nxh1 12. Ra1 Ng3 13. Kb2 Nxe2 14. Nbd2 Nxd4 15. Rd1 Nxf3 16. Kb3 Nxd2+ 17. Ka3 Nxa6 18. Bf5 Nb3 19. Bd3 Qa5+ 20. Kb2 Qb4 21. Ka2 Be6 22. Rh1 Qd4 23. Rf1 Qa4+ 24. Kb2 Qa2+ 25. Kxa2 Na1+ 26. Kb2 Nb3 27. Be2 Rb8 28. Ra1 c4 29. Ka3 Nxa1 30. Bxc4 Bxc4 31. h3 Nc5 32. Kb4 Nab3 33. Ka3 Na4 34. h4 Nc3 35. h5 Nc1 36. h6 Nb5+ 37. Ka4 Nb3 38. Kb4 Nc7 39. hxg7 Na1 40. g8=N Rxg8 41. Kc3 Bg7+ 42. Kd2 Bb3 43. Ke3 Nc2+ 44. Ke4 Nb5 45. Kf5 Be6+ 46. Ke4 Nc3+ 47. Kd3 Rc8 48. Kd2 Ne4+ 49. Kd1 Nc3+ 50. Kd2 Ne4+ 51. Kd1 Nc3+ 52. Kd2 Rc7 53. Kd3 Nb4+ 54. Ke3 Nc2+ 55. Kf4 Ne2+ 56. Kf3 Ned4+ 57. Kg2 Ne3+ 58. Kg1 Ne2+ 59. Kh2 Be5+ 60. Kh1 Rg2 1/2-1/2

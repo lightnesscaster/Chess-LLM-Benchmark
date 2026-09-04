@@ -3,85 +3,132 @@
 {% block title %}{{ game.white }} vs {{ game.black }} - LLM Chess Benchmark{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <a href="/games" class="back-link">&larr; Back to Games</a>
-    <h1>{{ game.white }} vs {{ game.black }}</h1>
-    <p class="subtitle">
-        {% if game.winner == 'white' %}
-        <span class="result-badge white-win">1-0</span> White wins
-        {% elif game.winner == 'black' %}
-        <span class="result-badge black-win">0-1</span> Black wins
-        {% else %}
-        <span class="result-badge draw">½-½</span> Draw
-        {% endif %}
-        by {{ game.termination }}
-    </p>
-</div>
-
-<div class="game-viewer">
-    <div class="board-section">
-        <div id="board" style="width: 400px"></div>
-        <div class="board-controls">
-            <button id="btn-start" title="Go to start">&lt;&lt;</button>
-            <button id="btn-prev" title="Previous move">&lt;</button>
-            <button id="btn-next" title="Next move">&gt;</button>
-            <button id="btn-end" title="Go to end">&gt;&gt;</button>
-            <button id="btn-flip" title="Flip board">Flip</button>
-        </div>
-        <div class="move-indicator">
-            Move: <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+<div class="game-page">
+    <div class="game-header">
+        <a href="/games" class="back-link">&larr; Back to Games</a>
+        <div class="game-title-row">
+            <h1>{{ game.white }} <span class="vs">vs</span> {{ game.black }}</h1>
+            <div class="game-result">
+                {% if game.winner == 'white' %}
+                <span class="result-badge white-win">1-0</span>
+                <span class="result-text">White wins by {{ game.termination }}</span>
+                {% elif game.winner == 'black' %}
+                <span class="result-badge black-win">0-1</span>
+                <span class="result-text">Black wins by {{ game.termination }}</span>
+                {% else %}
+                <span class="result-badge draw">½-½</span>
+                <span class="result-text">Draw by {{ game.termination }}</span>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <div class="info-section">
-        <div class="game-info">
-            <h3>Game Info</h3>
-            <table class="info-table">
-                <tr>
-                    <td>White:</td>
-                    <td>{{ game.white }}</td>
-                </tr>
-                <tr>
-                    <td>Black:</td>
-                    <td>{{ game.black }}</td>
-                </tr>
-                <tr>
-                    <td>Date:</td>
-                    <td>{{ game.created_at[:10] if game.created_at else 'N/A' }}</td>
-                </tr>
-                <tr>
-                    <td>Result:</td>
-                    <td>{% if game.winner == 'white' %}1-0{% elif game.winner == 'black' %}0-1{% else %}½-½{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>Termination:</td>
-                    <td>{{ game.termination }}</td>
-                </tr>
-                <tr>
-                    <td>Moves:</td>
-                    <td>{{ ((game.moves|default(0)) + 1) // 2 }}</td>
-                </tr>
-                <tr>
-                    <td>Illegal (White):</td>
-                    <td>{{ game.illegal_moves_white|default(0) }}</td>
-                </tr>
-                <tr>
-                    <td>Illegal (Black):</td>
-                    <td>{{ game.illegal_moves_black|default(0) }}</td>
-                </tr>
-            </table>
+    <div class="game-layout">
+        <!-- Left: Board and Analysis -->
+        <div class="board-column">
+            <div class="board-wrapper">
+                <div id="board"></div>
+            </div>
+
+            <div class="board-toolbar">
+                <div class="nav-controls">
+                    <button id="btn-start" class="nav-btn" title="Go to start" aria-label="Go to start">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6 1.41-1.41M6 6h2v12H6V6z"/></svg>
+                    </button>
+                    <button id="btn-prev" class="nav-btn" title="Previous move" aria-label="Previous move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                    </button>
+                    <span class="move-counter" aria-live="polite">
+                        <span id="current-move">0</span> / <span id="total-moves">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+                    </span>
+                    <button id="btn-next" class="nav-btn" title="Next move" aria-label="Next move">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    </button>
+                    <button id="btn-end" class="nav-btn" title="Go to end" aria-label="Go to end">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6-1.41 1.41M16 6h2v12h-2V6z"/></svg>
+                    </button>
+                </div>
+                <button id="btn-flip" class="flip-btn" title="Flip board" aria-label="Flip board">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                    Flip
+                </button>
+            </div>
+
+            <button id="btn-analysis" class="analysis-btn" aria-expanded="false" aria-controls="analysis-panel">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
+                <span>Stockfish Analysis</span>
+            </button>
+
+            <div id="analysis-panel" class="analysis-panel" style="display: none;" aria-live="polite">
+                <div class="analysis-header">
+                    <span class="analysis-title">Stockfish 16</span>
+                    <span id="analysis-depth" class="analysis-depth"></span>
+                </div>
+                <div class="analysis-content">
+                    <div id="eval-bar-container" class="eval-bar-container">
+                        <div id="eval-bar" class="eval-bar">
+                            <div id="eval-bar-fill" class="eval-bar-fill"></div>
+                        </div>
+                        <span id="eval-score" class="eval-score">0.00</span>
+                    </div>
+                    <div id="analysis-lines" class="analysis-lines">
+                        <div class="analysis-loading">Click to enable analysis</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="moves-list">
-            <h3>Moves</h3>
-            <div id="moves-container" class="moves-container"></div>
+        <!-- Right: Game Info and Moves -->
+        <div class="info-column">
+            <div class="game-meta">
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">White</span>
+                        <a href="/games?model={{ game.white | urlencode }}" class="meta-value player-white player-link">{{ game.white }}</a>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Black</span>
+                        <a href="/games?model={{ game.black | urlencode }}" class="meta-value player-black player-link">{{ game.black }}</a>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Date</span>
+                        <span class="meta-value">{{ game.created_at[:10] if game.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Moves</span>
+                        <span class="meta-value">{{ ((game.moves|default(0)) + 1) // 2 }}</span>
+                    </div>
+                    {% if game.illegal_moves_white|default(0) > 0 or game.illegal_moves_black|default(0) > 0 %}
+                    <div class="meta-item illegal">
+                        <span class="meta-label">Illegal Moves</span>
+                        <span class="meta-value">W: {{ game.illegal_moves_white|default(0) }} / B: {{ game.illegal_moves_black|default(0) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="moves-panel">
+                <div class="panel-header">
+                    <h3>Moves</h3>
+                </div>
+                <div id="moves-container" class="moves-container"></div>
+            </div>
+
+            <div class="pgn-panel">
+                <button class="pgn-toggle" id="pgn-toggle" aria-expanded="false" aria-controls="pgn-content">
+                    <span>PGN</span>
+                    <svg class="pgn-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                </button>
+                <div class="pgn-content" id="pgn-content" style="display: none;">
+                    <pre class="pgn-text">{{ game.pgn }}</pre>
+                    <button class="copy-btn" id="copy-pgn" title="Copy PGN" aria-label="Copy PGN to clipboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
-
-<div class="pgn-section">
-    <h3>PGN</h3>
-    <pre class="pgn-text">{{ game.pgn }}</pre>
 </div>
 {% endblock %}
 
@@ -97,10 +144,57 @@ document.addEventListener('DOMContentLoaded', function() {
     let positions = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']; // Starting position
     let moves = [];
 
+    // Analysis state
+    let analysisEnabled = false;
+    let analysisCache = {};
+    let stockfish = null;
+    let currentAnalysisFen = null;
+    let currentAnalysisId = 0;
+    let analysisLines = [{}, {}, {}]; // Store 3 lines of analysis
+
+    // Cleanup worker on page unload
+    window.addEventListener('beforeunload', () => {
+        if (stockfish) {
+            stockfish.terminate();
+            stockfish = null;
+        }
+    });
+
     const board = Chessboard('board', {
         position: 'start',
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     });
+
+    // PGN toggle functionality
+    const pgnToggle = document.getElementById('pgn-toggle');
+    const pgnContent = document.getElementById('pgn-content');
+    pgnToggle.addEventListener('click', () => {
+        const isExpanded = pgnContent.style.display !== 'none';
+        pgnContent.style.display = isExpanded ? 'none' : 'block';
+        pgnToggle.classList.toggle('expanded', !isExpanded);
+        pgnToggle.setAttribute('aria-expanded', !isExpanded);
+    });
+
+    // Copy PGN functionality
+    document.getElementById('copy-pgn').addEventListener('click', () => {
+        const btn = document.getElementById('copy-pgn');
+        const originalHTML = btn.innerHTML;
+
+        navigator.clipboard.writeText(pgn).then(() => {
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        }).catch((err) => {
+            console.error('Clipboard error:', err);
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Failed';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        });
+    });
+
+    // Check if chess.js loaded
+    if (typeof Chess === 'undefined') {
+        movesContainer.innerHTML = '<p style="color: var(--accent);">Error: Chess library failed to load. Please refresh the page.</p>';
+        return;
+    }
 
     try {
         // Parse PGN to extract moves
@@ -175,6 +269,312 @@ document.addEventListener('DOMContentLoaded', function() {
         movesContainer.innerHTML = '<p style="color: #e94560;">Error: Unable to parse PGN. The game moves may be corrupted.</p>';
     }
 
+    // Stockfish Web Worker initialization
+    async function initStockfish() {
+        if (stockfish) return;
+
+        const linesContainer = document.getElementById('analysis-lines');
+        linesContainer.innerHTML = '<div class="analysis-loading">Loading Stockfish...</div>';
+
+        // Load Stockfish 16 from CDN (single WASM file, simple structure)
+        const STOCKFISH_BASE = 'https://unpkg.com/stockfish@16.0.0/src/';
+        const STOCKFISH_JS_URL = STOCKFISH_BASE + 'stockfish-nnue-16-single.js';
+
+        let scriptBlob;
+        try {
+            const response = await fetch(STOCKFISH_JS_URL);
+            if (!response.ok) throw new Error('Failed to fetch Stockfish');
+            let scriptText = await response.text();
+
+            // Replace relative WASM/NNUE paths with absolute CDN URLs
+            scriptText = scriptText.replace(
+                /(["'`])([a-zA-Z0-9_-]+\.(wasm|nnue))\1/g,
+                (match, quote, filename) => `${quote}${STOCKFISH_BASE}${filename}${quote}`
+            );
+            console.log('Patched WASM/NNUE paths to use CDN');
+
+            scriptBlob = new Blob([scriptText], { type: 'application/javascript' });
+        } catch (error) {
+            console.error('Failed to download Stockfish:', error);
+            linesContainer.innerHTML = '<div class="analysis-error">Failed to download engine</div>';
+            throw error;
+        }
+
+        const blobUrl = URL.createObjectURL(scriptBlob);
+
+        return new Promise((resolve, reject) => {
+            // Timeout for initialization (15 seconds)
+            let initTimeout = setTimeout(() => {
+                currentAnalysisFen = null;
+                analysisLines = [{}, {}, {}];
+                if (stockfish) {
+                    stockfish.terminate();
+                    stockfish = null;
+                }
+                URL.revokeObjectURL(blobUrl);
+                linesContainer.innerHTML = '<div class="analysis-error">Engine load timeout. Try refreshing.</div>';
+                reject(new Error('Stockfish initialization timeout'));
+            }, 15000);
+
+            try {
+                // Create worker from patched Stockfish script
+                stockfish = new Worker(blobUrl);
+                URL.revokeObjectURL(blobUrl);
+
+                stockfish.onmessage = function(event) {
+                    const line = event.data;
+
+                    // Handle UCI initialization
+                    if (line === 'uciok') {
+                        stockfish.postMessage('setoption name MultiPV value 3');
+                        stockfish.postMessage('isready');
+                    } else if (line === 'readyok') {
+                        clearTimeout(initTimeout);
+                        resolve();
+                    } else {
+                        handleStockfishOutput(line);
+                    }
+                };
+
+                stockfish.onerror = function(error) {
+                    clearTimeout(initTimeout);
+                    console.error('Stockfish error:', error);
+                    linesContainer.innerHTML = '<div class="analysis-error">Failed to load engine</div>';
+                    currentAnalysisFen = null;
+                    analysisLines = [{}, {}, {}];
+                    if (stockfish) {
+                        stockfish.terminate();
+                        stockfish = null;
+                    }
+                    reject(error);
+                };
+
+                // Initialize UCI
+                stockfish.postMessage('uci');
+            } catch (error) {
+                clearTimeout(initTimeout);
+                console.error('Failed to create worker:', error);
+                linesContainer.innerHTML = '<div class="analysis-error">Browser not supported</div>';
+                URL.revokeObjectURL(blobUrl);
+                reject(error);
+            }
+        });
+    }
+
+    // Parse Stockfish UCI output
+    function handleStockfishOutput(line) {
+        if (!line.startsWith('info depth')) return;
+        if (line.includes('currmove')) return; // Skip current move updates
+
+        // Parse the info line
+        const depthMatch = line.match(/depth (\d+)/);
+        const multipvMatch = line.match(/multipv (\d+)/);
+        const scoreMatch = line.match(/score (cp|mate) (-?\d+)/);
+        const pvMatch = line.match(/ pv (.+)/);
+
+        if (!depthMatch || !scoreMatch || !pvMatch) return;
+
+        const depth = parseInt(depthMatch[1]);
+        const multipv = multipvMatch ? parseInt(multipvMatch[1]) : 1;
+        const scoreType = scoreMatch[1];
+        const scoreValue = parseInt(scoreMatch[2]);
+        const pvUci = pvMatch[1].split(' ');
+
+        // Validate multipv is in expected range (1-3)
+        if (multipv < 1 || multipv > 3) return;
+
+        // Check this is still the current analysis (race condition prevention)
+        if (!currentAnalysisFen) return;
+        const { fen, id } = currentAnalysisFen;
+        if (id !== currentAnalysisId) return; // Stale result, ignore
+
+        // Convert UCI moves to SAN using chess.js
+        let tempChess;
+        try {
+            tempChess = new Chess(fen);
+        } catch (e) {
+            console.error('Invalid FEN:', fen);
+            return;
+        }
+
+        const pvSan = [];
+        for (const uci of pvUci.slice(0, 10)) {
+            try {
+                const move = tempChess.move(uci, { sloppy: true });
+                if (move) {
+                    pvSan.push(move.san);
+                } else {
+                    break;
+                }
+            } catch (e) {
+                break;
+            }
+        }
+
+        // Build line data - convert score to White's perspective
+        // Stockfish returns score from side-to-move's perspective
+        const isBlackToMove = fen.split(' ')[1] === 'b';
+        const flipScore = isBlackToMove ? -1 : 1;
+
+        let score_cp = null;
+        let mate = null;
+        let score_text = '';
+
+        if (scoreType === 'mate') {
+            mate = scoreValue * flipScore;
+            score_text = mate > 0 ? `M${mate}` : `-M${Math.abs(mate)}`;
+        } else {
+            score_cp = scoreValue * flipScore;
+            score_text = (score_cp / 100).toFixed(2);
+            if (score_cp > 0) score_text = '+' + score_text;
+        }
+
+        // Store in analysis lines (multipv is 1-indexed)
+        analysisLines[multipv - 1] = {
+            score_cp,
+            mate,
+            score_text,
+            pv: pvSan,
+            depth
+        };
+
+        // Update display with current analysis
+        displayAnalysis({
+            depth,
+            lines: analysisLines.filter(l => l.pv && l.pv.length > 0)
+        });
+
+        // Cache when we reach target depth
+        if (depth >= 22 && multipv === 1) {
+            analysisCache[fen] = {
+                depth,
+                lines: analysisLines.filter(l => l.pv && l.pv.length > 0).map(l => ({...l}))
+            };
+        }
+    }
+
+    function updateEvalBar(score_cp, mate) {
+        const evalBarFill = document.getElementById('eval-bar-fill');
+        const evalScore = document.getElementById('eval-score');
+
+        let percentage, displayScore;
+
+        if (mate !== null && mate !== undefined) {
+            // Mate score
+            percentage = mate > 0 ? 100 : 0;
+            displayScore = mate > 0 ? `M${mate}` : `-M${Math.abs(mate)}`;
+        } else if (score_cp !== null && score_cp !== undefined) {
+            // Convert centipawns to percentage
+            const capped = Math.max(-1000, Math.min(1000, score_cp));
+            percentage = 50 + (capped / 20);
+            percentage = Math.max(0, Math.min(100, percentage));
+            displayScore = (score_cp / 100).toFixed(2);
+            if (score_cp > 0) displayScore = '+' + displayScore;
+        } else {
+            percentage = 50;
+            displayScore = '0.00';
+        }
+
+        evalBarFill.style.height = percentage + '%';
+        evalScore.textContent = displayScore;
+    }
+
+    function displayAnalysis(analysis) {
+        const linesContainer = document.getElementById('analysis-lines');
+        const depthSpan = document.getElementById('analysis-depth');
+
+        if (!analysis || !analysis.lines || analysis.lines.length === 0) {
+            return; // Keep showing loading or previous state
+        }
+
+        depthSpan.textContent = `Depth ${analysis.depth}`;
+
+        // Update eval bar with best line score
+        const bestLine = analysis.lines[0];
+        updateEvalBar(bestLine.score_cp, bestLine.mate);
+
+        // Display lines
+        let html = '';
+        analysis.lines.forEach((line) => {
+            const pvText = line.pv.join(' ');
+            html += `
+                <div class="analysis-line">
+                    <span class="line-score">${line.score_text}</span>
+                    <span class="line-pv">${pvText}</span>
+                </div>
+            `;
+        });
+
+        linesContainer.innerHTML = html;
+    }
+
+    async function runAnalysis() {
+        if (!analysisEnabled || !stockfish) return;
+
+        const fen = positions[currentPosition];
+
+        // Check cache first
+        if (analysisCache[fen]) {
+            displayAnalysis(analysisCache[fen]);
+            return;
+        }
+
+        // Stop previous analysis
+        stockfish.postMessage('stop');
+
+        // Increment analysis ID to invalidate stale results
+        currentAnalysisId++;
+
+        // Reset analysis lines
+        analysisLines = [{}, {}, {}];
+        currentAnalysisFen = { fen, id: currentAnalysisId };
+
+        // Show loading state
+        const linesContainer = document.getElementById('analysis-lines');
+        linesContainer.innerHTML = '<div class="analysis-loading">Analyzing...</div>';
+        document.getElementById('analysis-depth').textContent = '';
+
+        // Start new analysis
+        stockfish.postMessage('position fen ' + fen);
+        stockfish.postMessage('go depth 25');
+    }
+
+    async function toggleAnalysis() {
+        const panel = document.getElementById('analysis-panel');
+        const btn = document.getElementById('btn-analysis');
+
+        if (!analysisEnabled) {
+            // Enable analysis
+            panel.style.display = 'block';
+            btn.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
+
+            try {
+                await initStockfish();
+                analysisEnabled = true;
+                runAnalysis();
+            } catch (error) {
+                console.error('Failed to initialize Stockfish:', error);
+                panel.style.display = 'none';
+                btn.classList.remove('active');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        } else {
+            // Disable analysis
+            analysisEnabled = false;
+            panel.style.display = 'none';
+            btn.classList.remove('active');
+            btn.setAttribute('aria-expanded', 'false');
+            currentAnalysisFen = null;
+            analysisLines = [{}, {}, {}];
+            if (stockfish) {
+                stockfish.postMessage('stop');
+                stockfish.terminate();
+                stockfish = null;
+            }
+        }
+    }
+
     // Update display
     function updateDisplay() {
         board.position(positions[currentPosition]);
@@ -189,6 +589,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentEl.classList.add('current');
                 currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
+        }
+
+        // Run analysis if enabled
+        if (analysisEnabled) {
+            runAnalysis();
         }
     }
 
@@ -221,6 +626,8 @@ document.addEventListener('DOMContentLoaded', function() {
         flipped = !flipped;
         board.orientation(flipped ? 'black' : 'white');
     });
+
+    document.getElementById('btn-analysis').addEventListener('click', toggleAnalysis);
 
     // Click on moves to navigate
     movesContainer.addEventListener('click', (e) => {

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Cost vs Rating - LLM Chess Benchmark{% endblock %}
+
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+    /* Override container max-width for cost page */
+    main.container {
+        max-width: 1400px !important;
+    }
+
+    .cost-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 0.5rem;
+    }
+
+    .cost-title {
+        text-align: center;
+    }
+
+    .cost-title h2 {
+        font-size: 1.75rem;
+        margin: 0 0 0.35rem 0;
+        color: var(--text-primary);
+    }
+
+    .cost-title p {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .cost-container {
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #cost-chart {
+        width: 100% !important;
+        height: 700px;
+    }
+
+    /* Ensure Plotly chart fills container */
+    #cost-chart .plotly-graph-div {
+        width: 100% !important;
+    }
+
+    #cost-chart .main-svg {
+        width: 100% !important;
+    }
+
+    /* Move modebar to top-left */
+    #cost-chart .modebar {
+        left: 10px !important;
+        right: auto !important;
+    }
+
+    #cost-chart .modebar-group {
+        background: rgba(22, 33, 62, 0.9) !important;
+    }
+
+    .cost-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: 1rem 1.25rem;
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        align-items: center;
+    }
+
+    .legend-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-section-title {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .legend-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .legend-diamond {
+        width: 10px;
+        height: 10px;
+        transform: rotate(45deg);
+        flex-shrink: 0;
+    }
+
+    .legend-line {
+        width: 20px;
+        height: 3px;
+        background-color: #e94560;
+        border-radius: 2px;
+        border-style: dotted;
+        flex-shrink: 0;
+    }
+
+    .legend-divider {
+        width: 1px;
+        height: 24px;
+        background-color: var(--border);
+    }
+
+    .cost-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .export-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-nav">
+        <a href="/" class="page-nav-link">Leaderboard</a>
+        <a href="/games" class="page-nav-link">Games</a>
+        <a href="/timeline" class="page-nav-link">Timeline</a>
+        <h1 class="active">Cost</h1>
+        <a href="/methodology" class="page-nav-link">Methodology</a>
+    </div>
+</div>
+
+<div class="cost-header">
+    <div class="cost-title">
+        <h2>Rating vs Cost per Game</h2>
+        <p>Higher and further left is better (higher rating, lower cost)</p>
+    </div>
+</div>
+
+<div class="cost-container">
+    {{ chart_html|safe }}
+</div>
+
+<div class="cost-legend">
+    <div class="legend-section">
+        <span class="legend-line"></span>
+        <span>Efficiency Frontier</span>
+    </div>
+
+    <div class="legend-divider"></div>
+
+    <div class="legend-section">
+        <span class="legend-dot" style="background-color: #9CA3AF;"></span>
+        <span>Non-Reasoning</span>
+        <span class="legend-diamond" style="background-color: #9CA3AF;"></span>
+        <span>Reasoning</span>
+    </div>
+
+    <div class="legend-divider"></div>
+
+    <div class="legend-items">
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #D97706;"></span>
+            <span>Anthropic</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #10B981;"></span>
+            <span>OpenAI</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #3B82F6;"></span>
+            <span>Google</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #8B5CF6;"></span>
+            <span>DeepSeek</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #EC4899;"></span>
+            <span>Meta</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #6B7280;"></span>
+            <span>xAI</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #14B8A6;"></span>
+            <span>Qwen</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background-color: #EAB308;"></span>
+            <span>Moonshot</span>
+        </div>
+    </div>
+</div>
+
+<div class="cost-actions">
+    <button id="download-png" class="export-btn" title="Download as PNG">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download PNG
+    </button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var chartDiv = document.getElementById('cost-chart');
+    var resizeTimeout = null;
+
+    function resizeChart() {
+        if (chartDiv && window.Plotly) {
+            Plotly.Plots.resize(chartDiv);
+        }
+    }
+
+    function debouncedResize() {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        resizeTimeout = setTimeout(resizeChart, 150);
+    }
+
+    // Resize on load
+    window.addEventListener('load', resizeChart);
+
+    // Debounced resize on window resize
+    window.addEventListener('resize', debouncedResize);
+
+    // Download PNG button handler
+    var downloadBtn = document.getElementById('download-png');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            if (chartDiv && window.Plotly) {
+                Plotly.downloadImage(chartDiv, {
+                    format: 'png',
+                    width: 1200,
+                    height: 800,
+                    scale: 2,
+                    filename: 'llm-chess-cost'
+                });
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

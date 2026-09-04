@@ -1,0 +1,137 @@
+{
+  "experiment_id": "supplemental-predictor-lofo-v1",
+  "frozen_at": "2026-07-17T22:24:21Z",
+  "status": "frozen-before-first-successful-analysis",
+  "amended_at": "2026-07-17T22:32:44Z",
+  "amendment": "After the isolated target refresh but before the first successful analyzer run, added the omitted historical-blunder input hashes needed to reproduce the fixed production baseline and made the predeclared beta-binomial retry shrinkage prior explicit. Cohort rules, candidates, metrics, thresholds, and outputs were unchanged.",
+  "production_effect": "none",
+  "model_call_count": 0,
+  "objective": "Test whether game-like, continuation-CPL, first-answer illegality, and retry evidence improve robust rating prediction beyond the fixed production predictor.",
+  "inputs": {
+    "config": {
+      "path": "config/benchmark.yaml",
+      "sha256": "f39a1cb4c87a7cb46dedad7facaa7f6a663262121e2dd2a81adbe9a8fa208863"
+    },
+    "core_positions": {
+      "path": "position_benchmark/panels/core_equal_50.json",
+      "sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3"
+    },
+    "core_results": {
+      "path": "position_benchmark/results/core.json",
+      "sha256": "cac52babf0891b5eba385a61ede1f8b9b8bff4feda9a1f830377cc9eabaa9cf7"
+    },
+    "game_like_positions": {
+      "path": "position_benchmark/panels/game_like_48.json",
+      "sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17"
+    },
+    "game_like_results": {
+      "path": "position_benchmark/results/game_like.json",
+      "sha256": "dc00def4ef6c943ae54ad12c30efa875c43935824f3d5d885292f7682a4a7e84"
+    },
+    "blunder_positions": {
+      "path": "position_benchmark/panels/optional_blunder_25.json",
+      "sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+    },
+    "blunder_results": {
+      "path": "position_benchmark/results/optional_blunder.json",
+      "sha256": "2a15100368eeb79828d11d375772d2237210a77eaa4efd77c14c6d8a3697f15b"
+    },
+    "continuation_results": {
+      "path": "position_benchmark/results/stability.json",
+      "sha256": "843a206709bb0926ef8977d0f6e66726dea8d9578ca9376816adbd41c4852dc5"
+    },
+    "game_results_source": "production Firestore read by the guarded validation-only recalculation"
+  },
+  "validation_target": {
+    "method": "Replay production game results with the current benchmark prediction as the prior mean and RD 300.",
+    "benchmark_seed_rd": 300,
+    "output": "position_benchmark/validation/2026-07-17-supplemental-predictor-rd300.json",
+    "production_rating_store_write": false,
+    "circularity_warning": "The target still shares the benchmark prior mean; higher RD reduces but does not eliminate circularity."
+  },
+  "cohort_rules": {
+    "common": [
+      "Current 50-row core at Stockfish depth at least 30",
+      "At least 8 production games in the RD-300 validation target",
+      "Validation games_rd at most 250",
+      "Exclude fixed engine anchors"
+    ],
+    "game_like": "Common rules plus all 48 current game-like rows at Stockfish depth at least 30.",
+    "continuation": "Common rules plus a ready stratified-v2 continuation record with 8 selected starts, at least 24 scored/attempted model moves, score depth at least 10, and zero API errors.",
+    "all_panels": "Intersection of the game-like and continuation cohorts."
+  },
+  "family_grouping": {
+    "rule": "Longest known model-line prefix, with gpt-5.6-luna, gpt-5.6-terra, and gpt-5.6-sol treated as separate families; reasoning levels of one line remain in the same family.",
+    "purpose": "Every learned prediction for a configuration is trained without any configuration from its model-line family."
+  },
+  "fixed_candidates": [
+    "core-only production formula",
+    "current game-like 150-Elo-trigger hard downside cap",
+    "current full production predictor",
+    "continuous game-like deadband: min(core, game_like + 150), followed by the analogous continuation-cap deadband"
+  ],
+  "learned_candidates": {
+    "method": "Outer leave-one-family-out residual ridge around the fixed production prediction; ridge strength is selected only inside each outer training fold by inner leave-one-family-out MAE.",
+    "alpha_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "retry_failure_beta_prior": {
+      "alpha": 1.0,
+      "beta": 9.0
+    },
+    "feature_sets": {
+      "game_like_aggregate": [
+        "game_like_prediction_minus_core_prediction"
+      ],
+      "game_like_categories": [
+        "game_like_prediction_minus_core_prediction",
+        "log1p capped mean CPL in advantage_conversion",
+        "log1p capped mean CPL in defense",
+        "log1p capped mean CPL in quiet_equal",
+        "log1p capped mean CPL in tactical_equal"
+      ],
+      "legality": [
+        "game_like_prediction_minus_core_prediction",
+        "pooled first-answer illegal rate across available automatic panels",
+        "conditional retry failure rate with beta-binomial shrinkage"
+      ],
+      "continuation": [
+        "game_like_prediction_minus_core_prediction",
+        "pooled first-answer illegal rate across all automatic panels",
+        "conditional retry failure rate with beta-binomial shrinkage",
+        "log1p continuation mean CPL"
+      ]
+    }
+  },
+  "metrics": {
+    "primary": "Unweighted MAE against the RD-300 validation rating",
+    "secondary": [
+      "RMSE",
+      "mean signed error",
+      "maximum absolute error",
+      "family-level MAE",
+      "inverse-variance-weighted MAE using validation RD",
+      "family-cluster bootstrap probability of improving MAE"
+    ],
+    "bootstrap_resamples": 5000,
+    "bootstrap_seed": 1729
+  },
+  "research_recommendation_gate": {
+    "minimum_configurations": 30,
+    "minimum_families": 8,
+    "minimum_mae_improvement_fraction": 0.1,
+    "minimum_rmse_improvement_fraction": 0.05,
+    "minimum_family_win_fraction": 0.5,
+    "maximum_single_family_mae_worsening": 100,
+    "minimum_bootstrap_improvement_probability": 0.9,
+    "effect_if_passed": "Recommend a separately frozen independent validation; do not change production.",
+    "effect_if_failed": "Retain current production predictor and use feature results only to prioritize future acquisition."
+  },
+  "outputs": {
+    "analysis": "position_benchmark/validation/2026-07-17-supplemental-predictor-analysis.json",
+    "report": "position_benchmark/validation/2026-07-17-supplemental-predictor-analysis.md"
+  }
+}

@@ -2,19 +2,19 @@
 
 # Benchmark settings
 benchmark:
-  games_vs_anchor_per_color: 10   # Games per LLM vs each anchor (as white and black)
-  games_vs_llm_per_color: 5       # Games per LLM pair (as each color)
+  games_vs_anchor_per_color: 5    # ~5-6 games per LLM vs anchor (3 as each color)
+  games_vs_llm_per_color: 2
   max_moves: 200                   # Maximum half-moves per game
-  max_concurrent: 4                # Maximum concurrent games
+  max_concurrent: 10               # Maximum concurrent games
+  rating_threshold: 600            # Only pair players within this rating difference
+  max_cost: 10.0                   # Maximum cost budget in dollars (stops when exceeded)
 
 # Engine anchors (fixed ratings)
 engines:
-  # Random move bot - floor anchor
   - player_id: "random-bot"
     type: random
     rating: 400
 
-  # Maia engines trained to play at specific human Elo levels
   - player_id: "maia-1100"
     type: maia
     lc0_path: "/opt/homebrew/bin/lc0"
@@ -29,14 +29,658 @@ engines:
     rating: 1816
     nodes: 1
 
-# LLM players
+  - player_id: "eubos"
+    type: uci
+    path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
+    rating: 2211
+    initial_time: 900
+    increment: 10
+
+  - player_id: "survival-bot"
+    type: survival
+    rating: 1200
+    opening_book_path: "data/openings/gm2001.bin"
+    book_draw_threshold: 0.10
+    base_depth: 12
+    blunder_threshold: 3.0
+    anchor: false  # Rating is updated like LLMs, not fixed
+    ghost: true    # Opponents don't get rating/RD updates from games against survival-bot
+
+# Admin-only subscription models. These never enter benchmark scheduling and
+# are displayed only after the deployed CLI successfully probes model access.
+web_play_models:
+  - player_id: "claude-fable-5.1"
+    model_name: "anthropic/claude-fable-5-1"
+    web_api: claude_code
+    web_model_name: claude-fable-5-1
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+  - player_id: "claude-fable-5"
+    model_name: "anthropic/claude-fable-5"
+    web_api: claude_code
+    web_model_name: claude-fable-5
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+  - player_id: "claude-opus-5"
+    model_name: "anthropic/claude-opus-5"
+    web_api: claude_code
+    web_model_name: opus
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+  - player_id: "claude-sonnet-5"
+    model_name: "anthropic/claude-sonnet-5"
+    web_api: claude_code
+    web_model_name: sonnet
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+  - player_id: "claude-haiku-4.5"
+    model_name: "anthropic/claude-haiku-4.5"
+    web_api: claude_code
+    web_model_name: haiku
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+# LLM players - budget models only
 llms:
+  - player_id: "gpt-5.1-chat"
+    model_name: "openai/gpt-5.1-chat"
+    temperature: 0.0
+  # gpt-5-chat (228)
+  - player_id: "gpt-5-chat"
+    model_name: "openai/gpt-5-chat"
+    temperature: 0.0
+
+  - player_id: "gpt-5.2-chat"
+    model_name: "openai/gpt-5.2-chat"
+    temperature: 0.0
+
+  - player_id: "gpt-5 (no thinking)"
+    model_name: "openai/gpt-5-chat"
+    temperature: 0.0
+    reasoning: false
+
+  - player_id: "gpt-5.1 (no thinking)"
+    model_name: "openai/gpt-5.1-chat"
+    temperature: 0.0
+    reasoning: false
+
+  - player_id: "gpt-5.2 (no thinking)"
+    model_name: "openai/gpt-5.2-chat"
+    temperature: 0.0
+    reasoning: false
+
+  - player_id: "gpt-5.4 (no thinking)"
+    model_name: "openai/gpt-5.4"
+    temperature: 0.0
+    reasoning: false
+
+  - player_id: "gpt-5.5 (no thinking)"
+    model_name: "openai/gpt-5.5"
+    temperature: 0.0
+    reasoning: false
+
+  - player_id: "gpt-5.4 (minimal)"
+    model_name: "openai/gpt-5.4"
+    temperature: 0.0
+    reasoning_effort: minimal
+
+  - player_id: "gpt-5.4 (high)"
+    model_name: "openai/gpt-5.4"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.5 (low)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.5 (medium)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.5 (high)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.5 (xhigh)"
+    model_name: "openai/gpt-5.5"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-5.6-sol (low)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-sol (medium)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-sol (high)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-sol (xhigh)"
+    model_name: "openai/gpt-5.6-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-5.6-terra (low)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-terra (medium)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-terra (high)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-terra (xhigh)"
+    model_name: "openai/gpt-5.6-terra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-5.6-luna (low)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-5.6-luna (medium)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-5.6-luna (high)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-5.6-luna (xhigh)"
+    model_name: "openai/gpt-5.6-luna"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
+  # gemini-2.5-flash (no thinking) (223)
+  - player_id: "gemini-2.5-flash (no thinking)"
+    model_name: "google/gemini-2.5-flash"
+    temperature: 0.0
+
+  # gemini-3.1-flash-lite-preview
+  - player_id: "gemini-3.1-flash-lite-preview"
+    model_name: "google/gemini-3.1-flash-lite-preview"
+    temperature: 0.0
+
+  # gemini-2.0-flash-001 (180)
+  - player_id: "gemini-2.0-flash-001"
+    model_name: "google/gemini-2.0-flash-001"
+    temperature: 0.0
+
+  # glm-4.6 (no thinking) (-62)
+  - player_id: "glm-4.6 (no thinking)"
+    model_name: "z-ai/glm-4.6"
+    temperature: 0.0
+
+  # deepseek-v3.2 (no thinking) (-107) 
+  - player_id: "deepseek-v3.2 (no thinking)"
+    model_name: "deepseek/deepseek-v3.2"
+    temperature: 0.0
+    timeout: 1200
+
+  # deepseek-v4-pro (no thinking)
+  - player_id: "deepseek-v4-pro (no thinking)"
+    model_name: "deepseek/deepseek-v4-pro"
+    temperature: 0.0
+    reasoning: false
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
+    timeout: 1200
+
+  # deepseek-v4-flash (no thinking)
+  - player_id: "deepseek-v4-flash (no thinking)"
+    model_name: "deepseek/deepseek-v4-flash"
+    temperature: 0.0
+    reasoning: false
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  # deepseek-v4-flash-0731 (no thinking) - re-post-trained 2026-07-31 checkpoint
+  - player_id: "deepseek-v4-flash-0731 (no thinking)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
+    temperature: 0.0
+    reasoning: false
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  # deepseek-v3.2-exp (no thinking) (-107)
+  - player_id: "deepseek-v3.2-exp (no thinking)"
+    model_name: "deepseek/deepseek-v3.2-exp"
+    temperature: 0.0
+    timeout: 1200
+
+  # kimi-k2-0905 (-240)
+  - player_id: "kimi-k2-0905"
+    model_name: "moonshotai/kimi-k2-0905"
+    temperature: 0.0
+    timeout: 1200
+
+  # deepseek-v3.1-terminus (no thinking) (-350)
+  - player_id: "deepseek-v3.1-terminus (no thinking)"
+    model_name: "deepseek/deepseek-v3.1-terminus"
+    temperature: 0.0
+    timeout: 1200
+
+  # kimi-k2 (-388)
+  - player_id: "kimi-k2"
+    model_name: "moonshotai/kimi-k2"
+    temperature: 0.0
+    timeout: 1200
+
+  - player_id: "kimi-k2.5 (no thinking)"
+    model_name: "moonshotai/kimi-k2.5"
+    temperature: 0.0
+    reasoning: false
+    timeout: 1200
+
+  # qwen3-235b-a22b-2507 (-453)
+  - player_id: "qwen3-235b-a22b-2507"
+    model_name: "qwen/qwen3-235b-a22b-2507"
+    temperature: 0.0
+
+  # deepseek-chat-v3-0324 (-453)
+  - player_id: "deepseek-chat-v3-0324"
+    model_name: "deepseek/deepseek-chat-v3-0324"
+    temperature: 0.0
+    timeout: 1200
+
+  # mistral-medium-3 (-453)
+  - player_id: "mistral-medium-3"
+    model_name: "mistralai/mistral-medium-3"
+    temperature: 0.0
+
+  # gpt-3.5-turbo-0613 (-453)
+  - player_id: "gpt-3.5-turbo-0613"
+    model_name: "openai/gpt-3.5-turbo-0613"
+    temperature: 0.0
+
+  # gpt-3.5-turbo-instruct - OpenAI, released 2023-09-18 (text-completion model, uses PGN prompt)
+  - player_id: "gpt-3.5-turbo-instruct"
+    model_name: "openai/gpt-3.5-turbo-instruct"
+    temperature: 0.0
+    api: completion
+
+  # deepseek-chat-v3.1 (no thinking) (-453)
+  - player_id: "deepseek-chat-v3.1 (no thinking)"
+    model_name: "deepseek/deepseek-chat-v3.1"
+    temperature: 0.0
+    timeout: 1200
+
+  # gpt-5-mini (minimal) (-453)
+  - player_id: "gpt-5-mini (minimal)"
+    model_name: "openai/gpt-5-mini"
+    temperature: 0.0
+    reasoning_effort: minimal
+
+  # llama-3.3-70b-instruct (-453)
+  - player_id: "llama-3.3-70b-instruct"
+    model_name: "meta-llama/llama-3.3-70b-instruct"
+    temperature: 0.0
+
+  # gpt-3.5-turbo (-624)
+  - player_id: "gpt-3.5-turbo"
+    model_name: "openai/gpt-3.5-turbo"
+    temperature: 0.0
+
+  # llama-4-maverick (-704)
   - player_id: "llama-4-maverick"
     model_name: "meta-llama/llama-4-maverick"
     temperature: 0.0
-    max_tokens: 10
 
-  - player_id: "deepseek-v3"
-    model_name: "deepseek/deepseek-chat-v3-0324"
+  # mimo-v2-flash - Xiaomi, released 2025-12-10, updated 2026-02-06
+  - player_id: "mimo-v2-flash (no thinking)"
+    model_name: "xiaomi/mimo-v2-flash"
     temperature: 0.0
-    max_tokens: 10
+    unavailable: true
+    unavailable_reason: "OpenRouter returned API failures for all 50 acquisition-core positions on 2026-07-23"
+
+  # mimo-v2-flash (medium)
+  - player_id: "mimo-v2-flash (medium)"
+    model_name: "xiaomi/mimo-v2-flash"
+    reasoning_effort: medium
+
+  # gemma-4-31b-it (no thinking) - hybrid reasoning model, disabled here
+  - player_id: "gemma-4-31b-it (no thinking)"
+    model_name: "google/gemma-4-31b-it"
+    temperature: 0.0
+    reasoning: false
+
+  # gemma-4-31b-it (high)
+  - player_id: "gemma-4-31b-it (high)"
+    model_name: "google/gemma-4-31b-it"
+    temperature: 0.0
+    reasoning_effort: high
+
+  # kat-coder-pro - KwaiKat, released 2025-11-10, free
+  - player_id: "kat-coder-pro"
+    model_name: "kwaipilot/kat-coder-pro:free"
+    temperature: 0.0
+
+  # --- Reasoning models ---
+
+  # DeepSeek V4 supports non-thinking, high, and max reasoning.
+  # OpenRouter's xhigh effort maps to DeepSeek's max effort.
+  - player_id: "deepseek-v4-pro (high)"
+    model_name: "deepseek/deepseek-v4-pro"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-pro (max)"
+    model_name: "deepseek/deepseek-v4-pro"
+    temperature: 0.0
+    reasoning_effort: xhigh
+    provider_order: ["deepseek", "siliconflow"]
+    provider_ignore: ["gmicloud", "io.net"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash (high)"
+    model_name: "deepseek/deepseek-v4-flash"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash (max)"
+    model_name: "deepseek/deepseek-v4-flash"
+    temperature: 0.0
+    reasoning_effort: xhigh
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash-0731 (high)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4-flash-0731 (max)"
+    model_name: "deepseek/deepseek-v4-flash-0731"
+    temperature: 0.0
+    reasoning_effort: xhigh
+    provider_order: ["deepseek", "novita", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-r1-distill-qwen-32b"
+    model_name: "deepseek/deepseek-r1-distill-qwen-32b"
+    temperature: 0.0
+    reasoning: true
+    timeout: 1200
+
+  - player_id: "grok-3-mini"
+    model_name: "x-ai/grok-3-mini"
+    temperature: 0.0
+    reasoning: true
+
+  - player_id: "glm-4.6 (thinking)"
+    model_name: "z-ai/glm-4.6"
+    temperature: 0.0
+    reasoning: true
+
+  - player_id: "gpt-oss-120b (high)"
+    model_name: "openai/gpt-oss-120b"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["DeepInfra"]
+
+  - player_id: "gpt-oss-120b (medium)"
+    model_name: "openai/gpt-oss-120b"
+    temperature: 0.0
+    reasoning_effort: medium
+    provider_order: ["DeepInfra"]
+
+  - player_id: "gpt-oss-120b (low)"
+    model_name: "openai/gpt-oss-120b"
+    temperature: 0.0
+    reasoning_effort: low
+    provider_order: ["DeepInfra"]
+
+  # # deepseek-v3.2-exp (thinking) - is too slow/unreliable to run
+  # - player_id: "deepseek-v3.2-exp (thinking)"
+  #   model_name: "deepseek/deepseek-v3.2-exp"
+  #   temperature: 0.0
+  #   reasoning: true
+  #   timeout: 1200
+
+  # # kimi-k2-thinking - too slow/unreliable. Uses 2,000-7,000+ completion tokens
+  # # even on early opening moves (move 2-3) where top models use 30-375 tokens.
+  # # Effort parameter (low/medium) doesn't help much — seems ignored or ineffective.
+  # - player_id: "kimi-k2-thinking"
+  #   model_name: "moonshotai/kimi-k2-thinking"
+  #   temperature: 0.0
+  #   timeout: 1200
+
+  # gpt-5.2 (high)
+  - player_id: "gpt-5.2 (high)"
+    model_name: "openai/gpt-5.2"
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "deepseek-v3.2 (thinking)"
+    model_name: "deepseek/deepseek-v3.2"
+    temperature: 0.0
+    reasoning: true
+    timeout: 1200
+
+  # gemini-2.5-pro (default reasoning - OpenRouter default when no effort specified)
+  - player_id: "gemini-2.5-pro (default)"
+    model_name: "google/gemini-2.5-pro"
+    temperature: 0.0
+    reasoning: true
+    timeout: 1200
+
+  # gemini-2.5-pro (minimal) - reasoning is mandatory, minimal maps to ~6500 tokens
+  # via OpenRouter (10% of max_tokens), not 1024 as expected. Use reasoning_max_tokens
+  # for precise control.
+  # - player_id: "gemini-2.5-pro (minimal)"
+  #   model_name: "google/gemini-2.5-pro"
+  #   temperature: 0.0
+  #   reasoning_effort: minimal
+  #   timeout: 1200
+
+  # gemini-3-pro-preview is deprecated and no longer has OpenRouter endpoints.
+  # - player_id: "gemini-3-pro-preview (high)"
+  #   model_name: "google/gemini-3-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: high
+  #
+  # - player_id: "gemini-3-pro-preview (medium)"
+  #   model_name: "google/gemini-3-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: medium
+
+  # gemini-3-flash-preview (reasoning model)
+  - player_id: "gemini-3-flash-preview (high)"
+    model_name: "google/gemini-3-flash-preview"
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gemini-3-flash-preview (minimal)"
+    model_name: "google/gemini-3-flash-preview"
+    temperature: 0.0
+    reasoning_effort: minimal
+
+  - player_id: "gemini-3-flash-preview (medium)"
+    model_name: "google/gemini-3-flash-preview"
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gemini-3-flash-preview (low)"
+    model_name: "google/gemini-3-flash-preview"
+    temperature: 0.0
+    reasoning_effort: low
+
+  # gemini-3.5-flash (reasoning model)
+  - player_id: "gemini-3.5-flash (medium)"
+    model_name: "google/gemini-3.5-flash"
+    temperature: 0.0
+    reasoning_effort: medium
+
+  # gemini-3.6-flash (reasoning model; direct Gemini API)
+  - player_id: "gemini-3.6-flash (medium)"
+    model_name: "google/gemini-3.6-flash"
+    api: gemini
+    reasoning_effort: medium
+
+  # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
+  # - player_id: "grok-4-fast"
+  #   model_name: "x-ai/grok-4-fast"
+  #   temperature: 0.0
+  #   reasoning: true
+
+  # grok-4.1-fast
+  - player_id: "grok-4.1-fast"
+    model_name: "x-ai/grok-4.1-fast"
+    temperature: 0.0
+    unavailable: true
+    unavailable_reason: "Deprecated endpoint; all 50 acquisition-core positions failed on 2026-07-23"
+
+  # grok-4.3 (medium) - xAI, released 2026-04-30
+  - player_id: "grok-4.3 (medium)"
+    model_name: "x-ai/grok-4.3"
+    temperature: 0.0
+    reasoning_effort: medium
+    timeout: 1200
+
+  # grok-4.3 (high) - xAI, released 2026-04-30
+  - player_id: "grok-4.3 (high)"
+    model_name: "x-ai/grok-4.3"
+    temperature: 0.0
+    reasoning_effort: high
+    timeout: 1200
+
+  # gemini-3.1-pro-preview (high) - disabled temporarily due to frozen games
+  # - player_id: "gemini-3.1-pro-preview (high)"
+  #   model_name: "google/gemini-3.1-pro-preview"
+  #   temperature: 0.0
+  #   reasoning_effort: high
+  #   timeout: 1200
+
+  # claude-opus-4.5 (high)
+  - player_id: "claude-opus-4.5 (high)"
+    model_name: "anthropic/claude-opus-4.5"
+    web_hidden: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  # claude-opus-4.6 (no thinking)
+  - player_id: "claude-opus-4.6 (no thinking)"
+    model_name: "anthropic/claude-opus-4.6"
+    web_hidden: true
+    temperature: 0.0
+    reasoning: false
+
+  # claude-opus-4.6 (medium)
+  - player_id: "claude-opus-4.6 (medium)"
+    model_name: "anthropic/claude-opus-4.6"
+    web_hidden: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  # claude-opus-4.7 (no thinking) - Anthropic, released 2026-04-16
+  - player_id: "claude-opus-4.7 (no thinking)"
+    model_name: "anthropic/claude-opus-4.7"
+    web_hidden: true
+    temperature: 0.0
+    reasoning: false
+
+
+  # gemini-3.1-pro-preview (medium)
+  - player_id: "gemini-3.1-pro-preview (medium)"
+    model_name: "google/gemini-3.1-pro-preview"
+    temperature: 0.0
+    reasoning_effort: medium
+    timeout: 1200
+
+  # gpt-5 (medium)
+  - player_id: "gpt-5 (medium)"
+    model_name: "openai/gpt-5"
+    temperature: 0.0
+    reasoning_effort: medium
+
+  # gpt-5.1 (high)
+  - player_id: "gpt-5.1 (high)"
+    model_name: "openai/gpt-5.1"
+    temperature: 0.0
+    reasoning_effort: high

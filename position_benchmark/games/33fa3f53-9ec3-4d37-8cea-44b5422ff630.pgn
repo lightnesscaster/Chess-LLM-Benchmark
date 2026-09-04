@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "maia-1100"]
+[Black "grok-4-fast"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Ba4 h6 9. Nf3 e4 10. Ne5 Qd4 11. Nxc6 Qxa4 12. Nxa5 Qxa5 13. O-O Bc5 14. Nc3 Bf5 15. d3 exd3 16. cxd3 Bxf2+ 17. Rxf2 Bg4 18. Qe1+ Kd8 19. Bd2 Re8 20. Ne4 Nxe4 21. Bxa5+ Kd7 22. dxe4 Rf8 23. Rd1+ Bxd1 24. Qxd1+ Kc6 25. Rc2+ Kb5 26. Qd5+ Ka6 27. Rc6+ Kb7 28. Qd7+ Kb8 29. Qc7# 1-0

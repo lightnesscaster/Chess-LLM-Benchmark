@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.16"]
+[Round "1"]
+[White "gpt-oss-120b (medium)"]
+[Black "random-bot"]
+[Result "1/2-1/2"]
+[Termination "max_moves"]
+
+1. e4 Nh6 2. Nf3 b5 3. Bxb5 Bb7 4. O-O Bxe4 5. Nd4 Bxg2 6. Kxg2 Nc6 7. Bxc6 e6 8. Bxa8 Ba3 9. Nxa3 Qxa8+ 10. Kg1 a5 11. Nf5 e5 12. Nxh6 Ke7 13. Nf5+ Kf6 14. Nxg7 Qc6 15. Nh5+ Ke7 16. Nf6 Rc8 17. Ng8+ Kf8 18. d3 h5 19. Qxh5 Ra8 20. Qxf7+ Kxf7 21. Nh6+ Kf6 22. Ng8+ Kg6 23. Ne7+ Kg7 24. Nxc6 Rc8 25. Bh6+ Kxh6 26. Ne7 Rh8 27. Nf5+ Kg5 28. h4+ Rxh4 29. f4+ Kh5 30. Ng7+ Kh6 31. Kf2 Rg4 32. Nf5+ Kg6 33. Ke2 Kxf5 34. fxe5+ Kg6 35. Rf6+ Kg5 36. Rf5+ Kh6 37. Rf6+ Rg6 38. Rxg6+ Kxg6 39. Rg1+ Kh6 40. Rg6+ Kh7 41. Ra6 d6 42. exd6 Kh6 43. dxc7+ Kg7 44. Rxa5 Kg8 45. c8=Q+ Kf7 46. Ra7+ Kg6 47. Qc6+ Kf5 48. Qc5+ Kg4 49. Qh5+ Kxh5 50. Ra5+ Kg4 51. Ra4+ Kg3 52. Rg4+ Kh2 53. Rh4+ Kg2 54. Rg4+ Kh3 55. Rg3+ Kxg3 56. Ke3 Kg2 57. c3 Kf1 58. b3 Kg2 59. Kd2 Kh1 60. Nc4 Kg2 61. Ne3+ Kf3 62. a4 Kf2 63. Nd1+ Kf3 64. a5 Kg2 65. Ne3+ Kg3 66. Nf5+ Kf4 67. a6 Kf3 68. Kc1 Kf4 69. Kc2 Kg4 70. a7 Kh5 71. a8=Q Kg6 72. Qg8+ Kf6 73. Qg6+ Ke5 74. Qe6+ Kxe6 75. Nd4+ Ke7 76. Nf5+ Kd8 77. d4 Kd7 78. Kd2 Kc8 79. Nd6+ Kd7 80. Nb5 Kc8 81. Nd6+ Kb8 82. Nc8 Kb7 83. Nd6+ Ka8 84. Nc8 Kb7 85. Nd6+ Kb8 86. Nb5 Kb7 87. Nd6+ Kc7 88. d5 Kd7 89. Nc8 Kd8 90. d6 Ke8 91. d7+ Kd8 92. Kd3 Kxd7 93. Nb6+ Kc6 94. b4 Kxb6 95. Kc4 Ka6 96. b5+ Ka7 97. Kc5 Kb7 98. b6 Ka8 99. Kb5 Kb8 100. Kc6 Kc8 1/2-1/2

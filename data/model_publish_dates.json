@@ -1,0 +1,602 @@
+{
+  "gemini-3-flash-preview (high)": {
+    "model_id": "google/gemini-3-flash-preview",
+    "created_timestamp": 1766014361,
+    "created_date": "2025-12-17"
+  },
+  "gemini-3-flash-preview (minimal)": {
+    "model_id": "google/gemini-3-flash-preview",
+    "created_timestamp": 1766014361,
+    "created_date": "2025-12-17"
+  },
+  "gemini-3-flash-preview (medium)": {
+    "model_id": "google/gemini-3-flash-preview",
+    "created_timestamp": 1766014361,
+    "created_date": "2025-12-17"
+  },
+  "gemini-3.5-flash (medium)": {
+    "model_id": "google/gemini-3.5-flash",
+    "created_timestamp": 1779148800,
+    "created_date": "2026-05-19"
+  },
+  "gemini-3.6-flash (medium)": {
+    "model_id": "google/gemini-3.6-flash",
+    "created_timestamp": 1784592000,
+    "created_date": "2026-07-21",
+    "display_cost_per_game": 0.174,
+    "display_cost_estimated": true,
+    "display_cost_basis": "Extrapolated from 31 retained full-token medium-thinking calls to 343 model turns across 15 games"
+  },
+  "o3": {
+    "model_id": "openai/o3",
+    "created_timestamp": 1744823457,
+    "created_date": "2025-04-16"
+  },
+  "gpt-5.1 (high)": {
+    "model_id": "openai/gpt-5.1",
+    "created_timestamp": 1763060305,
+    "created_date": "2025-11-13"
+  },
+  "grok-4-fast": {
+    "model_id": "x-ai/grok-4-fast",
+    "created_timestamp": 1758240090,
+    "created_date": "2025-09-18"
+  },
+  "gemini-2.5-pro (default)": {
+    "model_id": "google/gemini-2.5-pro",
+    "created_timestamp": 1750169544,
+    "created_date": "2025-06-17"
+  },
+  "claude-opus-4.5 (high)": {
+    "model_id": "anthropic/claude-opus-4.5",
+    "created_timestamp": 1764010580,
+    "created_date": "2025-11-24"
+  },
+  "claude-opus-4.6 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.6",
+    "created_timestamp": 1770249600,
+    "created_date": "2026-02-05"
+  },
+  "claude-opus-4.6 (medium)": {
+    "model_id": "anthropic/claude-opus-4.6",
+    "created_timestamp": 1770249600,
+    "created_date": "2026-02-05"
+  },
+  "claude-opus-4.7 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.7",
+    "created_timestamp": 1776297600,
+    "created_date": "2026-04-16"
+  },
+  "gpt-oss-120b (medium)": {
+    "model_id": "openai/gpt-oss-120b",
+    "created_timestamp": 1754414231,
+    "created_date": "2025-08-05"
+  },
+  "gpt-5 (medium)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
+  },
+  "deepseek-r1-0528 (high)": {
+    "model_id": "deepseek/deepseek-r1-0528",
+    "created_timestamp": 1748455170,
+    "created_date": "2025-05-28"
+  },
+  "deepseek-chat-v3.1 (thinking)": {
+    "model_id": "deepseek/deepseek-chat-v3.1",
+    "created_timestamp": 1755779628,
+    "created_date": "2025-08-21"
+  },
+  "gemini-2.5-flash (thinking)": {
+    "model_id": "google/gemini-2.5-flash",
+    "created_timestamp": 1750172488,
+    "created_date": "2025-06-17"
+  },
+  "gpt-oss-120b (high)": {
+    "model_id": "openai/gpt-oss-120b",
+    "created_timestamp": 1754414231,
+    "created_date": "2025-08-05"
+  },
+  "gpt-5.1-chat": {
+    "model_id": "openai/gpt-5.1-chat",
+    "created_timestamp": 1763060302,
+    "created_date": "2025-11-13"
+  },
+  "o4-mini-high": {
+    "model_id": "openai/o4-mini-high",
+    "created_timestamp": 1744824212,
+    "created_date": "2025-04-16"
+  },
+  "gemini-2.5-flash (no thinking)": {
+    "model_id": "google/gemini-2.5-flash",
+    "created_timestamp": 1750172488,
+    "created_date": "2025-06-17"
+  },
+  "gemini-2.0-flash-001": {
+    "model_id": "google/gemini-2.0-flash-001",
+    "created_timestamp": 1738769413,
+    "created_date": "2025-02-05"
+  },
+  "claude-opus-4 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4",
+    "created_timestamp": 1747931245,
+    "created_date": "2025-05-22"
+  },
+  "gpt-5-chat": {
+    "model_id": "openai/gpt-5-chat",
+    "created_timestamp": 1754587837,
+    "created_date": "2025-08-07"
+  },
+  "claude-opus-4.1 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.1",
+    "created_timestamp": 1754411591,
+    "created_date": "2025-08-05"
+  },
+  "claude-opus-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-opus-4.5",
+    "created_timestamp": 1764010580,
+    "created_date": "2025-11-24"
+  },
+  "gpt-5 (minimal)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
+  },
+  "claude-sonnet-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-sonnet-4.5",
+    "created_timestamp": 1759161676,
+    "created_date": "2025-09-29"
+  },
+  "gpt-4.1 (minimal)": {
+    "model_id": "openai/gpt-4.1",
+    "created_timestamp": 1744651385,
+    "created_date": "2025-04-14"
+  },
+  "claude-sonnet-4 (no thinking)": {
+    "model_id": "anthropic/claude-sonnet-4",
+    "created_timestamp": 1747930371,
+    "created_date": "2025-05-22"
+  },
+  "deepseek-v3.2-exp (thinking)": {
+    "model_id": "deepseek/deepseek-v3.2-exp",
+    "created_timestamp": 1759150481,
+    "created_date": "2025-09-29"
+  },
+  "deepseek-r1": {
+    "model_id": "deepseek/deepseek-r1",
+    "created_timestamp": 1737381095,
+    "created_date": "2025-01-20"
+  },
+  "deepseek-r1-0528": {
+    "model_id": "deepseek/deepseek-r1-0528",
+    "created_timestamp": 1748455170,
+    "created_date": "2025-05-28"
+  },
+  "qwen3-max": {
+    "model_id": "qwen/qwen3-max",
+    "created_timestamp": 1758662808,
+    "created_date": "2025-09-23"
+  },
+  "claude-3.7-sonnet (no thinking)": {
+    "model_id": "anthropic/claude-3.7-sonnet",
+    "created_timestamp": 1740422110,
+    "created_date": "2025-02-24"
+  },
+  "claude-3.5-sonnet": {
+    "model_id": "anthropic/claude-3.5-sonnet",
+    "created_timestamp": 1718841600,
+    "created_date": "2024-06-20"
+  },
+  "grok-3-mini": {
+    "model_id": "x-ai/grok-3-mini",
+    "created_timestamp": 1749542400,
+    "created_date": "2025-06-10"
+  },
+  "claude-sonnet-4.5 (thinking)": {
+    "model_id": "anthropic/claude-sonnet-4.5",
+    "created_timestamp": 1759161676,
+    "created_date": "2025-09-29"
+  },
+  "claude-3.7-sonnet (thinking)": {
+    "model_id": "anthropic/claude-3.7-sonnet",
+    "created_timestamp": 1740422110,
+    "created_date": "2025-02-24"
+  },
+  "glm-4.6 (thinking)": {
+    "model_id": "z-ai/glm-4.6",
+    "created_timestamp": 1759235576,
+    "created_date": "2025-09-30"
+  },
+  "claude-sonnet-4 (thinking)": {
+    "model_id": "anthropic/claude-sonnet-4",
+    "created_timestamp": 1747930371,
+    "created_date": "2025-05-22"
+  },
+  "grok-3": {
+    "model_id": "x-ai/grok-3",
+    "created_timestamp": 1739836800,
+    "created_date": "2025-02-18"
+  },
+  "deepseek-r1-distill-qwen-32b": {
+    "model_id": "deepseek/deepseek-r1-distill-qwen-32b",
+    "created_timestamp": 1738194830,
+    "created_date": "2025-01-29"
+  },
+  "gpt-4": {
+    "model_id": "openai/gpt-4",
+    "created_timestamp": 1678766400,
+    "created_date": "2023-03-14"
+  },
+  "gpt-4o-2024-11-20": {
+    "model_id": "openai/gpt-4o-2024-11-20",
+    "created_timestamp": 1732127594,
+    "created_date": "2024-11-20"
+  },
+  "claude-3-opus": {
+    "model_id": "anthropic/claude-3-opus",
+    "created_timestamp": 1709596800,
+    "created_date": "2024-03-04"
+  },
+  "kimi-k2": {
+    "model_id": "moonshotai/kimi-k2",
+    "created_timestamp": 1752263252,
+    "created_date": "2025-07-11"
+  },
+  "gpt-4-turbo": {
+    "model_id": "openai/gpt-4-turbo",
+    "created_timestamp": 1712620800,
+    "created_date": "2024-04-08"
+  },
+  "deepseek-chat-v3-0324": {
+    "model_id": "deepseek/deepseek-chat-v3-0324",
+    "created_timestamp": 1742824755,
+    "created_date": "2025-03-24"
+  },
+  "mistral-medium-3": {
+    "model_id": "mistralai/mistral-medium-3",
+    "created_timestamp": 1746627341,
+    "created_date": "2025-05-07"
+  },
+  "llama-4-maverick": {
+    "model_id": "meta-llama/llama-4-maverick",
+    "created_timestamp": 1743881822,
+    "created_date": "2025-04-05"
+  },
+  "deepseek-v3.2-exp (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.2-exp",
+    "created_timestamp": 1759150481,
+    "created_date": "2025-09-29"
+  },
+  "kimi-k2-0905": {
+    "model_id": "moonshotai/kimi-k2-0905",
+    "created_timestamp": 1757021147,
+    "created_date": "2025-09-04"
+  },
+  "gpt-3.5-turbo-0613": {
+    "model_id": "openai/gpt-3.5-turbo-0613",
+    "created_timestamp": 1686614400,
+    "created_date": "2023-06-13"
+  },
+  "gpt-3.5-turbo-instruct": {
+    "model_id": "openai/gpt-3.5-turbo-instruct",
+    "created_timestamp": 1694995200,
+    "created_date": "2023-09-18"
+  },
+  "deepseek-v3.1-terminus (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.1-terminus",
+    "created_timestamp": 1758548275,
+    "created_date": "2025-09-22"
+  },
+  "claude-haiku-4.5 (no thinking)": {
+    "model_id": "anthropic/claude-haiku-4.5",
+    "created_timestamp": 1760547638,
+    "created_date": "2025-10-15"
+  },
+  "deepseek-chat-v3.1 (no thinking)": {
+    "model_id": "deepseek/deepseek-chat-v3.1",
+    "created_timestamp": 1755779628,
+    "created_date": "2025-08-21"
+  },
+  "glm-4.6 (no thinking)": {
+    "model_id": "z-ai/glm-4.6",
+    "created_timestamp": 1759235576,
+    "created_date": "2025-09-30"
+  },
+  "gpt-5-mini (minimal)": {
+    "model_id": "openai/gpt-5-mini",
+    "created_timestamp": 1754587407,
+    "created_date": "2025-08-07"
+  },
+  "qwen3-235b-a22b-2507": {
+    "model_id": "qwen/qwen3-235b-a22b-2507",
+    "created_timestamp": 1753119555,
+    "created_date": "2025-07-21"
+  },
+  "llama-3.3-70b-instruct": {
+    "model_id": "meta-llama/llama-3.3-70b-instruct",
+    "created_timestamp": 1733506137,
+    "created_date": "2024-12-06"
+  },
+  "gpt-3.5-turbo": {
+    "model_id": "openai/gpt-3.5-turbo",
+    "created_timestamp": 1669784400,
+    "created_date": "2022-11-30"
+  },
+  "grok-4.1-fast": {
+    "model_id": "x-ai/grok-4.1-fast:free",
+    "created_timestamp": 1763587502,
+    "created_date": "2025-11-19"
+  },
+  "grok-4.3 (medium)": {
+    "model_id": "x-ai/grok-4.3",
+    "created_timestamp": 1777591821,
+    "created_date": "2026-04-30"
+  },
+  "grok-4.3 (high)": {
+    "model_id": "x-ai/grok-4.3",
+    "created_timestamp": 1777591821,
+    "created_date": "2026-04-30"
+  },
+  "claude-haiku-4.5 (thinking)": {
+    "model_id": "anthropic/claude-haiku-4.5",
+    "created_timestamp": 1760547638,
+    "created_date": "2025-10-15"
+  },
+  "o1": {
+    "model_id": "openai/o1",
+    "created_timestamp": 1734459999,
+    "created_date": "2024-12-17"
+  },
+  "kimi-k2-thinking": {
+    "model_id": "moonshotai/kimi-k2-thinking",
+    "created_timestamp": 1762440622,
+    "created_date": "2025-11-06"
+  },
+  "kimi-k2.5 (no thinking)": {
+    "model_id": "moonshotai/kimi-k2.5",
+    "created_timestamp": 1769490000,
+    "created_date": "2026-01-27"
+  },
+  "deepseek-v3.2 (thinking)": {
+    "model_id": "deepseek/deepseek-v3.2",
+    "created_timestamp": 1764594642,
+    "created_date": "2025-12-01"
+  },
+  "deepseek-v3.2 (no thinking)": {
+    "model_id": "deepseek/deepseek-v3.2",
+    "created_timestamp": 1764594642,
+    "created_date": "2025-12-01"
+  },
+  "deepseek-v4-pro (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (high)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-pro (max)": {
+    "model_id": "deepseek/deepseek-v4-pro",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (high)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash (max)": {
+    "model_id": "deepseek/deepseek-v4-flash",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "deepseek-v4-flash-0731 (no thinking)": {
+    "model_id": "deepseek/deepseek-v4-flash-0731",
+    "created_timestamp": 1785456000,
+    "created_date": "2026-07-31"
+  },
+  "deepseek-v4-flash-0731 (high)": {
+    "model_id": "deepseek/deepseek-v4-flash-0731",
+    "created_timestamp": 1785456000,
+    "created_date": "2026-07-31"
+  },
+  "deepseek-v4-flash-0731 (max)": {
+    "model_id": "deepseek/deepseek-v4-flash-0731",
+    "created_timestamp": 1785456000,
+    "created_date": "2026-07-31"
+  },
+  "qwen3-235b-a22b-thinking-2507": {
+    "model_id": "qwen/qwen3-235b-a22b-thinking-2507",
+    "created_timestamp": 1753449557,
+    "created_date": "2025-07-25"
+  },
+  "gpt-5.2-chat": {
+    "model_id": "openai/gpt-5.2-chat",
+    "created_timestamp": 1765454400,
+    "created_date": "2025-12-11"
+  },
+  "gpt-5.2 (high)": {
+    "model_id": "openai/gpt-5.2",
+    "created_timestamp": 1765454400,
+    "created_date": "2025-12-11"
+  },
+  "gpt-5 (no thinking)": {
+    "model_id": "openai/gpt-5",
+    "created_timestamp": 1754587413,
+    "created_date": "2025-08-07"
+  },
+  "gpt-5.1 (no thinking)": {
+    "model_id": "openai/gpt-5.1",
+    "created_timestamp": 1763060305,
+    "created_date": "2025-11-13"
+  },
+  "gpt-5.2 (no thinking)": {
+    "model_id": "openai/gpt-5.2",
+    "created_timestamp": 1765454400,
+    "created_date": "2025-12-11"
+  },
+  "gpt-5.4 (no thinking)": {
+    "model_id": "openai/gpt-5.4",
+    "created_timestamp": 1772686800,
+    "created_date": "2026-03-05"
+  },
+  "gpt-5.5 (no thinking)": {
+    "model_id": "openai/gpt-5.5",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "gpt-5.4 (minimal)": {
+    "model_id": "openai/gpt-5.4",
+    "created_timestamp": 1772686800,
+    "created_date": "2026-03-05"
+  },
+  "gpt-5.4 (high)": {
+    "model_id": "openai/gpt-5.4",
+    "created_timestamp": 1772686800,
+    "created_date": "2026-03-05"
+  },
+  "gpt-5.5 (low)": {
+    "model_id": "openai/gpt-5.5",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "gpt-5.5 (medium)": {
+    "model_id": "openai/gpt-5.5",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "gpt-5.5 (high)": {
+    "model_id": "openai/gpt-5.5",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "gpt-5.5 (xhigh)": {
+    "model_id": "openai/gpt-5.5",
+    "created_timestamp": 1776988800,
+    "created_date": "2026-04-24"
+  },
+  "gpt-5.6-sol (low)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (medium)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (high)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-sol (xhigh)": {
+    "model_id": "openai/gpt-5.6-sol",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (low)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (medium)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (high)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-terra (xhigh)": {
+    "model_id": "openai/gpt-5.6-terra",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (low)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (medium)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (high)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "gpt-5.6-luna (xhigh)": {
+    "model_id": "openai/gpt-5.6-luna",
+    "created_timestamp": 1783555200,
+    "created_date": "2026-07-09"
+  },
+  "kat-coder-pro": {
+    "model_id": "kwaipilot/kat-coder-pro:free",
+    "created_timestamp": 1762732800,
+    "created_date": "2025-11-10",
+    "organization": "KwaiKat",
+    "notes": "free"
+  },
+  "gemini-3-pro-preview (high)": {
+    "model_id": "google/gemini-3-pro-preview",
+    "created_timestamp": 1763474668,
+    "created_date": "2025-11-18"
+  },
+  "gemini-3-pro-preview (medium)": {
+    "model_id": "google/gemini-3-pro-preview",
+    "created_timestamp": 1763474668,
+    "created_date": "2025-11-18"
+  },
+  "gemini-3-flash-preview (low)": {
+    "model_id": "google/gemini-3-flash-preview",
+    "created_timestamp": 1766014361,
+    "created_date": "2025-12-17"
+  },
+  "gemini-3.1-pro-preview (medium)": {
+    "model_id": "google/gemini-3.1-pro-preview",
+    "created_timestamp": 1771509627,
+    "created_date": "2026-02-19"
+  },
+  "gemini-3.1-pro-preview (high)": {
+    "model_id": "google/gemini-3.1-pro-preview",
+    "created_timestamp": 1771509627,
+    "created_date": "2026-02-19"
+  },
+  "gemini-3.1-flash-lite-preview": {
+    "model_id": "google/gemini-3.1-flash-lite-preview",
+    "created_timestamp": 1772512673,
+    "created_date": "2026-03-03"
+  },
+  "mimo-v2-flash (no thinking)": {
+    "model_id": "xiaomi/mimo-v2-flash",
+    "created_timestamp": 1738800000,
+    "created_date": "2026-02-06"
+  },
+  "mimo-v2-flash (medium)": {
+    "model_id": "xiaomi/mimo-v2-flash",
+    "created_timestamp": 1738800000,
+    "created_date": "2026-02-06"
+  },
+  "gemma-4-31b-it (no thinking)": {
+    "model_id": "google/gemma-4-31b-it",
+    "created_timestamp": 1775148486,
+    "created_date": "2026-04-02"
+  },
+  "gemma-4-31b-it (high)": {
+    "model_id": "google/gemma-4-31b-it",
+    "created_timestamp": 1775148486,
+    "created_date": "2026-04-02"
+  }
+}

@@ -1,0 +1,426 @@
+{
+  "generated_at": "2026-07-20T06:40:59.380417+00:00",
+  "production_effect": "none",
+  "counterfactual": {
+    "ratings_path": "position_benchmark/validation/2026-07-17-no-position-seed-ratings.json",
+    "position_benchmark_seeds": false,
+    "ordinary_initial_rd": 350,
+    "fallback_initial_ratings": {
+      "reasoning": 1200,
+      "non_reasoning": 400,
+      "low_legality": 0
+    },
+    "normal_lower_effort_sibling_seeding_retained": true,
+    "production_games_processed": 6276,
+    "games_skipped": 5
+  },
+  "exact_xhigh": {
+    "rows": [
+      {
+        "label": "GPT-5.5",
+        "model_id": "openai/gpt-5.5",
+        "release_cohort": "gpt-5.5",
+        "high_id": "gpt-5.5 (high)",
+        "xhigh_id": "gpt-5.5 (xhigh)",
+        "high_rating": 388.2069908005692,
+        "high_rd": 61.27922662374813,
+        "historical_high_to_xhigh_delta": 0.0,
+        "high_curve_prediction": 388.2069908005692,
+        "position_prediction": 936.0306887081433,
+        "blend_50_prediction": 662.1188397543563,
+        "target_rating": 532.054176180371,
+        "target_rd": 62.03357799724726,
+        "games": 55,
+        "production_target_rating": 561.6597874287322,
+        "position_free_minus_production": -29.605611248361242,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "GPT-5.6 Sol",
+        "model_id": "openai/gpt-5.6-sol",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-sol (high)",
+        "xhigh_id": "gpt-5.6-sol (xhigh)",
+        "high_rating": 1640.8832362493658,
+        "high_rd": 205.06878403323557,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 1779.0830122857474,
+        "position_prediction": 1539.1326240084977,
+        "blend_50_prediction": 1659.1078181471225,
+        "target_rating": 1663.8918877368912,
+        "target_rd": 185.75508027605542,
+        "games": 8,
+        "production_target_rating": 1611.7547050147302,
+        "position_free_minus_production": 52.137182722161015,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "GPT-5.6 Terra",
+        "model_id": "openai/gpt-5.6-terra",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-terra (high)",
+        "xhigh_id": "gpt-5.6-terra (xhigh)",
+        "high_rating": 476.6005927594439,
+        "high_rd": 157.91255102047137,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 614.8003687958254,
+        "position_prediction": 1246.0993533231185,
+        "blend_50_prediction": 930.4498610594719,
+        "target_rating": 976.4889739973875,
+        "target_rd": 199.30449252508672,
+        "games": 8,
+        "production_target_rating": 1258.5443748936325,
+        "position_free_minus_production": -282.05540089624503,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "GPT-5.6 Luna",
+        "model_id": "openai/gpt-5.6-luna",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-luna (high)",
+        "xhigh_id": "gpt-5.6-luna (xhigh)",
+        "high_rating": 871.2108940530542,
+        "high_rd": 201.30451162415577,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 1009.4106700894357,
+        "position_prediction": 1279.719219848457,
+        "blend_50_prediction": 1144.5649449689463,
+        "target_rating": 1287.8510347846852,
+        "target_rd": 205.36180427398006,
+        "games": 8,
+        "production_target_rating": 1371.1046934263618,
+        "position_free_minus_production": -83.25365864167657,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "DeepSeek V4 Flash",
+        "model_id": "deepseek/deepseek-v4-flash",
+        "release_cohort": "deepseek-v4-flash",
+        "high_id": "deepseek-v4-flash (high)",
+        "xhigh_id": "deepseek-v4-flash (max)",
+        "high_rating": 323.36067588263813,
+        "high_rd": 303.66486819778555,
+        "historical_high_to_xhigh_delta": 0.0,
+        "high_curve_prediction": 323.36067588263813,
+        "position_prediction": 550.0,
+        "blend_50_prediction": 436.68033794131907,
+        "target_rating": 987.9139152776565,
+        "target_rd": 218.01155916987057,
+        "games": 11,
+        "production_target_rating": 812.8636930357338,
+        "position_free_minus_production": 175.0502222419227,
+        "historical_training_lines": []
+      }
+    ],
+    "fixed_blends": [
+      {
+        "position_weight": 0.0,
+        "mae": 312.7441038440976,
+        "rmse": 369.84853649330796,
+        "mean_error": -266.66765402455513,
+        "max_absolute_error": 664.5532393950184,
+        "errors": [
+          -143.84718537980177,
+          115.19112454885612,
+          -361.68860520156204,
+          -278.4403646952495,
+          -664.5532393950184
+        ]
+      },
+      {
+        "position_weight": 0.25,
+        "mae": 216.94305661467257,
+        "rmse": 302.8706286521907,
+        "mean_error": -194.86164562285506,
+        "max_absolute_error": 607.8934083656779,
+        "errors": [
+          -6.891260902908243,
+          55.20352747954371,
+          -203.86385906973874,
+          -210.86322725549417,
+          -607.8934083656779
+        ]
+      },
+      {
+        "position_weight": 0.5,
+        "mae": 175.0815026507492,
+        "rmse": 262.0872619072754,
+        "mean_error": -123.05563722115508,
+        "max_absolute_error": 551.2335773363375,
+        "errors": [
+          130.06466357398529,
+          -4.7840695897687056,
+          -46.03911293791555,
+          -143.28608981573893,
+          -551.2335773363375
+        ]
+      },
+      {
+        "position_weight": 0.75,
+        "mae": 202.7721173173697,
+        "rmse": 260.1255185634051,
+        "mean_error": -51.249628819455054,
+        "max_absolute_error": 494.573746306997,
+        "errors": [
+          267.0205880508788,
+          -64.77166665908112,
+          111.78563319390776,
+          -75.7089523759837,
+          -494.573746306997
+        ]
+      },
+      {
+        "position_weight": 1.0,
+        "mae": 248.87837715915634,
+        "rmse": 297.7537159493666,
+        "mean_error": 20.556379582245018,
+        "max_absolute_error": 437.91391527765654,
+        "errors": [
+          403.97651252777234,
+          -124.75926372839353,
+          269.61037932573106,
+          -8.131814936228238,
+          -437.91391527765654
+        ]
+      }
+    ],
+    "in_sample_optimal": {
+      "position_weight": 0.6366327567848783,
+      "mae": 181.86435902447593,
+      "rmse": 255.73740469476232,
+      "mean_error": -83.81142569458538,
+      "max_absolute_error": 520.2672216863208,
+      "errors": [
+        204.91532565118348,
+        -37.56915263169117,
+        40.21700767354287,
+        -106.35308747964132,
+        -520.2672216863208
+      ]
+    },
+    "gpt55_chronological_holdout": {
+      "high_curve_absolute_error": 143.84718537980177,
+      "position_absolute_error": 403.97651252777234,
+      "blend_50_absolute_error": 130.06466357398529
+    },
+    "deepseek_cross_lab_holdout": {
+      "high_curve_absolute_error": 664.5532393950184,
+      "position_absolute_error": 437.91391527765654,
+      "blend_50_absolute_error": 551.2335773363375
+    }
+  },
+  "gpt56_xhigh": {
+    "rows": [
+      {
+        "label": "GPT-5.6 Sol",
+        "model_id": "openai/gpt-5.6-sol",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-sol (high)",
+        "xhigh_id": "gpt-5.6-sol (xhigh)",
+        "high_rating": 1640.8832362493658,
+        "high_rd": 205.06878403323557,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 1779.0830122857474,
+        "position_prediction": 1539.1326240084977,
+        "blend_50_prediction": 1659.1078181471225,
+        "target_rating": 1663.8918877368912,
+        "target_rd": 185.75508027605542,
+        "games": 8,
+        "production_target_rating": 1611.7547050147302,
+        "position_free_minus_production": 52.137182722161015,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "GPT-5.6 Terra",
+        "model_id": "openai/gpt-5.6-terra",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-terra (high)",
+        "xhigh_id": "gpt-5.6-terra (xhigh)",
+        "high_rating": 476.6005927594439,
+        "high_rd": 157.91255102047137,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 614.8003687958254,
+        "position_prediction": 1246.0993533231185,
+        "blend_50_prediction": 930.4498610594719,
+        "target_rating": 976.4889739973875,
+        "target_rd": 199.30449252508672,
+        "games": 8,
+        "production_target_rating": 1258.5443748936325,
+        "position_free_minus_production": -282.05540089624503,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      },
+      {
+        "label": "GPT-5.6 Luna",
+        "model_id": "openai/gpt-5.6-luna",
+        "release_cohort": "gpt-5.6",
+        "high_id": "gpt-5.6-luna (high)",
+        "xhigh_id": "gpt-5.6-luna (xhigh)",
+        "high_rating": 871.2108940530542,
+        "high_rd": 201.30451162415577,
+        "historical_high_to_xhigh_delta": 138.1997760363815,
+        "high_curve_prediction": 1009.4106700894357,
+        "position_prediction": 1279.719219848457,
+        "blend_50_prediction": 1144.5649449689463,
+        "target_rating": 1287.8510347846852,
+        "target_rd": 205.36180427398006,
+        "games": 8,
+        "production_target_rating": 1371.1046934263618,
+        "position_free_minus_production": -83.25365864167657,
+        "historical_training_lines": [
+          "openai/gpt-5",
+          "openai/gpt-5.1",
+          "openai/gpt-5.2",
+          "openai/gpt-5.4",
+          "openai/gpt-5.5",
+          "openai/gpt-oss-120b"
+        ]
+      }
+    ],
+    "fixed_blends": [
+      {
+        "position_weight": 0.0,
+        "mae": 251.77336481522255,
+        "rmse": 271.7944560380786,
+        "mean_error": -174.9792817826518,
+        "max_absolute_error": 361.68860520156204,
+        "errors": [
+          115.19112454885612,
+          -361.68860520156204,
+          -278.4403646952495
+        ]
+      },
+      {
+        "position_weight": 0.25,
+        "mae": 156.64353793492555,
+        "rmse": 172.30902770854578,
+        "mean_error": -119.8411862818964,
+        "max_absolute_error": 210.86322725549417,
+        "errors": [
+          55.20352747954371,
+          -203.86385906973874,
+          -210.86322725549417
+        ]
+      },
+      {
+        "position_weight": 0.5,
+        "mae": 64.70309078114106,
+        "rmse": 86.93559067231689,
+        "mean_error": -64.70309078114106,
+        "max_absolute_error": 143.28608981573893,
+        "errors": [
+          -4.7840695897687056,
+          -46.03911293791555,
+          -143.28608981573893
+        ]
+      },
+      {
+        "position_weight": 0.75,
+        "mae": 84.08875074299085,
+        "rmse": 86.45469345313566,
+        "mean_error": -9.564995280385688,
+        "max_absolute_error": 111.78563319390776,
+        "errors": [
+          -64.77166665908112,
+          111.78563319390776,
+          -75.7089523759837
+        ]
+      },
+      {
+        "position_weight": 1.0,
+        "mae": 134.16715266345093,
+        "rmse": 171.5816199756183,
+        "mean_error": 45.57310022036976,
+        "max_absolute_error": 269.61037932573106,
+        "errors": [
+          -124.75926372839353,
+          269.61037932573106,
+          -8.131814936228238
+        ]
+      }
+    ],
+    "production_target_position_only": {
+      "configurations": 3,
+      "mae": 58.817525384883766,
+      "rmse": 67.7745035457639,
+      "mean_error": -58.817525384883766,
+      "max_absolute_error": 91.3854735779048
+    },
+    "position_free_target_position_only": {
+      "configurations": 3,
+      "mae": 134.16715266345093,
+      "rmse": 171.5816199756183,
+      "mean_error": 45.57310022036976,
+      "max_absolute_error": 269.61037932573106
+    }
+  },
+  "broader_position_only_checks": {
+    "all_eligible": {
+      "configurations": 26,
+      "mae": 261.0271935464978,
+      "rmse": 331.0545190595014,
+      "mean_error": 125.53018477388986,
+      "max_absolute_error": 768.0711437894142
+    },
+    "game_like_ready": {
+      "configurations": 17,
+      "mae": 289.14642037749627,
+      "rmse": 355.43184127071896,
+      "mean_error": 112.78937245798494,
+      "max_absolute_error": 768.0711437894142
+    },
+    "gpt56_all_efforts": {
+      "configurations": 12,
+      "mae": 267.32299113509504,
+      "rmse": 338.0640787029288,
+      "mean_error": 134.2836257082148,
+      "max_absolute_error": 768.0711437894142
+    }
+  },
+  "limitations": [
+    "Only five exact Xhigh cases are available across two labs and three model releases.",
+    "The GPT-5.6 Xhigh targets each have eight games and RD between 186 and 205.",
+    "The no-position rating removes prior-mean circularity but remains a noisy game estimate.",
+    "The in-sample optimal blend weight is descriptive, not a production recommendation."
+  ]
+}

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "maia-1100"]
+[Black "gemini-2.5-flash (no thinking)"]
+[Result "1-0"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6 6. Bb5+ Bd7 7. Bxd7+ Nbxd7 8. O-O Bg7 9. Re1 O-O 10. Bg5 Rc8 11. Bxf6 Nxf6 12. e5 dxe5 13. Rxe5 Nd7 14. Rd5 Nb6 15. Rxd8 Rfxd8 16. Nce2 Rxd4 17. Nxd4 Rc4 18. c3 Bxd4 19. cxd4 Rxd4 20. Qxd4 1-0

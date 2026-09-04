@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.13"]
+[Round "1"]
+[White "gpt-5.1 (high)"]
+[Black "gpt-5.2-chat"]
+[Result "1/2-1/2"]
+[Termination "insufficient_material"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. O-O cxb5 9. Nc3 Be7 10. Nxb5 O-O 11. d4 exd4 12. Nxd4 Qxd4 13. Qxd4 Be6 14. Nxe6 fxe6 15. a3 Nd5 16. Qxd5 exd5 17. c4 dxc4 18. Be3 Nc6 19. b4 cxb3 20. a4 b2 21. a5 bxa1=Q 22. Rxa1 Rxf2 23. Bxf2 a6 24. Re1 Nxa5 25. Rxe7 h6 26. Re8+ Rxe8 27. g3 Nb3 28. h4 Re1+ 29. Bxe1 g6 30. g4 a5 31. Bxa5 Nxa5 32. g5 hxg5 33. h5 gxh5 34. Kf2 Kg7 35. Ke3 Kf6 36. Kd4 Nb3+ 37. Kc4 g4 38. Kb5 Na5 39. Ka4 g3 40. Kxa5 g2 41. Kb5 g1=Q 42. Ka6 Qg2 43. Ka5 Qg5+ 44. Ka4 Qg4+ 45. Ka5 h4 46. Ka6 h3 47. Ka7 h2 48. Ka8 Qg8+ 49. Ka7 h1=Q 50. Ka6 Qg6 51. Ka5 Qgh5+ 52. Ka6 Qa5+ 53. Kxa5 Qg2 54. Kb5 Qe2+ 55. Ka4 Qc4+ 56. Ka5 Ke5 57. Kb6 Qc6+ 58. Kxc6 1/2-1/2

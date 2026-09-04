@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.13"]
+[Round "1"]
+[White "gpt-oss-120b (medium)"]
+[Black "gpt-5.2-chat"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nc4 Nxe4 5. Nxd6+ Qxd6 6. Bb5+ c6 7. Bxc6+ Qxc6 8. O-O Qxc2 9. Qxc2 Nxd2 10. Qxd2 Nc6 11. Nc3 Be6 12. Qd6 Bxd6 13. Re1 O-O 14. Re3 Rfd8 15. Nb5 a6 16. Rc3 axb5 17. Rxc6 bxc6 18. Bf4 Bxf4 19. Kf1 Bxa2 20. Rxa2 Rxa2 21. Ke1 Rd1+ 22. Kxd1 Ra1+ 23. Ke2 Ra2 24. Kd1 Ra1+ 25. Ke2 Bxh2 26. Kd2 Ra2 27. Ke2 Ra1 28. Kd2 Ra2 29. Kd1 Ra1+ 30. Kc2 Ra2 31. Kc1 Ra1+ 32. Kc2 Ra2 33. Kd2 Ra1 34. Kc2 Ra2 35. Kb1 Ra1+ 36. Kxa1 g6 37. Ka2 Bg1 38. Ka1 Bxf2 39. Ka2 Bc5 40. Ka1 g5 41. Ka2 g4 42. Ka1 g3 43. Kb1 b4 44. b3 Kg7 45. Ka1 Kg6 46. Ka2 f6 47. Kb2 h5 48. Ka1 f5 49. Ka2 h4 50. Kb2 h3 51. Ka1 h2 52. Ka2 h1=Q 53. Kb2 Qh2 54. Ka1 Qh1+ 55. Ka2 Qa1+ 56. Kxa1 f4 57. Ka2 f3 58. Ka1 fxg2 59. Ka2 g1=Q 60. Kb2 Qb1+ 0-1

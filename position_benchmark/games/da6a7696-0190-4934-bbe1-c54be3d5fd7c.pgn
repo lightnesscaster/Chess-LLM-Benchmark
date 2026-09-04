@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "random-bot"]
+[Black "gemini-2.5-flash (no thinking)"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. d4 Nf6 2. h4 e6 3. Be3 c5 4. dxc5 Qa5+ 5. Nc3 Ng4 6. Bd2 Qxc5 7. Be3 Nxe3 8. Qc1 Nxc2+ 9. Kd2 Nxa1 10. Qe1 d5 11. Nxd5 Qxd5+ 12. Kc3 Qc5+ 13. Kd2 Nc2 14. Qa1 Nd4 15. Nf3 Nxf3+ 16. exf3 Nc6 17. Bd3 e5 18. Rf1 Be6 19. Rb1 Rd8 20. f4 exf4 21. a4 Rxd3+ 22. Kxd3 Qxf2 23. Qa2 Qe3+ 24. Kc2 Qe2+ 25. Kc1 Qe1+ 26. Kc2 Qe2+ 27. Kc1 Qe3+ 28. Kc2 Qe2+ 29. Kc1 Qe3+ 30. Kc2 Qe2+ 31. Kc3 Qe3+ 32. Kc2 Qe2+ 1/2-1/2

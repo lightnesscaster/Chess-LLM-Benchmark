@@ -3,6 +3,9 @@ Base class for LLM player wrappers.
 """
 
 import abc
+import copy
+from typing import Optional
+
 import chess
 
 
@@ -23,11 +26,16 @@ class BaseLLMPlayer(abc.ABC):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        # Timing tracking (seconds per move)
+        self.move_times: list[float] = []
+        self.total_move_time: float = 0.0
         # Last request/response for debugging illegal moves
         self.last_prompt: str = ""
         self.last_raw_response: str = ""
         # Last successful response (for context in next move's prompt)
         self.last_successful_response: str = ""
+        # Set per request by request_llm_move; position probes leave this disabled.
+        self.allow_resignation: bool = False
 
     def reset_token_usage(self) -> None:
         """Reset token counters and debug state (call at start of each game)."""
@@ -37,6 +45,33 @@ class BaseLLMPlayer(abc.ABC):
         self.last_prompt = ""
         self.last_raw_response = ""
         self.last_successful_response = ""
+        # Reset provider tracking for OpenRouterPlayer subclass
+        if hasattr(self, 'last_provider'):
+            self.last_provider = None
+
+    def reset_timing(self) -> None:
+        """Reset timing counters (call at start of each game)."""
+        self.move_times = []
+        self.total_move_time = 0.0
+
+    def clone_for_game(self) -> "BaseLLMPlayer":
+        """Return isolated mutable request/accounting state for one game."""
+        clone = copy.copy(self)
+        # HTTP sessions must not be shared with a clone that will be closed
+        # independently after its game.
+        if hasattr(clone, "_session"):
+            clone._session = None
+        if hasattr(clone, "_prefetched_response"):
+            clone._prefetched_response = None
+        if hasattr(clone, "last_api_error"):
+            clone.last_api_error = ""
+        clone.reset_token_usage()
+        clone.reset_timing()
+        if hasattr(clone, "_last_prompt_tokens"):
+            clone._last_prompt_tokens = 0
+        if hasattr(clone, "_last_completion_tokens"):
+            clone._last_completion_tokens = 0
+        return clone
 
     def mark_move_successful(self) -> None:
         """Mark the last response as successful (called after a legal move)."""
@@ -48,6 +83,16 @@ class BaseLLMPlayer(abc.ABC):
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
+        }
+
+    def get_timing_usage(self) -> dict:
+        """Get current timing stats."""
+        move_count = len(self.move_times)
+        return {
+            "total_time": self.total_move_time,
+            "move_count": move_count,
+            "avg_time": self.total_move_time / move_count if move_count > 0 else 0.0,
+            "move_times": self.move_times.copy(),
         }
 
     @abc.abstractmethod
@@ -62,7 +107,8 @@ class BaseLLMPlayer(abc.ABC):
             last_move_illegal: The illegal move that was attempted (if retry)
 
         Returns:
-            A move in UCI format (e.g., "e2e4", "g1f3", "e7e8q")
+            A move in UCI format, or ``"resign"`` when the current request
+            explicitly allows resignation.
         """
         ...
 
@@ -77,3 +123,25 @@ class BaseLLMPlayer(abc.ABC):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
         return False
+
+
+async def request_llm_move(
+    player: BaseLLMPlayer,
+    board: chess.Board,
+    *,
+    is_retry: bool,
+    last_move_illegal: Optional[str],
+    allow_resignation: bool,
+) -> Optional[str]:
+    """Request a move using the production game prompt context and normalization."""
+    previous_capability = player.allow_resignation
+    player.allow_resignation = bool(allow_resignation)
+    try:
+        move_uci = await player.select_move(
+            board,
+            is_retry=is_retry,
+            last_move_illegal=last_move_illegal,
+        )
+    finally:
+        player.allow_resignation = previous_capability
+    return move_uci.strip() if move_uci else None

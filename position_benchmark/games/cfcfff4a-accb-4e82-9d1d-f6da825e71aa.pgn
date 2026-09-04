@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "deepseek-v3.2 (no thinking)-exp (no thinking)"]
+[Black "claude-sonnet-4.5 (no thinking)"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. a3 e5 2. Nc3 d5 3. d4 exd4 4. Qxd4 Nc6 5. Qb4 d4 6. Qxb7 d3 0-1

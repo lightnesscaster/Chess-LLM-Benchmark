@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "random-bot"]
+[Black "grok-4-fast"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. Na3 e5 2. f3 Nc6 3. Rb1 Nf6 4. g3 Bc5 5. h3 Bxa3 6. b4 Bxc1 7. e4 Ba3 8. Ke2 Nd4+ 9. Ke3 O-O 10. Be2 Nxe2 11. Rb2 Bxb2 12. Nxe2 Bd4+ 13. Nxd4 exd4+ 14. Ke2 Qe7 15. Qa1 Nh5 16. a3 Nxg3+ 17. Ke1 Nxh1 18. Qa2 Qh4+ 19. Kd1 Nf2+ 20. Ke1 Nxh3+ 21. Ke2 Qf2+ 22. Kd3 Qxf3+ 23. Kxd4 Qf6+ 24. Kd3 Nf2+ 25. Ke2 Qa6+ 26. Qc4 Qxc4+ 27. Ke3 Qd3+ 28. Kf4 Qxd2+ 29. Kg3 Nxe4+ 30. Kf3 Ng5+ 31. Kg3 Qc3+ 32. Kf4 Qf6+ 33. Ke3 Qc3+ 34. Kf2 Qxc2+ 35. Ke3 Qc3+ 36. Kf2 Qf3+ 37. Ke1 Qc3+ 38. Kf2 Qf3+ 39. Kg1 Qg3+ 40. Kh1 Qe1+ 41. Kh2 Qf2+ 42. Kh1 Qf1+ 43. Kh2 Nf3+ 44. Kg3 Qg1+ 45. Kxf3 Qf1+ 46. Ke4 Qe1+ 47. Kd3 Qd1+ 48. Ke4 Qg4+ 49. Ke3 Qg3+ 50. Ke2 Qg2+ 51. Kd1 Qg1+ 52. Ke2 Qg2+ 53. Kd1 Qg1+ 54. Ke2 Qg2+ 55. Kd1 Qg1+ 56. Kc2 Qg2+ 57. Kc3 Qg3+ 58. Kc4 Qg4+ 59. Kb3 Qh3+ 60. Ka4 a5 61. bxa5 Qh4+ 62. Kb5 Qg5+ 63. Ka4 Qxa5+ 64. Kb3 Qb5+ 65. Kc2 Qc4+ 66. Kd2 Qa2+ 67. Ke1 Qa1+ 68. Kf2 Qa2+ 69. Kg1 Qa1+ 70. Kg2 Qh1+ 71. Kg3 Qg1+ 72. Kf3 Qf1+ 73. Kg3 Rxa3+ 74. Kh4 Qh3+ 75. Kg5 Rg3+ 76. Kf4 Rg4+ 77. Ke5 Qh5# 0-1

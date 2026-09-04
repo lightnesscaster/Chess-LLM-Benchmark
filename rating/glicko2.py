@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 class PlayerRating:
     """Represents a player's Glicko-2 rating."""
     player_id: str
-    rating: float = 1500.0          # μ (mu) - rating
+    rating: float = 1500.0           # μ (mu) - rating (start low, earn higher rating)
     rating_deviation: float = 350.0  # φ (phi) - rating deviation
     volatility: float = 0.06        # σ (sigma) - volatility
     games_played: int = 0
@@ -23,10 +23,13 @@ class PlayerRating:
     losses: int = 0
     draws: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    unclamped_rating: float = None  # Legacy field, kept for backwards compatibility
+    games_rd: float = 350.0          # RD tracking only game results (not benchmark seeding)
+    is_frozen: bool = False          # Whether the model is frozen (won't play more games)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
-        return {
+        d = {
             "player_id": self.player_id,
             "rating": self.rating,
             "rating_deviation": self.rating_deviation,
@@ -36,20 +39,33 @@ class PlayerRating:
             "losses": self.losses,
             "draws": self.draws,
             "last_updated": self.last_updated,
+            "games_rd": self.games_rd,
+            "is_frozen": self.is_frozen,
         }
+        if self.unclamped_rating is not None:
+            d["unclamped_rating"] = self.unclamped_rating
+        return d
 
     @classmethod
     def from_dict(cls, data: dict) -> "PlayerRating":
-        """Create from dictionary (handles old data without W-L-D fields)."""
+        """Create from dictionary (handles old/new data with missing/extra fields)."""
         # Ensure backwards compatibility with old ratings.json files
-        defaults = {'wins': 0, 'losses': 0, 'draws': 0}
-        return cls(**{**defaults, **data})
+        defaults = {
+            'wins': 0, 'losses': 0, 'draws': 0,
+            'unclamped_rating': None,
+            'games_rd': data.get('rating_deviation', 350.0),
+            'is_frozen': False,
+        }
+        merged = {**defaults, **data}
+        # Strip unknown fields so old code can deserialize new Firestore data
+        valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        return cls(**{k: v for k, v in merged.items() if k in valid_fields})
 
 
 class Glicko2System:
     """Implements the Glicko-2 rating system."""
 
-    # Rating floor (like Lichess)
+    # Legacy constant, kept for backwards compatibility (no longer enforced)
     RATING_FLOOR = 400
 
     def __init__(self, tau: float = 1.2):
@@ -209,11 +225,18 @@ class Glicko2System:
         raw_sum = self.calculate_delta(mu, opponent_params, scores)
         delta = v * raw_sum
 
-        # Step 5: Compute new volatility
-        new_sigma = self.calculate_new_volatility(sigma, phi, v, delta)
+        # Step 5: Skip volatility update
+        # For fixed-strength players (engines, LLMs with fixed weights/prompts),
+        # volatility inflation doesn't make sense - it models skill drift over time,
+        # which doesn't apply. We keep sigma constant and don't inflate phi.
+        new_sigma = sigma
 
         # Step 6: Update rating deviation
-        phi_star = math.sqrt(phi * phi + new_sigma * new_sigma)
+        # Standard Glicko-2 does: phi_star = sqrt(phi² + sigma²)
+        # But that inflates RD every rating period, modeling "uncertainty from inactivity"
+        # For stationary players, we skip this inflation - RD only decreases from
+        # information gained, with a floor to acknowledge model misfit/nontransitivity.
+        phi_star = phi  # No volatility inflation
         new_phi = 1.0 / math.sqrt(1.0 / (phi_star * phi_star) + 1.0 / v)
 
         # Step 7: Update rating
@@ -222,16 +245,23 @@ class Glicko2System:
         # Convert back to Glicko scale
         new_rating, new_rd = self.glicko2_to_glicko(new_mu, new_phi)
 
-        # Numerical stability checks
-        if not math.isfinite(new_rating) or abs(new_rating) > 10000:
+        # Numerical stability: clamp to reasonable bounds instead of reverting
+        # This ensures extreme results still produce rating changes (just bounded)
+        if not math.isfinite(new_rating):
             new_rating = player.rating
-        if not math.isfinite(new_rd) or new_rd < 30 or new_rd > 500:
+        else:
+            new_rating = max(-500, min(4000, new_rating))
+
+        if not math.isfinite(new_rd):
             new_rd = player.rating_deviation
+        else:
+            # RD floor of 45 acknowledges irreducible uncertainty from:
+            # - Model misfit (1D rating can't capture style/nontransitivity)
+            # - Sampling noise (temperature, decoding randomness)
+            new_rd = max(45, min(350, new_rd))
+
         if not math.isfinite(new_sigma):
             new_sigma = player.volatility
-
-        # Apply rating floor (like Lichess)
-        new_rating = max(new_rating, self.RATING_FLOOR)
 
         # Calculate W-L-D from scores (use threshold for float safety)
         new_wins = player.wins
@@ -245,6 +275,11 @@ class Glicko2System:
             else:  # Draw (0.5)
                 new_draws += 1
 
+        # Parallel games_rd tracking (decreases only from games, independent of benchmark seeding)
+        games_phi = player.games_rd / self.SCALE_FACTOR
+        games_phi_new = 1.0 / math.sqrt(1.0 / (games_phi ** 2) + 1.0 / v)
+        new_games_rd = max(45, min(350, games_phi_new * self.SCALE_FACTOR))
+
         return PlayerRating(
             player_id=player.player_id,
             rating=new_rating,
@@ -255,6 +290,8 @@ class Glicko2System:
             losses=new_losses,
             draws=new_draws,
             last_updated=datetime.now(timezone.utc).isoformat(),
+            unclamped_rating=player.unclamped_rating,
+            games_rd=new_games_rd,
         )
 
     def expected_score(self, player: PlayerRating, opponent: PlayerRating) -> float:

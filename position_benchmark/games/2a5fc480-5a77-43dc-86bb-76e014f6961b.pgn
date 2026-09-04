@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.15"]
+[Round "1"]
+[White "qwen3-235b-a22b-2507"]
+[Black "llama-4-maverick"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 0-1

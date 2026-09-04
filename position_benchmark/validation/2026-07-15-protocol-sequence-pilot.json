@@ -1,0 +1,333 @@
+{
+  "generated_at": "2026-07-16T02:59:43.727496+00:00",
+  "method": "protocol-sequence-v1-pilot-comparison-v1",
+  "players": {
+    "gpt-5.6-luna (medium)": {
+      "core": {
+        "attempts": 50,
+        "illegals": 1,
+        "illegal_pct": 2.0,
+        "wilson_95pct": [
+          0.35391680889764604,
+          10.495686471836953
+        ]
+      },
+      "game_like": {
+        "attempts": 48,
+        "illegals": 1,
+        "illegal_pct": 2.0833333333333335,
+        "wilson_95pct": [
+          0.3687015979399688,
+          10.899469137531158
+        ]
+      },
+      "prior_continuation": {
+        "attempts": 32,
+        "illegals": 1,
+        "illegal_pct": 3.125,
+        "wilson_95pct": [
+          0.5537717362550945,
+          15.744607800372734
+        ]
+      },
+      "protocol_sequence": {
+        "attempts": 32,
+        "illegals": 3,
+        "illegal_pct": 9.375,
+        "wilson_95pct": [
+          3.2400962626319516,
+          24.21849933577883
+        ]
+      },
+      "live": {
+        "attempts": 381,
+        "illegals": 24,
+        "illegal_pct": 6.299212598425197,
+        "wilson_95pct": [
+          4.2692230644271865,
+          9.201669895169697
+        ]
+      },
+      "protocol_sequence_cpl": {
+        "scored_moves": 31,
+        "raw_mean_cpl": 953.4193548387096,
+        "capped_5000_mean_cpl": 579.9677419354839,
+        "turns_1_4": {
+          "moves": 16,
+          "raw_mean_cpl": 74.5625,
+          "capped_5000_mean_cpl": 74.5625
+        },
+        "turns_5_8": {
+          "moves": 15,
+          "raw_mean_cpl": 1890.8666666666666,
+          "capped_5000_mean_cpl": 1119.0666666666666
+        },
+        "median_cpl": 74.0,
+        "p90_cpl": 901.0,
+        "catastrophe_1000cp_pct": 9.67741935483871,
+        "random_opponent_mean_cpl": 1615.6129032258063
+      },
+      "protocol_sequence_forfeits": 1,
+      "protocol_sequence_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 4,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "known_outcomes": 2,
+        "recovery_pct": 100.0
+      }
+    },
+    "gpt-5.6-terra (low)": {
+      "core": {
+        "attempts": 50,
+        "illegals": 2,
+        "illegal_pct": 4.0,
+        "wilson_95pct": [
+          1.1038652660826578,
+          13.460337877954668
+        ]
+      },
+      "game_like": {
+        "attempts": 48,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "wilson_95pct": [
+          0.0,
+          7.41026511527422
+        ]
+      },
+      "prior_continuation": {
+        "attempts": 32,
+        "illegals": 1,
+        "illegal_pct": 3.125,
+        "wilson_95pct": [
+          0.5537717362550945,
+          15.744607800372734
+        ]
+      },
+      "protocol_sequence": {
+        "attempts": 32,
+        "illegals": 1,
+        "illegal_pct": 3.125,
+        "wilson_95pct": [
+          0.5537717362550945,
+          15.744607800372734
+        ]
+      },
+      "live": {
+        "attempts": 482,
+        "illegals": 19,
+        "illegal_pct": 3.9419087136929463,
+        "wilson_95pct": [
+          2.5378544526542464,
+          6.074335199281694
+        ]
+      },
+      "protocol_sequence_cpl": {
+        "scored_moves": 32,
+        "raw_mean_cpl": 118.4375,
+        "capped_5000_mean_cpl": 118.4375,
+        "turns_1_4": {
+          "moves": 16,
+          "raw_mean_cpl": 102.5,
+          "capped_5000_mean_cpl": 102.5
+        },
+        "turns_5_8": {
+          "moves": 16,
+          "raw_mean_cpl": 134.375,
+          "capped_5000_mean_cpl": 134.375
+        },
+        "median_cpl": 18.5,
+        "p90_cpl": 347.0,
+        "catastrophe_1000cp_pct": 0.0,
+        "random_opponent_mean_cpl": 235.875
+      },
+      "protocol_sequence_forfeits": 0,
+      "protocol_sequence_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 4,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "known_outcomes": 1,
+        "recovery_pct": 100.0
+      }
+    },
+    "gpt-5.6-sol (high)": {
+      "core": {
+        "attempts": 50,
+        "illegals": 1,
+        "illegal_pct": 2.0,
+        "wilson_95pct": [
+          0.35391680889764604,
+          10.495686471836953
+        ]
+      },
+      "game_like": {
+        "attempts": 48,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "wilson_95pct": [
+          0.0,
+          7.41026511527422
+        ]
+      },
+      "prior_continuation": {
+        "attempts": 32,
+        "illegals": 1,
+        "illegal_pct": 3.125,
+        "wilson_95pct": [
+          0.5537717362550945,
+          15.744607800372734
+        ]
+      },
+      "protocol_sequence": {
+        "attempts": 30,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "wilson_95pct": [
+          0.0,
+          11.3517091390478
+        ]
+      },
+      "live": {
+        "attempts": 311,
+        "illegals": 3,
+        "illegal_pct": 0.9646302250803859,
+        "wilson_95pct": [
+          0.3285871923022885,
+          2.7973021437956103
+        ]
+      },
+      "protocol_sequence_cpl": {
+        "scored_moves": 30,
+        "raw_mean_cpl": 51.5,
+        "capped_5000_mean_cpl": 51.5,
+        "turns_1_4": {
+          "moves": 16,
+          "raw_mean_cpl": 26.0,
+          "capped_5000_mean_cpl": 26.0
+        },
+        "turns_5_8": {
+          "moves": 14,
+          "raw_mean_cpl": 80.64285714285714,
+          "capped_5000_mean_cpl": 80.64285714285714
+        },
+        "median_cpl": 1.5,
+        "p90_cpl": 127.0,
+        "catastrophe_1000cp_pct": 0.0,
+        "random_opponent_mean_cpl": 462.62068965517244
+      },
+      "protocol_sequence_forfeits": 0,
+      "protocol_sequence_retry": {
+        "protocol_version": "production-game-retry-v1",
+        "source": "continuation-game-events",
+        "measured_games": 4,
+        "incomplete_evidence_games": 0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0,
+        "retry_unknown": 0,
+        "known_outcomes": 0,
+        "recovery_pct": null
+      }
+    }
+  },
+  "aggregate_rates": {
+    "core": {
+      "attempts": 150,
+      "illegals": 4,
+      "illegal_pct": 2.6666666666666665,
+      "wilson_95pct": [
+        1.0417772291104763,
+        6.655490610017561
+      ]
+    },
+    "game_like": {
+      "attempts": 144,
+      "illegals": 1,
+      "illegal_pct": 0.6944444444444444,
+      "wilson_95pct": [
+        0.1226887030401979,
+        3.828567235748344
+      ]
+    },
+    "prior_continuation": {
+      "attempts": 96,
+      "illegals": 3,
+      "illegal_pct": 3.125,
+      "wilson_95pct": [
+        1.0683876777878007,
+        8.788826148913696
+      ]
+    },
+    "protocol_sequence": {
+      "attempts": 94,
+      "illegals": 4,
+      "illegal_pct": 4.25531914893617,
+      "wilson_95pct": [
+        1.6670278401570267,
+        10.435799587031408
+      ]
+    },
+    "live": {
+      "attempts": 1174,
+      "illegals": 46,
+      "illegal_pct": 3.918228279386712,
+      "wilson_95pct": [
+        2.9502826311445616,
+        5.1867707723012
+      ]
+    }
+  },
+  "failure_events": [
+    {
+      "source_player_id": "gpt-5.6-luna (medium)",
+      "starting_position_id": "game-like-013",
+      "starting_position_idx": 12,
+      "continuation_turn": 3,
+      "prospective_ply": 19,
+      "fen": "r1bqk2r/pppp1p1p/2n2n2/6p1/4P3/3K2P1/P4P1P/RN1Q1BNR w kq - 0 10",
+      "parsed_move": "f4g5",
+      "raw_response": "MOVE: f4g5"
+    },
+    {
+      "source_player_id": "gpt-5.6-luna (medium)",
+      "starting_position_id": "game-like-013",
+      "starting_position_idx": 12,
+      "continuation_turn": 8,
+      "prospective_ply": 29,
+      "fen": "1rbqk2r/ppp2p1p/2n2P2/3Q4/6p1/3K2P1/P4P1P/RN3BNR w - - 1 15",
+      "parsed_move": "d5e5",
+      "raw_response": "d5e5"
+    },
+    {
+      "source_player_id": "gpt-5.6-luna (medium)",
+      "starting_position_id": "game-like-025",
+      "starting_position_idx": 24,
+      "continuation_turn": 7,
+      "prospective_ply": 32,
+      "fen": "r1b2rk1/2pq1ppp/p4b2/Np1P4/3Pn1P1/2P5/PPn2P1P/1NB3K1 b - - 1 16",
+      "parsed_move": "c2c1",
+      "raw_response": "MOVE: c2c1"
+    },
+    {
+      "source_player_id": "gpt-5.6-terra (low)",
+      "starting_position_id": "game-like-025",
+      "starting_position_idx": 24,
+      "continuation_turn": 1,
+      "prospective_ply": 20,
+      "fen": "r1bq1rk1/2p1bppp/p4n2/np1PN3/8/1BP5/PP1P1PPP/RNBQR1K1 b - - 0 10",
+      "parsed_move": "b7b7",
+      "raw_response": "b7b7"
+    }
+  ],
+  "failure_event_selection_warning": "Discovery events are candidate-pool inputs only. Validate transfer on models that did not supply each event before selecting a frozen panel."
+}

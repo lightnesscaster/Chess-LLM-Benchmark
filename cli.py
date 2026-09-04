@@ -5,29 +5,174 @@ CLI for the Chess LLM Benchmark.
 Commands:
 - run: Run the benchmark
 - leaderboard: Show current leaderboard
-- test: Run a test game
+- manual: Run a manual game
 """
 
 import argparse
 import asyncio
+import json
+import logging
 import os
 import random
 import sys
+from collections import defaultdict
 from pathlib import Path
 
+import requests
 import yaml
 
 from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
+from engines.survival_engine import SurvivalEngine
+from engines.uci_engine import UCIEngine
 from llm.openrouter_client import OpenRouterPlayer
+from llm.openrouter_completion_client import OpenRouterCompletionPlayer
+from llm.gemini_client import GeminiPlayer
+from llm.codex_subagent_client import CodexSubagentPlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
-from rating.glicko2 import Glicko2System
-from rating.rating_store import RatingStore
+from utils import is_reasoning_model, resolve_player_id
+from rating.glicko2 import Glicko2System, PlayerRating
+from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
+from position_benchmark.predictions import predict_rating_from_model_data_with_supplement
+from position_benchmark.layout import (
+    BLUNDER_POSITIONS_PATH,
+    BLUNDER_RESULTS_PATH,
+    CORE_POSITIONS_PATH,
+    CORE_RESULTS_PATH,
+    GAME_LIKE_POSITIONS_PATH,
+    GAME_LIKE_RESULTS_PATH,
+    STABILITY_RESULTS_PATH,
+)
+
+# Starting ratings based on model type and legal move rate
+REASONING_START_RATING = 1200
+NON_REASONING_START_RATING = 400
+LOW_LEGAL_MOVE_RATING = 0  # For models with legal move rate < 90%
+
+# Legal move rate thresholds for initial rating
+LEGAL_MOVE_THRESHOLD_LOW = 0.90  # Below this: start at 0
+LEGAL_MOVE_THRESHOLD_MED = 0.95  # Below this: start at 400 (even for reasoning models)
+
+
+def load_benchmark_predictions() -> dict:
+    """
+    Load position benchmark results and compute predicted ratings.
+
+    Same production predictor as rating_store._load_benchmark_predictions():
+    current history-replay equal-position rows, optionally capped by a fresh
+    game-like supplemental panel when available.
+      rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
+
+    Returns:
+        Dict mapping model name to predicted rating, or empty dict if files missing.
+    """
+    results_path = CORE_RESULTS_PATH
+    positions_path = CORE_POSITIONS_PATH
+    blunder_results_path = BLUNDER_RESULTS_PATH
+    blunder_positions_path = BLUNDER_POSITIONS_PATH
+    game_like_results_path = GAME_LIKE_RESULTS_PATH
+    game_like_positions_path = GAME_LIKE_POSITIONS_PATH
+    stability_results_path = STABILITY_RESULTS_PATH
+
+    if not results_path.exists() or not positions_path.exists():
+        return {}
+
+    try:
+        with open(results_path) as f:
+            results_data = json.load(f)
+        with open(positions_path) as f:
+            positions_data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    positions = positions_data.get("positions", [])
+    blunder_results_data = None
+    blunder_positions = None
+    game_like_results_data = None
+    game_like_positions = None
+    stability_results_data = None
+    if blunder_results_path.exists() and blunder_positions_path.exists():
+        try:
+            with open(blunder_results_path) as f:
+                blunder_results_data = json.load(f)
+            with open(blunder_positions_path) as f:
+                blunder_positions_data = json.load(f)
+            blunder_positions = blunder_positions_data.get("positions", [])
+        except (json.JSONDecodeError, OSError):
+            blunder_results_data = None
+            blunder_positions = None
+    if game_like_results_path.exists() and game_like_positions_path.exists():
+        try:
+            with open(game_like_results_path) as f:
+                game_like_results_data = json.load(f)
+            with open(game_like_positions_path) as f:
+                game_like_positions_data = json.load(f)
+            game_like_positions = game_like_positions_data.get("positions", [])
+        except (json.JSONDecodeError, OSError):
+            game_like_results_data = None
+            game_like_positions = None
+    if stability_results_path.exists():
+        try:
+            with open(stability_results_path) as f:
+                stability_results_data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            stability_results_data = None
+
+    predictions = {}
+    for model_name, model_data in results_data.items():
+        predicted = predict_rating_from_model_data_with_supplement(
+            model_data,
+            positions,
+            blunder_model_data=(
+                blunder_results_data.get(model_name)
+                if isinstance(blunder_results_data, dict)
+                else None
+            ),
+            blunder_positions=blunder_positions,
+            game_like_model_data=(
+                game_like_results_data.get(model_name)
+                if isinstance(game_like_results_data, dict)
+                else None
+            ),
+            game_like_positions=game_like_positions,
+            stability_probe_model_data=(
+                stability_results_data.get(model_name)
+                if isinstance(stability_results_data, dict)
+                else None
+            ),
+            require_ready=True,
+        )
+        if predicted is not None:
+            predictions[model_name] = predicted
+
+    return predictions
+
+
+def invalidate_remote_cache():
+    """Invalidate cache on remote web server and locally."""
+    # Local file-based invalidation (for local dev)
+    invalidate_cache()
+
+    # Remote API invalidation (for production)
+    web_url = os.environ.get("WEB_APP_URL")
+    if not web_url:
+        return
+
+    token = os.environ.get("CACHE_INVALIDATE_TOKEN")
+    try:
+        headers = {"X-Cache-Token": token} if token else {}
+        resp = requests.post(f"{web_url}/api/invalidate-cache", headers=headers, timeout=10)
+        if resp.status_code == 200:
+            print(f"Remote cache invalidated: {web_url}")
+        else:
+            print(f"Warning: Failed to invalidate remote cache (HTTP {resp.status_code})")
+    except requests.RequestException as e:
+        print(f"Warning: Failed to invalidate remote cache: {e}")
 
 
 def load_config(config_path: str) -> dict:
@@ -36,9 +181,17 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def create_engines(config: dict) -> dict:
-    """Create engine players from config."""
+def create_engines(config: dict) -> tuple[dict, set, set]:
+    """Create engine players from config.
+
+    Returns:
+        Tuple of (engines dict, anchor_ids set, ghost_ids set)
+        Engines with anchor: false are not included in anchor_ids.
+        Engines with ghost: true are included in ghost_ids (opponents don't get rating updates).
+    """
     engines = {}
+    anchor_ids = set()
+    ghost_ids = set()
 
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
@@ -49,6 +202,7 @@ def create_engines(config: dict) -> dict:
         engine_type = engine_cfg.get("type", "stockfish")
         player_id = engine_cfg["player_id"]
         rating = engine_cfg["rating"]
+        is_anchor = engine_cfg.get("anchor", True)  # Default to True for backwards compat
 
         if engine_type == "stockfish":
             engines[player_id] = StockfishEngine(
@@ -74,34 +228,149 @@ def create_engines(config: dict) -> dict:
                 rating=rating,
                 seed=engine_cfg.get("seed"),
             )
+        elif engine_type == "uci":
+            if "path" not in engine_cfg:
+                raise ValueError(f"UCI engine '{player_id}' missing required 'path' field")
+            engines[player_id] = UCIEngine(
+                player_id=player_id,
+                rating=rating,
+                engine_path=engine_cfg["path"],
+                move_time=engine_cfg.get("move_time"),
+                nodes=engine_cfg.get("nodes"),
+                depth=engine_cfg.get("depth"),
+                initial_time=engine_cfg.get("initial_time"),
+                increment=engine_cfg.get("increment"),
+            )
+        elif engine_type == "survival":
+            engines[player_id] = SurvivalEngine(
+                player_id=player_id,
+                rating=rating,
+                stockfish_path=engine_cfg.get("stockfish_path", "stockfish"),
+                opening_book_path=engine_cfg.get("opening_book_path"),
+                book_draw_threshold=engine_cfg.get("book_draw_threshold", 0.10),
+                base_depth=engine_cfg.get("base_depth", 12),
+                blunder_threshold=engine_cfg.get("blunder_threshold", 3.0),
+                seed=engine_cfg.get("seed"),
+            )
 
-    return engines
+        # Track anchors (engines with fixed ratings)
+        if is_anchor:
+            anchor_ids.add(player_id)
+
+        # Track ghosts (engines whose opponents don't get rating updates)
+        is_ghost = engine_cfg.get("ghost", False)
+        if is_ghost:
+            ghost_ids.add(player_id)
+
+    return engines, anchor_ids, ghost_ids
 
 
-def create_llm_players(config: dict, api_key: str = None) -> dict:
-    """Create LLM players from config."""
+def create_llm_players(config: dict, api_key: str = None, api_backend: str = "openrouter") -> tuple[dict, set]:
+    """Create LLM players from config.
+
+    Returns:
+        Tuple of (players dict, set of reasoning model player IDs)
+    """
     players = {}
+    reasoning_ids = set()
 
     for llm_cfg in config.get("llms", []):
+        if llm_cfg.get("unavailable") is True:
+            continue
+        configured_api = llm_cfg.get("api", "openrouter")
+        if api_backend == "codex" and configured_api != "codex":
+            continue
+        if api_backend == "gemini" and configured_api != "gemini":
+            continue
+        if (
+            api_backend == "openrouter"
+            and configured_api in {"codex", "gemini"}
+        ):
+            continue
+
         player_id = llm_cfg["player_id"]
         model_name = llm_cfg["model_name"]
         reasoning_effort = llm_cfg.get("reasoning_effort")
+        reasoning_max_tokens = llm_cfg.get("reasoning_max_tokens")
+        reasoning = llm_cfg.get("reasoning")  # None = not set, True = enable, False = disable
+
+        # Validate no conflicting reasoning settings
+        if reasoning is False and reasoning_effort is not None:
+            raise ValueError(
+                f"Model '{player_id}': reasoning=false conflicts with reasoning_effort={reasoning_effort}"
+            )
+        if reasoning_effort is not None and reasoning_max_tokens is not None:
+            raise ValueError(
+                f"Model '{player_id}': cannot set both reasoning_effort and reasoning_max_tokens"
+            )
 
         # Append reasoning effort to player_id if set and not already included
-        if reasoning_effort and f"({reasoning_effort})" not in player_id:
-            player_id = f"{player_id} ({reasoning_effort})"
+        player_id = resolve_player_id(player_id, reasoning_effort)
 
-        players[player_id] = OpenRouterPlayer(
-            player_id=player_id,
-            model_name=model_name,
-            api_key=api_key,
-            temperature=llm_cfg.get("temperature", 0.0),
-            max_tokens=llm_cfg.get("max_tokens", 10),
-            reasoning=llm_cfg.get("reasoning", False),
-            reasoning_effort=reasoning_effort,
-        )
+        if llm_cfg.get("api") == "codex":
+            players[player_id] = CodexSubagentPlayer(
+                player_id=player_id,
+                model_name=llm_cfg.get("codex_model_name") or model_name,
+                reasoning_effort=reasoning_effort or llm_cfg.get("codex_reasoning_effort", "medium"),
+                codex_command=llm_cfg.get("codex_command", "codex"),
+                timeout=llm_cfg.get("timeout", 600),
+                max_retries=llm_cfg.get("codex_max_retries", 2),
+                max_concurrent=llm_cfg.get("codex_max_concurrent"),
+                sandbox=llm_cfg.get("codex_sandbox", "read-only"),
+                ignore_rules=llm_cfg.get("codex_ignore_rules", True),
+                ephemeral=llm_cfg.get("codex_ephemeral", True),
+                include_legal_moves=llm_cfg.get("codex_include_legal_moves", False),
+                extra_args=llm_cfg.get("codex_extra_args"),
+                working_dir=llm_cfg.get("codex_working_dir"),
+            )
+        elif configured_api == "gemini" or api_backend == "gemini":
+            # Strip google/ prefix for direct Gemini API
+            gemini_model = model_name.removeprefix("google/")
+            players[player_id] = GeminiPlayer(
+                player_id=player_id,
+                model_name=gemini_model,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+                timeout=llm_cfg.get("timeout", 600),
+            )
+        elif llm_cfg.get("api") == "completion":
+            players[player_id] = OpenRouterCompletionPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                max_tokens=llm_cfg.get("max_tokens", 10),
+                provider_order=llm_cfg.get("provider_order"),
+                provider_ignore=llm_cfg.get("provider_ignore"),
+                timeout=llm_cfg.get("timeout", 600),
+            )
+        else:
+            players[player_id] = OpenRouterPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
+                temperature=llm_cfg.get("temperature", 0.0),
+                max_tokens=llm_cfg.get("max_tokens", 0),
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+                reasoning_max_tokens=reasoning_max_tokens,
+                provider_order=llm_cfg.get("provider_order"),
+                provider_ignore=llm_cfg.get("provider_ignore"),
+                timeout=llm_cfg.get("timeout", 600),
+            )
 
-    return players
+        # Track reasoning models:
+        # 1. Has reasoning_effort set, OR
+        # 2. Has reasoning=True, OR
+        # 3. Matches naming convention (unless reasoning is explicitly False)
+        if reasoning_effort is not None or reasoning_max_tokens is not None or reasoning is True:
+            reasoning_ids.add(player_id)
+        elif reasoning is not False and is_reasoning_model(player_id):
+            reasoning_ids.add(player_id)
+
+    return players, reasoning_ids
 
 
 async def run_benchmark(args):
@@ -109,29 +378,66 @@ async def run_benchmark(args):
     # Load config
     config = load_config(args.config)
 
-    # Get API key
-    api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
-        return 1
+    if getattr(args, "acquisition_plan", False):
+        from scripts.plan_benchmark_acquisition import run_preflight
+
+        run_preflight(
+            config_path=Path(args.config),
+            api_backend=getattr(args, "api", "openrouter"),
+            max_cost=args.max_cost,
+        )
+        return 0
+
+    # Get API key based on backend
+    api_backend = getattr(args, "api", "openrouter")
+    if api_backend == "gemini":
+        api_key = args.api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
+            return 1
+    elif api_backend == "codex":
+        api_key = None
+    else:
+        api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
+            return 1
 
     # Create players
-    engines = create_engines(config)
-    llm_players = create_llm_players(config, api_key)
+    engines, anchor_ids, ghost_ids = create_engines(config)
+    llm_players, reasoning_ids = create_llm_players(config, api_key, api_backend)
     all_players = {**engines, **llm_players}
 
-    # Set up rating store with anchors
-    anchor_ids = set(engines.keys())
-    rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchor_ids)
+    # Set up rating store with anchors and ghosts
+    rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchor_ids, ghost_ids=ghost_ids)
 
-    # Initialize anchor ratings
+    # Initialize anchor ratings (only for engines with anchor: true)
+    for engine_id in anchor_ids:
+        rating_store.set_anchor(engine_id, engines[engine_id].rating)
+
+    # Initialize non-anchor engine ratings (rating can change)
     for engine_id, engine in engines.items():
-        rating_store.set_anchor(engine_id, engine.rating)
+        if engine_id not in anchor_ids and not rating_store.has_player(engine_id):
+            rating_store.set(PlayerRating(
+                player_id=engine_id,
+                rating=engine.rating,  # Start at configured rating
+                rating_deviation=350,  # High RD for new players
+                volatility=0.06,       # Standard starting volatility
+                games_played=0,
+                unclamped_rating=engine.rating,
+            ))
 
     # Create components
     glicko = Glicko2System()
     pgn_logger = PGNLogger()
     stats_collector = StatsCollector()
+    stats_collector.add_results(pgn_logger.load_all_results())  # Load historical stats
+
+    # Build llm_configs for position benchmark phase
+    llm_configs = {}
+    for cfg in config.get("llms", []):
+        pid = resolve_player_id(cfg["player_id"], cfg.get("reasoning_effort"))
+        llm_configs[pid] = cfg
 
     # Create scheduler
     scheduler = MatchScheduler(
@@ -143,15 +449,27 @@ async def run_benchmark(args):
         max_concurrent=config.get("benchmark", {}).get("max_concurrent", 4),
         max_moves=config.get("benchmark", {}).get("max_moves", 200),
         verbose=args.verbose,
+        reasoning_ids=reasoning_ids,
+        llm_configs=llm_configs,
     )
 
     try:
         # Run benchmark
-        results = await scheduler.run_benchmark(
+        # Note: scheduler's anchor_ids = all engine opponents for LLMs to play against
+        # This differs from RatingStore's anchor_ids (fixed-rating players only).
+        # Rating updates use RatingStore.is_anchor() which excludes non-anchor engines.
+        # Get max_cost: CLI > config > default
+        max_cost = args.max_cost
+        if max_cost is None:
+            max_cost = config.get("benchmark", {}).get("max_cost")
+
+        await scheduler.run_benchmark(
             llm_ids=list(llm_players.keys()),
-            anchor_ids=list(engines.keys()),
+            anchor_ids=list(engines.keys()),  # All engines, including non-anchor ones
             games_vs_anchor_per_color=config.get("benchmark", {}).get("games_vs_anchor_per_color", 10),
             games_vs_llm_per_color=config.get("benchmark", {}).get("games_vs_llm_per_color", 5),
+            rating_threshold=config.get("benchmark", {}).get("rating_threshold"),
+            max_cost=max_cost,
         )
 
         # Show leaderboard
@@ -168,6 +486,9 @@ async def run_benchmark(args):
         for llm in llm_players.values():
             await llm.close()
 
+    # Invalidate web cache so leaderboard refreshes
+    invalidate_remote_cache()
+
     return 0
 
 
@@ -181,14 +502,111 @@ async def show_leaderboard(args):
     stats_collector.add_results(pgn_logger.load_all_results())
 
     leaderboard = Leaderboard(rating_store, stats_collector)
-    print(leaderboard.format_table(min_games=args.min_games))
+    print(leaderboard.format_table(min_games=args.min_games, sort_by=args.sort))
 
+    return 0
+
+
+def show_cap_holdout_status(args):
+    """Show read-only progress toward the prospective stability-cap decision."""
+    from position_benchmark.stability_cap_shadow import (
+        POLICY_PATH,
+        SHADOW_LEDGER_PATH,
+    )
+    from scripts.evaluate_stability_cap_holdout import evaluate
+
+    policy = json.loads(POLICY_PATH.read_text())
+    ratings_path = (
+        args.ratings
+        or Path(__file__).resolve().parent
+        / policy["primary_target"]["default_path"]
+    )
+    if not ratings_path.exists():
+        print("Prospective stability-cap holdout: awaiting game-only ratings")
+        print(f"Production effect: none")
+        print(f"Missing target: {ratings_path}")
+        print(f"Refresh: {policy['primary_target']['refresh_command']}")
+        return 0
+
+    analysis = evaluate(
+        policy_path=POLICY_PATH,
+        ledger_path=SHADOW_LEDGER_PATH,
+        ratings_path=ratings_path,
+    )
+    if args.json:
+        print(json.dumps(analysis, indent=2))
+        return 0
+
+    coverage = analysis["coverage"]
+    rows = analysis["rows"]
+    affected = [row for row in rows if row["affected"]]
+    pending_affected = [row for row in affected if not row["mature"]]
+    gates = policy["coverage_gate"]
+    print(f"Prospective stability-cap holdout: {analysis['status']}")
+    print("Production effect: none")
+    print(
+        "Coverage: "
+        f"{coverage['mature_holdout_configurations']}/"
+        f"{gates['minimum_mature_holdout_configurations']} mature; "
+        f"{coverage['affected_mature_configurations']}/"
+        f"{gates['minimum_affected_holdout_configurations']} affected mature; "
+        f"{len(coverage['affected_families'])}/"
+        f"{gates['minimum_affected_families']} affected families; "
+        f"{len(coverage['affected_labs'])}/"
+        f"{gates['minimum_affected_labs']} affected labs"
+    )
+    print(
+        f"Ledger: {len(rows)} prospective, {len(affected)} affected, "
+        f"{len(pending_affected)} affected and still prioritized"
+    )
+    for row in sorted(
+        pending_affected,
+        key=lambda item: (
+            int((item["target"] or {}).get("games", 0)),
+            item["player_id"],
+        ),
+    ):
+        target = row["target"] or {}
+        print(
+            f"  {row['player_id']}: games={target.get('games', 0)}, "
+            f"games_rd={float(target.get('games_rd', 350.0)):.0f} "
+            f"({row['maturity_reason']})"
+        )
     return 0
 
 
 async def recalculate_ratings(args):
     """Recalculate ratings from stored game results."""
     from datetime import datetime
+
+    validation_output = getattr(args, "validation_output", None)
+    validation_seed_rd = getattr(args, "validation_seed_rd", None)
+    disable_benchmark_seeds = getattr(
+        args, "validation_disable_benchmark_seeds", False
+    )
+    validation_mode = validation_output is not None or validation_seed_rd is not None
+    if validation_mode and (validation_output is None or validation_seed_rd is None):
+        print("Error: --validation-output and --validation-seed-rd must be used together")
+        return 1
+    if validation_seed_rd is not None and validation_seed_rd <= 0:
+        print("Error: --validation-seed-rd must be positive")
+        return 1
+    if disable_benchmark_seeds and not validation_mode:
+        print("Error: --validation-disable-benchmark-seeds requires validation mode")
+        return 1
+
+    ratings_path = Path(validation_output or "data/ratings.json")
+    production_ratings_path = (Path.cwd() / "data/ratings.json").resolve()
+    if validation_mode and ratings_path.resolve() == production_ratings_path:
+        print("Error: validation mode refuses to overwrite production data/ratings.json")
+        return 1
+    benchmark_seed_rd = validation_seed_rd or BENCHMARK_SEED_RD
+    if validation_mode:
+        print(
+            f"Validation-only recalculation: benchmark seed RD={benchmark_seed_rd:.0f}, "
+            f"benchmark seeds={'disabled' if disable_benchmark_seeds else 'enabled'}, "
+            f"local output={ratings_path}"
+        )
 
     # Load config for anchors
     try:
@@ -200,8 +618,10 @@ async def recalculate_ratings(args):
         print(f"Error: Invalid YAML in config file: {e}")
         return 1
 
-    # Build anchor map from config
+    # Build anchor map, non-anchor engine map, and ghost set from config
     anchors = {}
+    non_anchor_engines = {}
+    ghost_ids = set()
     for i, engine_cfg in enumerate(config.get("engines", [])):
         if "player_id" not in engine_cfg:
             print(f"Error: Engine {i+1} missing required 'player_id' field")
@@ -209,13 +629,23 @@ async def recalculate_ratings(args):
         if "rating" not in engine_cfg:
             print(f"Error: Engine '{engine_cfg['player_id']}' missing required 'rating' field")
             return 1
-        anchors[engine_cfg["player_id"]] = engine_cfg["rating"]
+        player_id = engine_cfg["player_id"]
+        # Separate anchors (fixed ratings) from non-anchors (updatable ratings)
+        if engine_cfg.get("anchor", True):
+            anchors[player_id] = engine_cfg["rating"]
+        else:
+            non_anchor_engines[player_id] = engine_cfg["rating"]
+        # Track ghosts (opponents don't get rating updates)
+        if engine_cfg.get("ghost", False):
+            ghost_ids.add(player_id)
 
     if not anchors:
         print("Warning: No anchors (engines) defined in config")
 
     if args.verbose:
         print(f"Anchors: {anchors}")
+        if ghost_ids:
+            print(f"Ghosts (opponents don't get rating updates): {ghost_ids}")
 
     # Load all results
     pgn_logger = PGNLogger()
@@ -239,7 +669,12 @@ async def recalculate_ratings(args):
         invalid_timestamps.append(r.game_id)
         return datetime.min  # Put invalid timestamps first
 
-    results.sort(key=parse_timestamp)
+    results.sort(key=lambda result: (parse_timestamp(result), result.game_id or ""))
+    validation_as_of = (
+        results[-1].created_at
+        if results and results[-1].created_at
+        else "1970-01-01T00:00:00+00:00"
+    )
 
     if invalid_timestamps and args.verbose:
         print(f"Warning: {len(invalid_timestamps)} result(s) with invalid timestamps (sorted to beginning)")
@@ -247,8 +682,15 @@ async def recalculate_ratings(args):
     if args.verbose:
         print(f"Found {len(results)} game results")
 
-    # Initialize rating store with anchors
-    rating_store = RatingStore(path="data/ratings.json", anchor_ids=set(anchors.keys()))
+    # Initialize rating store with anchors and ghosts
+    rating_store = RatingStore(
+        path=str(ratings_path),
+        anchor_ids=set(anchors.keys()),
+        ghost_ids=ghost_ids,
+        use_firestore=False if validation_mode else None,
+        benchmark_seed_rd=benchmark_seed_rd,
+        use_benchmark_predictions=not disable_benchmark_seeds,
+    )
 
     # Always reset when recalculating to avoid double-counting
     rating_store.reset()
@@ -258,6 +700,18 @@ async def recalculate_ratings(args):
     # Set anchor ratings (batch save)
     for anchor_id, rating in anchors.items():
         rating_store.set_anchor(anchor_id, rating, auto_save=False)
+
+    # Initialize non-anchor engines with their configured starting ratings
+    for engine_id, rating in non_anchor_engines.items():
+        rating_store.set(PlayerRating(
+            player_id=engine_id,
+            rating=rating,  # Start at configured rating
+            rating_deviation=350,  # High RD for new players
+            volatility=0.06,       # Standard starting volatility
+            games_played=0,
+            unclamped_rating=rating,
+        ), auto_save=False)
+
     rating_store.save()
 
     glicko = Glicko2System()
@@ -291,132 +745,431 @@ async def recalculate_ratings(args):
         else:
             white_score, black_score = 0.5, 0.5
 
+        fixed_white = None
+        fixed_black = None
+        if result.game_type == "human_challenge":
+            human_id = f"lichess:{result.human_lichess_username or ''}"
+            if (
+                human_id not in {result.white_id, result.black_id}
+                or result.human_rating is None
+                or result.human_rating_deviation is None
+                or not 0 < result.human_rating_deviation <= 500
+            ):
+                if args.verbose:
+                    print(f"Skipping: invalid human snapshot for {result.game_id}")
+                skipped += 1
+                continue
+            fixed_human = PlayerRating(
+                player_id=human_id,
+                rating=float(result.human_rating),
+                rating_deviation=float(result.human_rating_deviation),
+                games_rd=float(result.human_rating_deviation),
+            )
+            if result.white_id == human_id:
+                fixed_white = fixed_human
+            else:
+                fixed_black = fixed_human
+
         valid_games.append({
             'white_id': result.white_id,
             'black_id': result.black_id,
             'white_score': white_score,
             'black_score': black_score,
+            'fixed_white': fixed_white,
+            'fixed_black': fixed_black,
         })
 
     if not valid_games:
         print("No valid games to process")
         return 1
 
-    # Multi-pass convergence
-    max_passes = 10
-    convergence_threshold = 30.0  # Stop when no rating changes by more than this
-    random.seed(42)  # Fixed seed for reproducible results
+    # Rating period configuration
+    BATCH_SIZE = 1  # Games per rating period
+    rating_rng = random.Random(42)
 
     # Count actual games and W-L-D per player, get all unique player IDs
     all_players = set()
     actual_game_counts = {}
     actual_wld = {}  # {player_id: {'wins': N, 'losses': N, 'draws': N}}
     for game in valid_games:
-        all_players.add(game['white_id'])
-        all_players.add(game['black_id'])
-        actual_game_counts[game['white_id']] = actual_game_counts.get(game['white_id'], 0) + 1
-        actual_game_counts[game['black_id']] = actual_game_counts.get(game['black_id'], 0) + 1
+        rated_ids = []
+        if game['fixed_white'] is None:
+            rated_ids.append(game['white_id'])
+        if game['fixed_black'] is None:
+            rated_ids.append(game['black_id'])
+        for player_id in rated_ids:
+            all_players.add(player_id)
+            actual_game_counts[player_id] = actual_game_counts.get(player_id, 0) + 1
+            actual_wld.setdefault(player_id, {'wins': 0, 'losses': 0, 'draws': 0})
 
-        # Initialize W-L-D if needed
-        if game['white_id'] not in actual_wld:
-            actual_wld[game['white_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
-        if game['black_id'] not in actual_wld:
-            actual_wld[game['black_id']] = {'wins': 0, 'losses': 0, 'draws': 0}
+        for player_id, score in (
+            (game['white_id'], game['white_score']),
+            (game['black_id'], game['black_score']),
+        ):
+            if player_id not in actual_wld:
+                continue
+            if score == 1.0:
+                actual_wld[player_id]['wins'] += 1
+            elif score == 0.0:
+                actual_wld[player_id]['losses'] += 1
+            else:
+                actual_wld[player_id]['draws'] += 1
 
-        # Track W-L-D from scores
-        if game['white_score'] == 1.0:
-            actual_wld[game['white_id']]['wins'] += 1
-            actual_wld[game['black_id']]['losses'] += 1
-        elif game['white_score'] == 0.0:
-            actual_wld[game['white_id']]['losses'] += 1
-            actual_wld[game['black_id']]['wins'] += 1
-        else:  # draw
-            actual_wld[game['white_id']]['draws'] += 1
-            actual_wld[game['black_id']]['draws'] += 1
+    # Create stats collector early to get legal move rates for initial ratings
+    stats_collector = StatsCollector()
+    stats_collector.add_results([
+        result for result in results if result.game_type != "human_challenge"
+    ])
+    player_stats = stats_collector.get_player_stats()
 
-    print(f"Starting multi-pass convergence (max {max_passes} passes, {len(valid_games)} games)")
+    # Pre-initialize all non-anchor players with appropriate starting ratings
+    # Priority: benchmark prediction > legal move rate heuristic > model type default
+    benchmark_preds = (
+        {} if disable_benchmark_seeds else load_benchmark_predictions()
+    )
+    # Include models with benchmark predictions even if they haven't played games yet
+    all_players |= set(benchmark_preds.keys())
+    benchmark_count = 0
+    low_legal_count = 0
+    med_legal_count = 0
+    reasoning_count = 0
+    non_reasoning_count = 0
+    for player_id in sorted(all_players):
+        if not rating_store.is_anchor(player_id):
+            # Check benchmark predictions first
+            if player_id in benchmark_preds:
+                start_rating = benchmark_preds[player_id]
+                start_rd = benchmark_seed_rd
+                benchmark_count += 1
+            elif player_id in player_stats:
+                # Fall back to legal move rate heuristic
+                legal_move_rate = player_stats[player_id].get("legal_move_rate", 1.0)
+                if legal_move_rate < LEGAL_MOVE_THRESHOLD_LOW:
+                    start_rating = LOW_LEGAL_MOVE_RATING
+                    low_legal_count += 1
+                elif legal_move_rate < LEGAL_MOVE_THRESHOLD_MED:
+                    start_rating = NON_REASONING_START_RATING
+                    med_legal_count += 1
+                elif is_reasoning_model(player_id):
+                    start_rating = REASONING_START_RATING
+                    reasoning_count += 1
+                else:
+                    start_rating = NON_REASONING_START_RATING
+                    non_reasoning_count += 1
+                start_rd = 350.0
+            else:
+                # Player has no stats yet - use model-type-based default
+                if is_reasoning_model(player_id):
+                    start_rating = REASONING_START_RATING
+                    reasoning_count += 1
+                else:
+                    start_rating = NON_REASONING_START_RATING
+                    non_reasoning_count += 1
+                start_rd = 350.0
 
+            rating_store.set(PlayerRating(
+                player_id=player_id,
+                rating=start_rating,
+                rating_deviation=start_rd,
+                volatility=0.06,
+                games_rd=350.0,
+            ), auto_save=False)
+    rating_store.save()
+    initial_player_ratings = {
+        player_id: PlayerRating.from_dict(rating_store.get(player_id).to_dict())
+        for player_id in sorted(all_players)
+        if not rating_store.is_anchor(player_id)
+    }
+    if args.verbose:
+        print(f"Initialized ratings:")
+        if benchmark_count:
+            print(f"  {benchmark_count} models from benchmark predictions (RD={benchmark_seed_rd:.0f})")
+        if low_legal_count:
+            print(f"  {low_legal_count} models with <{LEGAL_MOVE_THRESHOLD_LOW*100:.0f}% legal moves at {LOW_LEGAL_MOVE_RATING}")
+        if med_legal_count:
+            print(f"  {med_legal_count} models with {LEGAL_MOVE_THRESHOLD_LOW*100:.0f}%-{LEGAL_MOVE_THRESHOLD_MED*100:.0f}% legal moves at {NON_REASONING_START_RATING}")
+        print(f"  {reasoning_count} reasoning models at {REASONING_START_RATING}")
+        print(f"  {non_reasoning_count} non-reasoning models at {NON_REASONING_START_RATING}")
+
+    # Split games into anchor games (calibration) and LLM-only games
+    anchor_games = []
+    llm_games = []
+    for game in valid_games:
+        if (
+            game['fixed_white'] is not None
+            or game['fixed_black'] is not None
+            or rating_store.is_anchor(game['white_id'])
+            or rating_store.is_anchor(game['black_id'])
+        ):
+            anchor_games.append(game)
+        else:
+            llm_games.append(game)
+
+    # Shuffle games within each category for fairness
+    rating_rng.shuffle(anchor_games)
+    rating_rng.shuffle(llm_games)
+
+    # Multi-pass convergence settings. Between passes we snapshot ratings and
+    # reset non-anchor/non-configured-engine ratings so new pass re-seeds with
+    # updated cross-variant info (lower-effort sibling ratings). This lets a
+    # higher-effort variant seeded before its lower-effort sibling pick up the
+    # sibling's stronger rating on subsequent passes.
+    max_passes = 3
+    convergence_threshold = 30.0  # Stop when no rating changes by more than this
+
+    # IDs that should NOT be reset between passes (fixed anchors + configured
+    # starting engines).
+    preserve_ids = set(anchors.keys()) | set(non_anchor_engines.keys())
+
+    print(f"Processing {len(valid_games)} games in rating periods (batch size: {BATCH_SIZE})")
+    print(f"  Anchor games: {len(anchor_games)} (calibration phase)")
+    print(f"  LLM vs LLM games: {len(llm_games)}")
+    print(f"  Max passes: {max_passes}, convergence threshold: {convergence_threshold}")
+
+    def process_batch(batch_games):
+        """Process a batch of games as a single rating period."""
+        if not batch_games:
+            return
+
+        # Snapshot current ratings for this period
+        period_ratings = {
+            pid: rating_store.get(pid) for pid in sorted(all_players)
+        }
+
+        # Collect games per player
+        player_games = defaultdict(lambda: {'opponents': [], 'scores': []})
+
+        for game in batch_games:
+            white_id, black_id = game['white_id'], game['black_id']
+            white_rating = game['fixed_white'] or period_ratings[white_id]
+            black_rating = game['fixed_black'] or period_ratings[black_id]
+
+            # Update white's rating if: not an anchor AND opponent is not a ghost
+            if (
+                game['fixed_white'] is None
+                and not rating_store.is_anchor(white_id)
+                and not rating_store.is_ghost(black_id)
+            ):
+                player_games[white_id]['opponents'].append(black_rating)
+                player_games[white_id]['scores'].append(game['white_score'])
+
+            # Update black's rating if: not an anchor AND opponent is not a ghost
+            if (
+                game['fixed_black'] is None
+                and not rating_store.is_anchor(black_id)
+                and not rating_store.is_ghost(white_id)
+            ):
+                player_games[black_id]['opponents'].append(white_rating)
+                player_games[black_id]['scores'].append(game['black_score'])
+
+        # Update each player with their games from this period
+        for player_id, games in player_games.items():
+            player = period_ratings[player_id]
+            new_player = glicko.update_rating(player, games['opponents'], games['scores'])
+            rating_store.set(new_player, auto_save=False)
+
+    def run_rating_periods():
+        """Run one full pass of rating periods (anchor games first, then LLM games)."""
+        # Phase 1: Process anchor games in batches (calibration)
+        for i in range(0, len(anchor_games), BATCH_SIZE):
+            batch = anchor_games[i:i + BATCH_SIZE]
+            process_batch(batch)
+
+        # Phase 2: Process LLM vs LLM games in batches
+        for i in range(0, len(llm_games), BATCH_SIZE):
+            batch = llm_games[i:i + BATCH_SIZE]
+            process_batch(batch)
+
+    # Multi-pass convergence loop
+    previous_pass_end: Dict[str, float] = {}
     for pass_num in range(1, max_passes + 1):
-        # Store ratings at start of pass to check convergence
-        pass_start_ratings = {pid: rating_store.get(pid).rating for pid in all_players}
+        # On pass >1, snapshot current ratings (= previous pass end) and wipe
+        # non-anchor/non-engine ratings so seeding re-runs with updated
+        # lower-effort sibling info.
+        if pass_num > 1:
+            previous_pass_end = {
+                pid: rating_store.get(pid).rating
+                for pid in sorted(all_players)
+            }
+            rating_store.snapshot_for_pass(
+                preserve_ids,
+                reset_ratings=initial_player_ratings,
+            )
 
-        # Shuffle games to eliminate order bias
-        random.shuffle(valid_games)
+        # Store ratings and RDs at start of pass (post-reset/reseed)
+        pass_start_ratings = {
+            pid: rating_store.get(pid).rating
+            for pid in sorted(all_players)
+        }
+        pass_start_rds = {
+            pid: rating_store.get(pid).rating_deviation
+            for pid in sorted(all_players)
+        }
 
-        if args.verbose:
-            print(f"Pass {pass_num}/{max_passes}: processing {len(valid_games)} games (shuffled)")
-
-        # Process each game with symmetric updates (batch save at end of pass)
-        for game in valid_games:
-            # Get BOTH ratings BEFORE any updates (symmetric)
-            # Even though we call set() for white before black, we use the
-            # pre-stored white_rating object for black's update, ensuring symmetry
-            white_rating = rating_store.get(game['white_id'])
-            black_rating = rating_store.get(game['black_id'])
-
-            # Update non-anchor ratings using same pre-update opponent ratings
-            if not rating_store.is_anchor(game['white_id']):
-                new_white = glicko.update_rating(white_rating, [black_rating], [game['white_score']])
-                rating_store.set(new_white, auto_save=False)
-
-            if not rating_store.is_anchor(game['black_id']):
-                new_black = glicko.update_rating(black_rating, [white_rating], [game['black_score']])
-                rating_store.set(new_black, auto_save=False)
-
-        # Save once per pass (not per game)
+        # Run all rating periods for this pass
+        run_rating_periods()
         rating_store.save()
 
-        # Check convergence
+        # Check convergence: compare end of this pass to end of previous pass
+        # (not to pass-start, since pass-start is a freshly-seeded state after
+        # reset). Pass 1 has no previous pass, so always considered unconverged.
+        MIN_GAMES_FOR_CONVERGENCE = 10
+        MAX_RD_FOR_CONVERGENCE = 80
         max_change = 0.0
-        for pid in all_players:
-            if not rating_store.is_anchor(pid):
+        max_change_player = None
+        max_change_details = {}
+        for pid in sorted(all_players):
+            if rating_store.is_anchor(pid):
+                continue
+            player = rating_store.get(pid)
+            games_played = actual_game_counts.get(pid, 0)
+            if games_played < MIN_GAMES_FOR_CONVERGENCE:
+                continue
+            if player.rating_deviation > MAX_RD_FOR_CONVERGENCE:
+                continue
+            if pass_num == 1:
+                # No previous pass to compare against — treat as unconverged.
                 old_rating = pass_start_ratings[pid]
-                new_rating = rating_store.get(pid).rating
-                change = abs(new_rating - old_rating)
-                max_change = max(max_change, change)
+            else:
+                old_rating = previous_pass_end.get(pid, pass_start_ratings[pid])
+            new_rating = player.rating
+            change = abs(new_rating - old_rating)
+            if change > max_change:
+                max_change = change
+                max_change_player = pid
+                max_change_details = {
+                    'old': old_rating,
+                    'new': new_rating,
+                    'rd': player.rating_deviation,
+                }
 
-        print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
+        if args.verbose and max_change_player:
+            start_rd = pass_start_rds[max_change_player]
+            print(f"Pass {pass_num}: max rating change = {max_change:.1f} "
+                  f"({max_change_player}: {max_change_details['old']:.0f} -> {max_change_details['new']:.0f}, "
+                  f"RD: {start_rd:.0f} -> {max_change_details['rd']:.0f})")
+        else:
+            print(f"Pass {pass_num}: max rating change = {max_change:.1f}")
 
         if pass_num > 1 and max_change < convergence_threshold:
             print(f"Converged after {pass_num} passes (max change {max_change:.1f} < {convergence_threshold})")
             break
 
-    # Fix game counts and W-L-D to actual values (multi-pass inflates them)
-    for pid in all_players:
-        if not rating_store.is_anchor(pid):
-            player = rating_store.get(pid)
-            player.games_played = actual_game_counts.get(pid, 0)
-            wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
-            player.wins = wld['wins']
-            player.losses = wld['losses']
-            player.draws = wld['draws']
-            rating_store.set(player, auto_save=False)
+    # Discard the inter-pass snapshot so it can't leak into later `get()`
+    # seeding (e.g. from a long-lived web-app RatingStore instance).
+    rating_store.clear_pass_snapshot()
+
+    # Fix game counts and W-L-D to actual values (multi-pass inflates them for non-anchors)
+    for pid in sorted(all_players):
+        player = rating_store.get(pid)
+        player.games_played = actual_game_counts.get(pid, 0)
+        wld = actual_wld.get(pid, {'wins': 0, 'losses': 0, 'draws': 0})
+        player.wins = wld['wins']
+        player.losses = wld['losses']
+        player.draws = wld['draws']
+        if validation_mode:
+            # Validation snapshots must be byte-reproducible. Rating updates
+            # otherwise stamp wall-clock time even when every game and seed is
+            # identical.
+            player.last_updated = validation_as_of
+        rating_store.set(player, auto_save=False)
+    rating_store.save()
+
+    # Compute and store frozen flags
+    from game.freeze_checker import FreezeChecker
+    reasoning_ids = set()
+    for llm_cfg in config.get("llms", []):
+        if llm_cfg.get("reasoning", False):
+            reasoning_ids.add(llm_cfg["player_id"])
+    engine_ids = set(anchors.keys()) | set(non_anchor_engines.keys())
+    freeze_checker = FreezeChecker(rating_store, stats_collector, reasoning_ids, engine_ids)
+    frozen_flags = freeze_checker.compute_frozen_flags()
+    frozen_count = 0
+    for player_id, is_frozen in frozen_flags.items():
+        player = rating_store.get(player_id)
+        player.is_frozen = is_frozen
+        rating_store.set(player, auto_save=False)
+        if is_frozen:
+            frozen_count += 1
     rating_store.save()
 
     processed = len(valid_games)
     print(f"\nProcessed {processed} games" + (f" ({skipped} skipped)" if skipped else ""))
+    print(f"Frozen models: {frozen_count}")
     print()
 
-    # Show leaderboard
-    stats_collector = StatsCollector()
-    stats_collector.add_results(results)
+    # Show leaderboard (stats_collector already created earlier)
     leaderboard = Leaderboard(rating_store, stats_collector)
     print(leaderboard.format_table(min_games=1))
+
+    # Invalidate web cache so leaderboard refreshes
+    if not validation_mode:
+        invalidate_remote_cache()
+    else:
+        print(f"Validation ratings saved locally to {ratings_path}; production ratings were unchanged.")
+        if disable_benchmark_seeds:
+            from position_benchmark.stability_cap_shadow import POLICY_PATH
+            from scripts.evaluate_stability_cap_holdout import (
+                evaluate_and_write,
+            )
+
+            with POLICY_PATH.open() as handle:
+                shadow_policy = json.load(handle)
+            expected_target = (
+                Path(__file__).resolve().parent
+                / shadow_policy["primary_target"]["default_path"]
+            ).resolve()
+            if ratings_path.resolve() == expected_target:
+                shadow_analysis = evaluate_and_write(
+                    ratings_path=ratings_path,
+                )
+                print(
+                    "Prospective stability-cap holdout updated: "
+                    f"{shadow_analysis['status']} "
+                    "(production effect: none)."
+                )
 
     return 0
 
 
-async def run_test_game(args):
-    """Run test game(s)."""
+async def run_manual_game(args):
+    """Run manual game(s)."""
+    # Configure debug logging for survival engine if requested
+    if args.debug_engine:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(message)s'
+        )
+        # Only enable debug for survival engine, suppress chess.engine noise
+        logging.getLogger('engines.survival_engine').setLevel(logging.DEBUG)
+        logging.getLogger('chess.engine').setLevel(logging.ERROR)
+
     # Validate arguments
     if args.games < 1:
         print("Error: --games must be at least 1")
         return 1
 
-    # Get API key
-    api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
+    # Get API key based on backend
+    api_backend = getattr(args, "api", "openrouter")
+    if api_backend == "gemini":
+        api_key = args.api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("Error: Gemini API key required. Set GEMINI_API_KEY or use --api-key")
+            return 1
+    elif api_backend == "codex":
+        api_key = None
+    else:
+        api_key = args.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            print("Error: OpenRouter API key required. Set OPENROUTER_API_KEY or use --api-key")
+            return 1
+
+    # Validate reasoning settings don't conflict
+    if args.white_reasoning is False and args.white_reasoning_effort is not None:
+        print("Error: --white-no-reasoning conflicts with --white-reasoning-effort")
+        return 1
+    if args.black_reasoning is False and args.black_reasoning_effort is not None:
+        print("Error: --black-no-reasoning conflicts with --black-reasoning-effort")
         return 1
 
     # Helper to create engine based on type
@@ -448,75 +1201,267 @@ async def run_test_game(args):
                 player_id="random-bot",
                 rating=400,
             )
+        elif engine_type == "eubos":
+            return UCIEngine(
+                player_id="eubos",
+                rating=2344,
+                engine_path="/Volumes/MainStorage/Programming/EubosChess/eubos.sh",
+                initial_time=900,  # 15 minutes
+                increment=10,      # 10 seconds
+            )
+        elif engine_type == "survival":
+            book_path = Path(__file__).parent / "data" / "openings" / "gm2001.bin"
+            return SurvivalEngine(
+                player_id="survival-bot",
+                rating=1200,
+                stockfish_path=args.stockfish_path,
+                opening_book_path=str(book_path) if book_path.exists() else None,
+                base_depth=12,
+                blunder_threshold=3.0,
+            )
         else:
             return StockfishEngine(
                 player_id="stockfish-test",
                 rating=1500,
+                engine_path=args.stockfish_path,
                 skill_level=args.stockfish_skill,
             )
 
+    # Look up api flag from benchmark.yaml (e.g. "completion" for text-completion models)
+    _llm_api_by_model: dict = {}
+    try:
+        import yaml as _yaml
+        _cfg_path = Path(__file__).parent / "config" / "benchmark.yaml"
+        if _cfg_path.exists():
+            with open(_cfg_path) as _f:
+                _cfg = _yaml.safe_load(_f) or {}
+            for _entry in _cfg.get("llms", []) or []:
+                _mn = _entry.get("model_name")
+                _api = _entry.get("api")
+                if _mn and _api:
+                    _llm_api_by_model[_mn] = _api
+    except Exception:
+        pass
+
+    def manual_player_id(
+        model_name,
+        reasoning=None,
+        reasoning_effort=None,
+        reasoning_max_tokens=None,
+        custom_name=None,
+    ):
+        """Resolve the exact persisted player ID without starting a client."""
+        if custom_name:
+            return custom_name
+        player_id = resolve_player_id(
+            model_name.split("/")[-1],
+            reasoning_effort,
+        )
+        if (
+            not reasoning_effort
+            and not reasoning_max_tokens
+            and reasoning is False
+            and "(no thinking)" not in player_id.lower()
+        ):
+            player_id = f"{player_id} (no thinking)"
+        return player_id
+
     # Helper to create LLM player
-    def create_llm(model_name, reasoning_effort=None):
-        player_id = model_name.split("/")[-1]
-        if reasoning_effort and f"({reasoning_effort})" not in player_id:
-            player_id = f"{player_id} ({reasoning_effort})"
+    def create_llm(model_name, reasoning=None, reasoning_effort=None, reasoning_max_tokens=None, custom_name=None):
+        player_id = manual_player_id(
+            model_name,
+            reasoning,
+            reasoning_effort,
+            reasoning_max_tokens,
+            custom_name,
+        )
+        if api_backend == "gemini":
+            gemini_model = model_name.removeprefix("google/")
+            return GeminiPlayer(
+                player_id=player_id,
+                model_name=gemini_model,
+                api_key=api_key,
+                reasoning=reasoning,
+                reasoning_effort=reasoning_effort,
+            )
+        if api_backend == "codex":
+            return CodexSubagentPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                reasoning_effort=reasoning_effort or "medium",
+            )
+        if _llm_api_by_model.get(model_name) == "completion":
+            return OpenRouterCompletionPlayer(
+                player_id=player_id,
+                model_name=model_name,
+                api_key=api_key,
+            )
         return OpenRouterPlayer(
             player_id=player_id,
             model_name=model_name,
             api_key=api_key,
             max_tokens=args.max_tokens,
-            reasoning=args.reasoning,
+            reasoning=reasoning,
             reasoning_effort=reasoning_effort,
+            reasoning_max_tokens=reasoning_max_tokens,
         )
 
     # Track results across games
     results_summary = {"white": 0, "black": 0, "draw": 0}
     total_illegal_white = 0
     total_illegal_black = 0
+    api_error_count = 0
     pgn_logger = PGNLogger() if args.save else None
+
+    if pgn_logger:
+        from position_benchmark.stability_cap_shadow import (
+            ensure_shadow_lock_before_saved_game,
+            record_nonprospective_exclusion,
+        )
+
+        llm_player_ids = []
+        if not args.white_engine:
+            llm_player_ids.append(
+                manual_player_id(
+                    args.white_model,
+                    args.white_reasoning,
+                    args.white_reasoning_effort,
+                    args.white_reasoning_max_tokens,
+                    args.white_name,
+                )
+            )
+        if not args.black_engine:
+            llm_player_ids.append(
+                manual_player_id(
+                    args.black_model,
+                    args.black_reasoning,
+                    args.black_reasoning_effort,
+                    args.black_reasoning_max_tokens,
+                    args.black_name,
+                )
+            )
+        llm_player_ids = list(dict.fromkeys(llm_player_ids))
+
+        historical_counts = defaultdict(int)
+        for result in pgn_logger.load_all_results():
+            historical_counts[result.white_id] += 1
+            historical_counts[result.black_id] += 1
+        manual_rating_store = RatingStore(path="data/ratings.json")
+
+        if getattr(args, "allow_nonprospective_save", False):
+            for player_id in llm_player_ids:
+                try:
+                    exclusion = record_nonprospective_exclusion(
+                        player_id,
+                        reason=(
+                            "explicit --allow-nonprospective-save before a "
+                            "saved manual game"
+                        ),
+                    )
+                except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+                    print(
+                        f"Error: could not persist prospective opt-out for "
+                        f"{player_id}: {error}"
+                    )
+                    return 1
+                if exclusion:
+                    print(
+                        f"Prospective cap holdout disabled for {player_id} by "
+                        "explicit saved-manual-game opt-out."
+                    )
+                else:
+                    print(
+                        f"Stability-cap prediction for {player_id} was already "
+                        "locked; the manual opt-out does not alter it."
+                    )
+        else:
+            for player_id in llm_player_ids:
+                rating = manual_rating_store.get(player_id)
+                game_snapshot = {
+                    "games_played": max(
+                        int(getattr(rating, "games_played", 0) or 0),
+                        historical_counts[player_id],
+                    ),
+                    "games_rd": float(
+                        getattr(rating, "games_rd", 350.0) or 350.0
+                    ),
+                    "rating_deviation": float(
+                        getattr(rating, "rating_deviation", 350.0) or 350.0
+                    ),
+                }
+                decision = ensure_shadow_lock_before_saved_game(
+                    player_id,
+                    game_snapshot=game_snapshot,
+                )
+                if not decision.allowed:
+                    print(
+                        f"Error: saved manual game blocked for {player_id}; "
+                        f"stability-cap shadow lock failed: {decision.message}"
+                    )
+                    print(
+                        "Run the automatic position suite first, use --no-save, "
+                        "or intentionally exclude this configuration with "
+                        "--allow-nonprospective-save."
+                    )
+                    return 1
+                if decision.record is not None and decision.message.startswith(
+                    "immutable shadow prediction locked"
+                ):
+                    print(
+                        f"Locked stability-cap shadow for {player_id}: "
+                        f"{decision.status} (production effect: none)"
+                    )
 
     try:
         for game_num in range(args.games):
             # Alternate colors if playing multiple games
             swap_colors = (game_num % 2 == 1) and args.games > 1
 
+            # Determine engine types (with per-side overrides)
+            white_engine_type = args.white_engine_type or args.engine_type
+            black_engine_type = args.black_engine_type or args.engine_type
+
             # Create players for this game
             if swap_colors:
                 # Swapped: original black config plays white, original white config plays black
                 if args.black_engine:
-                    white = create_engine(args.engine_type)
+                    white = create_engine(black_engine_type)
                 else:
-                    white = create_llm(args.black_model, args.black_reasoning_effort)
+                    white = create_llm(args.black_model, reasoning=args.black_reasoning, reasoning_effort=args.black_reasoning_effort, reasoning_max_tokens=args.black_reasoning_max_tokens, custom_name=args.black_name)
 
                 if args.white_engine:
-                    black = create_engine(args.engine_type)
+                    black = create_engine(white_engine_type)
                 else:
-                    black = create_llm(args.white_model, args.white_reasoning_effort)
+                    black = create_llm(args.white_model, reasoning=args.white_reasoning, reasoning_effort=args.white_reasoning_effort, reasoning_max_tokens=args.white_reasoning_max_tokens, custom_name=args.white_name)
             else:
                 # Normal: original assignments
                 if args.white_engine:
-                    white = create_engine(args.engine_type)
+                    white = create_engine(white_engine_type)
                 else:
-                    white = create_llm(args.white_model, args.white_reasoning_effort)
+                    white = create_llm(args.white_model, reasoning=args.white_reasoning, reasoning_effort=args.white_reasoning_effort, reasoning_max_tokens=args.white_reasoning_max_tokens, custom_name=args.white_name)
 
                 if args.black_engine:
-                    black = create_engine(args.engine_type)
+                    black = create_engine(black_engine_type)
                 else:
-                    black = create_llm(args.black_model, args.black_reasoning_effort)
+                    black = create_llm(args.black_model, reasoning=args.black_reasoning, reasoning_effort=args.black_reasoning_effort, reasoning_max_tokens=args.black_reasoning_max_tokens, custom_name=args.black_name)
 
             if args.games > 1:
                 print(f"\n{'='*50}")
                 print(f"Game {game_num + 1}/{args.games}: {white.player_id} vs {black.player_id}")
                 print("=" * 50)
             else:
-                print(f"Test game: {white.player_id} vs {black.player_id}")
+                print(f"Manual game: {white.player_id} vs {black.player_id}")
             print()
+
+            # Only apply pre-moves to the first game
+            pre_moves = args.moves.split() if args.moves else None
 
             runner = GameRunner(
                 white=white,
                 black=black,
                 max_moves=args.max_moves,
                 verbose=True,
+                pre_moves=pre_moves if game_num == 0 else None,
             )
 
             try:
@@ -524,9 +1469,17 @@ async def run_test_game(args):
 
                 print()
                 print("-" * 50)
+                print(f"White: {white.player_id}")
+                print(f"Black: {black.player_id}")
                 print(f"Result: {result.winner} ({result.termination})")
                 print(f"Moves: {result.moves}")
                 print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
+
+                # Don't count or save games that ended due to API errors
+                if result.termination == "api_error":
+                    print("API error - game not saved or counted")
+                    api_error_count += 1
+                    continue
 
                 # Track results
                 results_summary[result.winner] += 1
@@ -558,27 +1511,39 @@ async def run_test_game(args):
 
         # Print summary if multiple games
         if args.games > 1:
+            games_completed = sum(results_summary.values())
             print()
             print("=" * 50)
             print("SUMMARY")
             print("=" * 50)
-            print(f"Games played: {args.games}")
+            print(f"Games completed: {games_completed}/{args.games}")
+            if api_error_count > 0:
+                print(f"API errors: {api_error_count} (not saved)")
             print(f"White wins: {results_summary['white']}")
             print(f"Black wins: {results_summary['black']}")
             print(f"Draws: {results_summary['draw']}")
             print(f"Total illegal moves - White: {total_illegal_white}, Black: {total_illegal_black}")
 
+        # Invalidate web cache if games were saved
+        if pgn_logger and sum(results_summary.values()) > 0:
+            invalidate_remote_cache()
+
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
         if args.games > 1:
-            games_played = sum(results_summary.values())
-            print(f"Games completed: {games_played}/{args.games}")
+            games_completed = sum(results_summary.values())
+            print(f"Games completed: {games_completed}/{args.games}")
+            if api_error_count > 0:
+                print(f"API errors: {api_error_count} (not saved)")
             print(f"White wins: {results_summary['white']}, Black wins: {results_summary['black']}, Draws: {results_summary['draw']}")
 
     return 0
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(description="Chess LLM Benchmark")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -591,12 +1556,29 @@ def main():
     )
     run_parser.add_argument(
         "--api-key",
-        help="OpenRouter API key (or set OPENROUTER_API_KEY)",
+        help="API key (OPENROUTER_API_KEY or GEMINI_API_KEY depending on --api)",
     )
     run_parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Verbose output",
+    )
+    run_parser.add_argument(
+        "--max-cost",
+        type=float,
+        default=None,
+        help="Maximum cost budget in dollars (default: $10, or from config)",
+    )
+    run_parser.add_argument(
+        "--api",
+        choices=["openrouter", "gemini", "codex"],
+        default="openrouter",
+        help="API backend to use (default: openrouter; codex runs only llms with api: codex)",
+    )
+    run_parser.add_argument(
+        "--acquisition-plan",
+        action="store_true",
+        help="Print the freeze-, readiness-, budget-, and cost-aware acquisition plan without model calls",
     )
 
     # Leaderboard command
@@ -606,6 +1588,12 @@ def main():
         type=int,
         default=1,
         help="Minimum games to include",
+    )
+    lb_parser.add_argument(
+        "--sort",
+        choices=["rating", "legal", "cost"],
+        default="rating",
+        help="Sort by: rating (default), legal (legal move %%), cost ($/game)",
     )
 
     # Recalculate command
@@ -620,89 +1608,207 @@ def main():
         action="store_true",
         help="Show each game as it's processed",
     )
+    recalc_parser.add_argument(
+        "--validation-output",
+        type=Path,
+        help="Write an isolated local validation result instead of production ratings",
+    )
+    recalc_parser.add_argument(
+        "--validation-seed-rd",
+        type=float,
+        help="Benchmark seed RD for --validation-output (production remains 166)",
+    )
+    recalc_parser.add_argument(
+        "--validation-disable-benchmark-seeds",
+        action="store_true",
+        help=(
+            "Validation only: use ordinary legality/model-type initialization "
+            "instead of position-benchmark seeds"
+        ),
+    )
 
-    # Test game command
-    test_parser = subparsers.add_parser("test", help="Run a test game")
-    test_parser.add_argument(
+    holdout_parser = subparsers.add_parser(
+        "cap-holdout-status",
+        help="Show prospective stability-cap holdout progress",
+    )
+    holdout_parser.add_argument(
+        "--ratings",
+        type=Path,
+        help="Alternate game-only ratings target",
+    )
+    holdout_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the complete current analysis as JSON",
+    )
+
+    # Manual game command
+    manual_parser = subparsers.add_parser("manual", help="Run a manual game")
+    manual_parser.add_argument(
         "--white-model",
         default="meta-llama/llama-4-maverick",
         help="White player model (OpenRouter)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-model",
         default="deepseek/deepseek-chat-v3-0324",
         help="Black player model (OpenRouter)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--white-engine",
         action="store_true",
         help="Use engine as white",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-engine",
         action="store_true",
         help="Use engine as black",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--engine-type",
-        choices=["stockfish", "maia-1100", "maia-1900", "random"],
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
         default="stockfish",
-        help="Engine type to use (stockfish, maia-1100, maia-1900, or random)",
+        help="Default engine type (used if --white-engine-type or --black-engine-type not specified)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
+        "--white-engine-type",
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
+        help="Engine type for white (overrides --engine-type)",
+    )
+    manual_parser.add_argument(
+        "--black-engine-type",
+        choices=["stockfish", "maia-1100", "maia-1900", "random", "eubos", "survival"],
+        help="Engine type for black (overrides --engine-type)",
+    )
+    manual_parser.add_argument(
         "--stockfish-skill",
         type=int,
         default=5,
         help="Stockfish skill level (0-20)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--lc0-path",
         default="/opt/homebrew/bin/lc0",
         help="Path to lc0 executable",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
+        "--stockfish-path",
+        default="stockfish",
+        help="Path to stockfish executable (for survival engine)",
+    )
+    manual_parser.add_argument(
         "--max-tokens",
         type=int,
         default=0,
         help="Max tokens for LLM response (0 = no limit, recommended for reasoning models)",
     )
-    test_parser.add_argument(
-        "--reasoning",
-        action="store_true",
-        help="Enable reasoning mode for hybrid models (e.g., DeepSeek)",
-    )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--white-reasoning-effort",
-        choices=["low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for white (low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Reasoning effort level for white (minimal, low, medium, high, xhigh)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--black-reasoning-effort",
-        choices=["low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for black (low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Reasoning effort level for black (minimal, low, medium, high, xhigh)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
+        "--white-reasoning-max-tokens",
+        type=int,
+        help="Explicit thinking token budget for white (overrides effort)",
+    )
+    manual_parser.add_argument(
+        "--black-reasoning-max-tokens",
+        type=int,
+        help="Explicit thinking token budget for black (overrides effort)",
+    )
+    white_reasoning_group = manual_parser.add_mutually_exclusive_group()
+    white_reasoning_group.add_argument(
+        "--white-reasoning",
+        dest="white_reasoning",
+        action="store_const",
+        const=True,
+        help="Enable reasoning mode for white LLM",
+    )
+    white_reasoning_group.add_argument(
+        "--white-no-reasoning",
+        dest="white_reasoning",
+        action="store_const",
+        const=False,
+        help="Disable reasoning mode for white LLM",
+    )
+    manual_parser.set_defaults(white_reasoning=None)
+    black_reasoning_group = manual_parser.add_mutually_exclusive_group()
+    black_reasoning_group.add_argument(
+        "--black-reasoning",
+        dest="black_reasoning",
+        action="store_const",
+        const=True,
+        help="Enable reasoning mode for black LLM",
+    )
+    black_reasoning_group.add_argument(
+        "--black-no-reasoning",
+        dest="black_reasoning",
+        action="store_const",
+        const=False,
+        help="Disable reasoning mode for black LLM",
+    )
+    manual_parser.set_defaults(black_reasoning=None)
+    manual_parser.add_argument(
+        "--white-name",
+        help="Custom display name for white LLM player",
+    )
+    manual_parser.add_argument(
+        "--black-name",
+        help="Custom display name for black LLM player",
+    )
+    manual_parser.add_argument(
         "--max-moves",
         type=int,
         default=200,
         help="Maximum moves per game",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--api-key",
-        help="OpenRouter API key",
+        help="API key (OPENROUTER_API_KEY or GEMINI_API_KEY depending on --api)",
     )
-    test_parser.add_argument(
+    manual_parser.add_argument(
         "--no-save",
         action="store_false",
         dest="save",
         help="Don't save the game (saves by default)",
     )
-    test_parser.set_defaults(save=True)
-    test_parser.add_argument(
+    manual_parser.set_defaults(save=True)
+    manual_parser.add_argument(
+        "--allow-nonprospective-save",
+        action="store_true",
+        help=(
+            "Intentionally save without prospective cap enrollment and "
+            "persistently exclude the LLM configuration(s) from that holdout"
+        ),
+    )
+    manual_parser.add_argument(
         "--games",
         type=int,
         default=1,
         help="Number of games to play (alternates colors if > 1)",
+    )
+    manual_parser.add_argument(
+        "--debug-engine",
+        action="store_true",
+        help="Enable debug logging for survival engine",
+    )
+    manual_parser.add_argument(
+        "--api",
+        choices=["openrouter", "gemini", "codex"],
+        default="openrouter",
+        help="API backend to use (default: openrouter)",
+    )
+    manual_parser.add_argument(
+        "--moves",
+        type=str,
+        default=None,
+        help="UCI moves to pre-play before starting (space-separated, for resuming crashed games)",
     )
 
     args = parser.parse_args()
@@ -713,8 +1819,10 @@ def main():
         return asyncio.run(show_leaderboard(args))
     elif args.command == "recalculate":
         return asyncio.run(recalculate_ratings(args))
-    elif args.command == "test":
-        return asyncio.run(run_test_game(args))
+    elif args.command == "cap-holdout-status":
+        return show_cap_holdout_status(args)
+    elif args.command == "manual":
+        return asyncio.run(run_manual_game(args))
     else:
         parser.print_help()
         return 0

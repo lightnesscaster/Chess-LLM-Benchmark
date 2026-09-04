@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.17"]
+[Round "1"]
+[White "maia-1900"]
+[Black "survival-bot"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 5. d4 d5 6. Bd3 Bb4+ 7. c3 Bd6 8. O-O O-O 9. Nbd2 Ng5 10. Nxg5 Qxg5 11. Nf3 Qg4 12. h3 Qh5 13. Ne5 Qxd1 14. Rxd1 Nd7 15. f4 Nb8 16. Rf1 c5 17. Be3 cxd4 18. Bxd4 Rd8 19. Rae1 f6 20. Nf3 Nd7 21. Nh4 b6 22. Nf5 Bf8 23. Ne7+ Kf7 24. Nc6 Re8 25. Rxe8 Kxe8 26. Re1+ Kf7 27. Bxh7 Ba6 28. Bf5 Bc5 29. Bxd7 Bc8 30. Bxc8 Rxc8 31. Nxa7 Bxd4+ 32. cxd4 Ra8 33. Nb5 Rxa2 34. Re2 Ra5 35. Nd6+ Kg8 36. Re8+ Kh7 37. Rb8 Ra4 38. Rxb6 Rxd4 39. g3 Rd2 40. Nf5 g5 41. fxg5 fxg5 42. g4 Rc2 43. b4 Kg8 44. b5 Rb2 45. Rb8+ Kh7 46. b6 d4 47. b7 d3 48. Rd8 d2 49. b8=Q Rxb8 50. Rxb8 d1=Q+ 51. Kg2 Qa4 52. Rb7+ Kg6 53. Rb6+ Kh7 54. Rh6+ Kg8 55. Rg6+ Kf8 56. Rxg5 Qf4 57. Rh5 Qc1 58. Rh8+ Kf7 59. Rh7+ Ke8 60. Nd6+ Kd8 61. Rh8+ Ke7 62. Nf5+ Kd7 63. Rh7+ Ke8 64. Re7+ Kf8 65. Re1 Qg5 66. Re2 Qf6 67. Kg3 Qa6 68. Re3 Qa7 69. h4 Qf7 70. h5 Qa7 71. h6 Qc5 72. h7 Qc7+ 73. Kh4 Qxh7+ 74. Kg5 Qc7 75. Re6 Qh2 76. Rh6 Qe2 77. Rf6+ Kg8 78. Rg6+ Kh8 79. Rh6+ Kg8 80. Rg6+ Kh7 81. Rg7+ Kh8 82. Kg6 Qc2 83. Rh7+ Kg8 84. Rg7+ Kf8 85. Rf7+ Kg8 86. Rg7+ Kh8 87. Rh7+ Kg8 88. Rg7+ Kf8 89. Rf7+ Kg8 90. Rg7+ Kh8 91. Rh7+ Kg8 92. Rg7+ 1/2-1/2

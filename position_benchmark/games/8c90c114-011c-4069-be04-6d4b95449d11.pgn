@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.13"]
+[Round "1"]
+[White "gpt-5.2-chat"]
+[Black "gpt-5.2 (high)"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. Nxd4 Bb4 6. Nxc6 bxc6 7. e5 Bxc3+ 8. bxc3 O-O 9. Qd4 c5 10. Qxc5 d6 11. Qe3 Ng4 12. Qg3 Nxe5 13. Qxe5 dxe5 14. h3 Bf5 15. Bd3 Bxd3 16. cxd3 Qxd3 17. g3 Qxc3+ 18. Bd2 Qxa1+ 19. Ke2 Qxh1 20. Be3 Qe4 21. Kf1 Qd3+ 22. Kg2 Qe4+ 23. f3 Qxe3 24. a3 Qd2+ 25. Kg1 Qd1+ 26. Kh2 Qd2+ 27. Kh1 Qe1+ 28. Kh2 Qf2+ 29. Kh1 Qf1+ 30. Kh2 Qf2+ 31. Kh1 Qf1+ 32. Kh2 Qf2+ 33. Kh1 Qf1+ 34. Kh2 Qf2+ 35. Kh1 Qf1+ 36. Kh2 Qf2+ 1/2-1/2

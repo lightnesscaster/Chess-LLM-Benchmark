@@ -1,0 +1,28 @@
+# Incremental, resumable validation games for the two GPT-5.6 configurations
+# whose position predictions most strongly exceeded their initial game results.
+#
+# GPT-5.5 opponents are established production IDs near the targets' observed
+# strength. Random-bot supplies a fixed 400 anchor. Each pairing is color-balanced.
+
+source_config: benchmark.yaml
+games_per_color: 1
+max_concurrent: 10
+codex_max_concurrent: 10
+max_moves: 200
+
+matchups:
+  # Luna medium already played GPT-5.5 medium once per color. Add three other
+  # nearby GPT-5.5 effort levels, plus a second game per color against random.
+  - ["gpt-5.6-luna (medium)", "gpt-5.5 (low)"]
+  - ["gpt-5.6-luna (medium)", "gpt-5.5 (high)"]
+  - ["gpt-5.6-luna (medium)", "gpt-5.5 (xhigh)"]
+  - players: ["gpt-5.6-luna (medium)", "random-bot"]
+    games_per_color: 2
+
+  # Terra low already played GPT-5.5 low once per color. Add the other nearby
+  # GPT-5.5 effort levels, plus a second game per color against random.
+  - ["gpt-5.6-terra (low)", "gpt-5.5 (medium)"]
+  - ["gpt-5.6-terra (low)", "gpt-5.5 (high)"]
+  - ["gpt-5.6-terra (low)", "gpt-5.5 (xhigh)"]
+  - players: ["gpt-5.6-terra (low)", "random-bot"]
+    games_per_color: 2

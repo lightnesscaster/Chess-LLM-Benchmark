@@ -2,19 +2,27 @@
 OpenRouter API client for LLM chess players.
 """
 
+import json
 import os
 import re
 import asyncio
 import random
+import time
 import aiohttp
 import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
+from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
 class TransientAPIError(Exception):
     """Raised when API call fails due to transient network issues after retries."""
+    pass
+
+
+class TruncatedResponseError(Exception):
+    """Raised when response content appears truncated (short content but long reasoning)."""
     pass
 
 
@@ -26,7 +34,8 @@ class OpenRouterPlayer(BaseLLMPlayer):
     """
 
     OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-    VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+    VALID_REASONING_EFFORTS = {"minimal", "low", "medium", "high", "xhigh"}
+    REASONING_EXTRACTION_MODEL = "deepseek/deepseek-v3.2-exp"
 
     def __init__(
         self,
@@ -34,9 +43,13 @@ class OpenRouterPlayer(BaseLLMPlayer):
         model_name: str,
         api_key: Optional[str] = None,
         temperature: float = 0.0,
-        max_tokens: int = 10,
-        reasoning: bool = False,
+        max_tokens: int = 0,
+        reasoning: Optional[bool] = None,
         reasoning_effort: Optional[str] = None,
+        reasoning_max_tokens: Optional[int] = None,
+        provider_order: Optional[list] = None,
+        provider_ignore: Optional[list] = None,
+        timeout: int = 300,
     ):
         """
         Initialize OpenRouter player.
@@ -47,9 +60,14 @@ class OpenRouterPlayer(BaseLLMPlayer):
             api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
             temperature: Sampling temperature (0.0 for deterministic)
             max_tokens: Maximum tokens in response
-            reasoning: Enable reasoning mode for hybrid models
-            reasoning_effort: Reasoning effort level (low, medium, high, xhigh).
+            reasoning: Reasoning mode (True=enable, False=disable, None=use API default)
+            reasoning_effort: Reasoning effort level (minimal, low, medium, high, xhigh).
                 If set, automatically enables reasoning mode.
+            reasoning_max_tokens: Explicit thinking token budget. Overrides effort-based
+                percentage mapping. Passed as reasoning.max_tokens to OpenRouter.
+            provider_order: List of provider names to prioritize (e.g., ["DeepInfra", "Together"])
+            provider_ignore: List of provider names to exclude (e.g., ["deepinfra"])
+            timeout: Request timeout in seconds (default 300 = 5 minutes)
         """
         super().__init__(player_id, model_name)
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
@@ -60,17 +78,44 @@ class OpenRouterPlayer(BaseLLMPlayer):
                 f"Invalid reasoning_effort: '{reasoning_effort}'. "
                 f"Must be one of: {', '.join(sorted(self.VALID_REASONING_EFFORTS))}"
             )
+        if reasoning is False and reasoning_effort is not None:
+            raise ValueError(
+                "Cannot set reasoning_effort when reasoning is explicitly disabled"
+            )
+        if reasoning_effort is not None and reasoning_max_tokens is not None:
+            raise ValueError(
+                "Cannot set both reasoning_effort and reasoning_max_tokens"
+            )
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.reasoning = reasoning
         self.reasoning_effort = reasoning_effort
+        self.reasoning_max_tokens = reasoning_max_tokens
+        self.provider_order = provider_order
+        self.provider_ignore = provider_ignore
+        self.timeout = timeout
+        self._last_prompt_tokens = 0
+        self._last_completion_tokens = 0
         self._session: Optional[aiohttp.ClientSession] = None
+        # Track the last inference provider used (from OpenRouter response)
+        self.last_provider: Optional[str] = None
 
     async def _ensure_session(self) -> aiohttp.ClientSession:
         """Lazily create aiohttp session."""
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
         return self._session
+
+    def _track_usage(self, data: dict) -> None:
+        """Track token usage from API response, updating both per-request and cumulative counters."""
+        if "usage" not in data:
+            return
+        usage = data["usage"]
+        self._last_prompt_tokens = usage.get("prompt_tokens", 0)
+        self._last_completion_tokens = usage.get("completion_tokens", 0)
+        self.prompt_tokens += self._last_prompt_tokens
+        self.completion_tokens += self._last_completion_tokens
+        self.total_tokens += usage.get("total_tokens", 0)
 
     def _parse_move(self, response_text: str, board: chess.Board = None) -> Optional[str]:
         """
@@ -91,6 +136,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         # Clean up the response
         text = response_text.strip()
+        resignation = parse_resignation(text)
+        if resignation:
+            return resignation
 
         # Try to find a UCI move pattern
         # Standard moves: e2e4, a1h8
@@ -127,11 +175,19 @@ class OpenRouterPlayer(BaseLLMPlayer):
             # Try first token as SAN
             for token in tokens[:3]:  # Check first few tokens
                 clean_token = token.strip(".,;:!?")
-                try:
-                    move = board.parse_san(clean_token)
-                    return move.uci()
-                except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
-                    continue
+                # Try variations: as-is, with first letter capitalized (for piece prefix)
+                variations = [clean_token]
+                if len(clean_token) > 1 and clean_token[0].lower() in 'kqrbn':
+                    # LLM might have used lowercase piece letter (e.g., "nbd7" instead of "Nbd7")
+                    capitalized = clean_token[0].upper() + clean_token[1:]
+                    if capitalized != clean_token:
+                        variations.append(capitalized)
+                for variant in variations:
+                    try:
+                        move = board.parse_san(variant)
+                        return move.uci()
+                    except (chess.InvalidMoveError, chess.AmbiguousMoveError, ValueError):
+                        continue
 
             # Try to find SAN pattern anywhere in text
             # Match piece moves: Nf3, Bb5, Qd1, Kf1, Rh8
@@ -153,6 +209,255 @@ class OpenRouterPlayer(BaseLLMPlayer):
 
         return None
 
+    async def _extract_move_from_reasoning(
+        self, reasoning_text: str, board: chess.Board
+    ) -> Optional[str]:
+        """
+        Use a secondary LLM to extract a move from a reasoning trace.
+
+        When a model's response content is truncated but reasoning is available,
+        this method attempts to extract the intended move from the reasoning.
+
+        Args:
+            reasoning_text: The reasoning trace from the original model
+            board: Current board position for move validation
+
+        Returns:
+            UCI move string if extraction succeeds, None otherwise
+        """
+        if not reasoning_text or len(reasoning_text) < 50:
+            return None
+
+        session = await self._ensure_session()
+
+        # Truncate reasoning if too long (keep last portion which likely has conclusion)
+        max_reasoning_chars = 8000
+        if len(reasoning_text) > max_reasoning_chars:
+            reasoning_text = "..." + reasoning_text[-max_reasoning_chars:]
+
+        extraction_prompt = f"""A chess-playing AI was analyzing a position and produced the following reasoning trace, but its final response was truncated/corrupted.
+
+Your task: Extract the UCI move (e.g., e2e4, g1f3, e7e8q) that the AI concluded was best.
+
+REASONING TRACE:
+{reasoning_text}
+
+INSTRUCTIONS:
+- Look for the final conclusion/answer in the reasoning
+- The move should be in UCI format: source square + destination square (+ optional promotion piece)
+- Examples: e2e4, g1f3, e7e8q, a7a8n
+- If you can clearly identify the intended move, respond with ONLY that move
+- If the reasoning is unclear or no definitive move was reached, respond with: UNCLEAR
+
+Your response (just the UCI move or UNCLEAR):"""
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/chess-llm-benchmark",
+            "X-Title": "Chess LLM Benchmark",
+        }
+
+        payload = {
+            "model": self.REASONING_EXTRACTION_MODEL,
+            "messages": [{"role": "user", "content": extraction_prompt}],
+            "temperature": 0.0,
+            "max_tokens": 20,
+            "reasoning": {"enabled": True},
+        }
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with session.post(
+                self.OPENROUTER_API_URL,
+                headers=headers,
+                json=payload,
+                timeout=timeout,
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    print(f"  [Reasoning extraction API error {response.status}]: {error_text[:200]}")
+                    return None
+
+                data = await response.json()
+
+                # Handle null JSON response
+                if data is None:
+                    print(f"  [Reasoning extraction API returned null response]")
+                    return None
+
+                first_choice = data.get("choices", [{}])[0] or {}
+                message = first_choice.get("message") or {}
+                response_text = message.get("content", "")
+
+                if not response_text or "UNCLEAR" in response_text.upper():
+                    return None
+
+                # Try to parse the extracted move
+                move = self._parse_move(response_text.strip(), board)
+                if move:
+                    # Validate it's a legal move
+                    try:
+                        chess_move = chess.Move.from_uci(move)
+                        if chess_move in board.legal_moves:
+                            print(f"  [Reasoning extraction] Successfully extracted move: {move}")
+                            return move
+                    except (ValueError, chess.InvalidMoveError):
+                        pass
+
+                return None
+
+        except Exception as e:
+            print(f"  [Reasoning extraction failed]: {type(e).__name__}: {e}")
+            return None
+
+    def _get_reasoning_text(self, data: dict) -> Optional[str]:
+        """
+        Extract reasoning text from API response data.
+
+        Handles various formats providers use for reasoning content.
+        """
+        try:
+            first_choice = data.get("choices", [{}])[0] or {}
+            message = first_choice.get("message", {}) or {}
+
+            # Check reasoning_details (used by some providers)
+            reasoning_details = message.get("reasoning_details", [])
+            if reasoning_details:
+                texts = []
+                for item in reasoning_details:
+                    if isinstance(item, dict):
+                        text = item.get("text", "")
+                        if text:
+                            texts.append(text)
+                    elif isinstance(item, str):
+                        texts.append(item)
+                if texts:
+                    return "\n".join(texts)
+
+            # Check reasoning field (simpler format)
+            reasoning = message.get("reasoning", "")
+            if reasoning:
+                return reasoning
+
+            return None
+        except Exception:
+            return None
+
+    async def _consume_stream(self, response) -> dict:
+        """
+        Consume an SSE stream and return a dict matching non-streaming response format.
+
+        Accumulates content and reasoning from delta chunks so the caller can
+        process the result identically to a non-streaming response.
+        """
+        content_parts = []
+        reasoning_parts = []
+        usage = None
+        model = None
+        provider = None
+        response_id = None
+        finish_reason = None
+
+        # Manually buffer bytes and split on newlines — aiohttp's readline() caps
+        # a single line at ~64KB and raises "Chunk too big" when an SSE data line
+        # (e.g. a long reasoning delta) exceeds that. iter_any() + our own split
+        # has no such limit.
+        async def _iter_lines():
+            buf = bytearray()
+            async for raw in response.content.iter_any():
+                buf.extend(raw)
+                while True:
+                    nl = buf.find(b"\n")
+                    if nl < 0:
+                        break
+                    raw_line = bytes(buf[:nl])
+                    del buf[: nl + 1]
+                    yield raw_line.decode("utf-8", errors="replace").strip()
+            if buf:
+                yield bytes(buf).decode("utf-8", errors="replace").strip()
+
+        early_return = None
+        async for line in _iter_lines():
+            if not line.startswith('data: '):
+                continue
+
+            data_str = line[6:]
+
+            if data_str == '[DONE]':
+                break
+
+            try:
+                chunk = json.loads(data_str)
+            except json.JSONDecodeError:
+                continue
+
+            # Capture metadata
+            if response_id is None:
+                response_id = chunk.get('id')
+            if model is None:
+                model = chunk.get('model')
+            if chunk.get('provider'):
+                provider = chunk['provider']
+
+            # Check for top-level error in chunk
+            if 'error' in chunk and not chunk.get('choices'):
+                early_return = {
+                    'id': response_id,
+                    'model': model,
+                    'provider': provider,
+                    'error': chunk['error'],
+                }
+                break
+
+            # Check for error embedded in choices
+            choices = chunk.get('choices', [])
+            if choices and isinstance(choices[0], dict) and 'error' in choices[0]:
+                early_return = {
+                    'id': response_id,
+                    'model': model,
+                    'provider': provider,
+                    'choices': [{'error': choices[0]['error']}],
+                }
+                break
+
+            # Accumulate deltas
+            if choices:
+                delta = choices[0].get('delta', {})
+                if delta.get('content'):
+                    content_parts.append(delta['content'])
+                if delta.get('reasoning'):
+                    reasoning_parts.append(delta['reasoning'])
+                if choices[0].get('finish_reason'):
+                    finish_reason = choices[0]['finish_reason']
+
+            # Usage comes in later chunks
+            if 'usage' in chunk:
+                usage = chunk['usage']
+
+        if early_return is not None:
+            return early_return
+
+        # Build response dict matching non-streaming format
+        message = {'role': 'assistant', 'content': ''.join(content_parts)}
+        if reasoning_parts:
+            message['reasoning'] = ''.join(reasoning_parts)
+
+        result = {
+            'id': response_id,
+            'model': model,
+            'choices': [{
+                'message': message,
+                'finish_reason': finish_reason,
+            }],
+        }
+        if provider:
+            result['provider'] = provider
+        if usage:
+            result['usage'] = usage
+
+        return result
+
     async def select_move(self, board: chess.Board, is_retry: bool = False,
                           last_move_illegal: str = None) -> str:
         """
@@ -169,13 +474,21 @@ class OpenRouterPlayer(BaseLLMPlayer):
         Raises:
             TransientAPIError: If the API call fails after retries due to network issues
         """
+        move_start_time = time.time()
         session = await self._ensure_session()
 
         # Pass previous successful response for context
         # (use last_successful_response so retries still have context from last good move)
-        prompt = build_chess_prompt(board, is_retry, last_move_illegal, self.last_successful_response)
+        prompt = build_chess_prompt(
+            board,
+            is_retry,
+            last_move_illegal,
+            self.last_successful_response,
+            allow_resignation=self.allow_resignation,
+        )
         self.last_prompt = prompt  # Store for debugging illegal moves
         self.last_raw_response = ""  # Clear stale data before API call
+        self.last_provider = None  # Clear stale provider before API call
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -189,7 +502,7 @@ class OpenRouterPlayer(BaseLLMPlayer):
             "messages": [
                 {"role": "user", "content": prompt}
             ],
-            "temperature": self.temperature,
+            "stream": True,
         }
 
         # Only set max_tokens if explicitly specified (non-zero)
@@ -197,29 +510,63 @@ class OpenRouterPlayer(BaseLLMPlayer):
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
 
-        # Enable reasoning mode for hybrid models
-        if self.reasoning or self.reasoning_effort is not None:
-            reasoning_config = {"enabled": True}
-            if self.reasoning_effort is not None:
-                reasoning_config["effort"] = self.reasoning_effort
-            payload["reasoning"] = reasoning_config
+        # Configure reasoning mode for hybrid models
+        # - reasoning_effort set: enable with effort level
+        # - reasoning=True: enable reasoning
+        # - reasoning=False: explicitly disable reasoning (for thinking models run without thinking)
+        # - reasoning=None: omit parameter (use OpenRouter default)
+        reasoning_enabled = False
+        if self.reasoning_max_tokens is not None:
+            payload["reasoning"] = {"enabled": True, "max_tokens": self.reasoning_max_tokens}
+            reasoning_enabled = True
+        elif self.reasoning_effort is not None:
+            payload["reasoning"] = {"enabled": True, "effort": self.reasoning_effort}
+            reasoning_enabled = True
+        elif self.reasoning is True:
+            payload["reasoning"] = {"enabled": True}
+            reasoning_enabled = True
+        elif self.reasoning is False:
+            payload["reasoning"] = {"enabled": False}
+
+        # Omit temperature when reasoning is enabled — some providers (e.g. Gemini)
+        # hang indefinitely when temperature=0.0 is combined with reasoning mode.
+        if not reasoning_enabled:
+            payload["temperature"] = self.temperature
+
+        # Provider routing preferences
+        provider_routing = {}
+        if self.provider_order:
+            provider_routing["order"] = self.provider_order
+        if self.provider_ignore:
+            provider_routing["ignore"] = self.provider_ignore
+        if provider_routing:
+            payload["provider"] = provider_routing
 
         # Retry logic for transient network and HTTP errors
-        max_retries = 3
+        max_retries = 7
         retry_delay = 2.0  # seconds
         retryable_http_codes = {429, 500, 502, 503, 504}
 
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=300)  # 5 minute timeout per move
+                request_timeout = aiohttp.ClientTimeout(total=self.timeout, sock_read=120)
                 async with session.post(
                     self.OPENROUTER_API_URL,
                     headers=headers,
                     json=payload,
-                    timeout=timeout,
+                    timeout=request_timeout,
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
+                        # Try to extract provider from error response (may be JSON)
+                        try:
+                            error_data = json.loads(error_text)
+                            error_provider = error_data.get("provider")
+                            if error_provider and isinstance(error_provider, str):
+                                self.last_provider = error_provider.strip()[:100]
+                            print(f"  [DEBUG HTTP {response.status}] provider={error_provider}, keys={list(error_data.keys())[:10]}")
+                        except (json.JSONDecodeError, ValueError, TypeError) as parse_err:
+                            print(f"  [DEBUG HTTP {response.status}] Not JSON: {error_text[:100]}")
                         # Store error for debugging before raising
                         self.last_raw_response = f"[HTTP {response.status}] {error_text[:500]}"
                         # Retry on transient server errors and rate limits
@@ -230,56 +577,172 @@ class OpenRouterPlayer(BaseLLMPlayer):
                                 status=response.status,
                                 message=f"HTTP {response.status}: {error_text[:200]}"
                             )
-                        # Non-retryable error (4xx client errors except 429)
-                        raise RuntimeError(f"OpenRouter API error {response.status}: {error_text}")
+                        # Non-retryable error (4xx client errors except 429) - still an API error, not illegal move
+                        raise TransientAPIError(f"OpenRouter API error {response.status}: {error_text}")
 
-                    data = await response.json()
+                    data = await self._consume_stream(response)
+
+                    # Capture provider immediately (even before error checks, so we know which provider failed)
+                    response_provider = data.get("provider")
+                    if response_provider and isinstance(response_provider, str):
+                        self.last_provider = response_provider.strip()[:100]
+
+                    # Check for embedded errors (API returns 200 but with error in body)
+                    choices = data.get("choices")
+                    if (isinstance(choices, list) and len(choices) > 0 and
+                        isinstance(choices[0], dict) and "error" in choices[0]):
+                        print(f"  [DEBUG 200+error] provider={self.last_provider}, error={choices[0].get('error')}")
+                        error_info = choices[0]["error"]
+                        # Handle error_info being a string or dict
+                        if isinstance(error_info, dict):
+                            error_msg = error_info.get("message", "Unknown error")
+                            error_code = error_info.get("code", 0)
+                            # Ensure error_code is int for comparison
+                            try:
+                                error_code = int(error_code) if error_code else 0
+                            except (ValueError, TypeError):
+                                error_code = 0
+                        else:
+                            error_msg = str(error_info)
+                            error_code = 0
+                        self.last_raw_response = f"[API Error {error_code}] {error_msg}"
+                        # Treat as transient (retryable) if it's a network/server error
+                        if error_code in retryable_http_codes or "network" in error_msg.lower():
+                            raise aiohttp.ClientResponseError(
+                                response.request_info,
+                                response.history,
+                                status=error_code if error_code else 500,
+                                message=f"Embedded error {error_code}: {error_msg}"
+                            )
+                        # Non-retryable embedded error - still an API error, not an illegal move
+                        raise TransientAPIError(f"API error in response: {error_code} - {error_msg}")
+
+                    # Check for top-level error in response body (HTTP 200 but error payload)
+                    if "error" in data and not data.get("choices"):
+                        error_info = data["error"]
+                        if isinstance(error_info, dict):
+                            error_msg = error_info.get("message", "Unknown error")
+                            error_code = error_info.get("code", 0)
+                            try:
+                                error_code = int(error_code) if error_code else 0
+                            except (ValueError, TypeError):
+                                error_code = 0
+                        else:
+                            error_msg = str(error_info)
+                            error_code = 0
+                        self.last_raw_response = f"[API Error {error_code}] {error_msg}"
+                        # Treat as retryable
+                        raise aiohttp.ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=error_code if error_code else 500,
+                            message=f"Top-level error {error_code}: {error_msg}"
+                        )
+
+                    # Check for truncated response (short content but long reasoning)
+                    # This indicates network-level truncation, worth retrying
+                    first_choice = data.get("choices", [{}])[0] or {}
+                    message = first_choice.get("message") or {}
+                    content = message.get("content", "")
+                    reasoning_text = self._get_reasoning_text(data)
+                    if (not content or len(content.strip()) < 4) and reasoning_text and len(reasoning_text) > 50:
+                        # Short content with long reasoning - but check if content is valid move first
+                        # Valid moves can be short: "e4" (2), "Bb5" (3), "O-O" (3)
+                        parsed_move = self._parse_move(content, board)
+                        if parsed_move:
+                            # Content is a valid move despite being short - track tokens and use it
+                            self._track_usage(data)
+                            elapsed = time.time() - move_start_time
+                            self.move_times.append(elapsed)
+                            self.total_move_time += elapsed
+                            return parsed_move
+
+                        print(f"  [Truncation detected] content='{content}', reasoning={len(reasoning_text)} chars")
+                        # Try reasoning extraction before retrying API call
+                        extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
+                        if extracted_move:
+                            # Extraction succeeded - track tokens from original response and use move
+                            self._track_usage(data)
+                            elapsed = time.time() - move_start_time
+                            self.move_times.append(elapsed)
+                            self.total_move_time += elapsed
+                            return extracted_move
+                        # Extraction failed - retry API call with fresh session
+                        # OpenRouter may bill this completed generation even though
+                        # it did not yield a usable move. Retain its usage so actual
+                        # benchmark cost includes failed provider-level attempts.
+                        self._track_usage(data)
+                        raise TruncatedResponseError(
+                            f"Response truncated and extraction failed: content='{content}'"
+                        )
 
                 # Success - break out of retry loop
                 break
 
-            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError) as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError,
+                    json.JSONDecodeError, aiohttp.ContentTypeError, TruncatedResponseError) as e:
+                # Note: asyncio.CancelledError is intentionally NOT caught here.
+                # It should propagate to allow proper task cancellation (e.g., Ctrl+C shutdown).
                 if attempt < max_retries - 1:
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * retry_delay)
                     sleep_time = retry_delay + jitter
-                    print(f"  [Transient error, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
+                    provider_info = f" via {self.last_provider}" if self.last_provider else ""
+                    print(f"  [Transient error on {self.model_name}{provider_info}, retrying in {sleep_time:.1f}s]: {type(e).__name__}: {e}")
                     await asyncio.sleep(sleep_time)
-                    retry_delay = min(retry_delay * 2, 60)  # Exponential backoff with cap
-                    # Recreate session in case connection is stale
-                    await self.close()
-                    session = await self._ensure_session()
+                    retry_delay = min(retry_delay * 2, 300)  # Exponential backoff with 5min cap
+                    # Note: Don't close/recreate session here - aiohttp's connection pool
+                    # handles stale connections automatically, and closing would cancel
+                    # other concurrent requests sharing this player instance
                 else:
+                    # Record timing even for failed API calls
+                    elapsed = time.time() - move_start_time
+                    self.move_times.append(elapsed)
+                    self.total_move_time += elapsed
                     raise TransientAPIError(
                         f"API call failed after {max_retries} retries: {e}"
                     ) from e
 
         # Track token usage
-        if "usage" in data:
-            usage = data["usage"]
-            self.prompt_tokens += usage.get("prompt_tokens", 0)
-            self.completion_tokens += usage.get("completion_tokens", 0)
-            self.total_tokens += usage.get("total_tokens", 0)
+        self._track_usage(data)
 
         # Extract response text
-        try:
-            response_text = data["choices"][0]["message"]["content"]
-            self.last_raw_response = response_text or ""  # Store for debugging illegal moves
-            # Debug: check for empty responses
-            if not response_text:
-                print(f"  [DEBUG] Empty response. Full API data: {data}")
-        except (KeyError, IndexError) as e:
-            self.last_raw_response = f"[Failed to extract: {data}]"
-            raise RuntimeError(f"Unexpected API response format: {data}") from e
+        first_choice = data.get("choices", [{}])[0] or {}
+        message = first_choice.get("message") or {}
+        response_text = message.get("content", "")
+        self.last_raw_response = response_text or ""  # Store for debugging illegal moves
+        # Debug: check for empty or suspiciously short responses
+        is_truncated = not response_text or len(response_text.strip()) < 4
+        if is_truncated:
+            print(f"  [DEBUG] Short/empty response. Full API data: {data}")
 
         # Parse and return the move
         move = self._parse_move(response_text, board)
+
+        # If response was truncated but we have reasoning, try to extract move from it
+        if move is None and is_truncated:
+            reasoning_text = self._get_reasoning_text(data)
+            if reasoning_text:
+                print(f"  [DEBUG] Attempting to extract move from reasoning trace ({len(reasoning_text)} chars)")
+                extracted_move = await self._extract_move_from_reasoning(reasoning_text, board)
+                if extracted_move:
+                    elapsed = time.time() - move_start_time
+                    self.move_times.append(elapsed)
+                    self.total_move_time += elapsed
+                    return extracted_move
+
         if move is None:
             # Debug: print raw response when parsing fails
             print(f"  [DEBUG] Raw LLM response: {repr(response_text[:200] if response_text else '')}")
             # Return raw response for logging, will be marked as illegal
+            elapsed = time.time() - move_start_time
+            self.move_times.append(elapsed)
+            self.total_move_time += elapsed
             return response_text.strip()[:20] if response_text else ""
 
+        elapsed = time.time() - move_start_time
+        self.move_times.append(elapsed)
+        self.total_move_time += elapsed
         return move
 
     async def close(self) -> None:

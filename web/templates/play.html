@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Play an LLM - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<div class="play-page" id="play-app"
+     data-start-url="/api/play/start"
+     data-move-url="/api/play/move"
+     data-csrf-token="{{ csrf_token }}">
+    <header class="play-header">
+        <div>
+            <p class="play-kicker">Approved player arena</p>
+            <h1>Play an LLM</h1>
+            <p>Choose a benchmark model, take a side, and play on the same move protocol used in rated matches.</p>
+        </div>
+        <div class="private-badge" aria-label="Approved players only">Rated table</div>
+    </header>
+
+    <section class="play-setup" aria-labelledby="setup-heading">
+        <div class="setup-heading">
+            <span>New game</span>
+            <h2 id="setup-heading">Set the board</h2>
+        </div>
+        {% if models %}
+        <form id="game-setup-form" class="setup-controls">
+            <label class="setup-field lichess-field">
+                <span>Lichess player</span>
+                <input id="lichess-username" name="lichess_username" type="text"
+                       value="{{ lichess_username }}" maxlength="64" autocomplete="username"
+                       placeholder="Your username" required{% if lichess_username %} readonly{% endif %}>
+            </label>
+            <label class="setup-field">
+                <span>Opponent</span>
+                <select id="model-select" name="model_id" required>
+                    {% for model in models %}
+                    <option value="{{ model.id }}">{{ model.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <fieldset class="effort-choice" id="effort-choice">
+                <legend>Effort</legend>
+                <div class="effort-choice-buttons">
+                    {% for effort_id, effort_name in [
+                        ('default', 'Auto'), ('none', 'None'), ('minimal', 'Minimal'),
+                        ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'),
+                        ('xhigh', 'XHigh'), ('max', 'Max')
+                    ] %}
+                    <label data-effort="{{ effort_id }}" hidden>
+                        <input type="radio" name="reasoning_effort" value="{{ effort_id }}" disabled>
+                        <span>{{ effort_name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <fieldset class="color-choice">
+                <legend>Your pieces</legend>
+                <div class="color-choice-buttons">
+                    <label><input type="radio" name="human_color" value="white" checked><span>White</span></label>
+                    <label><input type="radio" name="human_color" value="black"><span>Black</span></label>
+                </div>
+            </fieldset>
+            <button id="start-game" class="start-game-button" type="submit">Start game</button>
+        </form>
+        {% else %}
+        <div class="play-empty">
+            <strong>No web-play models are configured.</strong>
+            <span>Add an OpenRouter or Gemini API key to enable configured models.</span>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="arena-layout" aria-label="Chess game">
+        <div class="arena-board-column">
+            <div class="board-nameplate board-nameplate-top">
+                <span id="top-player-dot" class="piece-dot piece-dot-black" aria-hidden="true"></span>
+                <span id="top-player-name">Black</span>
+            </div>
+            <div class="play-board-frame">
+                <div id="play-board" class="play-board" aria-label="Interactive chessboard"></div>
+            </div>
+            <div id="thinking-rail" class="thinking-rail" role="status" aria-live="polite" hidden>
+                <span></span><span></span><span></span>
+                <strong>The model is choosing a move</strong>
+            </div>
+            <div class="board-nameplate">
+                <span id="bottom-player-dot" class="piece-dot piece-dot-white" aria-hidden="true"></span>
+                <span id="bottom-player-name">White</span>
+            </div>
+            <form id="keyboard-move-form" class="keyboard-move-form" aria-label="Keyboard move">
+                <label for="keyboard-move">Move by coordinates</label>
+                <div>
+                    <input id="keyboard-move" name="move" type="text" maxlength="5"
+                           inputmode="text" autocomplete="off" spellcheck="false"
+                           placeholder="e2e4" aria-describedby="keyboard-move-help" disabled>
+                    <button id="play-keyboard-move" type="submit" disabled>Play move</button>
+                </div>
+                <span id="keyboard-move-help">Enter the start and end squares, plus q, r, b, or n for promotion.</span>
+            </form>
+        </div>
+
+        <aside class="game-console">
+            <div class="turn-card">
+                <span class="console-label">Position</span>
+                <strong id="game-status" role="status" aria-live="polite">Start a game when you’re ready.</strong>
+                <span id="game-detail">Your current Lichess Classical rating and RD set the weight of this game.</span>
+            </div>
+
+            <div class="move-ledger">
+                <div class="ledger-header">
+                    <div>
+                        <span class="console-label">Score sheet</span>
+                        <h2>Moves</h2>
+                    </div>
+                    <div class="ledger-tools">
+                        <span id="move-count">0 plies</span>
+                        <div class="move-navigation" aria-label="Move history navigation">
+                            <button id="move-start" type="button" aria-label="Go to starting position" title="Starting position">«</button>
+                            <button id="move-previous" type="button" aria-label="Go to previous move" title="Previous move">‹</button>
+                            <span id="move-position" aria-live="polite">Live · 0 / 0</span>
+                            <button id="move-next" type="button" aria-label="Go to next move" title="Next move">›</button>
+                            <button id="move-live" type="button" aria-label="Go to live position" title="Live position">Live</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="move-list" class="move-list" aria-label="Moves played">
+                    <p class="ledger-empty">The score sheet is blank.</p>
+                </div>
+            </div>
+
+            <section class="position-data" aria-labelledby="position-data-heading">
+                <div class="position-data-header">
+                    <div>
+                        <span class="console-label">Export</span>
+                        <h2 id="position-data-heading">Position data</h2>
+                    </div>
+                    <span id="export-feedback" role="status" aria-live="polite"></span>
+                </div>
+                <code id="fen-value">No game yet</code>
+                <div class="position-data-actions">
+                    <button id="copy-fen" type="button" disabled>Copy FEN</button>
+                    <button id="copy-pgn" type="button" disabled>Copy PGN</button>
+                    <button id="download-pgn" type="button" disabled>Download PGN</button>
+                </div>
+            </section>
+        </aside>
+    </section>
+</div>
+
+<script id="play-models" type="application/json">{{ models|tojson }}</script>
+<script id="initial-game" type="application/json">{{ current_game|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/play.js') }}"></script>
+{% endblock %}

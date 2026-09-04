@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.15"]
+[Round "1"]
+[White "gpt-5.2 (high)"]
+[Black "gpt-5.1 (no thinking)"]
+[Result "1-0"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 O-O 7. c3 d5 8. exd5 Qxd5 9. Nxe5 Nxe5 10. d4 Bg4 11. Qb3 Qxb3 12. Bxb3 Nd3 13. Rxe7 Nxc1 14. Rxc7 Ne2+ 15. Kf1 Rac8 16. Rxc8 Rxc8 17. Bxf7+ Kh8 18. h3 Bh5 19. Bxh5 Nxh5 20. Kxe2 Re8+ 21. Kd1 Re1+ 22. Kxe1 Nf4 23. Nd2 Nd3+ 24. Kd1 Kg8 25. Ke2 Nf4+ 26. Kf3 Nxg2 27. Kxg2 b5 28. a4 bxa4 29. Rxa4 a5 30. Rxa5 g6 31. Ra8+ Kf7 32. Ra7+ Kf6 33. Rxh7 g5 34. Rh6+ Ke7 35. Rh7+ Ke6 36. Rh6+ Kd5 37. Rh5 1-0

@@ -1,13 +1,25 @@
 # Chess LLM Benchmark
 
-Benchmark suite for evaluating LLM chess-playing ability using Glicko-2 ratings calibrated against engine anchors.
+This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the Glicko-2 rating system, calibrated to approximate Lichess Classical ratings. 
+
+Results can be seen [here](https://chessbenchllm.onrender.com/)
+
+Author can be contacted at dfj2106@columbia.edu
 
 ## How It Works
 
-1. LLMs receive the current position (FEN + ASCII board) and must return a single UCI move
-2. Illegal moves get one retry with a warning; second illegal move = forfeit
-3. Games are played against Stockfish at various skill levels as rating anchors
-4. Glicko-2 ratings are calculated based on game outcomes
+**Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move or exactly `resign`. Resignation is optional, is based only on the model's own assessment, and counts as a normal loss. The first illegal move in a game gets one retry with a warning; the player's second illegal response anywhere in that game is a forfeit, including a failed same-turn retry.
+
+**Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool.
+
+**Rating Calculation** Glicko-2 ratings are calculated based on game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
+
+More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
+
+The separate position benchmark used to predict/seed ratings is documented in the
+[canonical position benchmark specification](position_benchmark/README.md). That
+specification records the finalized June 2026 methodology, validation results,
+optional downside checks, and the exact GPT-5.5 limitation.
 
 ## Installation
 
@@ -15,9 +27,7 @@ Benchmark suite for evaluating LLM chess-playing ability using Glicko-2 ratings 
 pip install -r requirements.txt
 ```
 
-Requires:
-- Stockfish in PATH (or specify path in config) for Stockfish anchors
-- lc0 for Maia anchors (optional)
+Using anchor engines requires installing them individually. [Maia](https://maiachess.com) [Eubos](https://github.com/cjbolt/EubosChess)
 
 ## Usage
 
@@ -27,25 +37,36 @@ Requires:
 export OPENROUTER_API_KEY="your-key"
 ```
 
-### Run a Test Game
+### Run Manual Games
 
 ```bash
-# LLM vs Stockfish
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
+# LLM vs Stockfish (default engine)
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5
 
 # LLM vs LLM
-python cli.py test --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-model deepseek/deepseek-chat-v3-0324
 
-# Multiple games (alternates colors)
-python cli.py test --white-model meta-llama/llama-4-maverick --black-engine --games 10
+# Multiple games (alternates colors each game)
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --games 10
 
-# Against Maia or Random engine
-python cli.py test --white-model gpt-4o --black-engine --engine-type maia-1100
-python cli.py test --white-model gpt-4o --black-engine --engine-type random
+# Against different engine types
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type maia-1100
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type random
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type eubos
 
-# With reasoning models
-python cli.py test --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high
+# With reasoning models (use max-tokens 0 for extended thinking)
+python cli.py manual --white-model deepseek/deepseek-r1 --black-engine --white-reasoning-effort high --max-tokens 0
+
+# Enable reasoning mode for hybrid models
+python cli.py manual --white-model deepseek/deepseek-chat --black-engine --reasoning
+
+# Don't save the game
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --no-save
 ```
+
+**Manual command engine presets:** `stockfish`, `maia-1100`, `maia-1900`, `random`, `eubos`
+
+> Note: `eubos` is a hardcoded preset. For custom UCI engines in benchmarks, use `type: uci` in config.
 
 ### Run Full Benchmark
 
@@ -57,11 +78,13 @@ python cli.py run -c config/benchmark.yaml -v
 
 ```bash
 python cli.py leaderboard --min-games 5
+python cli.py leaderboard --sort legal   # Sort by legal move %
+python cli.py leaderboard --sort cost    # Sort by $/game
 ```
 
 ### Recalculate Ratings
 
-Recalculate all ratings from stored game results (useful after changing anchor ratings):
+Recalculate all ratings from stored game results (useful after playing manual games or changing anchor ratings):
 
 ```bash
 python cli.py recalculate -c config/benchmark.yaml
@@ -69,19 +92,80 @@ python cli.py recalculate -c config/benchmark.yaml
 
 ### Web Interface
 
-View leaderboard and browse games with PGN viewer:
+Available at [https://chessbenchllm.onrender.com](https://chessbenchllm.onrender.com)
 
 ```bash
 python web/app.py
 # Open http://localhost:5000
 ```
 
+Features:
+- **Leaderboard** with Glicko-2 ratings, FIDE estimates, confidence intervals, legal move rates, $/game, and release dates
+- **Game library** with filtering by player and pagination
+- **Interactive game viewer** with move-by-move navigation
+- **Client-side Stockfish analysis** (toggle-able eval bar + top engine lines)
+- **Timeline chart** showing rating progression over time
+- **Cost vs Rating chart** with efficiency frontier
+- **Methodology page** explaining the rating system
+- **JSON API** at `/api/leaderboard`, `/api/games`, `/api/game/<id>`
+- **Google login** for site accounts through Firebase Authentication
+- **Admin play arena** for playing configured LLMs without affecting benchmark ratings
+
+### Login and Admin Play Setup
+
+The web app uses Firebase Authentication for Google sign-in. Any Google user
+with a verified email can log in, but `/admin/play` and its APIs are restricted
+to the comma-separated `ADMIN_EMAILS` allowlist. The Render blueprint designates
+`johnstondaniel4@gmail.com` as the initial administrator.
+
+1. In the Firebase console for the existing project, open **Authentication →
+   Sign-in method** and enable **Google**.
+2. Under **Authentication → Settings → Authorized domains**, add the production
+   Render hostname (currently `chessbenchllm.onrender.com`). Firebase includes
+   `localhost` for local development by default.
+3. In **Project settings → General → Your apps**, create or select a Web app and
+   copy its public `apiKey` value into `FIREBASE_WEB_API_KEY`.
+4. Configure these environment variables in Render:
+
+   - `FIREBASE_CREDENTIALS_JSON`: existing Firebase service-account JSON
+   - `FIREBASE_WEB_API_KEY`: public API key from the Firebase Web app
+   - `FLASK_SECRET_KEY`: long random value used to sign login/game sessions
+   - `ADMIN_EMAILS`: comma-separated verified admin emails
+   - `HUMAN_GAME_DISPLAY_ALIASES`: optional JSON object mapping account emails
+     to public names in the game library, for example
+     `{"player@example.com":"chess_handle"}`. This changes presentation and
+     filtering only; saved Lichess identities and rating inputs stay unchanged.
+   - `OPENROUTER_API_KEY`: enables configured OpenRouter and completion models
+   - `GEMINI_API_KEY`: optional; enables entries configured with `api: gemini`
+   - `CODEX_AUTH_JSON_B64`: base64-encoded Codex CLI `auth.json` used only by
+     the admin play arena
+   - `CLAUDE_CODE_OAUTH_TOKEN`: long-lived token from `claude setup-token`
+     used only by the admin play arena
+
+The Render service installs the official Codex and Claude Code CLIs during its
+build. Codex credentials are seeded into the private `/var/data/codex` disk so
+token refreshes survive deploys. Claude Code runs in print mode with tools,
+plugins, browser access, and session persistence disabled. Subscription-backed
+CLI models remain subject to the usage limits of their respective plans.
+At startup, the service makes one minimal, tool-free request to each configured
+Claude web opponent and writes an availability catalog. The admin dropdown
+fails closed and lists only models that the deployed subscription successfully
+accessed during that check.
+
+For local development, set the same variables and run `python web/app.py`.
+The Firebase project ID and default auth domain are derived from the service
+account; set `FIREBASE_PROJECT_ID` or `FIREBASE_AUTH_DOMAIN` only when an
+override is needed.
+
+Interactive human games live only in the administrator's signed browser session.
+They are not saved as benchmark games and never update Glicko ratings.
+
 ## Configuration
 
 Edit `config/benchmark.yaml` to configure:
 
 - **LLM models** to benchmark (via OpenRouter)
-- **Engine anchors** (Stockfish, Maia, Random)
+- **Engine anchors** (Stockfish, Maia, Random, or any UCI engine)
 - **Games per matchup** and concurrency settings
 
 Example:
@@ -91,6 +175,7 @@ benchmark:
   games_vs_llm_per_color: 5
   max_concurrent: 4
   max_moves: 200
+  rating_threshold: 600  # Only pair players within this rating difference
 
 engines:
   - player_id: "random-bot"
@@ -103,10 +188,12 @@ engines:
     weights_path: "maia-1100.pb.gz"
     rating: 1628
 
-  - player_id: "sf-skill-5"
-    type: stockfish
-    rating: 1300
-    skill_level: 5
+  - player_id: "eubos"
+    type: uci                    # Generic UCI engine
+    path: "/path/to/engine"
+    rating: 2200
+    initial_time: 900            # Clock-based time control (seconds)
+    increment: 10
 
 llms:
   - player_id: "llama-4-maverick"
@@ -116,8 +203,10 @@ llms:
 
   - player_id: "deepseek-r1"
     model_name: "deepseek/deepseek-r1"
-    reasoning_effort: "medium"  # low, medium, high, xhigh
+    reasoning_effort: "medium"  # minimal, low, medium, high
 ```
+
+**Engine types:** `stockfish`, `maia`, `random`, `uci` (generic UCI engine)
 
 ## Project Structure
 
@@ -126,10 +215,13 @@ llms:
 ├── config/
 │   └── benchmark.yaml     # Benchmark configuration
 ├── engines/               # Chess engine wrappers
+│   ├── base_engine.py     # Base engine class
 │   ├── stockfish_engine.py
 │   ├── maia_engine.py
-│   └── random_engine.py
+│   ├── random_engine.py
+│   └── uci_engine.py      # Generic UCI engine wrapper
 ├── llm/                   # LLM player clients
+│   ├── base_llm.py        # Base LLM player class
 │   ├── openrouter_client.py
 │   └── prompts.py         # Chess prompt templates
 ├── game/                  # Game execution
@@ -141,15 +233,30 @@ llms:
 ├── rating/                # Rating system
 │   ├── glicko2.py         # Glicko-2 implementation
 │   ├── rating_store.py    # Local JSON storage
-│   └── leaderboard.py     # Leaderboard formatting
+│   ├── leaderboard.py     # Leaderboard formatting
+│   ├── fide_estimate.py   # FIDE rating estimation
+│   └── cost_calculator.py # API cost calculation
+├── position_benchmark/     # Position-based rating predictor and canonical spec
+│   ├── README.md          # Production methodology and frozen validation record
+│   ├── benchmark_manifest.json # Active panel/result registry
+│   ├── panels/            # Required core and explicitly optional position sets
+│   ├── results/           # Results separated by panel
+│   ├── candidates/        # Non-production source pools
+│   ├── legacy/            # Archived mixed/index-based artifacts
+│   ├── run_benchmark.py   # History-replayed position runner
+│   └── predictions.py     # Readiness rules, formula, and downside caps
 ├── web/                   # Web interface
 │   ├── app.py             # Flask application
+│   ├── timeline_chart.py  # Rating timeline visualization
+│   ├── cost_chart.py      # Cost vs rating visualization
 │   ├── templates/         # HTML templates
 │   └── static/            # CSS/JS assets
 └── data/                  # Output (gitignored)
     ├── games/             # PGN files
     ├── results/           # JSON game results
-    └── ratings.json       # Current ratings
+    ├── ratings.json       # Current ratings
+    ├── lichess_to_fide.json      # FIDE conversion data
+    └── model_publish_dates.json  # Model release dates
 ```
 
 ## Rating System
@@ -158,13 +265,15 @@ Uses Glicko-2 with:
 - **Rating (μ)**: Estimated skill level (starts at 1500)
 - **Rating Deviation (RD)**: Uncertainty (decreases with more games)
 - **Volatility (σ)**: Expected rating fluctuation
+- **FIDE Estimate**: Approximate FIDE rating based on ChessGoals.com Lichess-to-FIDE conversion (valid for 1715-2500 range)
+- **Legal Move Rate**: Percentage of moves that were legal on first attempt
 
-Engine anchors have fixed ratings based on their approximate Elo:
+Engine anchors have fixed ratings based on their approximate Elo and are never updated.
 
 
 ## Illegal Move Policy
 
 - First illegal move: Warning sent, LLM gets one retry
-- Second illegal move: Immediate forfeit (loss)
+- Second illegal move: Immediate forfeit (loss), following FIDE rules
 
 The retry prompt tells the LLM which move was illegal but does not provide a list of legal moves.

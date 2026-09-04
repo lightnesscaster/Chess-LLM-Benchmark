@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "kimi-k2"]
+[Black "claude-sonnet-4 (no thinking)"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Bc5 4. Nxe5 f5 5. Nf7 Qh4 6. Nd8 d6 7. Ne6 fxe4 8. Nxc5 d5 9. N5xe4 d4 0-1

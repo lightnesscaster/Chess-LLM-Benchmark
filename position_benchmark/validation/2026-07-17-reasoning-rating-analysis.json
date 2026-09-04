@@ -1,0 +1,862 @@
+{
+  "generated_at": "2026-07-17T23:30:36.478869+00:00",
+  "target": "final production game-benchmark rating",
+  "position_features_used": false,
+  "ratings_path": "data/ratings.json",
+  "metadata_path": "data/model_publish_dates.json",
+  "multi_effort_lines": 19,
+  "eligibility": {
+    "min_games": 8,
+    "max_rd": 220.0
+  },
+  "validation": "leave-target-release-cohort-out",
+  "policies": {
+    "medium_to_high": {
+      "anchors": [
+        "medium"
+      ],
+      "target": "high",
+      "eligible_lines": 8,
+      "metrics": {
+        "carry_latest": {
+          "mae": 272.98773443437216,
+          "rmse": 487.3842003038855,
+          "max_absolute_error": 1226.510475040412,
+          "mean_error": -252.85293108987338
+        },
+        "linear_ordinal": {
+          "mae": 272.98773443437216,
+          "rmse": 487.3842003038855,
+          "max_absolute_error": 1226.510475040412,
+          "mean_error": -252.85293108987338
+        },
+        "global_curve": {
+          "mae": 313.4891234196271,
+          "rmse": 481.97453399167097,
+          "max_absolute_error": 1218.5997709279804,
+          "mean_error": -114.44996885650087
+        },
+        "lab_curve_release_holdout": {
+          "mae": 316.2029296899693,
+          "rmse": 484.07924943141705,
+          "max_absolute_error": 1220.279810912882,
+          "mean_error": -117.06958008976775
+        },
+        "lab_curve_sibling_allowed": {
+          "mae": 317.2456563329591,
+          "rmse": 485.2064530123957,
+          "max_absolute_error": 1220.279810912882,
+          "mean_error": -111.38979290507189
+        }
+      },
+      "rows": [
+        {
+          "model_id": "google/gemini-3-flash-preview",
+          "lab": "google",
+          "release_cohort": "google/gemini-3-flash-preview",
+          "actual": 1634.7789008991583,
+          "actual_rd": 125.53980459837477,
+          "actual_games": 18,
+          "anchor_ratings": {
+            "medium": 1647.371180539521
+          },
+          "carry_latest": 1647.371180539521,
+          "linear_ordinal": 1647.371180539521,
+          "global_curve": 1831.728506677269,
+          "lab_curve_release_holdout": 1847.7236662890725,
+          "lab_curve_sibling_allowed": 1847.7236662890725,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "google/gemini-3-pro-preview",
+            "google/gemini-3.1-pro-preview",
+            "google/gemma-4-31b-it"
+          ]
+        },
+        {
+          "model_id": "google/gemini-3-pro-preview",
+          "lab": "google",
+          "release_cohort": "google/gemini-3-pro-preview",
+          "actual": 1803.0943694023301,
+          "actual_rd": 79.51428564338492,
+          "actual_games": 51,
+          "anchor_ratings": {
+            "medium": 576.5838943619179
+          },
+          "carry_latest": 576.5838943619179,
+          "linear_ordinal": 576.5838943619179,
+          "global_curve": 584.4945984743497,
+          "lab_curve_release_holdout": 582.814558489448,
+          "lab_curve_sibling_allowed": 582.814558489448,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "google/gemini-3-flash-preview",
+            "google/gemini-3.1-pro-preview",
+            "google/gemma-4-31b-it"
+          ]
+        },
+        {
+          "model_id": "google/gemini-3.1-pro-preview",
+          "lab": "google",
+          "release_cohort": "google/gemini-3.1-pro-preview",
+          "actual": 2065.7099280801776,
+          "actual_rd": 85.45622552537078,
+          "actual_games": 18,
+          "anchor_ratings": {
+            "medium": 2042.4772520450879
+          },
+          "carry_latest": 2042.4772520450879,
+          "linear_ordinal": 2042.4772520450879,
+          "global_curve": 2211.4074351512686,
+          "lab_curve_release_holdout": 2228.340798085286,
+          "lab_curve_sibling_allowed": 2228.340798085286,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "google/gemini-3-flash-preview",
+            "google/gemini-3-pro-preview",
+            "google/gemma-4-31b-it"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.5",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.5",
+          "actual": 474.87339180311665,
+          "actual_rd": 74.65808035161031,
+          "actual_games": 38,
+          "anchor_ratings": {
+            "medium": 542.8203255407491
+          },
+          "carry_latest": 542.8203255407491,
+          "linear_ordinal": 542.8203255407491,
+          "global_curve": 738.546832822219,
+          "lab_curve_release_holdout": 727.6128465319597,
+          "lab_curve_sibling_allowed": 727.6128465319597,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-luna",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1109.0097727793373,
+          "actual_rd": 142.01371376966893,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 506.87865008018207
+          },
+          "carry_latest": 506.87865008018207,
+          "linear_ordinal": 506.87865008018207,
+          "global_curve": 634.1838097573273,
+          "lab_curve_release_holdout": 624.3569947425599,
+          "lab_curve_sibling_allowed": 620.3286437387453,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-sol",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1538.1156007196075,
+          "actual_rd": 129.23541753169792,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 1392.479805887941
+          },
+          "carry_latest": 1392.479805887941,
+          "linear_ordinal": 1392.479805887941,
+          "global_curve": 1519.7849655650862,
+          "lab_curve_release_holdout": 1509.9581505503188,
+          "lab_curve_sibling_allowed": 1532.5347437209577,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-terra",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 766.0300062792206,
+          "actual_rd": 140.76388796134344,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 738.8889406053991
+          },
+          "carry_latest": 738.8889406053991,
+          "linear_ordinal": 738.8889406053991,
+          "global_curve": 866.1941002825442,
+          "lab_curve_release_holdout": 856.3672852677769,
+          "lab_curve_sibling_allowed": 883.2573405785195,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-oss-120b",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-oss-120b",
+          "actual": 654.2067877866434,
+          "actual_rd": 61.07027398194859,
+          "actual_games": 52,
+          "anchor_ratings": {
+            "medium": 575.4952599698065
+          },
+          "carry_latest": 575.4952599698065,
+          "linear_ordinal": 575.4952599698065,
+          "global_curve": 743.8787581675206,
+          "lab_curve_release_holdout": 732.0878170750275,
+          "lab_curve_sibling_allowed": 732.0878170750275,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra"
+          ]
+        }
+      ]
+    },
+    "low_medium_to_high": {
+      "anchors": [
+        "low",
+        "medium"
+      ],
+      "target": "high",
+      "eligible_lines": 5,
+      "metrics": {
+        "carry_latest": {
+          "mae": 171.0894393165277,
+          "rmse": 279.0281929898821,
+          "max_absolute_error": 602.1311226991552,
+          "mean_error": -138.87375396532963
+        },
+        "linear_ordinal": {
+          "mae": 393.3516888993601,
+          "rmse": 579.4524729518272,
+          "max_absolute_error": 1052.748347259885,
+          "mean_error": 95.41564196337973
+        },
+        "global_curve": {
+          "mae": 210.7887477954136,
+          "rmse": 262.35143749842933,
+          "max_absolute_error": 474.82596302201,
+          "mean_error": 13.526108524801066
+        },
+        "lab_curve_release_holdout": {
+          "mae": 213.76634546267593,
+          "rmse": 265.73094901326664,
+          "max_absolute_error": 484.65277803677736,
+          "mean_error": 8.642254180249484
+        },
+        "lab_curve_sibling_allowed": {
+          "mae": 215.43470809145956,
+          "rmse": 269.00012819169626,
+          "max_absolute_error": 488.68112904059194,
+          "mean_error": 17.729913675762873
+        }
+      },
+      "rows": [
+        {
+          "model_id": "google/gemini-3-flash-preview",
+          "lab": "google",
+          "release_cohort": "google/gemini-3-flash-preview",
+          "actual": 1634.7789008991583,
+          "actual_rd": 125.53980459837477,
+          "actual_games": 18,
+          "anchor_ratings": {
+            "low": 607.2151129199988,
+            "medium": 1647.371180539521
+          },
+          "carry_latest": 1647.371180539521,
+          "linear_ordinal": 2687.527248159043,
+          "global_curve": 1831.728506677269,
+          "lab_curve_release_holdout": 1847.7236662890725,
+          "lab_curve_sibling_allowed": 1847.7236662890725,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "google/gemini-3-pro-preview",
+            "google/gemini-3.1-pro-preview",
+            "google/gemma-4-31b-it"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.5",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.5",
+          "actual": 474.87339180311665,
+          "actual_rd": 74.65808035161031,
+          "actual_games": 38,
+          "anchor_ratings": {
+            "low": 598.9215870046503,
+            "medium": 542.8203255407491
+          },
+          "carry_latest": 542.8203255407491,
+          "linear_ordinal": 486.71906407684787,
+          "global_curve": 738.546832822219,
+          "lab_curve_release_holdout": 727.6128465319597,
+          "lab_curve_sibling_allowed": 727.6128465319597,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-luna",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1109.0097727793373,
+          "actual_rd": 142.01371376966893,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 649.5876447209779,
+            "medium": 506.87865008018207
+          },
+          "carry_latest": 506.87865008018207,
+          "linear_ordinal": 364.16965543938625,
+          "global_curve": 634.1838097573273,
+          "lab_curve_release_holdout": 624.3569947425599,
+          "lab_curve_sibling_allowed": 620.3286437387453,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-sol",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1538.1156007196075,
+          "actual_rd": 129.23541753169792,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 1208.4569746023217,
+            "medium": 1392.479805887941
+          },
+          "carry_latest": 1392.479805887941,
+          "linear_ordinal": 1576.5026371735603,
+          "global_curve": 1519.7849655650862,
+          "lab_curve_release_holdout": 1509.9581505503188,
+          "lab_curve_sibling_allowed": 1532.5347437209577,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-terra",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 766.0300062792206,
+          "actual_rd": 140.76388796134344,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 592.8106037622968,
+            "medium": 738.8889406053991
+          },
+          "carry_latest": 738.8889406053991,
+          "linear_ordinal": 884.9672774485014,
+          "global_curve": 866.1941002825442,
+          "lab_curve_release_holdout": 856.3672852677769,
+          "lab_curve_sibling_allowed": 883.2573405785195,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        }
+      ]
+    },
+    "medium_to_xhigh": {
+      "anchors": [
+        "medium"
+      ],
+      "target": "xhigh",
+      "eligible_lines": 4,
+      "metrics": {
+        "carry_latest": {
+          "mae": 405.4989596622964,
+          "rmse": 516.0825590674368,
+          "max_absolute_error": 864.2260433461797,
+          "mean_error": -405.4989596622964
+        },
+        "linear_ordinal": {
+          "mae": 405.4989596622964,
+          "rmse": 516.0825590674368,
+          "max_absolute_error": 864.2260433461797,
+          "mean_error": -405.4989596622964
+        },
+        "global_curve": {
+          "mae": 336.19065366693997,
+          "rmse": 406.4260322114252,
+          "max_absolute_error": 660.8238192581364,
+          "mean_error": -160.2841985815962
+        },
+        "lab_curve_release_holdout": {
+          "mae": 341.23374854695345,
+          "rmse": 410.50973619450207,
+          "max_absolute_error": 670.4525211811438,
+          "mean_error": -169.6841565860938
+        },
+        "lab_curve_sibling_allowed": {
+          "mae": 328.5746919817884,
+          "rmse": 384.6433272573265,
+          "max_absolute_error": 626.5800476392706,
+          "mean_error": -123.43094067271656
+        }
+      },
+      "rows": [
+        {
+          "model_id": "openai/gpt-5.5",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.5",
+          "actual": 561.6597874287322,
+          "actual_rd": 60.316299119869065,
+          "actual_games": 55,
+          "anchor_ratings": {
+            "medium": 542.8203255407491
+          },
+          "carry_latest": 542.8203255407491,
+          "linear_ordinal": 542.8203255407491,
+          "global_curve": 913.4726975994198,
+          "lab_curve_release_holdout": 904.7589713504516,
+          "lab_curve_sibling_allowed": 904.7589713504516,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-luna",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1371.1046934263618,
+          "actual_rd": 130.35073864712237,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 506.87865008018207
+          },
+          "carry_latest": 506.87865008018207,
+          "linear_ordinal": 506.87865008018207,
+          "global_curve": 710.2808741682254,
+          "lab_curve_release_holdout": 700.652172245218,
+          "lab_curve_sibling_allowed": 744.5246457870912,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-sol",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1611.7547050147302,
+          "actual_rd": 126.11946967311813,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 1392.479805887941
+          },
+          "carry_latest": 1392.479805887941,
+          "linear_ordinal": 1392.479805887941,
+          "global_curve": 1595.8820299759843,
+          "lab_curve_release_holdout": 1586.253328052977,
+          "lab_curve_sibling_allowed": 1678.9430237111546,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-terra",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1258.5443748936325,
+          "actual_rd": 130.39096012380705,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "medium": 738.8889406053991
+          },
+          "carry_latest": 738.8889406053991,
+          "linear_ordinal": 738.8889406053991,
+          "global_curve": 942.2911646934424,
+          "lab_curve_release_holdout": 932.662462770435,
+          "lab_curve_sibling_allowed": 981.113157223893,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        }
+      ]
+    },
+    "low_medium_to_xhigh": {
+      "anchors": [
+        "low",
+        "medium"
+      ],
+      "target": "xhigh",
+      "eligible_lines": 4,
+      "metrics": {
+        "carry_latest": {
+          "mae": 405.4989596622964,
+          "rmse": 516.0825590674368,
+          "max_absolute_error": 864.2260433461797,
+          "mean_error": -405.4989596622964
+        },
+        "linear_ordinal": {
+          "mae": 414.2388853725088,
+          "rmse": 594.294083277044,
+          "max_absolute_error": 1149.6440326277714,
+          "mean_error": -339.8535036502841
+        },
+        "global_curve": {
+          "mae": 324.2690810920859,
+          "rmse": 384.1251329540145,
+          "max_absolute_error": 549.6298600302589,
+          "mean_error": -41.680623647814514
+        },
+        "lab_curve_release_holdout": {
+          "mae": 323.91644657809525,
+          "rmse": 385.51527182496994,
+          "max_absolute_error": 533.4736989585945,
+          "mean_error": -56.778881177506804
+        },
+        "lab_curve_sibling_allowed": {
+          "mae": 325.4628162560905,
+          "rmse": 371.4065102750297,
+          "max_absolute_error": 533.4736989585945,
+          "mean_error": -24.337336360176863
+        }
+      },
+      "rows": [
+        {
+          "model_id": "openai/gpt-5.5",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.5",
+          "actual": 561.6597874287322,
+          "actual_rd": 60.316299119869065,
+          "actual_games": 55,
+          "anchor_ratings": {
+            "low": 598.9215870046503,
+            "medium": 542.8203255407491
+          },
+          "carry_latest": 542.8203255407491,
+          "linear_ordinal": 430.61780261294666,
+          "global_curve": 1111.289647458991,
+          "lab_curve_release_holdout": 1095.1334863873267,
+          "lab_curve_sibling_allowed": 1095.1334863873267,
+          "anchor_combination": "mean",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-luna",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1371.1046934263618,
+          "actual_rd": 130.35073864712237,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 649.5876447209779,
+            "medium": 506.87865008018207
+          },
+          "carry_latest": 506.87865008018207,
+          "linear_ordinal": 221.46066079859042,
+          "global_curve": 905.0665170284627,
+          "lab_curve_release_holdout": 890.3208940127612,
+          "lab_curve_sibling_allowed": 927.1599953767889,
+          "anchor_combination": "mean",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-sol",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1611.7547050147302,
+          "actual_rd": 126.11946967311813,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 1208.4569746023217,
+            "medium": 1392.479805887941
+          },
+          "carry_latest": 1392.479805887941,
+          "linear_ordinal": 1760.5254684591796,
+          "global_curve": 1627.3017598730141,
+          "lab_curve_release_holdout": 1612.5561368573126,
+          "lab_curve_sibling_allowed": 1680.531965847963,
+          "anchor_combination": "mean",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-terra",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1258.5443748936325,
+          "actual_rd": 130.39096012380705,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "low": 592.8106037622968,
+            "medium": 738.8889406053991
+          },
+          "carry_latest": 738.8889406053991,
+          "linear_ordinal": 1031.0456142916037,
+          "global_curve": 992.6831418117307,
+          "lab_curve_release_holdout": 977.937518796029,
+          "lab_curve_sibling_allowed": 1002.8887677106708,
+          "anchor_combination": "mean",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        }
+      ]
+    },
+    "high_to_xhigh": {
+      "anchors": [
+        "high"
+      ],
+      "target": "xhigh",
+      "eligible_lines": 4,
+      "metrics": {
+        "carry_latest": {
+          "mae": 228.75869729554367,
+          "rmse": 284.7010479729995,
+          "max_absolute_error": 492.51436861441186,
+          "mean_error": -228.75869729554367
+        },
+        "linear_ordinal": {
+          "mae": 228.75869729554367,
+          "rmse": 284.7010479729995,
+          "max_absolute_error": 492.51436861441186,
+          "mean_error": -228.75869729554367
+        },
+        "global_curve": {
+          "mae": 173.2531474267502,
+          "rmse": 232.25695972069943,
+          "max_absolute_error": 416.4173042035137,
+          "mean_error": -127.95443279306986
+        },
+        "lab_curve_release_holdout": {
+          "mae": 173.75868416413297,
+          "rmse": 232.34236322016744,
+          "max_absolute_error": 416.21919111175373,
+          "mean_error": -127.2507829639271
+        },
+        "lab_curve_sibling_allowed": {
+          "mae": 173.92159386391685,
+          "rmse": 216.9283971637494,
+          "max_absolute_error": 394.6585519690383,
+          "mean_error": -92.3571414199416
+        }
+      },
+      "rows": [
+        {
+          "model_id": "openai/gpt-5.5",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.5",
+          "actual": 561.6597874287322,
+          "actual_rd": 60.316299119869065,
+          "actual_games": 55,
+          "anchor_ratings": {
+            "high": 474.87339180311665
+          },
+          "carry_latest": 474.87339180311665,
+          "linear_ordinal": 474.87339180311665,
+          "global_curve": 649.7992565803174,
+          "lab_curve_release_holdout": 652.0195166216085,
+          "lab_curve_sibling_allowed": 652.0195166216085,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-luna",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1371.1046934263618,
+          "actual_rd": 130.35073864712237,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "high": 1109.0097727793373
+          },
+          "carry_latest": 1109.0097727793373,
+          "linear_ordinal": 1109.0097727793373,
+          "global_curve": 1185.1068371902354,
+          "lab_curve_release_holdout": 1185.3049502819954,
+          "lab_curve_sibling_allowed": 1233.2057748276832,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-sol",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1611.7547050147302,
+          "actual_rd": 126.11946967311813,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "high": 1538.1156007196075
+          },
+          "carry_latest": 1538.1156007196075,
+          "linear_ordinal": 1538.1156007196075,
+          "global_curve": 1614.2126651305057,
+          "lab_curve_release_holdout": 1614.4107782222657,
+          "lab_curve_sibling_allowed": 1684.5238807098044,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        },
+        {
+          "model_id": "openai/gpt-5.6-terra",
+          "lab": "openai",
+          "release_cohort": "openai/gpt-5.6",
+          "actual": 1258.5443748936325,
+          "actual_rd": 130.39096012380705,
+          "actual_games": 8,
+          "anchor_ratings": {
+            "high": 766.0300062792206
+          },
+          "carry_latest": 766.0300062792206,
+          "linear_ordinal": 766.0300062792206,
+          "global_curve": 842.1270706901188,
+          "lab_curve_release_holdout": 842.3251837818788,
+          "lab_curve_sibling_allowed": 863.8858229245942,
+          "anchor_combination": "latest",
+          "lab_training_lines": [
+            "openai/gpt-5",
+            "openai/gpt-5.1",
+            "openai/gpt-5.2",
+            "openai/gpt-5.4",
+            "openai/gpt-5.5",
+            "openai/gpt-oss-120b"
+          ]
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "High/Xhigh coverage is small, especially for complete four-level curves.",
+    "Final ratings still contain Glicko uncertainty and the normal benchmark prior.",
+    "GPT-5.6 is the only multi-line release cohort, so release transfer is weakly identified.",
+    "Candidate comparison is exploratory and is not authorization for a production change."
+  ]
+}

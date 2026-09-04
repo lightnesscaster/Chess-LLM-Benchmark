@@ -1,0 +1,783 @@
+{
+  "generated_at": "2026-07-17T08:45:07.559391+00:00",
+  "experiment_id": "failure-transfer-heldout-v1",
+  "frozen_at": "2026-07-17T08:19:40Z",
+  "production_effect": "none",
+  "stockfish_depth": 30,
+  "primary": {
+    "failure_states": {
+      "attempts": 24,
+      "illegals": 6,
+      "illegal_pct": 25.0,
+      "illegal_wilson_95pct": [
+        11.999203479342329,
+        44.89982531210644
+      ],
+      "mean_cpl": 2022.9166666666667,
+      "median_cpl": 564.5,
+      "legal_only_mean_cpl": 1240.7222222222222,
+      "retry_attempts": 6,
+      "retry_recoveries": 4,
+      "retry_failures": 2
+    },
+    "matched_controls": {
+      "attempts": 24,
+      "illegals": 4,
+      "illegal_pct": 16.666666666666668,
+      "illegal_wilson_95pct": [
+        6.678568000728924,
+        35.85347038786943
+      ],
+      "mean_cpl": 1220.5,
+      "median_cpl": 10.0,
+      "legal_only_mean_cpl": 661.65,
+      "retry_attempts": 4,
+      "retry_recoveries": 4,
+      "retry_failures": 0
+    },
+    "illegal_rate_difference_points": 8.333333333333332,
+    "matched_pairs": 24,
+    "failure_only_discordant": 4,
+    "control_only_discordant": 2,
+    "one_sided_exact_mcnemar_p": 0.34375,
+    "positive_families": [
+      "google",
+      "qwen"
+    ],
+    "positive_family_count": 2,
+    "promotion_gate_passed": false,
+    "decision": "retain-research-only"
+  },
+  "per_family": {
+    "anthropic": {
+      "failure_states": {
+        "attempts": 6,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          39.03430336530645
+        ],
+        "mean_cpl": 3219.3333333333335,
+        "median_cpl": 564.5,
+        "legal_only_mean_cpl": 3219.3333333333335,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 6,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          39.03430336530645
+        ],
+        "mean_cpl": 1862.5,
+        "median_cpl": 38.0,
+        "legal_only_mean_cpl": 1862.5,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "deepseek": {
+      "failure_states": {
+        "attempts": 6,
+        "illegals": 2,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          9.676933255921682,
+          70.00116786584712
+        ],
+        "mean_cpl": 1761.6666666666667,
+        "median_cpl": 397.0,
+        "legal_only_mean_cpl": 272.75,
+        "retry_attempts": 2,
+        "retry_recoveries": 1,
+        "retry_failures": 1
+      },
+      "matched_controls": {
+        "attempts": 6,
+        "illegals": 2,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          9.676933255921682,
+          70.00116786584712
+        ],
+        "mean_cpl": 1735.5,
+        "median_cpl": 20.0,
+        "legal_only_mean_cpl": 10.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      }
+    },
+    "google": {
+      "failure_states": {
+        "attempts": 6,
+        "illegals": 2,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          9.676933255921682,
+          70.00116786584712
+        ],
+        "mean_cpl": 1547.1666666666667,
+        "median_cpl": 285.5,
+        "legal_only_mean_cpl": 142.75,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 6,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          39.03430336530645
+        ],
+        "mean_cpl": 14.333333333333334,
+        "median_cpl": 0.5,
+        "legal_only_mean_cpl": 14.333333333333334,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "qwen": {
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 1,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          6.14903152761605,
+          79.23450448735122
+        ],
+        "mean_cpl": 1538.3333333333333,
+        "median_cpl": 567.0,
+        "legal_only_mean_cpl": 301.0,
+        "retry_attempts": 1,
+        "retry_recoveries": 0,
+        "retry_failures": 1
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 621.3333333333334,
+        "median_cpl": 76.0,
+        "legal_only_mean_cpl": 621.3333333333334,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "z-ai": {
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 1,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          6.14903152761605,
+          79.23450448735122
+        ],
+        "mean_cpl": 1588.6666666666667,
+        "median_cpl": 562.0,
+        "legal_only_mean_cpl": 376.5,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 2,
+        "illegal_pct": 66.66666666666667,
+        "illegal_wilson_95pct": [
+          20.76549551264879,
+          93.85096847238394
+        ],
+        "mean_cpl": 1918.0,
+        "median_cpl": 68.0,
+        "legal_only_mean_cpl": 68.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      }
+    }
+  },
+  "per_target": {
+    "gemini-3.5-flash (medium)": {
+      "family": "google",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 0.0,
+        "median_cpl": 0.0,
+        "legal_only_mean_cpl": 0.0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 3.3333333333333335,
+        "median_cpl": 0.0,
+        "legal_only_mean_cpl": 3.3333333333333335,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "gemini-3-flash-preview (minimal)": {
+      "family": "google",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 2,
+        "illegal_pct": 66.66666666666667,
+        "illegal_wilson_95pct": [
+          20.76549551264879,
+          93.85096847238394
+        ],
+        "mean_cpl": 3094.3333333333335,
+        "median_cpl": 4013.0,
+        "legal_only_mean_cpl": 571.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 25.333333333333332,
+        "median_cpl": 1.0,
+        "legal_only_mean_cpl": 25.333333333333332,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "deepseek-v4-flash (no thinking)": {
+      "family": "deepseek",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 2,
+        "illegal_pct": 66.66666666666667,
+        "illegal_wilson_95pct": [
+          20.76549551264879,
+          93.85096847238394
+        ],
+        "mean_cpl": 3231.6666666666665,
+        "median_cpl": 4013.0,
+        "legal_only_mean_cpl": 216.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 1,
+        "retry_failures": 1
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 2,
+        "illegal_pct": 66.66666666666667,
+        "illegal_wilson_95pct": [
+          20.76549551264879,
+          93.85096847238394
+        ],
+        "mean_cpl": 3457.6666666666665,
+        "median_cpl": 4687.0,
+        "legal_only_mean_cpl": 0.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      }
+    },
+    "deepseek-v4-flash (high)": {
+      "family": "deepseek",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 291.6666666666667,
+        "median_cpl": 195.0,
+        "legal_only_mean_cpl": 291.6666666666667,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 13.333333333333334,
+        "median_cpl": 8.0,
+        "legal_only_mean_cpl": 13.333333333333334,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "claude-opus-4.6 (no thinking)": {
+      "family": "anthropic",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 3193.6666666666665,
+        "median_cpl": 562.0,
+        "legal_only_mean_cpl": 3193.6666666666665,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 25.333333333333332,
+        "median_cpl": 0.0,
+        "legal_only_mean_cpl": 25.333333333333332,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "claude-opus-4.6 (medium)": {
+      "family": "anthropic",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 3245.0,
+        "median_cpl": 567.0,
+        "legal_only_mean_cpl": 3245.0,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 3699.6666666666665,
+        "median_cpl": 513.0,
+        "legal_only_mean_cpl": 3699.6666666666665,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    },
+    "glm-4.6 (thinking)": {
+      "family": "z-ai",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 1,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          6.14903152761605,
+          79.23450448735122
+        ],
+        "mean_cpl": 1588.6666666666667,
+        "median_cpl": 562.0,
+        "legal_only_mean_cpl": 376.5,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 2,
+        "illegal_pct": 66.66666666666667,
+        "illegal_wilson_95pct": [
+          20.76549551264879,
+          93.85096847238394
+        ],
+        "mean_cpl": 1918.0,
+        "median_cpl": 68.0,
+        "legal_only_mean_cpl": 68.0,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      }
+    },
+    "qwen3-235b-a22b-2507": {
+      "family": "qwen",
+      "failure_states": {
+        "attempts": 3,
+        "illegals": 1,
+        "illegal_pct": 33.333333333333336,
+        "illegal_wilson_95pct": [
+          6.14903152761605,
+          79.23450448735122
+        ],
+        "mean_cpl": 1538.3333333333333,
+        "median_cpl": 567.0,
+        "legal_only_mean_cpl": 301.0,
+        "retry_attempts": 1,
+        "retry_recoveries": 0,
+        "retry_failures": 1
+      },
+      "matched_controls": {
+        "attempts": 3,
+        "illegals": 0,
+        "illegal_pct": 0.0,
+        "illegal_wilson_95pct": [
+          0.0,
+          56.15060804490177
+        ],
+        "mean_cpl": 621.3333333333334,
+        "median_cpl": 76.0,
+        "legal_only_mean_cpl": 621.3333333333334,
+        "retry_attempts": 0,
+        "retry_recoveries": 0,
+        "retry_failures": 0
+      }
+    }
+  },
+  "per_candidate": {
+    "failure-transfer-luna-003": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 4,
+        "illegal_pct": 50.0,
+        "illegal_wilson_95pct": [
+          21.521252682444185,
+          78.47874731755581
+        ],
+        "mean_cpl": 4243.75,
+        "median_cpl": 4013.0,
+        "legal_only_mean_cpl": 4474.5,
+        "retry_attempts": 4,
+        "retry_recoveries": 2,
+        "retry_failures": 2
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 1,
+        "illegal_pct": 12.5,
+        "illegal_wilson_95pct": [
+          2.241690886329617,
+          47.08948057698615
+        ],
+        "mean_cpl": 1.25,
+        "median_cpl": 0.0,
+        "legal_only_mean_cpl": 1.4285714285714286,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      }
+    },
+    "failure-transfer-sol-001": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 1,
+        "illegal_pct": 12.5,
+        "illegal_wilson_95pct": [
+          2.241690886329617,
+          47.08948057698615
+        ],
+        "mean_cpl": 715.875,
+        "median_cpl": 195.0,
+        "legal_only_mean_cpl": 146.85714285714286,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 1,
+        "illegal_pct": 12.5,
+        "illegal_wilson_95pct": [
+          2.241690886329617,
+          47.08948057698615
+        ],
+        "mean_cpl": 692.125,
+        "median_cpl": 75.5,
+        "legal_only_mean_cpl": 121.42857142857143,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      }
+    },
+    "failure-transfer-sol-003": {
+      "failure_states": {
+        "attempts": 8,
+        "illegals": 1,
+        "illegal_pct": 12.5,
+        "illegal_wilson_95pct": [
+          2.241690886329617,
+          47.08948057698615
+        ],
+        "mean_cpl": 1109.125,
+        "median_cpl": 567.0,
+        "legal_only_mean_cpl": 486.7142857142857,
+        "retry_attempts": 1,
+        "retry_recoveries": 1,
+        "retry_failures": 0
+      },
+      "matched_controls": {
+        "attempts": 8,
+        "illegals": 2,
+        "illegal_pct": 25.0,
+        "illegal_wilson_95pct": [
+          7.147768885802764,
+          59.073012089741084
+        ],
+        "mean_cpl": 2968.125,
+        "median_cpl": 893.0,
+        "legal_only_mean_cpl": 2062.1666666666665,
+        "retry_attempts": 2,
+        "retry_recoveries": 2,
+        "retry_failures": 0
+      }
+    }
+  },
+  "pair_outcomes": [
+    {
+      "target_player_id": "gemini-3.5-flash (medium)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gemini-3.5-flash (medium)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gemini-3.5-flash (medium)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gemini-3-flash-preview (minimal)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gemini-3-flash-preview (minimal)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "gemini-3-flash-preview (minimal)",
+      "target_family": "google",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (no thinking)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (no thinking)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": true
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (no thinking)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": true,
+      "control_illegal": true
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (high)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (high)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "deepseek-v4-flash (high)",
+      "target_family": "deepseek",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (no thinking)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (no thinking)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (no thinking)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (medium)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (medium)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "claude-opus-4.6 (medium)",
+      "target_family": "anthropic",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "glm-4.6 (thinking)",
+      "target_family": "z-ai",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": true,
+      "control_illegal": true
+    },
+    {
+      "target_player_id": "glm-4.6 (thinking)",
+      "target_family": "z-ai",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "glm-4.6 (thinking)",
+      "target_family": "z-ai",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": true
+    },
+    {
+      "target_player_id": "qwen3-235b-a22b-2507",
+      "target_family": "qwen",
+      "failure_id": "failure-transfer-luna-003",
+      "control_id": "control-transfer-luna-003",
+      "failure_illegal": true,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "qwen3-235b-a22b-2507",
+      "target_family": "qwen",
+      "failure_id": "failure-transfer-sol-001",
+      "control_id": "control-transfer-sol-001",
+      "failure_illegal": false,
+      "control_illegal": false
+    },
+    {
+      "target_player_id": "qwen3-235b-a22b-2507",
+      "target_family": "qwen",
+      "failure_id": "failure-transfer-sol-003",
+      "control_id": "control-transfer-sol-003",
+      "failure_illegal": false,
+      "control_illegal": false
+    }
+  ],
+  "cost": {
+    "estimated_base_usd": 0.1626,
+    "estimated_retry_upper_bound_usd": 0.3252,
+    "actual_reported_usd": 0.319021224,
+    "model_calls": 58,
+    "estimator_note": "The CLI cap is a pre-call estimate guard, not a runtime spend stop."
+  },
+  "interpretation_limits": [
+    "The three failures were selected for positive transfer within GPT-5.6, so this test estimates replication of this frozen shortlist, not the prevalence of transferable failures in all games.",
+    "Reasoning settings from the same provider family are not independent families.",
+    "Secondary endpoints are descriptive and cannot override the primary promotion gate."
+  ]
+}

@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "claude-sonnet-4.5 (no thinking)"]
+[Black "random-bot"]
+[Result "1-0"]
+[Termination "checkmate"]
+
+1. e4 c6 2. d4 Na6 3. Nc3 f5 4. exf5 Nb4 5. a3 Nd3+ 6. cxd3 a5 7. d5 cxd5 8. Nxd5 Qb6 9. Nxb6 e5 10. f6 Bxa3 11. Qa4 Bd6 12. fxg7 h6 13. gxh8=Q Rb8 14. Qxg8+ Bf8 15. Qf7+ Kxf7 16. Nd5 Ba3 17. Nb6 e4 18. Nd5 Bd6 19. Nf6 Bc5 20. Qc4+ Ke7 21. Qxc5+ Kd8 22. Qd5 d6 23. Qxd6+ Bd7 24. Qxd7# 1-0

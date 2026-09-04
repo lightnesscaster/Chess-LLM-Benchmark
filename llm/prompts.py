@@ -98,13 +98,11 @@ Board:
 {ascii_board}
 
 Your task:
-- Play exactly ONE legal move for {side_to_move}.
-- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).
+{task_instructions}
 - Do NOT include any commentary, explanations, or additional text.
 
 Output format:
-- Only the move in UCI, e.g.:
-b1c3"""
+{output_instructions}"""
 
 
 RETRY_PROMPT_TEMPLATE = """You are playing chess as {side_to_move}.
@@ -121,13 +119,11 @@ Board:
 Your previous attempted move "{illegal_move}" was ILLEGAL. Please try again.
 
 Your task:
-- Play exactly ONE LEGAL move for {side_to_move}.
-- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).
+{task_instructions}
 - Do NOT include any commentary, explanations, or additional text.
 
 Output format:
-- Only the move in UCI, e.g.:
-b1c3"""
+{output_instructions}"""
 
 
 def build_chess_prompt(
@@ -135,6 +131,7 @@ def build_chess_prompt(
     is_retry: bool = False,
     illegal_move: str = None,
     previous_response: str = None,
+    allow_resignation: bool = False,
 ) -> str:
     """
     Build the prompt to send to the LLM.
@@ -151,6 +148,28 @@ def build_chess_prompt(
     fen = board.fen()
     ascii_board = board_to_ascii(board)
     side = "White" if board.turn == chess.WHITE else "Black"
+
+    legal_word = "LEGAL" if is_retry else "legal"
+    if allow_resignation:
+        task_instructions = (
+            f"- Choose exactly ONE action for {side}.\n"
+            f"- Play exactly ONE {legal_word} move, or resign.\n"
+            "- For a move, use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n"
+            "- If you independently choose to resign, output exactly: resign\n"
+            "- Resignation is optional and should be based only on your assessment of the position."
+        )
+        output_instructions = (
+            "- Only a legal move in UCI or the word resign, e.g.:\n"
+            "b1c3\n"
+            "or\n"
+            "resign"
+        )
+    else:
+        task_instructions = (
+            f"- Play exactly ONE {legal_word} move for {side}.\n"
+            "- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion)."
+        )
+        output_instructions = "- Only the move in UCI, e.g.:\nb1c3"
 
     # Build move history section
     move_history = format_move_history(board)
@@ -182,6 +201,8 @@ def build_chess_prompt(
             move_history_section=move_history_section,
             last_move_section=last_move_section,
             previous_thinking_section=previous_thinking_section,
+            task_instructions=task_instructions,
+            output_instructions=output_instructions,
         )
     else:
         return CHESS_PROMPT_TEMPLATE.format(
@@ -191,4 +212,6 @@ def build_chess_prompt(
             move_history_section=move_history_section,
             last_move_section=last_move_section,
             previous_thinking_section=previous_thinking_section,
+            task_instructions=task_instructions,
+            output_instructions=output_instructions,
         )

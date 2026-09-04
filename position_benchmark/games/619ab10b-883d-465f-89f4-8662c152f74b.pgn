@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.01"]
+[Round "1"]
+[White "grok-4.1-fast"]
+[Black "maia-1100"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Nxd5 6. Qf3 Qxg5 7. Bxd5 Be6 8. Bxc6+ bxc6 9. Qxc6+ Bd7 10. Qxa8+ Ke7 11. Qd5 Be6 12. Qc5+ Kf6 13. Qxc7 Qxg2 14. Qd8+ Be7 15. Qxh8 Qxh1+ 16. Ke2 Qxc1 17. Qxh7 Qxb2 18. Qh4+ g5 19. Qh6+ Kf5 20. Qh7+ Kf6 21. Qh8+ Kg6 22. Qg8+ Kf6 23. Qh8+ Kg6 24. Qg8+ Kf6 25. Qh8+ Kg6 26. Qg8+ Kf6 27. Qh8+ Kg6 28. Qg8+ Kf6 29. Qh8+ 1/2-1/2

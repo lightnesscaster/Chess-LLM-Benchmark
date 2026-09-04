@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "gpt-5 (medium)"]
+[Black "gpt-oss-120b (high)"]
+[Result "1/2-1/2"]
+[Termination "fivefold_repetition"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. Qe2 Qe7 5. Qxe4 Qxe5 6. Qxe5+ Kd8 7. Qg5+ Ke8 8. Qe5+ Kd8 9. Qg5+ Ke8 10. Qe5+ Kd8 11. Qg5+ Ke8 12. Qe5+ Kd8 13. Qg5+ Ke8 14. Qe5+ Kd8 1/2-1/2

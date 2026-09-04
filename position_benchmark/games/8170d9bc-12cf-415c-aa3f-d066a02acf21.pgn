@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "kimi-k2-0905"]
+[Black "random-bot"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 f5 2. exf5 g6 3. fxg6 Nf6 4. g7 b5 5. gxh8=Q a5 6. Qxh7 a4 7. Qg7 Ng4 0-1

@@ -41,6 +41,7 @@ class StatsCollector:
             "wins_as_white": 0,
             "wins_as_black": 0,
             "forfeits": 0,
+            "resignations": 0,
             "illegal_moves": 0,
             "total_moves": 0,
             "total_game_moves": 0,  # Sum of game lengths
@@ -86,6 +87,11 @@ class StatsCollector:
                     stats[white_id]["forfeits"] += 1
                 elif result.winner == "white":
                     stats[black_id]["forfeits"] += 1
+            elif result.termination == "resignation":
+                if result.winner == "black":
+                    stats[white_id]["resignations"] += 1
+                elif result.winner == "white":
+                    stats[black_id]["resignations"] += 1
 
         # Calculate derived stats
         for player_id, player_stats in stats.items():
@@ -95,12 +101,15 @@ class StatsCollector:
                 player_stats["loss_rate"] = player_stats["losses"] / games
                 player_stats["draw_rate"] = player_stats["draws"] / games
                 player_stats["forfeit_rate"] = player_stats["forfeits"] / games
+                player_stats["resignation_rate"] = player_stats["resignations"] / games
                 player_stats["avg_game_length"] = player_stats["total_game_moves"] / games
 
-            total_moves = player_stats["total_moves"]
+            total_moves = player_stats["total_moves"]  # Actually: successful legal moves
             illegal = player_stats["illegal_moves"]
-            if total_moves > 0:
-                player_stats["legal_move_rate"] = 1 - (illegal / total_moves)
+            total_attempts = total_moves + illegal
+            if total_attempts > 0:
+                # Legal move rate = legal moves / total attempts
+                player_stats["legal_move_rate"] = total_moves / total_attempts
             else:
                 player_stats["legal_move_rate"] = 1.0
 

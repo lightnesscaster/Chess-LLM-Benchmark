@@ -19,7 +19,7 @@ import chess
 import chess.pgn
 
 from engines.base_engine import BaseEngine
-from llm import BaseLLMPlayer, TransientAPIError
+from llm import BaseLLMPlayer, TransientAPIError, request_llm_move
 from .models import GameResult
 
 # Live game file for following along
@@ -45,6 +45,7 @@ class GameRunner:
         black: Player,
         max_moves: int = 200,
         verbose: bool = False,
+        pre_moves: list = None,
     ):
         """
         Initialize the game runner.
@@ -54,11 +55,13 @@ class GameRunner:
             black: Player with black pieces
             max_moves: Maximum number of half-moves (plies) before draw
             verbose: Print moves as they happen
+            pre_moves: List of UCI move strings to pre-play before starting
         """
         self.white = white
         self.black = black
         self.max_moves = max_moves
         self.verbose = verbose
+        self.pre_moves = pre_moves
 
     def _write_live_game(self, white_id: str, black_id: str, board: chess.Board,
                           moves_played: int, last_move: str = None, status: str = "in_progress"):
@@ -87,11 +90,13 @@ class GameRunner:
         game_id = str(uuid.uuid4())
         board = chess.Board()
 
-        # Reset token counters for LLM players
+        # Reset token counters and timing for LLM players
         if isinstance(self.white, BaseLLMPlayer):
             self.white.reset_token_usage()
+            self.white.reset_timing()
         if isinstance(self.black, BaseLLMPlayer):
             self.black.reset_token_usage()
+            self.black.reset_timing()
 
         # Set up PGN
         pgn_game = chess.pgn.Game()
@@ -106,6 +111,9 @@ class GameRunner:
 
         # Track illegal moves per player for this game
         illegal_count = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_attempts = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_recoveries = {chess.WHITE: 0, chess.BLACK: 0}
+        retry_failures = {chess.WHITE: 0, chess.BLACK: 0}
         total_moves = {chess.WHITE: 0, chess.BLACK: 0}
         illegal_move_details = []  # List of dicts with debugging info
 
@@ -113,11 +121,25 @@ class GameRunner:
         termination = "normal"
         moves_played = 0
 
+        # Pre-play moves if resuming a game
+        if self.pre_moves:
+            for uci_str in self.pre_moves:
+                move = chess.Move.from_uci(uci_str)
+                if move not in board.legal_moves:
+                    raise ValueError(f"Illegal pre-move: {uci_str} at position {board.fen()}")
+                board.push(move)
+                node = node.add_variation(move)
+                moves_played += 1
+            if self.verbose:
+                print(f"  Resumed from move {moves_played} ({len(self.pre_moves)} pre-played moves)")
+                print(f"  Position: {board.fen()}")
+                print()
+
         # Write initial game state
         self._write_live_game(
             self._get_player_id(self.white),
             self._get_player_id(self.black),
-            board, 0, status="starting"
+            board, moves_played, status="starting" if not self.pre_moves else "resumed"
         )
 
         while not board.is_game_over() and moves_played < self.max_moves:
@@ -127,13 +149,28 @@ class GameRunner:
             # Get move with illegal retry policy
             try:
                 move_result = await self._get_move_with_retry(
-                    player, board, side, illegal_count, illegal_move_details, moves_played
+                    player,
+                    board,
+                    side,
+                    illegal_count,
+                    illegal_move_details,
+                    moves_played,
+                    retry_attempts,
+                    retry_recoveries,
+                    retry_failures,
                 )
             except TransientAPIError as e:
                 # Network error after retries - end as draw, not a forfeit
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
-                    print(f"  {side_name} API error (not counted as illegal move): {e}")
+                    model_info = ""
+                    if isinstance(player, BaseLLMPlayer):
+                        model_info = f" [{player.model_name}]"
+                        # Include inference provider if available (OpenRouter specific)
+                        provider = getattr(player, 'last_provider', None)
+                        if provider:
+                            model_info += f" via {provider}"
+                    print(f"  {side_name} ({player.player_id}{model_info}) API error (not counted as illegal move): {e}")
                 winner = "draw"
                 termination = "api_error"
                 break
@@ -150,6 +187,10 @@ class GameRunner:
 
             # Valid move received
             move_uci, _ = move_result
+            if move_uci == "resign":
+                winner = "black" if side == chess.WHITE else "white"
+                termination = "resignation"
+                break
             total_moves[side] += 1
 
             try:
@@ -164,7 +205,13 @@ class GameRunner:
 
                 if self.verbose:
                     side_name = "White" if side == chess.WHITE else "Black"
-                    print(f"  {moves_played}. {side_name}: {move_uci}")
+                    token_info = ""
+                    if isinstance(player, BaseLLMPlayer) and player.total_tokens > 0:
+                        last_prompt = getattr(player, '_last_prompt_tokens', 0)
+                        last_completion = getattr(player, '_last_completion_tokens', 0)
+                        if last_prompt or last_completion:
+                            token_info = f"  (tokens: {last_prompt}p/{last_completion}c)"
+                    print(f"  {moves_played}. {side_name}: {move_uci}{token_info}")
 
                 # Write live game state
                 self._write_live_game(
@@ -207,13 +254,17 @@ class GameRunner:
         pgn_game.headers["Termination"] = termination
         pgn_str = str(pgn_game)
 
-        # Collect token usage from LLM players
+        # Collect token usage and timing from LLM players
         tokens_white = None
         tokens_black = None
+        timing_white = None
+        timing_black = None
         if isinstance(self.white, BaseLLMPlayer):
             tokens_white = self.white.get_token_usage()
+            timing_white = self.white.get_timing_usage()
         if isinstance(self.black, BaseLLMPlayer):
             tokens_black = self.black.get_token_usage()
+            timing_black = self.black.get_timing_usage()
 
         # Build result object
         game_result = GameResult(
@@ -225,12 +276,30 @@ class GameRunner:
             moves=moves_played,
             illegal_moves_white=illegal_count[chess.WHITE],
             illegal_moves_black=illegal_count[chess.BLACK],
+            retry_attempts_white=retry_attempts[chess.WHITE],
+            retry_attempts_black=retry_attempts[chess.BLACK],
+            retry_recoveries_white=retry_recoveries[chess.WHITE],
+            retry_recoveries_black=retry_recoveries[chess.BLACK],
+            retry_failures_white=retry_failures[chess.WHITE],
+            retry_failures_black=retry_failures[chess.BLACK],
+            retry_unknown_white=(
+                retry_attempts[chess.WHITE]
+                - retry_recoveries[chess.WHITE]
+                - retry_failures[chess.WHITE]
+            ),
+            retry_unknown_black=(
+                retry_attempts[chess.BLACK]
+                - retry_recoveries[chess.BLACK]
+                - retry_failures[chess.BLACK]
+            ),
             total_moves_white=total_moves[chess.WHITE],
             total_moves_black=total_moves[chess.BLACK],
             pgn_path="",  # Will be set by logger
             created_at=datetime.now(timezone.utc).isoformat(),
             tokens_white=tokens_white,
             tokens_black=tokens_black,
+            timing_white=timing_white,
+            timing_black=timing_black,
             illegal_move_details=illegal_move_details if illegal_move_details else None,
         )
 
@@ -244,6 +313,9 @@ class GameRunner:
         illegal_count: dict,
         illegal_move_details: list,
         move_number: int,
+        retry_attempts: dict,
+        retry_recoveries: dict,
+        retry_failures: dict,
     ) -> Optional[Tuple[str, bool]]:
         """
         Get a move from the player with illegal move retry policy.
@@ -267,21 +339,30 @@ class GameRunner:
 
         for attempt in range(max_attempts):
             is_retry = attempt > 0
+            if is_retry:
+                retry_attempts[side] += 1
 
             # Get move from player (may raise TransientAPIError)
             move_uci = await self._ask_player_for_move(
                 player, board, is_retry, last_illegal_move
             )
 
+            if isinstance(move_uci, str) and move_uci.strip().casefold() == "resign":
+                return ("resign", is_retry)
+
             # Validate the move
             if move_uci is not None:
                 is_legal, validated_move = self._validate_move(board, move_uci)
 
                 if is_legal:
+                    if is_retry:
+                        retry_recoveries[side] += 1
                     return (validated_move, is_retry)
 
             # Move was illegal
             illegal_count[side] += 1
+            if is_retry:
+                retry_failures[side] += 1
             last_illegal_move = move_uci or "invalid"
 
             if self.verbose:
@@ -337,12 +418,14 @@ class GameRunner:
                 return move.uci()
             else:
                 # LLMs return UCI string
-                move_uci = await player.select_move(
+                move_uci = await request_llm_move(
+                    player,
                     board,
                     is_retry=is_retry,
                     last_move_illegal=last_illegal_move,
+                    allow_resignation=True,
                 )
-                return move_uci.strip() if move_uci else None
+                return move_uci
 
         except TransientAPIError:
             # Let transient API errors propagate - these aren't illegal moves

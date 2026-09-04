@@ -1,0 +1,67 @@
+# Fixed, resumable Codex-vs-Codex validation suite for GPT-5.6.
+#
+# Each directed pairing is played until it has `games_per_color` saved PGNs.
+# Re-running the suite schedules only missing games. GPT-5.4 deliberately reuses
+# its existing player ID so these Codex games update the established rating.
+
+source_config: benchmark.yaml
+games_per_color: 1
+max_concurrent: 10
+max_moves: 200
+
+matchups:
+  # Sol vs the matching GPT-5.5 effort and GPT-5.4 high.
+  - ["gpt-5.6-sol (low)", "gpt-5.5 (low)"]
+  - ["gpt-5.6-sol (low)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-sol (medium)", "gpt-5.5 (medium)"]
+  - ["gpt-5.6-sol (medium)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-sol (high)", "gpt-5.5 (high)"]
+  - ["gpt-5.6-sol (high)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-sol (xhigh)", "gpt-5.5 (xhigh)"]
+  - ["gpt-5.6-sol (xhigh)", "gpt-5.4 (high)"]
+
+  # Terra vs the matching GPT-5.5 effort and GPT-5.4 high.
+  - ["gpt-5.6-terra (low)", "gpt-5.5 (low)"]
+  - ["gpt-5.6-terra (low)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-terra (medium)", "gpt-5.5 (medium)"]
+  - ["gpt-5.6-terra (medium)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-terra (high)", "gpt-5.5 (high)"]
+  - ["gpt-5.6-terra (high)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-terra (xhigh)", "gpt-5.5 (xhigh)"]
+  - ["gpt-5.6-terra (xhigh)", "gpt-5.4 (high)"]
+
+  # Luna vs the matching GPT-5.5 effort and GPT-5.4 high.
+  - ["gpt-5.6-luna (low)", "gpt-5.5 (low)"]
+  - ["gpt-5.6-luna (low)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-luna (medium)", "gpt-5.5 (medium)"]
+  - ["gpt-5.6-luna (medium)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-luna (high)", "gpt-5.5 (high)"]
+  - ["gpt-5.6-luna (high)", "gpt-5.4 (high)"]
+  - ["gpt-5.6-luna (xhigh)", "gpt-5.5 (xhigh)"]
+  - ["gpt-5.6-luna (xhigh)", "gpt-5.4 (high)"]
+
+  # Every GPT-5.6 configuration also receives fixed engine calibration games.
+  - ["gpt-5.6-sol (low)", "random-bot"]
+  - ["gpt-5.6-sol (low)", "maia-1100"]
+  - ["gpt-5.6-sol (medium)", "random-bot"]
+  - ["gpt-5.6-sol (medium)", "maia-1100"]
+  - ["gpt-5.6-sol (high)", "random-bot"]
+  - ["gpt-5.6-sol (high)", "maia-1100"]
+  - ["gpt-5.6-sol (xhigh)", "random-bot"]
+  - ["gpt-5.6-sol (xhigh)", "maia-1100"]
+  - ["gpt-5.6-terra (low)", "random-bot"]
+  - ["gpt-5.6-terra (low)", "maia-1100"]
+  - ["gpt-5.6-terra (medium)", "random-bot"]
+  - ["gpt-5.6-terra (medium)", "maia-1100"]
+  - ["gpt-5.6-terra (high)", "random-bot"]
+  - ["gpt-5.6-terra (high)", "maia-1100"]
+  - ["gpt-5.6-terra (xhigh)", "random-bot"]
+  - ["gpt-5.6-terra (xhigh)", "maia-1100"]
+  - ["gpt-5.6-luna (low)", "random-bot"]
+  - ["gpt-5.6-luna (low)", "maia-1100"]
+  - ["gpt-5.6-luna (medium)", "random-bot"]
+  - ["gpt-5.6-luna (medium)", "maia-1100"]
+  - ["gpt-5.6-luna (high)", "random-bot"]
+  - ["gpt-5.6-luna (high)", "maia-1100"]
+  - ["gpt-5.6-luna (xhigh)", "random-bot"]
+  - ["gpt-5.6-luna (xhigh)", "maia-1100"]

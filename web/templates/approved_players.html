@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Approved players - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<div class="players-page">
+    <header class="players-header">
+        <div>
+            <h1>Approved players</h1>
+            <p>Choose which signed-in accounts can play rated games against the benchmark models.</p>
+        </div>
+        <a href="{{ url_for('admin_play') }}">Open the arena</a>
+    </header>
+
+    <form class="player-approval-form" method="post" action="{{ url_for('api_admin_players') }}">
+        <label for="approved-player-email">Google account email</label>
+        <div>
+            <input id="approved-player-email" name="email" type="email" autocomplete="email" required>
+            <button type="submit">Approve player</button>
+        </div>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    </form>
+
+    <section class="approved-player-list" aria-label="Approved player accounts">
+        {% if players %}
+            {% for player in players %}
+            <article>
+                <div>
+                    <strong>{{ player.email }}</strong>
+                    <span>{{ player.lichess_username or 'Lichess username not set' }}</span>
+                </div>
+                <form method="post" action="{{ url_for('admin_remove_player_form', email=player.email) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit">Remove</button>
+                </form>
+            </article>
+            {% endfor %}
+        {% else %}
+            <p>No player accounts have been approved yet.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

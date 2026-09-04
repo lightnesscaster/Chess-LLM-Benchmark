@@ -24,3 +24,30 @@ Thumbs.db
 # Environment
 .env
 *.env.local
+
+# Firebase
+firebase-key.json
+
+# Large data files
+lichess_db_puzzle.csv
+
+# Position benchmark intermediate/backup data
+position_benchmark/*_depth16_backup.json
+position_benchmark/lichess_*.json
+position_benchmark/game_blunders*.json
+position_benchmark/gemini_good_positions.json
+position_benchmark/results_*.json
+position_benchmark/results/*.failures.json
+
+# Generated analysis caches
+data/*_cache/
+data/acquisition_cohort/
+
+# Position benchmark experiment artifacts
+position_benchmark/common_reached_*.json
+position_benchmark/nonopening_*.csv
+position_benchmark/nonopening_*.json
+position_benchmark/positions_multipv_*.json
+position_benchmark/regan_lite_*.json
+position_benchmark/residual_panel_*.json
+position_benchmark/candidates/generated_*.json

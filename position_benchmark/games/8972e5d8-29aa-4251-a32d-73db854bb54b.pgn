@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "gemini-2.0-flash-001"]
+[Black "claude-opus-4 (no thinking)"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nc3 Bb4 6. Be2 Bxc3+ 7. bxc3 d5 8. exd5 Nxd5 9. O-O O-O 10. c4 Nf6 11. Nxc6 bxc6 12. Bf3 Bb7 13. Bxc6 Bxc6 14. Qxd8 Rfxd8 15. Rb1 Rab8 16. Ra1 Rd2 17. Ba3 Rxc2 18. Be7 Ne4 19. Rad1 Nd2 20. Rxd2 Rxd2 21. Bf6 gxf6 22. Re1 Rd1 23. Rxd1 Rb2 24. Rd8+ Kg7 25. Rd3 Rxa2 26. Rd8 Ra1+ 27. Rd1 Rxd1# 0-1

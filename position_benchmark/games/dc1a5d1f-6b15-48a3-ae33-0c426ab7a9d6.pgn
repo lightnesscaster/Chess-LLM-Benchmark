@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.02"]
+[Round "1"]
+[White "random-bot"]
+[Black "gemini-2.5-flash (no thinking)"]
+[Result "1/2-1/2"]
+[Termination "stalemate"]
+
+1. a4 e5 2. d4 exd4 3. Bg5 f6 4. b3 fxg5 5. f4 Qf6 6. Nc3 dxc3 7. Qd2 Qxf4 8. Rb1 Qxd2+ 9. Kf2 Qxc2 10. Rc1 Qxc1 11. e4 Qf4+ 12. Nf3 Qxe4 13. Kg3 Qf4+ 14. Kh3 Qh4+ 15. Nxh4 gxh4 16. Bd3 d5+ 17. Kxh4 Be7+ 18. Kh5 g6+ 19. Bxg6+ hxg6+ 20. Kxg6 Rh6+ 21. Kg7 Rh7+ 22. Kxg8 Rg7+ 23. Kxg7 Kd8 24. h4 Bf6+ 25. Kh6 Bf5 26. Rh2 Kd7 27. g3 Nc6 28. Re2 Nd4 29. Rb2 Re8 30. Ra2 Re6 31. Ra3 c2 32. Ra1 c1=Q+ 33. Rxc1 Be4 34. Rb1 Nf5+ 35. Kh5 Nd6 36. Rf1 Nf5 37. b4 Nd4 38. Rf4 Ke7 39. Kg4 Be5 40. Kg5 Rg6+ 41. Kh5 Rxg3 42. Rf6 Bxf6 43. Kh6 Rg8 44. b5 Nf3 45. h5 Rg5 46. b6 axb6 47. a5 bxa5 1/2-1/2

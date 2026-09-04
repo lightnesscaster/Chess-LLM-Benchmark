@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.16"]
+[Round "1"]
+[White "qwen3-235b-a22b-2507"]
+[Black "random-bot"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 Na6 2. Nc3 d6 3. d4 Kd7 4. e5 b5 5. exd6 Nc5 6. dxc5 Nf6 7. dxc7+ Kxc7 8. Nxb5+ Kb8 9. Nxa7 Ne8 0-1

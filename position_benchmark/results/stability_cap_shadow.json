@@ -1,0 +1,231 @@
+{
+  "schema_version": "depth30-cap-shadow-v1",
+  "production_effect": "none",
+  "exclusions": {},
+  "entries": {
+    "gemini-3.6-flash (medium)": {
+      "schema_version": "depth30-cap-shadow-v1",
+      "player_id": "gemini-3.6-flash (medium)",
+      "family": "gemini-3.6",
+      "lab": "google",
+      "recorded_at": "2026-07-24T07:00:25.729886+00:00",
+      "prediction_locked": true,
+      "production_effect": "none",
+      "policy_version": "depth30-cap-prospective-v1",
+      "policy_sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d",
+      "eligibility": {
+        "status": "prospective-holdout",
+        "prospective_holdout": true,
+        "game_snapshot": {
+          "games_played": 0,
+          "games_rd": 350.0,
+          "rating_deviation": 350.0
+        }
+      },
+      "production_reference_candidate": "deduplicated_move_exposure_cap",
+      "production_prediction": 1989.4199134151672,
+      "candidates": {
+        "current_move_cap": 1989.4199134151672,
+        "deduplicated_move_exposure_cap": 1989.4199134151672,
+        "trajectory_hazard_cap": 1989.4199134151672,
+        "two_affected_trajectory_gate": 1989.4199134151672,
+        "repeated_forfeit_only": 1989.4199134151672,
+        "no_hard_cap": 1989.4199134151672
+      },
+      "evidence": {
+        "attempted_positions": 8,
+        "scored_moves": 31,
+        "catastrophe_positions": 0,
+        "forfeit_positions": 0,
+        "affected_positions": 0,
+        "catastrophe_episodes": 0,
+        "at_risk_moves": 31,
+        "raw_catastrophe_moves": 0,
+        "catastrophe_hazard_pct": 0.0,
+        "forfeit_pct": 0.0,
+        "score_depth": 30,
+        "current_cap": null,
+        "hazard_cap": null,
+        "deduplicated_cap": null,
+        "deduplicated_catastrophe_pct": 0.0
+      },
+      "source_fingerprints": {
+        "core_record_sha256": "c2825d14813f9e5107259c9940186fb6f68ea87e6889d23c1854446a78a71fc1",
+        "game_like_record_sha256": "7b7ff079dd1d3854b8379de68dafaa1424de02fc537f37dff96359d22ea5a151",
+        "stability_record_sha256": "988bc5350e5dab26420a7718c5311977eee4c098d68cbaa17c7175fedfd87c74",
+        "blunder_record_sha256": null,
+        "core_positions_sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+        "game_like_positions_sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+        "blunder_positions_sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+      }
+    },
+    "deepseek-v4-flash-0731 (no thinking)": {
+      "schema_version": "depth30-cap-shadow-v1",
+      "player_id": "deepseek-v4-flash-0731 (no thinking)",
+      "family": "deepseek-v4-flash",
+      "lab": "deepseek",
+      "recorded_at": "2026-08-06T05:47:38.424489+00:00",
+      "prediction_locked": true,
+      "production_effect": "none",
+      "policy_version": "depth30-cap-prospective-v1",
+      "policy_sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d",
+      "eligibility": {
+        "status": "prospective-holdout",
+        "prospective_holdout": true,
+        "game_snapshot": {
+          "games_played": 0,
+          "games_rd": 350.0,
+          "rating_deviation": 166.0
+        }
+      },
+      "production_reference_candidate": "deduplicated_move_exposure_cap",
+      "production_prediction": -183.89024430063031,
+      "candidates": {
+        "current_move_cap": -183.89024430063031,
+        "deduplicated_move_exposure_cap": -183.89024430063031,
+        "trajectory_hazard_cap": -183.89024430063031,
+        "two_affected_trajectory_gate": -183.89024430063031,
+        "repeated_forfeit_only": -183.89024430063031,
+        "no_hard_cap": -183.89024430063031
+      },
+      "evidence": {
+        "attempted_positions": 8,
+        "scored_moves": 12,
+        "catastrophe_positions": 0,
+        "forfeit_positions": 7,
+        "affected_positions": 7,
+        "catastrophe_episodes": 0,
+        "at_risk_moves": 12,
+        "raw_catastrophe_moves": 0,
+        "catastrophe_hazard_pct": 0.0,
+        "forfeit_pct": 87.5,
+        "score_depth": 30,
+        "current_cap": 125.0,
+        "hazard_cap": 125.0,
+        "deduplicated_cap": 125.0,
+        "deduplicated_catastrophe_pct": 0.0
+      },
+      "source_fingerprints": {
+        "core_record_sha256": "682beb5871954ef391a948092eba2d185807a5cbb6cd3c413a7c7963ebcf4979",
+        "game_like_record_sha256": "4f2fc6d4af818612e85a79720b7ffba9be5910bbfb53cf7585c03f2089b1bbec",
+        "stability_record_sha256": "eff8a84d5297ce0342d5cedbd6ce690496bcadec66e2b24b335050e9301b4463",
+        "blunder_record_sha256": null,
+        "core_positions_sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+        "game_like_positions_sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+        "blunder_positions_sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+      }
+    },
+    "deepseek-v4-flash-0731 (high)": {
+      "schema_version": "depth30-cap-shadow-v1",
+      "player_id": "deepseek-v4-flash-0731 (high)",
+      "family": "deepseek-v4-flash",
+      "lab": "deepseek",
+      "recorded_at": "2026-08-06T08:49:06.311215+00:00",
+      "prediction_locked": true,
+      "production_effect": "none",
+      "policy_version": "depth30-cap-prospective-v1",
+      "policy_sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d",
+      "eligibility": {
+        "status": "prospective-holdout",
+        "prospective_holdout": true,
+        "game_snapshot": {
+          "games_played": 0,
+          "games_rd": 350.0,
+          "rating_deviation": 166.0
+        }
+      },
+      "production_reference_candidate": "deduplicated_move_exposure_cap",
+      "production_prediction": 1171.4337053875577,
+      "candidates": {
+        "current_move_cap": 1171.4337053875577,
+        "deduplicated_move_exposure_cap": 1171.4337053875577,
+        "trajectory_hazard_cap": 1171.4337053875577,
+        "two_affected_trajectory_gate": 1171.4337053875577,
+        "repeated_forfeit_only": 1171.4337053875577,
+        "no_hard_cap": 1171.4337053875577
+      },
+      "evidence": {
+        "attempted_positions": 8,
+        "scored_moves": 32,
+        "catastrophe_positions": 1,
+        "forfeit_positions": 0,
+        "affected_positions": 1,
+        "catastrophe_episodes": 1,
+        "at_risk_moves": 31,
+        "raw_catastrophe_moves": 1,
+        "catastrophe_hazard_pct": 3.225806451612903,
+        "forfeit_pct": 0.0,
+        "score_depth": 30,
+        "current_cap": null,
+        "hazard_cap": null,
+        "deduplicated_cap": null,
+        "deduplicated_catastrophe_pct": 3.125
+      },
+      "source_fingerprints": {
+        "core_record_sha256": "fa2e077863af55efa2fc13847bf6364935d9080bd8dc7f792b1d5f82a4240765",
+        "game_like_record_sha256": "bbefeaa1791ac6851a475f23fd56d5016a24e8d2b050b9a3b3329d53c583f502",
+        "stability_record_sha256": "85bed79027a01265f0a7b4d6e348f1c7c9c4a0427378c40f1773beb68c2ebca0",
+        "blunder_record_sha256": null,
+        "core_positions_sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+        "game_like_positions_sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+        "blunder_positions_sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+      }
+    },
+    "deepseek-v4-flash-0731 (max)": {
+      "schema_version": "depth30-cap-shadow-v1",
+      "player_id": "deepseek-v4-flash-0731 (max)",
+      "family": "deepseek-v4-flash",
+      "lab": "deepseek",
+      "recorded_at": "2026-08-06T11:11:06.022669+00:00",
+      "prediction_locked": true,
+      "production_effect": "none",
+      "policy_version": "depth30-cap-prospective-v1",
+      "policy_sha256": "d95c214d8611555eeccb7eaa9b8ff69e078c8fe86ef9e3414e44c6bd2cc6a89d",
+      "eligibility": {
+        "status": "prospective-holdout",
+        "prospective_holdout": true,
+        "game_snapshot": {
+          "games_played": 0,
+          "games_rd": 350.0,
+          "rating_deviation": 166.0
+        }
+      },
+      "production_reference_candidate": "deduplicated_move_exposure_cap",
+      "production_prediction": 1215.8876964353117,
+      "candidates": {
+        "current_move_cap": 1215.8876964353117,
+        "deduplicated_move_exposure_cap": 1215.8876964353117,
+        "trajectory_hazard_cap": 1215.8876964353117,
+        "two_affected_trajectory_gate": 1215.8876964353117,
+        "repeated_forfeit_only": 1215.8876964353117,
+        "no_hard_cap": 1215.8876964353117
+      },
+      "evidence": {
+        "attempted_positions": 8,
+        "scored_moves": 32,
+        "catastrophe_positions": 0,
+        "forfeit_positions": 0,
+        "affected_positions": 0,
+        "catastrophe_episodes": 0,
+        "at_risk_moves": 32,
+        "raw_catastrophe_moves": 0,
+        "catastrophe_hazard_pct": 0.0,
+        "forfeit_pct": 0.0,
+        "score_depth": 30,
+        "current_cap": null,
+        "hazard_cap": null,
+        "deduplicated_cap": null,
+        "deduplicated_catastrophe_pct": 0.0
+      },
+      "source_fingerprints": {
+        "core_record_sha256": "64b876c01e2b2dbc13a9d3ce76e90d709f37b851a4bbca349e48a88d1c85349c",
+        "game_like_record_sha256": "0201ae40a9ef6747d9190bc85e08923df2ebdb7f24dd459c4d6f49ffb8f31899",
+        "stability_record_sha256": "791bb17dca56b72fbfc7b3511c077a4d6fd5e021146ea682e8ba72c291620490",
+        "blunder_record_sha256": null,
+        "core_positions_sha256": "9e22d053ea71c2577a58f57448dadcedd2c3176d9639ca9d4151c8aecfa7f3d3",
+        "game_like_positions_sha256": "e2e8bae42accb264f085ece5d64c781d3e2bb5d2a4f8961420873dada0145d17",
+        "blunder_positions_sha256": "68c64cea4f67947321f404f83429f819a79e5b018e5855e9aaa9070286150cbd"
+      }
+    }
+  }
+}

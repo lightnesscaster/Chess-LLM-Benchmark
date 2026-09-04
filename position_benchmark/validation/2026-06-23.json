@@ -1,0 +1,123 @@
+{
+  "snapshot_date": "2026-06-23",
+  "source_commit": "08ffc44110c3cc3d833c1d6f0443b4ecfb8c6bcd",
+  "benchmark_version": "history-replay-v2",
+  "error_definition": "actual_game_rating - predicted_rating",
+  "core": {
+    "positions_file": "position_benchmark/panels/core_equal_50.json",
+    "results_file": "position_benchmark/results/core.json",
+    "position_type": "equal",
+    "positions": 50,
+    "model_calls_per_configuration": 50,
+    "stockfish_depth": 30,
+    "history_replay": true,
+    "formula": "1298.57 - 200.43*ln(mean_cpl+1) + 15.39*best_pct + 5.85*survival_40"
+  },
+  "optional_downside_checks": {
+    "game_like": {
+      "positions": 48,
+      "stockfish_depth": 30,
+      "cpl_cap": 5000,
+      "apply_only_if_more_than_elo_lower": 150
+    },
+    "continuation_stability": {
+      "minimum_starting_positions": 8,
+      "probe_plies": 8,
+      "score_depth": 10,
+      "risk_trigger_pct": 5,
+      "cap_formula": "clamp(650 - 6*forfeit_pct - 8*catastrophe_pct, -500, 650)",
+      "apply_only_if_more_than_elo_lower": 150
+    },
+    "historical_blunder": {
+      "positions_file": "position_benchmark/panels/optional_blunder_25.json",
+      "results_file": "position_benchmark/results/optional_blunder.json",
+      "positions": 25,
+      "required": false,
+      "incremental_predictive_value": "almost none in June analysis"
+    }
+  },
+  "validation_cohorts": [
+    {
+      "name": "fully_refreshed",
+      "rows": 12,
+      "mae": 148.0,
+      "rmse": 217.1,
+      "high_rated_threshold": 1000,
+      "high_rated_max_absolute_error": 200,
+      "high_rated_failures": 0,
+      "high_rated_rows": 6
+    },
+    {
+      "name": "reliable_readiness_audit",
+      "rows": 43,
+      "mae": 164.5,
+      "rmse": 235.1,
+      "high_rated_threshold": 1000,
+      "high_rated_max_absolute_error": 200,
+      "high_rated_failures": 0,
+      "high_rated_rows": 6
+    }
+  ],
+  "stability_cap_corrections": [
+    {
+      "player_id": "gemini-2.5-flash (no thinking)",
+      "prediction_before": 803,
+      "prediction_after": 547,
+      "actual_rating": 368
+    },
+    {
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "prediction_before": 802,
+      "prediction_after": 408,
+      "actual_rating": 278
+    },
+    {
+      "player_id": "gpt-5.1 (no thinking)",
+      "prediction_before": 747,
+      "prediction_after": 495,
+      "actual_rating": 508
+    }
+  ],
+  "gpt_5_5": [
+    {
+      "player_id": "gpt-5.5 (no thinking)",
+      "predicted_rating": 486.692282,
+      "actual_rating": 185.759857,
+      "error": -300.932425,
+      "fresh_core_row": false
+    },
+    {
+      "player_id": "gpt-5.5 (low)",
+      "predicted_rating": 1132.288855,
+      "actual_rating": 555.009470,
+      "error": -577.279385,
+      "fresh_core_row": true
+    },
+    {
+      "player_id": "gpt-5.5 (medium)",
+      "predicted_rating": 1033.772074,
+      "actual_rating": 411.625805,
+      "error": -622.146269,
+      "fresh_core_row": false
+    },
+    {
+      "player_id": "gpt-5.5 (high)",
+      "predicted_rating": 437.811663,
+      "actual_rating": 437.455336,
+      "error": -0.356327,
+      "fresh_core_row": false
+    },
+    {
+      "player_id": "gpt-5.5 (xhigh)",
+      "predicted_rating": 1484.998565,
+      "actual_rating": 634.692769,
+      "error": -850.305796,
+      "fresh_core_row": false
+    }
+  ],
+  "notes": [
+    "The validation numbers are frozen historical measurements, not live leaderboard metrics.",
+    "The near-zero GPT-5.5 high error came from a legacy row; GPT-5.5 low was the fresh history-replay-v2 row.",
+    "The historical blunder panel was not part of the required core and added almost no useful predictive value."
+  ]
+}

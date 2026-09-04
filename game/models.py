@@ -36,12 +36,19 @@ class GameResult(BaseModel):
     white_id: str
     black_id: str
     winner: str                 # "white", "black", "draw"
-    termination: str            # "checkmate", "stalemate", "insufficient_material",
-                                # "fifty_moves", "threefold_repetition",
+    termination: str            # "checkmate", "resignation", "stalemate",
                                 # "forfeit_illegal_move", etc.
     moves: int                  # Total half-moves (plies)
     illegal_moves_white: int
     illegal_moves_black: int
+    retry_attempts_white: int = 0
+    retry_attempts_black: int = 0
+    retry_recoveries_white: int = 0
+    retry_recoveries_black: int = 0
+    retry_failures_white: int = 0
+    retry_failures_black: int = 0
+    retry_unknown_white: int = 0
+    retry_unknown_black: int = 0
     total_moves_white: int      # Moves attempted by white
     total_moves_black: int      # Moves attempted by black
     pgn_path: str
@@ -49,8 +56,23 @@ class GameResult(BaseModel):
     # Token usage for LLM players (None for engine players)
     tokens_white: Optional[dict] = None  # {"prompt_tokens", "completion_tokens", "total_tokens"}
     tokens_black: Optional[dict] = None
+    # Timing for LLM players (None for engine players)
+    # {"total_time", "move_count", "avg_time", "move_times"}
+    timing_white: Optional[dict] = None
+    timing_black: Optional[dict] = None
+    accounting_status_white: Optional[str] = None
+    accounting_status_black: Optional[str] = None
     # Details about illegal moves for debugging (prompt, response, parsed move)
     illegal_move_details: Optional[List[dict]] = None
+    # Human challenge metadata. Defaults preserve all existing benchmark data.
+    game_type: str = "benchmark"
+    human_email: Optional[str] = None
+    human_lichess_username: Optional[str] = None
+    human_rating: Optional[float] = None
+    human_rating_deviation: Optional[float] = None
+    human_rating_provisional: Optional[bool] = None
+    # None denotes records created before the pool was persisted (Lichess Rapid).
+    human_rating_pool: Optional[str] = None
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""

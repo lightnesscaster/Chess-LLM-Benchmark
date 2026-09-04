@@ -1,0 +1,10 @@
+[Event "LLM Chess Benchmark"]
+[Site "Local"]
+[Date "2025.12.03"]
+[Round "1"]
+[White "deepseek-v3.1-terminus (no thinking)"]
+[Black "kimi-k2"]
+[Result "0-1"]
+[Termination "forfeit_illegal_move"]
+
+1. e4 e5 2. Nf3 c5 3. d4 cxd4 4. Bg5 Qxg5 5. Qxd4 Qxg2 6. Rg1 Qh1 7. Kd2 Qxh2 0-1
