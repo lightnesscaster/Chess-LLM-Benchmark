@@ -92,6 +92,10 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
     move_count = len(state.get("moves") or [])
     human_illegal = 0
     llm_illegal = int(state.get("llm_illegal_moves") or 0)
+    llm_tokens = state.get("llm_tokens") or None
+    accounting_status = (
+        state.get("llm_accounting_status", "partial") if llm_tokens else "missing"
+    )
     return GameResult(
         game_id=game_id,
         white_id=white_id,
@@ -103,6 +107,10 @@ def build_human_challenge_result(state, email, completed_at=None) -> GameResult:
         illegal_moves_black=llm_illegal if human_color == "white" else human_illegal,
         total_moves_white=(move_count + 1) // 2,
         total_moves_black=move_count // 2,
+        tokens_white=llm_tokens if human_color == "black" else None,
+        tokens_black=llm_tokens if human_color == "white" else None,
+        accounting_status_white=accounting_status if human_color == "black" else None,
+        accounting_status_black=accounting_status if human_color == "white" else None,
         pgn_path="",
         illegal_move_details=list(state.get("llm_illegal_move_details") or []) or None,
         created_at=completed_at or datetime.now(timezone.utc).isoformat(),

@@ -73,6 +73,27 @@ def test_completed_game_preserves_invalid_llm_response_forensics():
     assert result.illegal_move_details == state["llm_illegal_move_details"]
 
 
+@pytest.mark.parametrize("human_color,model_side,human_side", [
+    ("white", "black", "white"), ("black", "white", "black"),
+])
+@pytest.mark.parametrize("status", ["complete", "partial"])
+def test_completed_game_preserves_usage_on_model_side(human_color, model_side, human_side, status):
+    state = _finished_state()
+    state.update(human_color=human_color, llm_accounting_status=status,
+                 llm_tokens={"prompt_tokens": 360, "completion_tokens": 90, "total_tokens": 450})
+    result = build_human_challenge_result(state, "player@example.com")
+    assert getattr(result, f"tokens_{model_side}") == state["llm_tokens"]
+    assert getattr(result, f"tokens_{human_side}") is None
+    assert getattr(result, f"accounting_status_{model_side}") == status
+
+
+def test_legacy_game_usage_is_unknown_not_zero():
+    result = build_human_challenge_result(_finished_state(), "player@example.com")
+    assert result.tokens_white is None
+    assert result.tokens_black is None
+    assert result.accounting_status_black == "missing"
+
+
 def test_unfinished_game_cannot_be_scored():
     state = _finished_state()
     state.update(status="active", winner=None, termination=None)

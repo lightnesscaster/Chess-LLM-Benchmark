@@ -43,6 +43,8 @@ class GameStateError(ValueError):
 class ProviderError(RuntimeError):
     """Raised when the selected LLM cannot return a move."""
 
+    accounting_state: dict | None = None
+
 
 MoveAttempt = str | None | Mapping[str, object]
 MoveProvider = Callable[[dict, chess.Board, bool, str | None], MoveAttempt]
@@ -318,6 +320,8 @@ def _new_state(model: dict, human_color: str, human_profile: dict | None = None)
         "winner": None,
         "termination": None,
         "llm_illegal_moves": 0,
+        "llm_tokens": None,
+        "llm_accounting_status": "complete",
     }
     if human_profile is not None:
         state.update(
@@ -440,7 +444,7 @@ async def _request_model_move(
     is_retry: bool,
     last_illegal_move: str | None,
     environ: Mapping[str, str],
-) -> dict[str, str | None]:
+) -> dict[str, object]:
     backend = _web_backend(model)
     common = {
         "player_id": model["player_id"],
@@ -502,10 +506,14 @@ async def _request_model_move(
             allow_resignation=True,
             rating_context=model.get("rating_context"),
         )
-        return {
+        attempt = {
             "move": move,
             "raw_response": str(getattr(player, "last_raw_response", "") or ""),
         }
+        get_usage = getattr(player, "get_token_usage", None)
+        if callable(get_usage):
+            attempt["tokens"] = get_usage()
+        return attempt
     finally:
         await player.close()
 
@@ -516,7 +524,7 @@ def _default_move_provider(
     is_retry: bool,
     last_illegal_move: str | None,
     environ: Mapping[str, str],
-) -> dict[str, str | None]:
+) -> dict[str, object]:
     try:
         return asyncio.run(
             _request_model_move(
@@ -531,6 +539,24 @@ def _default_move_provider(
         raise
     except Exception as error:
         raise ProviderError("The LLM could not provide a move.") from error
+
+
+def _accumulate_llm_usage(state: dict, attempt: MoveAttempt) -> None:
+    """Keep billed usage across requests, including illegal and resigning attempts."""
+    # Legacy sessions may already have unaccounted moves. Never call their
+    # remaining usage a complete game bill.
+    state.setdefault("llm_accounting_status", "partial")
+    usage = attempt.get("tokens") if isinstance(attempt, Mapping) else None
+    keys = ("prompt_tokens", "completion_tokens", "total_tokens")
+    if (
+        not isinstance(usage, Mapping)
+        or any(type(usage.get(key)) is not int or usage[key] < 0 for key in keys)
+        or usage["prompt_tokens"] + usage["completion_tokens"] == 0
+    ):
+        state["llm_accounting_status"] = "partial"
+        return
+    totals = state.get("llm_tokens") or dict.fromkeys(keys, 0)
+    state["llm_tokens"] = {key: totals[key] + usage[key] for key in keys}
 
 
 def _apply_llm_turn(
@@ -567,6 +593,7 @@ def _apply_llm_turn(
         except TransientAPIError as error:
             raise ProviderError("The LLM could not provide a move.") from error
 
+        _accumulate_llm_usage(state, attempt)
         if isinstance(attempt, Mapping):
             move_uci = attempt.get("move")
             raw_response = str(attempt.get("raw_response") or "")
@@ -671,13 +698,23 @@ def play_human_move(
     working_state["moves"].append(move.uci())
     if not _finish_from_board(working_state, board):
         _ensure_rating_context(working_state, model)
-        _apply_llm_turn(
-            working_state,
-            board,
-            model,
-            environ,
-            move_provider,
-        )
+        try:
+            _apply_llm_turn(
+                working_state,
+                board,
+                model,
+                environ,
+                move_provider,
+            )
+        except ProviderError as error:
+            # The board rolls back on failure, but already billed attempts
+            # must survive a user's retry. The failing call may also have
+            # incurred usage the provider did not report.
+            error.accounting_state = {
+                "llm_tokens": working_state.get("llm_tokens"),
+                "llm_accounting_status": "partial",
+            }
+            raise
     return working_state
 
 

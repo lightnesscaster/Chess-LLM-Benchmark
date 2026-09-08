@@ -177,6 +177,11 @@ class Leaderboard:
                     "avg_cost_per_game": cost_stats.get("avg_cost_per_game", 0.0),
                     "games_with_cost": cost_stats.get("games_with_cost", 0),
                 })
+                if cost_stats.get("cost_lower_bound"):
+                    entry.update({
+                        "cost_lower_bound": True,
+                        "cost_basis": "Lower bound: some token usage is missing from recorded games.",
+                    })
             elif date_info.get("display_cost_per_game") is not None:
                 entry.update({
                     "avg_cost_per_game": float(
@@ -249,7 +254,7 @@ class Leaderboard:
             # Format cost per game
             avg_cost = entry.get("avg_cost_per_game")
             if avg_cost is not None:
-                prefix = "~" if entry.get("cost_estimated") else ""
+                prefix = "≥" if entry.get("cost_lower_bound") else "~" if entry.get("cost_estimated") else ""
                 cost_str = f"{prefix}${avg_cost:.4f}"
             else:
                 cost_str = "-"

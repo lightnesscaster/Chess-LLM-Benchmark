@@ -355,7 +355,39 @@ def test_provider_failure_keeps_previous_session_state(client, monkeypatch):
     assert response.status_code == 502
     assert response.get_json()["error"] == "The LLM could not provide a move."
     with client.session_transaction() as flask_session:
+        original["llm_accounting_status"] = "partial"
         assert flask_session["admin_play_game"] == original
+
+
+def test_failed_retry_preserves_billed_usage_without_advancing_board(client, monkeypatch):
+    csrf_token = _set_user(client)
+    headers = {"X-CSRF-Token": csrf_token}
+    assert client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    }).status_code == 200
+    attempts = iter([
+        {"move": "e7e4", "tokens": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}},
+        play_service.TransientAPIError("unavailable"),
+        {"move": "e7e5", "tokens": {"prompt_tokens": 200, "completion_tokens": 70, "total_tokens": 270}},
+    ])
+    def provider(*_):
+        attempt = next(attempts)
+        if isinstance(attempt, Exception):
+            raise attempt
+        return attempt
+    monkeypatch.setattr(play_service, "_default_move_provider", provider)
+    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 502
+    with client.session_transaction() as saved:
+        state = saved["admin_play_game"]
+        assert state["moves"] == []
+        assert state["llm_tokens"]["total_tokens"] == 150
+        assert state["llm_accounting_status"] == "partial"
+    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 200
+    with client.session_transaction() as saved:
+        state = saved["admin_play_game"]
+        assert state["moves"] == ["e2e4", "e7e5"]
+        assert state["llm_tokens"] == {"prompt_tokens": 300, "completion_tokens": 120, "total_tokens": 420}
+        assert state["llm_accounting_status"] == "partial"
 
 
 def test_finished_game_is_scored_and_rating_summary_is_returned(client, monkeypatch):

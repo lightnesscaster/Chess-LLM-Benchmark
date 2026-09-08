@@ -120,7 +120,7 @@ class Gemini38FlashRegistrationTests(unittest.TestCase):
         )
         self.assertEqual(
             checker._models_by_model_id.get(GEMINI_38_MODEL_ID),
-            [GEMINI_38_PLAYER_ID],
+            [GEMINI_38_PLAYER_ID, "gemini-3.8-flash (high)"],
         )
 
     def test_stability_analysis_uses_the_38_model_line(self) -> None:

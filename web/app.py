@@ -590,6 +590,8 @@ def api_admin_play_move():
     except (PlayConfigurationError, GameStateError) as error:
         return jsonify({"error": str(error)}), 400
     except ProviderError as error:
+        if error.accounting_state is not None:
+            session["admin_play_game"] = dict(state, **error.accounting_state)
         return jsonify({"error": str(error)}), 502
 
     if updated_state.get("status") == "finished":

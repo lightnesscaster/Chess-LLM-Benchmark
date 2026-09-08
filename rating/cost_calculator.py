@@ -452,6 +452,7 @@ class CostCalculator:
                     player_costs,
                     result.white_id,
                     result.tokens_white,
+                    accounting_status=result.accounting_status_white,
                     use_budget_overrides=use_budget_overrides,
                     subtract_excluded_prompt_overhead=subtract_excluded_prompt_overhead,
                     include_uncosted_players=include_uncosted_players,
@@ -467,6 +468,7 @@ class CostCalculator:
                     player_costs,
                     result.black_id,
                     result.tokens_black,
+                    accounting_status=result.accounting_status_black,
                     use_budget_overrides=use_budget_overrides,
                     subtract_excluded_prompt_overhead=subtract_excluded_prompt_overhead,
                     include_uncosted_players=include_uncosted_players,
@@ -496,6 +498,7 @@ class CostCalculator:
         include_uncosted_players: bool = True,
         subtract_excluded_prompt_overhead: bool = False,
         move_count: int = 0,
+        accounting_status: Optional[str] = None,
     ) -> None:
         """Add cost for a single game to player totals."""
         cost = None
@@ -534,6 +537,8 @@ class CostCalculator:
         if cost is not None:
             player_costs[player_id]["total_cost"] += cost
             player_costs[player_id]["games_with_cost"] += 1
+            if accounting_status in {"partial", "missing"}:
+                player_costs[player_id]["cost_lower_bound"] = True
 
         player_costs[player_id]["total_tokens"] += tokens.get("total_tokens", 0)
         player_costs[player_id]["prompt_tokens"] += tokens.get("prompt_tokens", 0)

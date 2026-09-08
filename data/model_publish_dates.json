@@ -30,6 +30,14 @@
   "gemini-3.8-flash (medium)": {
     "model_id": "google/gemini-3.8-flash",
     "created_timestamp": 1788307200,
+    "created_date": "2026-09-02",
+    "display_cost_per_game": 0.086834,
+    "display_cost_estimated": true,
+    "display_cost_basis": "Estimate, not recorded spend: 52,388 input + 99,035 output tokens across 134 retained medium benchmark calls (core, game-like, stability), priced at $0.75/$3.75 per million tokens and extrapolated to 85 calls across 3 human games as of 2026-09-08. Original game usage was not saved; game prompts and thinking lengths may differ."
+  },
+  "gemini-3.8-flash (high)": {
+    "model_id": "google/gemini-3.8-flash",
+    "created_timestamp": 1788307200,
     "created_date": "2026-09-02"
   },
   "o3": {

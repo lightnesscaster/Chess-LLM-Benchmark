@@ -86,6 +86,39 @@ def _service():
     return importlib.import_module("web.play_service")
 
 
+def test_usage_includes_illegal_retry_and_resignation(config_path):
+    service = _service()
+    attempts = iter([
+        {"move": "a1a8", "tokens": {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}},
+        {"move": "e2e4", "tokens": {"prompt_tokens": 120, "completion_tokens": 30, "total_tokens": 150}},
+        {"move": "resign", "tokens": {"prompt_tokens": 140, "completion_tokens": 40, "total_tokens": 180}},
+    ])
+    provider = lambda *_: next(attempts)
+    state = service.start_game("chat-model", "black", config_path,
+                               {"OPENROUTER_API_KEY": "test"}, provider)
+    state = service.play_human_move(state, "e7e5", config_path,
+                                    {"OPENROUTER_API_KEY": "test"}, provider)
+    assert state["termination"] == "resignation"
+    assert state["llm_tokens"] == {"prompt_tokens": 360, "completion_tokens": 90, "total_tokens": 450}
+    assert state["llm_accounting_status"] == "complete"
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_missing_usage_never_becomes_complete_accounting(config_path, legacy):
+    service = _service()
+    state = service.start_game("chat-model", "black", config_path,
+                               {"OPENROUTER_API_KEY": "test"}, lambda *_: "e2e4")
+    if legacy:
+        state.pop("llm_tokens", None)
+        state.pop("llm_accounting_status", None)
+    state = service.play_human_move(state, "e7e5", config_path,
+        {"OPENROUTER_API_KEY": "test"}, lambda *_: {
+            "move": "g1f3", "tokens": {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120},
+        })
+    assert state["llm_tokens"]["total_tokens"] == 120
+    assert state["llm_accounting_status"] == "partial"
+
+
 def test_game_start_rating_snapshot_reaches_opening_and_later_moves(config_path, monkeypatch):
     service = _service()
     monkeypatch.setattr(service, "_model_rating_snapshot", lambda player_id: {
@@ -441,6 +474,8 @@ def test_start_game_with_white_pieces_waits_for_human(config_path):
         "termination": None,
         "llm_illegal_moves": 0,
         "rating_context": {"self": None, "opponent": None},
+        "llm_tokens": None,
+        "llm_accounting_status": "complete",
     }
 
 
@@ -810,6 +845,9 @@ def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
             captured.update(kwargs)
             self.last_raw_response = ""
 
+        def get_token_usage(self):
+            return {"prompt_tokens": 100, "completion_tokens": 250, "total_tokens": 350}
+
         async def close(self):
             captured["closed"] = True
 
@@ -835,6 +873,7 @@ def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
     assert attempt == {
         "move": "e2e4",
         "raw_response": "I choose e2e4.",
+        "tokens": {"prompt_tokens": 100, "completion_tokens": 250, "total_tokens": 350},
     }
     assert captured["model_name"] == "gemini-direct"
     assert captured["closed"] is True
