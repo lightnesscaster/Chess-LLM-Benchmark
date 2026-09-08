@@ -318,6 +318,42 @@ def test_gemini_38_web_play_offers_supported_reasoning_efforts():
     assert gemini["default_effort"] == "medium"
 
 
+@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+def test_gemini_saved_identity_matches_selected_effort(effort):
+    service = _service()
+    selected = service._select_model(
+        "gemini-3.8-flash", Path("config/benchmark.yaml"),
+        {"GEMINI_API_KEY": "unused"}, effort,
+    )
+    assert selected["reasoning_effort"] == effort
+    assert selected["_rated_player_id"] == f"gemini-3.8-flash ({effort})"
+
+
+def test_active_high_session_repairs_legacy_medium_identity(monkeypatch):
+    service = _service()
+    config = Path("config/benchmark.yaml")
+    env = {"GEMINI_API_KEY": "unused"}
+    monkeypatch.setattr(service, "_model_rating_snapshot", lambda name: {"rating": 1800, "source": name})
+    state = service.start_game("gemini-3.8-flash", "white", config, env,
+                               reasoning_effort="high", human_profile={"username": "tester",
+                               "rating": 2329, "rating_deviation": 141, "rating_pool": "classical"})
+    state["rated_model_id"] = "gemini-3.8-flash (medium)"
+    state["rating_context"]["self"] = {"rating": 1300, "source": "medium"}
+    updated = service.play_human_move(state, "e2e4", config, env, lambda *_: "e7e5")
+    assert updated["rated_model_id"] == "gemini-3.8-flash (high)"
+    assert updated["rating_context"]["self"]["source"] == "gemini-3.8-flash (high)"
+
+
+@pytest.mark.parametrize("model", ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-v4-flash-0731"])
+def test_configured_max_alias_keeps_its_canonical_rating_identity(model):
+    selected = _service()._select_model(
+        model, Path("config/benchmark.yaml"),
+        {"OPENROUTER_API_KEY": "unused"}, "xhigh",
+    )
+    assert selected["reasoning_effort"] == "xhigh"
+    assert selected["_rated_player_id"] == f"{model} (max)"
+
+
 def test_unavailable_effort_is_rejected_for_model(config_path):
     with pytest.raises(_service().ConfigurationError, match="effort"):
         _service().start_game(

@@ -159,6 +159,7 @@ def _configured_efforts(model: dict) -> tuple[list[str], str]:
 
 def _model_with_effort(model: dict, effort: str) -> dict:
     selected = copy.deepcopy(model)
+    selected["_source_effort"] = _configured_efforts(model)[1]
     if effort == "none":
         selected["reasoning"] = False
         selected.pop("reasoning_effort", None)
@@ -261,10 +262,14 @@ def _select_model(
         if (
             len(group["variants"]) > 1
             and effort != "default"
-            and not EFFORT_SUFFIX.search(rated_player_id)
+            and (
+                not EFFORT_SUFFIX.search(rated_player_id)
+                or effort != selected["_source_effort"]
+            )
         ):
             effort_suffix = "no thinking" if effort == "none" else effort
-            rated_player_id = f"{group['id']} ({effort_suffix})"
+            base_player_id = EFFORT_SUFFIX.sub("", rated_player_id).strip()
+            rated_player_id = f"{base_player_id} ({effort_suffix})"
         selected["_rated_player_id"] = rated_player_id
         selected["player_id"] = group["id"]
         selected["_web_effort"] = effort
@@ -397,6 +402,9 @@ def _validate_state(
             raise GameStateError("The saved game state is invalid.")
         if not isinstance(state.get("started_at"), str) or not state["started_at"]:
             raise GameStateError("The saved game state is invalid.")
+        if state.get("rated_model_id") != model["_rated_player_id"]:
+            state["rated_model_id"] = model["_rated_player_id"]
+            state.pop("rating_context", None)
     return model, _board_from_state(state)
 
 
