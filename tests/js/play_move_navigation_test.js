@@ -66,7 +66,7 @@ class FakeChess {
         const uci = typeof move === "string" ? move : move.from + move.to;
         if (uci === "h2h3" && this.position === finalFen) {
             this.position = "optimistic-h2h3";
-            return {};
+            return {san: "h3"};
         }
         if (uci === "e2e4" && this.replayed.length === 0) {
             this.replayed.push(uci);
@@ -171,8 +171,7 @@ const documentObject = {
     boardOptions.onSnapEnd();
     assert.equal(boardPositions.at(-1), "start-fen");
     rejectMoveRequest(new Error("provider unavailable"));
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setImmediate(resolve));
     assert.equal(boardPositions.at(-1), "start-fen");
     assert.equal(elements.get("move-position").textContent, "0 / 2");
 })().catch((error) => {

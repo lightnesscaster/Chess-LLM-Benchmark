@@ -1312,6 +1312,8 @@ async def run_manual_game(args):
     total_illegal_black = 0
     api_error_count = 0
     pgn_logger = PGNLogger() if args.save else None
+    from rating.prompt_context import rating_snapshot
+    manual_rating_store = RatingStore(path="data/ratings.json")
 
     if pgn_logger:
         from position_benchmark.stability_cap_shadow import (
@@ -1346,7 +1348,6 @@ async def run_manual_game(args):
         for result in pgn_logger.load_all_results():
             historical_counts[result.white_id] += 1
             historical_counts[result.black_id] += 1
-        manual_rating_store = RatingStore(path="data/ratings.json")
 
         if getattr(args, "allow_nonprospective_save", False):
             for player_id in llm_player_ids:
@@ -1462,6 +1463,10 @@ async def run_manual_game(args):
                 max_moves=args.max_moves,
                 verbose=True,
                 pre_moves=pre_moves if game_num == 0 else None,
+                rating_snapshots={
+                    player.player_id: rating_snapshot(manual_rating_store, player.player_id)
+                    for player in (white, black)
+                },
             )
 
             try:

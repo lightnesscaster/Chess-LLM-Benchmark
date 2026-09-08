@@ -378,9 +378,14 @@
         return choices[String(answer || "queen").trim().toLowerCase()] || "q";
     }
 
-    function submitMove(uciMove, optimisticFen) {
+    function submitMove(uciMove, optimisticFen, san) {
+        const confirmedGame = game;
+        game = {...game, fen: optimisticFen, turn: "llm",
+            moves: [...(game.moves || []), uciMove],
+            san_moves: [...game.san_moves, san]};
         pendingFen = optimisticFen;
         board.position(pendingFen, false);
+        renderLedger();
         setBusy(true);
         postJSON(app.dataset.moveUrl, {move: uciMove})
             .then((payload) => {
@@ -391,7 +396,8 @@
             })
             .catch((error) => {
                 pendingFen = null;
-                board.position(displayedFen(), false);
+                game = confirmedGame;
+                render();
                 statusElement.textContent = "Move not completed.";
                 detailElement.textContent = error.message;
             })
@@ -414,7 +420,7 @@
             if (!localMove) return "snapback";
 
             const uciMove = source + target + (promotion || (localMove.promotion || ""));
-            submitMove(uciMove, chess.fen());
+            submitMove(uciMove, chess.fen(), localMove.san);
             return undefined;
         },
         onSnapEnd: function () {
@@ -446,7 +452,7 @@
             keyboardMoveInput.focus();
             return;
         }
-        submitMove(uciMove, chess.fen());
+        submitMove(uciMove, chess.fen(), localMove.san);
     });
 
     if (copyFenButton) copyFenButton.addEventListener("click", () => copyGameData("FEN"));

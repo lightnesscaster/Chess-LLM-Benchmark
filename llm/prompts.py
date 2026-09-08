@@ -2,7 +2,37 @@
 Prompt templates for LLM chess players.
 """
 
+import math
+
 import chess
+
+
+def format_rating_context(context: dict | None) -> str:
+    """Describe game-start ratings without implying cross-pool equivalence."""
+    if context is None:
+        return ""
+    lines = ["Game-start rating context:"]
+    for key, label in (("self", "Your rating"), ("opponent", "Opponent rating")):
+        snapshot = context.get(key) or {}
+        value = snapshot.get("rating")
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            lines.append(f"{label}: unknown")
+            continue
+        source = snapshot.get("source", "unknown source")
+        qualifiers = [str(source)]
+        rd = snapshot.get("rating_deviation")
+        if isinstance(rd, (int, float)) and not isinstance(rd, bool) and math.isfinite(rd):
+            qualifiers.append(f"RD {round(rd)}")
+        if snapshot.get("provisional"):
+            qualifiers.append("provisional estimate")
+        lines.append(f"{label}: {round(value)} ({'; '.join(qualifiers)})")
+    lines.append(
+        "Ratings from different pools are not directly interchangeable; uncertain or provisional "
+        "ratings are only rough evidence. Consider both players' strength and practical chances "
+        "of recovery alongside the position when deciding whether to continue or resign. "
+        "Do not resign merely because your opponent is higher rated."
+    )
+    return "\n".join(lines) + "\n\n"
 
 
 def board_to_ascii(board: chess.Board) -> str:
@@ -132,6 +162,7 @@ def build_chess_prompt(
     illegal_move: str = None,
     previous_response: str = None,
     allow_resignation: bool = False,
+    rating_context: dict | None = None,
 ) -> str:
     """
     Build the prompt to send to the LLM.
@@ -151,12 +182,17 @@ def build_chess_prompt(
 
     legal_word = "LEGAL" if is_retry else "legal"
     if allow_resignation:
+        resignation_guidance = (
+            "- Resignation is optional; assess the position and your practical chances of recovery."
+            if rating_context is not None else
+            "- Resignation is optional and should be based only on your assessment of the position."
+        )
         task_instructions = (
             f"- Choose exactly ONE action for {side}.\n"
             f"- Play exactly ONE {legal_word} move, or resign.\n"
             "- For a move, use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion).\n"
             "- If you independently choose to resign, output exactly: resign\n"
-            "- Resignation is optional and should be based only on your assessment of the position."
+            + resignation_guidance
         )
         output_instructions = (
             "- Only a legal move in UCI or the word resign, e.g.:\n"
@@ -174,6 +210,8 @@ def build_chess_prompt(
     # Build move history section
     move_history = format_move_history(board)
     move_history_section = f"Move history:\n{move_history}"
+    if allow_resignation:
+        move_history_section = format_rating_context(rating_context) + move_history_section
 
     # Build last move section
     last_move_info = get_last_move_info(board)

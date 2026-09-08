@@ -1373,6 +1373,7 @@ class FakeSequencePlayer:
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.allow_resignation = False
+        self.rating_context = None
         self.resignation_options: list[bool] = []
 
     async def select_move(self, _board, **kwargs) -> str:

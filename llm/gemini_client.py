@@ -155,6 +155,7 @@ class GeminiPlayer(BaseLLMPlayer):
             last_move_illegal,
             self.last_successful_response,
             allow_resignation=self.allow_resignation,
+            rating_context=self.rating_context,
         )
         self.last_prompt = prompt
         self.last_raw_response = ""

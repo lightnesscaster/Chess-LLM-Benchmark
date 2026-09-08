@@ -12,6 +12,7 @@ import uuid
 import asyncio
 import tempfile
 import os
+import copy
 from datetime import datetime, timezone
 from typing import Union, Tuple, Optional
 
@@ -46,6 +47,7 @@ class GameRunner:
         max_moves: int = 200,
         verbose: bool = False,
         pre_moves: list = None,
+        rating_snapshots: dict | None = None,
     ):
         """
         Initialize the game runner.
@@ -62,6 +64,7 @@ class GameRunner:
         self.max_moves = max_moves
         self.verbose = verbose
         self.pre_moves = pre_moves
+        self.rating_snapshots = copy.deepcopy(rating_snapshots)
 
     def _write_live_game(self, white_id: str, black_id: str, board: chess.Board,
                           moves_played: int, last_move: str = None, status: str = "in_progress"):
@@ -424,6 +427,12 @@ class GameRunner:
                     is_retry=is_retry,
                     last_move_illegal=last_illegal_move,
                     allow_resignation=True,
+                    rating_context={
+                        "self": self.rating_snapshots.get(player.player_id),
+                        "opponent": self.rating_snapshots.get(
+                            self.black.player_id if player is self.white else self.white.player_id
+                        ),
+                    } if self.rating_snapshots is not None else None,
                 )
                 return move_uci
 

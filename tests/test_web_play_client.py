@@ -1,9 +1,13 @@
 import subprocess
+import pytest
 
 
-def test_human_drag_move_is_rendered_before_model_response():
+@pytest.mark.parametrize("input_method", ["drag", "keyboard"])
+@pytest.mark.parametrize("human_color", ["white", "black"])
+@pytest.mark.parametrize("outcome", ["success", "failure"])
+def test_human_drag_move_is_rendered_before_model_response(input_method, human_color, outcome):
     result = subprocess.run(
-        ["node", "tests/js/play_immediate_move_test.js"],
+        ["node", "tests/js/play_immediate_move_test.js", input_method, human_color, outcome],
         capture_output=True,
         check=False,
         text=True,

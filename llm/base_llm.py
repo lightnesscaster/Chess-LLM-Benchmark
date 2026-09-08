@@ -36,6 +36,7 @@ class BaseLLMPlayer(abc.ABC):
         self.last_successful_response: str = ""
         # Set per request by request_llm_move; position probes leave this disabled.
         self.allow_resignation: bool = False
+        self.rating_context: dict | None = None
 
     def reset_token_usage(self) -> None:
         """Reset token counters and debug state (call at start of each game)."""
@@ -132,10 +133,13 @@ async def request_llm_move(
     is_retry: bool,
     last_move_illegal: Optional[str],
     allow_resignation: bool,
+    rating_context: dict | None = None,
 ) -> Optional[str]:
     """Request a move using the production game prompt context and normalization."""
     previous_capability = player.allow_resignation
+    previous_ratings = player.rating_context
     player.allow_resignation = bool(allow_resignation)
+    player.rating_context = copy.deepcopy(rating_context) if allow_resignation else None
     try:
         move_uci = await player.select_move(
             board,
@@ -144,4 +148,5 @@ async def request_llm_move(
         )
     finally:
         player.allow_resignation = previous_capability
+        player.rating_context = previous_ratings
     return move_uci.strip() if move_uci else None

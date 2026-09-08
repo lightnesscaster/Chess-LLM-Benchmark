@@ -86,6 +86,47 @@ def _service():
     return importlib.import_module("web.play_service")
 
 
+def test_game_start_rating_snapshot_reaches_opening_and_later_moves(config_path, monkeypatch):
+    service = _service()
+    monkeypatch.setattr(service, "_model_rating_snapshot", lambda player_id: {
+        "rating": 1303, "source": "ChessBench", "rating_deviation": 90,
+        "provisional": True,
+    }, raising=False)
+    seen = []
+    def provider(model, board, is_retry, last_illegal):
+        seen.append(model.get("rating_context"))
+        return "e2e4" if not board.move_stack else "g1f3"
+    state = service.start_game("chat-model", "black", config_path,
+                               {"OPENROUTER_API_KEY": "test"}, provider,
+                               human_profile={"username": "tester", "rating": 2329,
+                                              "rating_deviation": 141, "rating_pool": "classical"})
+    service.play_human_move(state, "e7e5", config_path,
+                            {"OPENROUTER_API_KEY": "test"}, provider)
+    assert seen[0] is not None
+    assert seen[0] == seen[1]
+    assert seen[0]["self"]["rating"] == 1303
+    assert seen[0]["opponent"]["rating"] == 2329
+    assert seen[0]["opponent"]["source"] == "Lichess classical"
+
+
+def test_legacy_session_gains_rating_context_on_next_turn(config_path, monkeypatch):
+    service = _service()
+    monkeypatch.setattr(service, "_model_rating_snapshot", lambda _: {"rating": 1400, "source": "ChessBench"})
+    state = service.start_game("chat-model", "white", config_path, {"OPENROUTER_API_KEY": "test"})
+    state.pop("rating_context")
+    state.update(game_id="legacy-game", started_at="2026-09-01T00:00:00Z",
+                 human_profile={"username": "tester", "rating": 1800, "rating_deviation": 70})
+    seen = []
+    def provider(model, *_):
+        seen.append(model.get("rating_context"))
+        return "e7e5"
+    updated = service.play_human_move(state, "e2e4", config_path,
+                                      {"OPENROUTER_API_KEY": "test"}, provider)
+    assert seen[0]["self"]["rating"] == 1400
+    assert updated["rating_context"] == seen[0]
+    assert seen[0]["opponent"]["source"] == "Lichess rapid"
+
+
 def test_model_list_includes_only_configured_web_backends_with_keys(config_path):
     models = _service().list_playable_models(
         config_path,
@@ -363,6 +404,7 @@ def test_start_game_with_white_pieces_waits_for_human(config_path):
         "winner": None,
         "termination": None,
         "llm_illegal_moves": 0,
+        "rating_context": {"self": None, "opponent": None},
     }
 
 

@@ -324,6 +324,35 @@ def _new_state(model: dict, human_color: str, human_profile: dict | None = None)
     return state
 
 
+def _model_rating_snapshot(player_id: str) -> dict | None:
+    """Load known model strength without making gameplay depend on rating storage."""
+    from rating.rating_store import RatingStore
+    from rating.prompt_context import rating_snapshot
+    try:
+        return rating_snapshot(RatingStore(), player_id)
+    except Exception:
+        logger.warning("Could not load model rating for game prompt", exc_info=True)
+        return None
+
+
+def _ensure_rating_context(state: dict, model: dict) -> None:
+    """Freeze ratings once, including for sessions created before rating prompts."""
+    if "rating_context" in state:
+        return
+    profile = state.get("human_profile")
+    if profile is not None:
+        profile = _validated_human_profile(profile)
+    state["rating_context"] = {
+        "self": _model_rating_snapshot(str(model.get("_rated_player_id") or model["player_id"])),
+        "opponent": {
+            "rating": profile["rating"],
+            "rating_deviation": profile["rating_deviation"],
+            "source": f"Lichess {profile['rating_pool']}",
+            "provisional": profile.get("provisional", False),
+        } if profile else None,
+    }
+
+
 def _board_from_state(state: dict) -> chess.Board:
     if not isinstance(state, dict):
         raise GameStateError("Start a new game.")
@@ -463,6 +492,7 @@ async def _request_model_move(
             is_retry=is_retry,
             last_move_illegal=last_illegal_move,
             allow_resignation=True,
+            rating_context=model.get("rating_context"),
         )
         return {
             "move": move,
@@ -502,6 +532,9 @@ def _apply_llm_turn(
     environ: Mapping[str, str],
     move_provider: MoveProvider | None,
 ) -> None:
+    model = dict(model, rating_context=state.get("rating_context") or {
+        "self": None, "opponent": None,
+    })
     provider = move_provider
     last_illegal_move = None
 
@@ -597,6 +630,7 @@ def start_game(
     """Create a game and make the opening LLM move when the human is black."""
     model = _select_model(model_id, config_path, environ, reasoning_effort)
     state = _new_state(model, human_color, human_profile)
+    _ensure_rating_context(state, model)
     if human_color == "black":
         _apply_llm_turn(state, chess.Board(), model, environ, move_provider)
     return state
@@ -628,6 +662,7 @@ def play_human_move(
     board.push(move)
     working_state["moves"].append(move.uci())
     if not _finish_from_board(working_state, board):
+        _ensure_rating_context(working_state, model)
         _apply_llm_turn(
             working_state,
             board,

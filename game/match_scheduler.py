@@ -24,6 +24,7 @@ from .pgn_logger import PGNLogger
 from .stats_collector import StatsCollector
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
+from rating.prompt_context import rating_snapshot
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
 from position_benchmark.acquisition import (
     AcquisitionPanel,
@@ -1124,6 +1125,10 @@ class MatchScheduler:
                 black=black,
                 max_moves=self.max_moves,
                 verbose=self.verbose,
+                rating_snapshots={
+                    player.player_id: rating_snapshot(self.rating_store, player.player_id)
+                    for player in (white, black)
+                },
             )
 
             try:

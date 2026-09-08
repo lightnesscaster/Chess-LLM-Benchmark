@@ -19,6 +19,7 @@ import chess
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
 from .protocol import parse_resignation
+from .prompts import format_rating_context
 
 
 class OpenRouterCompletionPlayer(BaseLLMPlayer):
@@ -117,6 +118,14 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         allow_resignation: bool = False,
     ) -> str:
         """Build a PGN-continuation prompt ending with the move-number prefix."""
+        instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
+        headers = self.PGN_HEADERS
+        if allow_resignation and self.rating_context is not None:
+            instruction = instruction.replace(
+                "only on your assessment of the position", "on the position and your practical chances of recovery"
+            )
+            instruction += format_rating_context(self.rating_context)
+            headers = '[Event "ChessBench"]\n[White "White"]\n[Black "Black"]\n'
         if board.move_stack:
             replay = chess.Board()
             tokens = []
@@ -136,8 +145,7 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
                 body = f"{body} {next_num}."
             else:
                 body = f"{body} {next_num}..."
-            instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
-            return f"{instruction}{self.PGN_HEADERS}\n{body} "
+            return f"{instruction}{headers}\n{body} "
 
         # No move history — use FEN setup header so the model knows the position.
         fen_headers = (
@@ -149,8 +157,7 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             suffix = f"{fullmove}."
         else:
             suffix = f"{fullmove}... "
-        instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
-        return f"{instruction}{self.PGN_HEADERS}{fen_headers}\n{suffix} "
+        return f"{instruction}{headers}{fen_headers}\n{suffix} "
 
     # Move-number prefixes (e.g. "12", "12.", "12..."), game-result markers, and
     # annotations that may appear before the actual SAN move in a PGN continuation.

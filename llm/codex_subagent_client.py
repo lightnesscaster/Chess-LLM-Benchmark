@@ -130,6 +130,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             illegal_move=last_move_illegal,
             previous_response=self.last_successful_response,
             allow_resignation=allow_resignation,
+            rating_context=self.rating_context,
         )
 
         constraints = [

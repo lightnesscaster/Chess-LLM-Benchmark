@@ -485,6 +485,7 @@ Your response (just the UCI move or UNCLEAR):"""
             last_move_illegal,
             self.last_successful_response,
             allow_resignation=self.allow_resignation,
+            rating_context=self.rating_context,
         )
         self.last_prompt = prompt  # Store for debugging illegal moves
         self.last_raw_response = ""  # Clear stale data before API call
