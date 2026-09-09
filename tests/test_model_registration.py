@@ -127,5 +127,29 @@ class Gemini38FlashRegistrationTests(unittest.TestCase):
         self.assertEqual(model_family(GEMINI_38_PLAYER_ID), "gemini-3.8")
 
 
+class Fable51RegistrationTests(unittest.TestCase):
+    def test_freeze_checker_identifies_all_configured_fable_efforts(self) -> None:
+        checker = FreezeChecker.__new__(FreezeChecker)
+        checker._publish_dates = {}
+        checker._player_providers = {}
+        checker._models_by_provider = {}
+        checker._player_model_ids = {}
+        checker._models_by_model_id = {}
+        checker._load_publish_dates()
+
+        with open(ROOT / "config" / "benchmark.yaml") as config_file:
+            config = yaml.safe_load(config_file)
+        model = next(m for m in config["web_play_models"]
+                     if m["player_id"] == "claude-fable-5.1")
+        for effort in model["web_reasoning_efforts"]:
+            player_id = f"claude-fable-5.1 ({effort})"
+            with self.subTest(player_id=player_id):
+                self.assertEqual(checker._publish_dates.get(player_id), 1788220800)
+                self.assertEqual(checker._player_providers.get(player_id), "anthropic")
+                self.assertEqual(checker._player_model_ids.get(player_id),
+                                 "anthropic/claude-fable-5-1")
+                self.assertIn(player_id, checker._models_by_model_id["anthropic/claude-fable-5-1"])
+
+
 if __name__ == "__main__":
     unittest.main()

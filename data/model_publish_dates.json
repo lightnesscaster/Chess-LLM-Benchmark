@@ -1,4 +1,34 @@
 {
+  "claude-fable-5.1 (low)": {
+    "model_id": "anthropic/claude-fable-5-1",
+    "created_timestamp": 1788220800,
+    "created_date": "2026-09-01",
+    "source": "https://aws.amazon.com/about-aws/whats-new/2026/09/claude-fable-5-1-aws/"
+  },
+  "claude-fable-5.1 (medium)": {
+    "model_id": "anthropic/claude-fable-5-1",
+    "created_timestamp": 1788220800,
+    "created_date": "2026-09-01",
+    "source": "https://aws.amazon.com/about-aws/whats-new/2026/09/claude-fable-5-1-aws/"
+  },
+  "claude-fable-5.1 (high)": {
+    "model_id": "anthropic/claude-fable-5-1",
+    "created_timestamp": 1788220800,
+    "created_date": "2026-09-01",
+    "source": "https://aws.amazon.com/about-aws/whats-new/2026/09/claude-fable-5-1-aws/"
+  },
+  "claude-fable-5.1 (xhigh)": {
+    "model_id": "anthropic/claude-fable-5-1",
+    "created_timestamp": 1788220800,
+    "created_date": "2026-09-01",
+    "source": "https://aws.amazon.com/about-aws/whats-new/2026/09/claude-fable-5-1-aws/"
+  },
+  "claude-fable-5.1 (max)": {
+    "model_id": "anthropic/claude-fable-5-1",
+    "created_timestamp": 1788220800,
+    "created_date": "2026-09-01",
+    "source": "https://aws.amazon.com/about-aws/whats-new/2026/09/claude-fable-5-1-aws/"
+  },
   "gemini-3-flash-preview (high)": {
     "model_id": "google/gemini-3-flash-preview",
     "created_timestamp": 1766014361,
