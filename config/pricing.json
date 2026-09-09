@@ -927,6 +927,10 @@
     "completion": 3e-05,
     "prompt": 5e-06
   },
+  "openai/gpt-6-astra": {
+    "prompt": 0.00001,
+    "completion": 0.00005
+  },
   "openai/gpt-5.6-sol": {
     "completion": 3e-05,
     "prompt": 5e-06

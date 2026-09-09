@@ -127,6 +127,33 @@ class Gemini38FlashRegistrationTests(unittest.TestCase):
         self.assertEqual(model_family(GEMINI_38_PLAYER_ID), "gemini-3.8")
 
 
+class AstraRegistrationTests(unittest.TestCase):
+    def test_astra_variants_construct_with_exact_efforts_and_subscription_costs(self):
+        config = yaml.safe_load((ROOT / "config/benchmark.yaml").read_text())
+        config["llms"] = [m for m in config["llms"] if m["player_id"].startswith("gpt-6-astra")]
+        players, reasoning = create_llm_players(config, api_backend="codex")
+        expected = {f"gpt-6-astra ({e})" for e in ("low", "medium", "high", "xhigh", "max")}
+        self.assertEqual(set(players), expected)
+        self.assertEqual(reasoning, expected)
+        calculator = CostCalculator()
+        for pid, player in players.items():
+            self.assertEqual(player.model_name, "gpt-6-astra")
+            self.assertIn(f"model_reasoning_effort={player.reasoning_effort}", player._command("/tmp/astra-test", "move"))
+            self.assertEqual(calculator.get_model_for_player(pid), "openai/gpt-6-astra")
+            self.assertEqual(calculator.get_budget_cost_override(pid), 0.0)
+        self.assertEqual(calculator.calculate_game_cost({"prompt_tokens": 1000000, "completion_tokens": 1000000}, "openai/gpt-6-astra"), 60.0)
+
+    def test_astra_release_metadata_is_available_to_freeze_checker(self):
+        checker = FreezeChecker.__new__(FreezeChecker)
+        for field in ("_publish_dates", "_player_providers", "_models_by_provider", "_player_model_ids", "_models_by_model_id"):
+            setattr(checker, field, {})
+        checker._load_publish_dates()
+        for effort in ("low", "medium", "high", "xhigh", "max"):
+            pid = f"gpt-6-astra ({effort})"
+            self.assertEqual(checker._publish_dates.get(pid), 1788393600)
+            self.assertEqual(checker._player_model_ids.get(pid), "openai/gpt-6-astra")
+
+
 class Fable51RegistrationTests(unittest.TestCase):
     def test_freeze_checker_identifies_all_configured_fable_efforts(self) -> None:
         checker = FreezeChecker.__new__(FreezeChecker)

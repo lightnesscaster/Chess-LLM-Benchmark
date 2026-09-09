@@ -168,6 +168,41 @@ llms:
     temperature: 0.0
     reasoning_effort: xhigh
 
+  - player_id: "gpt-6-astra (low)"
+    model_name: "openai/gpt-6-astra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    reasoning_effort: low
+
+  - player_id: "gpt-6-astra (medium)"
+    model_name: "openai/gpt-6-astra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    reasoning_effort: medium
+
+  - player_id: "gpt-6-astra (high)"
+    model_name: "openai/gpt-6-astra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    reasoning_effort: high
+
+  - player_id: "gpt-6-astra (xhigh)"
+    model_name: "openai/gpt-6-astra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    reasoning_effort: xhigh
+
+  - player_id: "gpt-6-astra (max)"
+    model_name: "openai/gpt-6-astra"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    reasoning_effort: max
+
   - player_id: "gpt-5.6-sol (low)"
     model_name: "openai/gpt-5.6-sol"
     api: codex

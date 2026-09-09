@@ -27,7 +27,7 @@ from .prompts import build_chess_prompt
 class CodexSubagentPlayer(BaseLLMPlayer):
     """Chess player that shells out to `codex exec` for each move."""
 
-    VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+    VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
     NON_TOOL_ITEM_TYPES = {"agent_message", "reasoning"}
     SUBPROCESS_ENV_ALLOWLIST = {
         "CODEX_HOME",
