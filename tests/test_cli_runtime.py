@@ -69,6 +69,40 @@ def test_render_scripts_persist_cli_binaries_in_deploy_artifact():
     start_script = Path("scripts/render_start.sh").read_text()
 
     assert 'mkdir -p "$PWD/.render/bin"' in build_script
-    assert 'install -m 0755 "$(readlink -f "$(command -v codex)")" "$PWD/.render/bin/codex"' in build_script
+    assert 'python scripts/package_codex_runtime.py' in build_script
     assert 'install -m 0755 "$(readlink -f "$(command -v claude)")" "$PWD/.render/bin/claude"' in build_script
     assert 'export PATH="$PWD/.render/bin:$HOME/.local/bin:$PATH"' in start_script
+
+
+def test_packaged_codex_runs_without_original_installation(tmp_path):
+    import subprocess
+    from scripts.package_codex_runtime import package_runtime
+
+    release = tmp_path / "release"
+    (release / "bin").mkdir(parents=True)
+    (release / "codex-resources").mkdir()
+    (release / "codex-resources/resource").write_text("runtime-ready")
+    binary = release / "bin/codex"
+    binary.write_text('#!/bin/sh\nexec "$(dirname "$0")/codex-code-mode-host"\n')
+    host = release / "bin/codex-code-mode-host"
+    host.write_text('#!/bin/sh\ncat "$(dirname "$0")/../codex-resources/resource"\n')
+    for executable in (binary, host):
+        executable.chmod(0o755)
+    link = tmp_path / "codex"
+    link.symlink_to(binary)
+    destination = tmp_path / "artifact"
+    packaged = package_runtime(link, destination)
+    release.rename(tmp_path / "removed-original")
+    result = subprocess.run([str(packaged)], capture_output=True, text=True, check=True)
+    assert result.stdout == "runtime-ready"
+
+
+def test_packaging_rejects_incomplete_codex_installation(tmp_path):
+    import pytest
+    from scripts.package_codex_runtime import package_runtime
+
+    binary = tmp_path / "release/bin/codex"
+    binary.parent.mkdir(parents=True)
+    binary.write_text("incomplete")
+    with pytest.raises(ValueError, match="codex-code-mode-host"):
+        package_runtime(binary, tmp_path / "artifact")

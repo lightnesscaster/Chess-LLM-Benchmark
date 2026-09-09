@@ -11,5 +11,6 @@ codex --version
 claude --version
 
 mkdir -p "$PWD/.render/bin"
-install -m 0755 "$(readlink -f "$(command -v codex)")" "$PWD/.render/bin/codex"
+python scripts/package_codex_runtime.py "$(command -v codex)" "$PWD/.render/codex"
+ln -sfn ../codex/bin/codex "$PWD/.render/bin/codex"
 install -m 0755 "$(readlink -f "$(command -v claude)")" "$PWD/.render/bin/claude"
