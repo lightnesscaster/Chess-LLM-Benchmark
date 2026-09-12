@@ -137,7 +137,13 @@ class CostCalculator:
         with open(config_file) as f:
             config = yaml.safe_load(f)
 
-        for llm in config.get("llms", []):
+        entries = list(config.get("llms", []))
+        for model in config.get("web_play_models", []):
+            entries.append(model)
+            for effort in model.get("web_reasoning_efforts", []):
+                entries.append({**model, "reasoning_effort": effort})
+
+        for llm in entries:
             player_id = llm.get("player_id")
             model_name = llm.get("model_name")
             if not player_id:

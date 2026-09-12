@@ -67,6 +67,8 @@ web_play_models:
     model_name: "anthropic/claude-opus-5"
     web_api: claude_code
     web_model_name: opus
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
     web_reasoning_efforts: [low, medium, high, xhigh, max]
     web_default_reasoning_effort: high
 
@@ -74,6 +76,8 @@ web_play_models:
     model_name: "anthropic/claude-sonnet-5"
     web_api: claude_code
     web_model_name: sonnet
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
     web_reasoning_efforts: [low, medium, high, xhigh, max]
     web_default_reasoning_effort: high
 
@@ -81,6 +85,8 @@ web_play_models:
     model_name: "anthropic/claude-haiku-4.5"
     web_api: claude_code
     web_model_name: haiku
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
     web_reasoning_efforts: [low, medium, high, xhigh, max]
     web_default_reasoning_effort: high
 
@@ -171,36 +177,26 @@ llms:
   - player_id: "gpt-6-astra (low)"
     model_name: "openai/gpt-6-astra"
     api: codex
-    budget_cost_per_game: 0.0
-    exclude_runtime_tokens_from_cost: true
     reasoning_effort: low
 
   - player_id: "gpt-6-astra (medium)"
     model_name: "openai/gpt-6-astra"
     api: codex
-    budget_cost_per_game: 0.0
-    exclude_runtime_tokens_from_cost: true
     reasoning_effort: medium
 
   - player_id: "gpt-6-astra (high)"
     model_name: "openai/gpt-6-astra"
     api: codex
-    budget_cost_per_game: 0.0
-    exclude_runtime_tokens_from_cost: true
     reasoning_effort: high
 
   - player_id: "gpt-6-astra (xhigh)"
     model_name: "openai/gpt-6-astra"
     api: codex
-    budget_cost_per_game: 0.0
-    exclude_runtime_tokens_from_cost: true
     reasoning_effort: xhigh
 
   - player_id: "gpt-6-astra (max)"
     model_name: "openai/gpt-6-astra"
     api: codex
-    budget_cost_per_game: 0.0
-    exclude_runtime_tokens_from_cost: true
     reasoning_effort: max
 
   - player_id: "gpt-5.6-sol (low)"
@@ -657,7 +653,7 @@ llms:
     model_name: "x-ai/grok-4.1-fast"
     temperature: 0.0
     unavailable: true
-    unavailable_reason: "Deprecated endpoint; all 50 acquisition-core positions failed on 2026-07-23"
+    unavailable_reason: "Retired: xAI retired Grok 4.1 Fast on 2026-05-15 (old API names redirect to Grok 4.3); all 50 OpenRouter acquisition-core positions failed on 2026-07-23. See https://docs.x.ai/developers/migration/may-15-retirement"
 
   # grok-4.3 (medium) - xAI, released 2026-04-30
   - player_id: "grok-4.3 (medium)"

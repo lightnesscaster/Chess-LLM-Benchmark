@@ -140,7 +140,8 @@ class AstraRegistrationTests(unittest.TestCase):
             self.assertEqual(player.model_name, "gpt-6-astra")
             self.assertIn(f"model_reasoning_effort={player.reasoning_effort}", player._command("/tmp/astra-test", "move"))
             self.assertEqual(calculator.get_model_for_player(pid), "openai/gpt-6-astra")
-            self.assertEqual(calculator.get_budget_cost_override(pid), 0.0)
+            self.assertIsNone(calculator.get_budget_cost_override(pid))
+            self.assertFalse(calculator.exclude_runtime_tokens_from_cost(pid))
         self.assertEqual(calculator.calculate_game_cost({"prompt_tokens": 1000000, "completion_tokens": 1000000}, "openai/gpt-6-astra"), 60.0)
 
     def test_astra_release_metadata_is_available_to_freeze_checker(self):

@@ -25,6 +25,22 @@ class FakeRatingStore:
         return False
 
 
+def test_retired_model_keeps_history_and_is_labelled_on_leaderboard(monkeypatch):
+    store = FakeRatingStore()
+    rating = store.get_sorted_ratings()[0]
+    rating.player_id = "grok-4.1-fast"
+    store.get_sorted_ratings = lambda **_: [rating]
+    entry = Leaderboard(store).get_leaderboard()[0]
+    assert entry["retired"] is True
+    assert entry["games_played"] == 15
+    import web.app as web_app
+    monkeypatch.setattr(web_app, "get_leaderboard_data", lambda **_: [entry])
+    with web_app.app.test_client() as client:
+        html = client.get("/leaderboard").get_data(as_text=True)
+    assert "Retired</span>" in html
+    assert "grok-4.1-fast" in html
+
+
 @pytest.mark.parametrize("effort", ["medium", "high"])
 def test_gemini38_variants_have_release_dates_and_medium_has_labelled_estimate(effort, monkeypatch):
     store = FakeRatingStore()

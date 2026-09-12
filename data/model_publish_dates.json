@@ -398,7 +398,10 @@
   "grok-4.1-fast": {
     "model_id": "x-ai/grok-4.1-fast:free",
     "created_timestamp": 1763587502,
-    "created_date": "2025-11-19"
+    "created_date": "2025-11-19",
+    "retired": true,
+    "retirement_reason": "Retired by xAI on May 15, 2026; old xAI API names redirect to Grok 4.3. OpenRouter endpoint unavailable in our July 23 checks. Historical results retained.",
+    "retirement_source": "https://docs.x.ai/developers/migration/may-15-retirement"
   },
   "grok-4.3 (medium)": {
     "model_id": "x-ai/grok-4.3",

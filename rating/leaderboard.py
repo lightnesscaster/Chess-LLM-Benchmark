@@ -143,6 +143,8 @@ class Leaderboard:
                 "games_played": rating.games_played,
                 "is_anchor": self.rating_store.is_anchor(rating.player_id),
                 "is_frozen": rating.is_frozen,
+                "retired": date_info.get("retired", False),
+                "retirement_reason": date_info.get("retirement_reason", ""),
                 # W-L-D from rating store (single source of truth)
                 "wins": rating.wins,
                 "losses": rating.losses,

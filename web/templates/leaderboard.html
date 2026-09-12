@@ -50,6 +50,7 @@
                 <td class="rank">{{ entry.rank }}</td>
                 <td class="player">
                     {{ entry.player_id }}
+                    {% if entry.get('retired') %}<span class="anchor-badge" title="{{ entry.get('retirement_reason', 'No longer available for new games') }}">Retired</span>{% endif %}
                     {% if entry.is_anchor %}<span class="anchor-badge" title="Anchor (fixed rating)">*</span>{% endif %}
                     {% if is_top_llm %}<span class="crown-badge" title="Top-rated LLM">👑</span>{% endif %}
                     {% if is_top_standard %}<span class="medal-badge" title="Top-rated standard (non-thinking) LLM">🥇</span>{% endif %}
