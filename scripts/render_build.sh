@@ -3,7 +3,8 @@ set -euo pipefail
 
 python -m pip install -r requirements.txt
 
-curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 bash
+# Runtime disks are read-only/unavailable during Render builds.
+curl -fsSL https://chatgpt.com/codex/install.sh | env -u CODEX_HOME CODEX_NON_INTERACTIVE=1 bash
 curl -fsSL https://claude.ai/install.sh | bash -s latest
 
 export PATH="$HOME/.local/bin:$PATH"

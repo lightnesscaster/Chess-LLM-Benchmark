@@ -78,6 +78,25 @@ def test_render_build_installs_codex_non_interactively():
     assert "CODEX_NON_INTERACTIVE=1" in script
 
 
+def test_build_installer_does_not_use_runtime_credential_disk(tmp_path):
+    import os
+    import subprocess
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    python = fake_bin / "python"
+    python.write_text("#!/bin/sh\nexit 0\n")
+    curl = fake_bin / "curl"
+    curl.write_text("#!/bin/sh\nprintf '%s\\n' 'test -z \"${CODEX_HOME:-}\" || exit 91' 'exit 92'\n")
+    python.chmod(0o755)
+    curl.chmod(0o755)
+    env = dict(os.environ, PATH=str(fake_bin) + ":" + os.environ["PATH"], CODEX_HOME="/var/data/codex")
+    result = subprocess.run(["bash", str(Path("scripts/render_build.sh").resolve())],
+                            cwd=tmp_path, env=env, capture_output=True, text=True)
+    # The fake installer stops the build after verifying its environment.
+    assert result.returncode == 92, result.stderr
+
+
 def test_render_build_tracks_latest_claude_models():
     script = Path("scripts/render_build.sh").read_text()
 
