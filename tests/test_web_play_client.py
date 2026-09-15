@@ -2,6 +2,14 @@ import subprocess
 import pytest
 
 
+def test_game_navigation_keeps_page_scroll_position():
+    result = subprocess.run(
+        ["node", "tests/js/game_navigation_scroll_test.js"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("input_method", ["drag", "keyboard"])
 @pytest.mark.parametrize("human_color", ["white", "black"])
 @pytest.mark.parametrize("outcome", ["success", "cancel", "failure"])

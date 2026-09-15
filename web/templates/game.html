@@ -587,7 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentEl = document.querySelector(`.move[data-index="${currentPosition}"]`);
             if (currentEl) {
                 currentEl.classList.add('current');
-                currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
 
@@ -644,6 +643,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             return;
+        }
+
+        // Keep the viewport on the board while navigating the game.
+        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+            e.preventDefault();
         }
 
         if (e.key === 'ArrowLeft') {
