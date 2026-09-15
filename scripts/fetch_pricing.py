@@ -47,6 +47,12 @@ def fetch_pricing():
             "prompt": prompt_cost,
             "completion": completion_cost,
         }
+        for key in ("input_cache_read", "input_cache_write", "input_cache_write_1h"):
+            if model_pricing.get(key) is not None:
+                try:
+                    pricing[model_id][key] = float(model_pricing[key])
+                except (TypeError, ValueError):
+                    pass
 
     return pricing
 

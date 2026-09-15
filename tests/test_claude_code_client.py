@@ -63,11 +63,13 @@ def test_select_move_parses_result_and_tracks_usage(player, monkeypatch):
     move = asyncio.run(player.select_move(chess.Board()))
 
     assert move == "e2e4"
-    assert player.get_token_usage() == {
+    usage = player.get_token_usage()
+    assert {key: usage[key] for key in ("prompt_tokens", "completion_tokens", "total_tokens")} == {
         "prompt_tokens": 12,
         "completion_tokens": 3,
         "total_tokens": 15,
     }
+    assert usage["cache_accounting_known"] is False
 
 
 def test_select_move_accepts_exact_resignation(player, monkeypatch):

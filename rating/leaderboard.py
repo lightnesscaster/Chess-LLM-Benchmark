@@ -179,11 +179,20 @@ class Leaderboard:
                     "avg_cost_per_game": cost_stats.get("avg_cost_per_game", 0.0),
                     "games_with_cost": cost_stats.get("games_with_cost", 0),
                 })
+                if cost_stats.get("cost_estimated"):
+                    entry.update({"cost_estimated": True,
+                        "cost_basis": "Estimated chess-only input plus output; cached input priced separately where recorded. Excludes agent runtime context."})
                 if cost_stats.get("cost_lower_bound"):
                     entry.update({
                         "cost_lower_bound": True,
                         "cost_basis": "Lower bound: some token usage is missing from recorded games.",
                     })
+                    if cost_stats.get("games_missing_chess_input"):
+                        entry["cost_basis"] = (
+                            "Lower bound: historical agent games lack chess-only input/cache counts; "
+                            "only their recorded output is priced. New games include chess input and output."
+                        )
+                        entry["games_missing_chess_input"] = cost_stats["games_missing_chess_input"]
             elif date_info.get("display_cost_per_game") is not None:
                 entry.update({
                     "avg_cost_per_game": float(

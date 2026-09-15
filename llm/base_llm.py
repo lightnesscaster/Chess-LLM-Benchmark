@@ -26,6 +26,7 @@ class BaseLLMPlayer(abc.ABC):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        self._input_accounting_requests: list[dict] = []
         # Timing tracking (seconds per move)
         self.move_times: list[float] = []
         self.total_move_time: float = 0.0
@@ -43,6 +44,7 @@ class BaseLLMPlayer(abc.ABC):
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
+        self._input_accounting_requests = []
         self.last_prompt = ""
         self.last_raw_response = ""
         self.last_successful_response = ""
@@ -80,11 +82,32 @@ class BaseLLMPlayer(abc.ABC):
 
     def get_token_usage(self) -> dict:
         """Get current token usage stats."""
-        return {
+        result = {
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
         }
+        if self._input_accounting_requests:
+            requests = self._input_accounting_requests
+            for key in set().union(*(request.keys() for request in requests)):
+                if key not in result and key not in {"input_accounting_method", "cache_accounting_known"}:
+                    result[key] = sum(request.get(key, 0) for request in requests)
+            methods = {request["input_accounting_method"] for request in requests}
+            result["input_accounting_method"] = next(iter(methods)) if len(methods) == 1 else "mixed"
+            result["cache_accounting_known"] = all(request["cache_accounting_known"] for request in requests)
+            result["input_accounting_requests"] = copy.deepcopy(requests)
+        return result
+
+    def record_chess_usage(self, usage: dict, prompt: str, *, runtime: bool = True) -> dict:
+        """Accumulate raw usage and retain the corresponding chess input split."""
+        from .token_accounting import chess_usage
+
+        request = chess_usage(usage, prompt, runtime=runtime)
+        self.prompt_tokens += request["prompt_tokens"]
+        self.completion_tokens += request["completion_tokens"]
+        self.total_tokens += request["total_tokens"]
+        self._input_accounting_requests.append(request)
+        return copy.deepcopy(request)
 
     def get_timing_usage(self) -> dict:
         """Get current timing stats."""

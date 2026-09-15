@@ -555,8 +555,41 @@ def _accumulate_llm_usage(state: dict, attempt: MoveAttempt) -> None:
     ):
         state["llm_accounting_status"] = "partial"
         return
-    totals = state.get("llm_tokens") or dict.fromkeys(keys, 0)
-    state["llm_tokens"] = {key: totals[key] + usage[key] for key in keys}
+    previous = state.get("llm_tokens") or {}
+    totals = copy.deepcopy(previous)
+    for key, value in usage.items():
+        if key.endswith("_tokens"):
+            if type(value) is not int or value < 0:
+                state["llm_accounting_status"] = "partial"
+                continue
+            totals[key] = totals.get(key, 0) + value
+
+    detailed = "chess_prompt_tokens" in usage
+    previous_detailed = "chess_prompt_tokens" in previous
+    partial_input = (
+        previous.get("input_accounting_method") == "partial"
+        or usage.get("input_accounting_method") == "partial"
+        or (bool(previous) and detailed != previous_detailed)
+    )
+    if partial_input:
+        state["llm_accounting_status"] = "partial"
+        totals["input_accounting_method"] = "partial"
+    elif "input_accounting_method" in usage:
+        method = usage["input_accounting_method"]
+        previous_method = previous.get("input_accounting_method", method)
+        totals["input_accounting_method"] = method if previous_method == method else "mixed"
+
+    if "cache_accounting_known" in usage or "cache_accounting_known" in previous:
+        totals["cache_accounting_known"] = (
+            not partial_input
+            and usage.get("cache_accounting_known") is True
+            and (not previous or previous.get("cache_accounting_known") is True)
+        )
+    if "input_accounting_requests" in usage:
+        totals.setdefault("input_accounting_requests", []).extend(
+            copy.deepcopy(usage["input_accounting_requests"])
+        )
+    state["llm_tokens"] = totals
 
 
 def _apply_llm_turn(

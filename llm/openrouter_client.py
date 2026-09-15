@@ -113,9 +113,17 @@ class OpenRouterPlayer(BaseLLMPlayer):
         usage = data["usage"]
         self._last_prompt_tokens = usage.get("prompt_tokens", 0)
         self._last_completion_tokens = usage.get("completion_tokens", 0)
-        self.prompt_tokens += self._last_prompt_tokens
-        self.completion_tokens += self._last_completion_tokens
-        self.total_tokens += usage.get("total_tokens", 0)
+        details = usage.get("prompt_tokens_details") or {}
+        normalized = {
+            "prompt_tokens": self._last_prompt_tokens,
+            "completion_tokens": self._last_completion_tokens,
+            "cache_accounting_known": "cached_tokens" in details,
+        }
+        if "cached_tokens" in details:
+            normalized["cached_input_tokens"] = details["cached_tokens"]
+        if "cache_write_tokens" in details:
+            normalized["cache_creation_input_tokens"] = details["cache_write_tokens"]
+        self.record_chess_usage(normalized, self.last_prompt, runtime=False)
 
     def _parse_move(self, response_text: str, board: chess.Board = None) -> Optional[str]:
         """

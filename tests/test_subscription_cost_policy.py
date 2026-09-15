@@ -12,6 +12,7 @@ def test_premium_subscription_models_use_token_cost(player):
     costs = {}
     calculator._add_player_cost(costs, player, {
         "prompt_tokens": 1000, "completion_tokens": 1000, "total_tokens": 2000,
+        "chess_prompt_tokens": 1000,
     })
     assert calculator.get_budget_cost_override(player) is None
     assert costs[player]["total_cost"] == pytest.approx(0.06)

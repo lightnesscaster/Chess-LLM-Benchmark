@@ -229,9 +229,11 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             response_text = str(prefetched["response_text"])
             usage = dict(prefetched["usage"])
             elapsed = float(prefetched["elapsed"])
+            accounting_prompt = prefetched.get("prompt", prompt)
             self.move_times.append(elapsed)
             self.total_move_time += elapsed
         else:
+            accounting_prompt = prompt
             move_start_time = time.time()
             assert self._GLOBAL_SEMAPHORE is not None
             async with self._GLOBAL_SEMAPHORE:
@@ -243,7 +245,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                     self.total_move_time += elapsed
 
         self.last_raw_response = response_text
-        self._track_usage(usage)
+        self._track_usage(usage, accounting_prompt)
 
         move = self._parse_move(response_text, board)
         if move is None:
@@ -265,6 +267,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         async with self._GLOBAL_SEMAPHORE:
             response_text, usage = await self._run_codex(prompt)
         self._prefetched_response = {
+            "prompt": prompt,
             "fen": board.fen(),
             "response_text": response_text,
             "usage": usage,
@@ -396,15 +399,15 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                     "prompt_tokens": int(event_usage.get("input_tokens", 0) or 0),
                     "completion_tokens": int(event_usage.get("output_tokens", 0) or 0),
                     "cached_input_tokens": int(event_usage.get("cached_input_tokens", 0) or 0),
+                    "cache_creation_input_tokens": 0,
+                    "cache_accounting_known": "cached_input_tokens" in event_usage,
                 }
         return usage
 
-    def _track_usage(self, usage: dict) -> None:
+    def _track_usage(self, usage: dict, prompt: Optional[str] = None) -> None:
         self._last_prompt_tokens = usage.get("prompt_tokens", 0)
         self._last_completion_tokens = usage.get("completion_tokens", 0)
-        self.prompt_tokens += self._last_prompt_tokens
-        self.completion_tokens += self._last_completion_tokens
-        self.total_tokens += self._last_prompt_tokens + self._last_completion_tokens
+        self.record_chess_usage(usage, self.last_prompt if prompt is None else prompt)
 
     def _parse_move(self, response_text: str, board: chess.Board) -> Optional[str]:
         if not response_text:

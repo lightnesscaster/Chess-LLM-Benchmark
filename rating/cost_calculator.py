@@ -82,11 +82,6 @@ class CostCalculator:
 
     # Project root directory (parent of rating/)
     _PROJECT_ROOT = Path(__file__).parent.parent
-    # Codex CLI usage includes a large fixed prompt wrapper for every subagent
-    # call. Display costs should price the chess prompt, not that local runtime
-    # wrapper, while benchmark budget enforcement can still use explicit
-    # budget_cost_per_game overrides.
-    CODEX_FIXED_PROMPT_OVERHEAD_TOKENS = 16000
 
     def __init__(
         self,
@@ -115,6 +110,7 @@ class CostCalculator:
         self.reasoning_players: set[str] = set()
         self.player_budget_cost_overrides: Dict[str, float] = {}
         self.player_exclude_runtime_token_cost: set[str] = set()
+        self.runtime_players: set[str] = set()
         self._position_usage_cache: Optional[List[Dict[str, Any]]] = None
         self._position_usage_signature: Optional[tuple[tuple[str, int, int], ...]] = None
         self._load_player_config(config_path)
@@ -154,6 +150,8 @@ class CostCalculator:
             player_ids.add(full_id)
 
             for pid in player_ids:
+                if llm.get("api") == "codex" or llm.get("web_api") in {"codex", "claude_code"}:
+                    self.runtime_players.add(pid)
                 if model_name:
                     self.player_to_model[pid] = model_name
 
@@ -242,13 +240,22 @@ class CostCalculator:
         if not pricing:
             return None
 
-        prompt_tokens = tokens.get("prompt_tokens", 0)
-        completion_tokens = tokens.get("completion_tokens", 0)
-
-        prompt_cost = prompt_tokens * pricing.get("prompt", 0)
-        completion_cost = completion_tokens * pricing.get("completion", 0)
-
-        return prompt_cost + completion_cost
+        prefix = "chess_" if "chess_prompt_tokens" in tokens else ""
+        def count(key: str) -> int:
+            return max(0, int(tokens.get(key, 0) or 0))
+        prompt = count(prefix + "prompt_tokens")
+        cached = min(prompt, count(prefix + "cached_input_tokens"))
+        writes = min(prompt - cached, count(prefix + "cache_creation_input_tokens"))
+        writes_1h = min(writes, count(prefix + "cache_creation_1h_input_tokens"))
+        regular = prompt - cached - writes
+        rate = pricing.get("prompt", 0)
+        # Unknown cache prices fall back to ordinary input price, never free.
+        read_rate = pricing.get("input_cache_read", rate)
+        write_rate = pricing.get("input_cache_write", rate)
+        write_1h_rate = pricing.get("input_cache_write_1h", write_rate)
+        return (regular * rate + cached * read_rate
+                + (writes - writes_1h) * write_rate + writes_1h * write_1h_rate
+                + count("completion_tokens") * pricing.get("completion", 0))
 
     @staticmethod
     def _nearest_rank(values: List[float], percentile: float) -> float:
@@ -433,10 +440,8 @@ class CostCalculator:
             use_budget_overrides: Whether to use configured budget cost overrides.
                 Benchmark scheduling uses this; display code should pass False so
                 "$/Game" reflects token-priced usage instead of budget caps.
-            subtract_excluded_prompt_overhead: For players with
-                exclude_runtime_tokens_from_cost, subtract the Codex CLI fixed
-                prompt overhead before pricing display costs. This still prices
-                the remaining chess prompt input tokens plus output tokens.
+            subtract_excluded_prompt_overhead: Deprecated compatibility argument.
+                Chess-only accounting now applies regardless of this flag.
             include_uncosted_players: Include players whose token cost could not be
                 priced. Display code should pass False so unknown costs render as "-".
 
@@ -508,6 +513,9 @@ class CostCalculator:
     ) -> None:
         """Add cost for a single game to player totals."""
         cost = None
+        missing_chess_input = (
+            player_id in self.runtime_players and "chess_prompt_tokens" not in tokens
+        )
 
         if use_budget_overrides and self.exclude_runtime_tokens_from_cost(player_id):
             override = self.get_budget_cost_override(player_id)
@@ -517,14 +525,12 @@ class CostCalculator:
             model_name = self.get_model_for_player(player_id)
             if model_name:
                 priced_tokens = tokens
-                if (
-                    subtract_excluded_prompt_overhead and
-                    self.exclude_runtime_tokens_from_cost(player_id)
-                ):
-                    priced_tokens = self._subtract_fixed_prompt_overhead(
-                        tokens,
-                        move_count,
-                    )
+                if missing_chess_input:
+                    # Historical records cannot separate runtime from chess or
+                    # recover dropped cache usage. Price only known output as a
+                    # disclosed lower bound; never guess a fixed subtraction.
+                    priced_tokens = {"chess_prompt_tokens": 0,
+                                     "completion_tokens": tokens.get("completion_tokens", 0)}
                 cost = self.calculate_game_cost(priced_tokens, model_name)
 
         if cost is None and not include_uncosted_players:
@@ -545,6 +551,21 @@ class CostCalculator:
             player_costs[player_id]["games_with_cost"] += 1
             if accounting_status in {"partial", "missing"}:
                 player_costs[player_id]["cost_lower_bound"] = True
+            if missing_chess_input and not (use_budget_overrides and self.get_budget_cost_override(player_id) is not None):
+                player_costs[player_id]["cost_lower_bound"] = True
+                player_costs[player_id]["games_missing_chess_input"] = (
+                    player_costs[player_id].get("games_missing_chess_input", 0) + 1
+                )
+            pricing = self.get_pricing(self.get_model_for_player(player_id)) or {}
+            prefix = "chess_" if "chess_prompt_tokens" in tokens else ""
+            cache_rate_unknown = any(
+                tokens.get(prefix + field, 0) and rate not in pricing
+                for field, rate in (("cached_input_tokens", "input_cache_read"),
+                                    ("cache_creation_input_tokens", "input_cache_write"),
+                                    ("cache_creation_1h_input_tokens", "input_cache_write_1h"))
+            )
+            if tokens.get("input_accounting_method", "").startswith("estimated") or tokens.get("cache_accounting_known") is False or cache_rate_unknown:
+                player_costs[player_id]["cost_estimated"] = True
 
         player_costs[player_id]["total_tokens"] += tokens.get("total_tokens", 0)
         player_costs[player_id]["prompt_tokens"] += tokens.get("prompt_tokens", 0)
@@ -563,29 +584,3 @@ class CostCalculator:
             return max(0, int(total_moves or 0))
         except (TypeError, ValueError):
             return 0
-
-    def _subtract_fixed_prompt_overhead(
-        self,
-        tokens: Dict[str, int],
-        move_count: int,
-    ) -> Dict[str, int]:
-        """Remove Codex CLI fixed prompt overhead while preserving chess input tokens."""
-        try:
-            prompt_tokens = int(tokens.get("prompt_tokens", 0) or 0)
-        except (TypeError, ValueError):
-            prompt_tokens = 0
-
-        try:
-            completion_tokens = int(tokens.get("completion_tokens", 0) or 0)
-        except (TypeError, ValueError):
-            completion_tokens = 0
-
-        calls = max(0, int(move_count or 0))
-        overhead = calls * self.CODEX_FIXED_PROMPT_OVERHEAD_TOKENS
-        adjusted_prompt_tokens = max(0, prompt_tokens - overhead)
-
-        return {
-            **tokens,
-            "prompt_tokens": adjusted_prompt_tokens,
-            "total_tokens": adjusted_prompt_tokens + completion_tokens,
-        }

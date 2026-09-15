@@ -103,6 +103,69 @@ def test_usage_includes_illegal_retry_and_resignation(config_path):
     assert state["llm_accounting_status"] == "complete"
 
 
+def test_chess_accounting_survives_human_game_retries_and_result_json(config_path):
+    from web.human_challenges import build_human_challenge_result
+
+    usage = {
+        "prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120,
+        "cached_input_tokens": 80, "cache_creation_input_tokens": 10,
+        "chess_prompt_tokens": 30, "runtime_prompt_tokens": 70,
+        "chess_cached_input_tokens": 10, "chess_cache_creation_input_tokens": 10,
+        "cache_creation_5m_input_tokens": 6, "cache_creation_1h_input_tokens": 4,
+        "chess_cache_creation_5m_input_tokens": 6,
+        "chess_cache_creation_1h_input_tokens": 4,
+        "input_accounting_method": "estimated_o200k_base_runtime_prefix_cache",
+        "cache_accounting_known": True,
+    }
+    usage["input_accounting_requests"] = [dict(usage)]
+    attempts = iter([
+        {"move": "a1a8", "tokens": usage},
+        {"move": "e2e4", "tokens": usage},
+        {"move": "resign", "tokens": usage},
+    ])
+    service = _service()
+    provider = lambda *_: next(attempts)
+    state = service.start_game("chat-model", "black", config_path,
+        {"OPENROUTER_API_KEY": "test"}, provider,
+        human_profile={"username": "tester", "rating": 1800,
+                       "rating_deviation": 70, "rating_pool": "classical"})
+    state = json.loads(json.dumps(state))
+    state = service.play_human_move(state, "e7e5", config_path,
+        {"OPENROUTER_API_KEY": "test"}, provider)
+    result = build_human_challenge_result(state, "player@example.com")
+    persisted = json.loads(result.model_dump_json())
+    tokens = persisted["tokens_white"]
+    assert tokens.get("chess_prompt_tokens") == 90
+    assert tokens["prompt_tokens"] == 300
+    assert tokens["runtime_prompt_tokens"] == 210
+    assert tokens["cached_input_tokens"] == 240
+    assert tokens["chess_cached_input_tokens"] == 30
+    assert tokens["cache_creation_input_tokens"] == 30
+    assert tokens["chess_cache_creation_input_tokens"] == 30
+    assert tokens["chess_cache_creation_1h_input_tokens"] == 12
+    assert tokens["cache_creation_5m_input_tokens"] == 18
+    assert tokens["input_accounting_method"] == usage["input_accounting_method"]
+    assert tokens["cache_accounting_known"] is True
+    assert len(tokens["input_accounting_requests"]) == 3
+    assert persisted["accounting_status_white"] == "complete"
+    state["llm_tokens"]["input_accounting_requests"][0]["prompt_tokens"] = 999
+    assert usage["input_accounting_requests"][0]["prompt_tokens"] == 100
+
+
+@pytest.mark.parametrize("legacy_first", [True, False])
+def test_mixed_chess_and_legacy_request_accounting_stays_partial(legacy_first):
+    state = {"llm_accounting_status": "complete", "llm_tokens": None}
+    raw = {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}
+    detailed = dict(raw, chess_prompt_tokens=30, runtime_prompt_tokens=70,
+                    cached_input_tokens=0, cache_accounting_known=True,
+                    input_accounting_method="estimated_o200k_base_runtime_prefix_cache")
+    for usage in ([raw, detailed] if legacy_first else [detailed, raw]):
+        _service()._accumulate_llm_usage(state, {"tokens": usage})
+    assert state["llm_accounting_status"] == "partial"
+    assert state["llm_tokens"]["prompt_tokens"] == 200
+    assert state["llm_tokens"]["cache_accounting_known"] is False
+
+
 @pytest.mark.parametrize("legacy", [False, True])
 def test_missing_usage_never_becomes_complete_accounting(config_path, legacy):
     service = _service()

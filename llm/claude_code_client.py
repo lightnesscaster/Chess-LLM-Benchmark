@@ -22,6 +22,11 @@ from .prompts import build_chess_prompt
 class ClaudeCodePlayer(BaseLLMPlayer):
     """Chess player that shells out to Claude Code for each move."""
 
+    CHESS_SYSTEM_PROMPT = (
+        "You are a chess move selector. Analyze only the position in the "
+        "user prompt and return exactly the requested response line."
+    )
+
     def __init__(
         self,
         player_id: str,
@@ -88,10 +93,7 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             "--disallowedTools",
             "mcp__*",
             "--system-prompt",
-            (
-                "You are a chess move selector. Analyze only the position in the "
-                "user prompt and return exactly the requested response line."
-            ),
+            self.CHESS_SYSTEM_PROMPT,
             prompt,
         ]
 
@@ -131,11 +133,7 @@ class ClaudeCodePlayer(BaseLLMPlayer):
 
         self.last_api_error = ""
         self.last_raw_response = response_text
-        prompt_tokens = int(usage.get("prompt_tokens", 0) or 0)
-        completion_tokens = int(usage.get("completion_tokens", 0) or 0)
-        self.prompt_tokens += prompt_tokens
-        self.completion_tokens += completion_tokens
-        self.total_tokens += prompt_tokens + completion_tokens
+        self.record_chess_usage(usage, self.CHESS_SYSTEM_PROMPT + "\n\n" + prompt)
 
         resignation = parse_resignation(response_text)
         if resignation:
@@ -178,9 +176,21 @@ class ClaudeCodePlayer(BaseLLMPlayer):
 
         raw_usage = payload.get("usage") or {}
         usage = {
-            "prompt_tokens": int(raw_usage.get("input_tokens", 0) or 0),
+            "prompt_tokens": sum(int(raw_usage.get(key, 0) or 0) for key in (
+                "input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"
+            )),
             "completion_tokens": int(raw_usage.get("output_tokens", 0) or 0),
+            "cached_input_tokens": int(raw_usage.get("cache_read_input_tokens", 0) or 0),
+            "cache_creation_input_tokens": int(raw_usage.get("cache_creation_input_tokens", 0) or 0),
+            "cache_accounting_known": all(key in raw_usage for key in (
+                "cache_read_input_tokens", "cache_creation_input_tokens"
+            )),
         }
+        creation = raw_usage.get("cache_creation") or {}
+        for ttl in ("5m", "1h"):
+            key = f"ephemeral_{ttl}_input_tokens"
+            if key in creation:
+                usage[f"cache_creation_{ttl}_input_tokens"] = int(creation[key] or 0)
         return response_text, usage
 
     @staticmethod
