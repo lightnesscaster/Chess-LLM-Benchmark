@@ -24,6 +24,10 @@ from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
+class CodexAuthenticationError(TransientAPIError):
+    """The subscription login needs operator intervention, not a move retry."""
+
+
 class CodexSubagentPlayer(BaseLLMPlayer):
     """Chess player that shells out to `codex exec` for each move."""
 
@@ -299,6 +303,17 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                         timeout=self.timeout,
                     )
                 stdout = stdout_bytes.decode("utf-8", errors="replace")
+                if process.returncode != 0 and any(marker in stdout.lower() for marker in (
+                    "refresh token was already used",
+                    "refresh_token_reused",
+                    "refresh token has expired",
+                    "refresh_token_expired",
+                    "refresh token has been revoked",
+                    "refresh_token_invalidated",
+                    "please log out and sign in again",
+                )):
+                    self.last_api_error = "Codex subscription authentication requires a new login."
+                    raise CodexAuthenticationError(self.last_api_error)
                 usage = self._parse_usage(stdout)
                 response_text = self._read_response(output_path, stdout)
 

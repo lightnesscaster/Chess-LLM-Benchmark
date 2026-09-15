@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import re
+import traceback
 import uuid
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
@@ -26,6 +27,7 @@ from llm import (
     request_llm_move,
 )
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
+from llm.codex_subagent_client import CodexAuthenticationError
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +50,34 @@ class ProviderError(RuntimeError):
 
 MoveAttempt = str | None | Mapping[str, object]
 MoveProvider = Callable[[dict, chess.Board, bool, str | None], MoveAttempt]
+
+
+def _reported_provider_error(error: Exception, state: dict, model: dict, board: chess.Board) -> ProviderError:
+    """Report actionable failures without logging credentials or provider payloads."""
+    cause = error
+    while cause.__cause__ is not None:
+        cause = cause.__cause__
+    auth_failure = isinstance(cause, CodexAuthenticationError)
+    code = "codex_authentication_required" if auth_failure else "provider_move_failed"
+    reference = uuid.uuid4().hex[:12]
+    logger.error("Web-play provider failure: %s", json.dumps({
+        "reference": reference,
+        "code": code,
+        "game_id": state.get("game_id"),
+        "model_id": model.get("player_id"),
+        "backend": _web_backend(model),
+        "reasoning_effort": model.get("reasoning_effort"),
+        "fen": board.fen(),
+        "exception_type": type(cause).__name__,
+        "frames": [f"{Path(f.filename).name}:{f.lineno}:{f.name}"
+                   for f in traceback.extract_tb(cause.__traceback__)],
+    }, sort_keys=True))
+    message = (
+        "The server's ChatGPT login needs to be renewed by an administrator. "
+        "This is not an illegal move or a forfeit."
+        if auth_failure else "The LLM could not provide a move."
+    )
+    return ProviderError(f"{message} Reference: {reference}")
 
 EFFORT_LABELS = {
     "default": "Auto",
@@ -623,8 +653,8 @@ def _apply_llm_turn(
                     is_retry,
                     last_illegal_move,
                 )
-        except TransientAPIError as error:
-            raise ProviderError("The LLM could not provide a move.") from error
+        except (TransientAPIError, ProviderError) as error:
+            raise _reported_provider_error(error, state, model, board) from error
 
         _accumulate_llm_usage(state, attempt)
         if isinstance(attempt, Mapping):

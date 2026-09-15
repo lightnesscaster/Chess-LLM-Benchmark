@@ -92,6 +92,22 @@ class CodexSubagentPlayerTests(unittest.TestCase):
             self.player._is_permanent_model_failure("temporary upstream timeout")
         )
 
+    def test_expired_login_stops_without_retrying_or_exposing_raw_output(self) -> None:
+        from llm.openrouter_client import TransientAPIError
+
+        process = AsyncMock()
+        process.returncode = 1
+        process.communicate.return_value = (
+            b'Your refresh token was already used. Please log out and sign in again. secret-value',
+            None,
+        )
+        with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)) as spawn:
+            with self.assertRaises(TransientAPIError) as caught:
+                asyncio.run(self.player._run_codex("choose a move"))
+        self.assertEqual(type(caught.exception).__name__, "CodexAuthenticationError")
+        self.assertNotIn("secret-value", str(caught.exception))
+        self.assertEqual(spawn.await_count, 1)
+
     def test_preflight_response_is_reused_as_first_move(self) -> None:
         board = chess.Board()
         usage = {"prompt_tokens": 10, "completion_tokens": 2}

@@ -353,7 +353,7 @@ def test_provider_failure_keeps_previous_session_state(client, monkeypatch):
     )
 
     assert response.status_code == 502
-    assert response.get_json()["error"] == "The LLM could not provide a move."
+    assert response.get_json()["error"].startswith("The LLM could not provide a move. Reference: ")
     with client.session_transaction() as flask_session:
         original["llm_accounting_status"] = "partial"
         assert flask_session["admin_play_game"] == original

@@ -52,6 +52,26 @@ def test_prepare_codex_auth_rejects_malformed_secret(tmp_path):
         })
 
 
+def test_explicit_rotation_replaces_old_auth_but_preserves_subsequent_refresh(tmp_path):
+    from web.cli_runtime import prepare_codex_auth
+
+    codex_home = tmp_path / "codex"
+    codex_home.mkdir()
+    auth_path = codex_home / "auth.json"
+    auth_path.write_text(json.dumps({"tokens": {"account_id": "expired"}}))
+    env = {
+        "CODEX_HOME": str(codex_home),
+        "CODEX_AUTH_JSON_B64": _encoded_auth("new-login"),
+        "CODEX_AUTH_REVISION": "login-20260915",
+    }
+    prepare_codex_auth(env)
+    assert json.loads(auth_path.read_text())["tokens"]["account_id"] == "new-login"
+    auth_path.write_text(json.dumps({"tokens": {"account_id": "refreshed-new-login"}}))
+    prepare_codex_auth(env)
+    assert json.loads(auth_path.read_text())["tokens"]["account_id"] == "refreshed-new-login"
+    assert stat.S_IMODE(auth_path.stat().st_mode) == 0o600
+
+
 def test_render_build_installs_codex_non_interactively():
     script = Path("scripts/render_build.sh").read_text()
 

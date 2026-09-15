@@ -1,4 +1,7 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
+from itsdangerous import TimestampSigner
 
 import web.app as web_app
 import web.approved_players as approved_players
@@ -96,6 +99,27 @@ def test_verified_firebase_user_can_create_site_session(client, monkeypatch):
     }
     with client.session_transaction() as flask_session:
         assert flask_session["user"]["uid"] == "firebase-user-1"
+
+
+def test_login_cookie_lasts_thirty_days(client, monkeypatch):
+    started = datetime.now(timezone.utc)
+    assert _login(client, monkeypatch, email="member@example.com").status_code == 200
+    cookie = client.get_cookie("session")
+    assert started + timedelta(days=30, seconds=-2) <= cookie.expires
+    assert cookie.expires <= datetime.now(timezone.utc) + timedelta(days=30)
+    assert cookie.http_only
+    assert cookie.same_site == "Lax"
+
+
+def test_login_renews_until_thirty_days_of_inactivity(client, monkeypatch):
+    now = 1_800_000_000
+    monkeypatch.setattr(TimestampSigner, "get_timestamp", lambda self: now)
+    assert _login(client, monkeypatch, email="member@example.com").status_code == 200
+    for days in (29, 58):
+        now = 1_800_000_000 + days * 86400
+        assert client.get("/login").status_code == 302
+    now = 1_800_000_000 + 89 * 86400
+    assert client.get("/login").status_code == 200
 
 
 def test_unverified_firebase_email_cannot_create_site_session(client, monkeypatch):

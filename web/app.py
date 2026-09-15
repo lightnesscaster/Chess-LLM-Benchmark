@@ -61,7 +61,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "").lower()
     in ("1", "true", "yes")
     or bool(os.environ.get("RENDER")),
-    PERMANENT_SESSION_LIFETIME=43200,
+    PERMANENT_SESSION_LIFETIME=30 * 24 * 60 * 60,
+    SESSION_REFRESH_EACH_REQUEST=True,
 )
 
 # Register custom Jinja filter for reasoning model detection

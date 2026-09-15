@@ -899,6 +899,28 @@ def test_provider_error_does_not_mutate_game_state(config_path):
     assert state == original
 
 
+def test_auth_failure_is_explained_and_logged_without_secrets(config_path, caplog):
+    from llm.codex_subagent_client import CodexAuthenticationError
+
+    service = _service()
+    state = service.start_game(
+        "codex-local", "white", config_path,
+        {"CODEX_AUTH_JSON_B64": "encoded"}, move_provider=lambda *_: "unused",
+    )
+    state["game_id"] = "auth-failure-game"
+    original = copy.deepcopy(state)
+    with pytest.raises(service.ProviderError, match="server.*ChatGPT login.*renewed"):
+        service.play_human_move(
+            state, "e2e4", config_path, {"CODEX_AUTH_JSON_B64": "encoded"},
+            move_provider=lambda *_: (_ for _ in ()).throw(CodexAuthenticationError("secret-value")),
+        )
+    assert state == original
+    logs = "\n".join(r.getMessage() for r in caplog.records)
+    assert state["game_id"] in logs
+    assert "codex_authentication_required" in logs
+    assert "secret-value" not in logs
+
+
 def test_direct_gemini_provider_constructs_and_returns_move(monkeypatch):
     service = _service()
     captured = {}
