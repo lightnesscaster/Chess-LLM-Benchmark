@@ -78,6 +78,12 @@
             <div class="play-board-frame">
                 <div id="play-board" class="play-board" aria-label="Interactive chessboard"></div>
             </div>
+            <dialog id="promotion-dialog" class="promotion-dialog" aria-labelledby="promotion-title" aria-describedby="promotion-help">
+                <h2 id="promotion-title">Promote your pawn</h2>
+                <p id="promotion-help">Choose a piece, or press Q, R, B, or N.</p>
+                <div id="promotion-choices" class="promotion-choices"></div>
+                <button id="promotion-cancel" class="promotion-cancel" type="button">Cancel</button>
+            </dialog>
             <div id="thinking-rail" class="thinking-rail" role="status" aria-live="polite" hidden>
                 <span></span><span></span><span></span>
                 <strong>The model is choosing a move</strong>
@@ -94,7 +100,7 @@
                            placeholder="e2e4" aria-describedby="keyboard-move-help" disabled>
                     <button id="play-keyboard-move" type="submit" disabled>Play move</button>
                 </div>
-                <span id="keyboard-move-help">Enter the start and end squares, plus q, r, b, or n for promotion.</span>
+                <span id="keyboard-move-help">Enter the start and end squares. For promotion, choose a piece when prompted or add q, r, b, or n.</span>
             </form>
         </div>
 

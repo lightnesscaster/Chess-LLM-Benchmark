@@ -43,6 +43,7 @@ from web.approved_players import get_approved_player_store
 from web.approved_players import is_approved_player, player_api_required, player_required
 from web.human_challenges import HumanChallengeError, record_human_challenge
 from web.lichess import LichessLookupError, fetch_classical_snapshot
+from web.memory_diagnostics import install_memory_diagnostics
 from web.play_service import (
     ConfigurationError as PlayConfigurationError,
     GameStateError,
@@ -147,6 +148,7 @@ def _should_invalidate_cache(cache_time: float) -> bool:
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+install_memory_diagnostics(app)
 
 def get_anchors_from_config() -> dict:
     """Load anchor IDs and ratings from config file.

@@ -9,6 +9,6 @@ python -m web.claude_catalog
 
 exec gunicorn web.app:app \
     --bind "0.0.0.0:$PORT" \
-    --workers 2 \
-    --threads 2 \
+    --workers "${WEB_CONCURRENCY:-1}" \
+    --threads "${WEB_THREADS:-4}" \
     --timeout 620

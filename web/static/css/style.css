@@ -319,6 +319,45 @@ body {
 .thinking-rail span:nth-child(3) { animation-delay: 0.24s; }
 .thinking-rail strong { margin-left: 0.3rem; font-size: 0.8rem; }
 
+.promotion-dialog {
+    margin: auto;
+    width: min(440px, calc(100vw - 32px));
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 16px 64px #0008;
+}
+.promotion-dialog::backdrop { background: #0009; }
+.promotion-dialog h2 { margin: 0 0 8px; font-size: 1.4rem; }
+.promotion-dialog p { margin: 0 0 20px; color: var(--text-secondary); font-size: 0.85rem; }
+.promotion-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.promotion-piece {
+    padding: 8px 2px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: #dce5ed;
+    color: #16213e;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+}
+.promotion-piece img { display: block; width: 100%; max-width: 72px; margin: 0 auto 4px; }
+.promotion-piece:hover { border-color: var(--accent); }
+.promotion-dialog button:focus-visible { outline: 3px solid var(--accent-light); outline-offset: 3px; }
+.promotion-cancel {
+    display: block;
+    margin: 20px auto 0;
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
 .keyboard-move-form {
     margin-top: 0.55rem;
     padding: 0.8rem;

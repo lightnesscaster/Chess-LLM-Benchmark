@@ -29,6 +29,10 @@
     const copyPgnButton = document.getElementById("copy-pgn");
     const downloadPgnButton = document.getElementById("download-pgn");
     const exportFeedback = document.getElementById("export-feedback");
+    const promotionDialog = document.getElementById("promotion-dialog");
+    const promotionChoices = document.getElementById("promotion-choices");
+    const promotionCancel = document.getElementById("promotion-cancel");
+    const pieceTheme = "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png";
 
     let game = initialNode ? JSON.parse(initialNode.textContent || "null") : null;
     const playableModels = modelsNode ? JSON.parse(modelsNode.textContent || "[]") : [];
@@ -37,6 +41,7 @@
     let viewedPly = null;
     let ledgerMoveButtons = [];
     let board;
+    let pendingPromotion = null;
 
     function totalPlies() {
         return game && Array.isArray(game.moves) ? game.moves.length : 0;
@@ -78,11 +83,11 @@
     }
 
     function canMove(piece) {
-        return !busy && isViewingLive() && game && game.status === "active" && game.turn === "human" && humanPiece(piece);
+        return !pendingPromotion && !busy && isViewingLive() && game && game.status === "active" && game.turn === "human" && humanPiece(piece);
     }
 
     function keyboardMoveEnabled() {
-        return !busy && isViewingLive() && game && game.status === "active" && game.turn === "human";
+        return !pendingPromotion && !busy && isViewingLive() && game && game.status === "active" && game.turn === "human";
     }
 
     function syncMoveControls() {
@@ -329,7 +334,7 @@
     }
 
     function navigateToPly(ply) {
-        if (!game) return;
+        if (!game || pendingPromotion) return;
         const total = totalPlies();
         const target = Math.max(0, Math.min(total, Number(ply)));
         viewedPly = target === total ? null : target;
@@ -371,11 +376,58 @@
         return payload;
     }
 
-    function promotionFor(source, target, piece) {
-        if (!piece || piece[1] !== "P" || !/[18]$/.test(target)) return undefined;
-        const answer = window.prompt("Promote to queen, rook, bishop, or knight?", "queen");
-        const choices = {queen: "q", q: "q", rook: "r", r: "r", bishop: "b", b: "b", knight: "n", n: "n"};
-        return choices[String(answer || "queen").trim().toLowerCase()] || "q";
+    function finishPromotion(choice) {
+        const pending = pendingPromotion;
+        if (!pending) return;
+        pendingPromotion = null;
+        promotionDialog.close();
+        if (startButton) startButton.disabled = busy;
+        syncMoveControls();
+        if (pending.focus && typeof pending.focus.focus === "function") pending.focus.focus();
+        if (!choice) return;
+        const chess = new window.Chess(game.fen);
+        const move = chess.move({from: pending.source, to: pending.target, promotion: choice});
+        if (move) submitMove(pending.source + pending.target + choice, chess.fen(), move.san);
+    }
+
+    function choosePromotion(source, target) {
+        pendingPromotion = {source, target, focus: document.activeElement};
+        promotionChoices.replaceChildren();
+        const color = game.human_color === "white" ? "w" : "b";
+        for (const [piece, name] of [["q", "Queen"], ["r", "Rook"], ["b", "Bishop"], ["n", "Knight"]]) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "promotion-piece";
+            button.setAttribute("aria-label", "Promote to " + name.toLowerCase());
+            const image = document.createElement("img");
+            image.src = pieceTheme.replace("{piece}", color + piece.toUpperCase());
+            image.alt = "";
+            const label = document.createElement("span");
+            label.textContent = name;
+            button.append(image, label);
+            button.addEventListener("click", () => finishPromotion(piece));
+            promotionChoices.appendChild(button);
+        }
+        if (startButton) startButton.disabled = true;
+        syncMoveControls();
+        promotionDialog.showModal();
+        promotionChoices.children[0].focus();
+    }
+
+    if (promotionCancel) promotionCancel.addEventListener("click", () => finishPromotion(null));
+    if (promotionDialog) {
+        promotionDialog.addEventListener("cancel", (event) => {
+            event.preventDefault();
+            finishPromotion(null);
+        });
+        promotionDialog.addEventListener("keydown", (event) => {
+            if (!pendingPromotion || event.altKey || event.ctrlKey || event.metaKey) return;
+            const choice = event.key.toLowerCase();
+            if (["q", "r", "b", "n"].includes(choice)) {
+                event.preventDefault();
+                finishPromotion(choice);
+            }
+        });
     }
 
     function submitMove(uciMove, optimisticFen, san) {
@@ -408,18 +460,21 @@
         draggable: true,
         position: game ? game.fen : "start",
         orientation: game ? game.human_color : "white",
-        pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
+        pieceTheme,
         onDragStart: function (_source, piece) {
             return canMove(piece);
         },
         onDrop: function (source, target, piece) {
             if (!canMove(piece)) return "snapback";
             const chess = new window.Chess(game.fen);
-            const promotion = promotionFor(source, target, piece);
-            const localMove = chess.move({from: source, to: target, promotion: promotion || "q"});
+            const localMove = chess.move({from: source, to: target, promotion: "q"});
             if (!localMove) return "snapback";
+            if (localMove.promotion) {
+                choosePromotion(source, target);
+                return "snapback";
+            }
 
-            const uciMove = source + target + (promotion || (localMove.promotion || ""));
+            const uciMove = source + target;
             submitMove(uciMove, chess.fen(), localMove.san);
             return undefined;
         },
@@ -452,6 +507,10 @@
             keyboardMoveInput.focus();
             return;
         }
+        if (localMove.promotion && uciMove.length === 4) {
+            choosePromotion(uciMove.slice(0, 2), uciMove.slice(2, 4));
+            return;
+        }
         submitMove(uciMove, chess.fen(), localMove.san);
     });
 
@@ -466,7 +525,7 @@
         const tagName = event.target && event.target.tagName;
         const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(tagName)
             || Boolean(event.target && event.target.isContentEditable);
-        if (!game || isTyping || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+        if (!game || pendingPromotion || isTyping || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
 
         const destinations = {
             ArrowLeft: currentViewedPly() - 1,

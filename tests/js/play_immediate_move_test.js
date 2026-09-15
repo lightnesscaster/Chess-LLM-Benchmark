@@ -20,6 +20,8 @@ class FakeElement {
     append(...children) { this.children.push(...children); }
     appendChild(child) { this.children.push(child); }
     focus() {}
+    showModal() { this.open = true; }
+    close() { this.open = false; }
     removeAttribute(name) { if (this.attributes) delete this.attributes[name]; }
     replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) {
@@ -31,8 +33,10 @@ class FakeElement {
 const humanBlack = process.argv.includes("black");
 const keyboard = process.argv.includes("keyboard");
 const fail = process.argv.includes("failure");
-const sourceSquare = humanBlack ? "e7" : "e2";
-const targetSquare = humanBlack ? "e5" : "e4";
+const promotion = process.argv.includes("promotion");
+const cancel = process.argv.includes("cancel");
+const sourceSquare = promotion ? (humanBlack ? "e2" : "e7") : (humanBlack ? "e7" : "e2");
+const targetSquare = promotion ? (humanBlack ? "e1" : "e8") : (humanBlack ? "e5" : "e4");
 const san = humanBlack ? "e5" : "e4";
 const initialGame = {
     fen: "before-e2e4",
@@ -46,6 +50,9 @@ const initialGame = {
 const elements = new Map();
 for (const id of [
     "play-board",
+    "promotion-dialog",
+    "promotion-choices",
+    "promotion-cancel",
     "game-status",
     "game-detail",
     "move-list",
@@ -79,10 +86,10 @@ const windowObject = {
     Chess: class {
         constructor(fen) { this.currentFen = fen; }
         fen() { return this.currentFen; }
-        move({from, to}) {
+        move({from, to, promotion: chosen}) {
             if (from !== sourceSquare || to !== targetSquare) return null;
             this.currentFen = "after-e2e4";
-            return {san};
+            return {san, promotion: promotion ? chosen : undefined};
         }
     },
     Chessboard(_id, options) {
@@ -103,6 +110,7 @@ const documentObject = {
 };
 
 let resolveResponse, rejectResponse;
+const requests = [];
 const pendingResponse = new Promise((resolve, reject) => {
     resolveResponse = resolve;
     rejectResponse = reject;
@@ -111,7 +119,7 @@ const source = fs.readFileSync("web/static/js/play.js", "utf8");
 vm.runInNewContext(source, {
     console,
     document: documentObject,
-    fetch() { return pendingResponse; },
+    fetch(url, options) { requests.push(JSON.parse(options.body)); return pendingResponse; },
     FormData: class {},
     window: windowObject,
 });
@@ -120,7 +128,25 @@ if (keyboard) {
     elements.get("keyboard-move").value = sourceSquare + targetSquare;
     elements.get("keyboard-move-form").listeners.submit({preventDefault() {}});
 } else {
-    assert.equal(boardOptions.onDrop(sourceSquare, targetSquare, humanBlack ? "bP" : "wP"), undefined);
+    assert.equal(boardOptions.onDrop(sourceSquare, targetSquare, humanBlack ? "bP" : "wP"), promotion ? "snapback" : undefined);
+}
+if (promotion) {
+    const dialog = elements.get("promotion-dialog");
+    assert.equal(dialog.open, true);
+    assert.equal(requests.length, 0, "choosing a promotion must precede submitting the move");
+    const choices = elements.get("promotion-choices").children;
+    assert.equal(choices.length, 4);
+    assert.ok(choices[3].children[0].src.endsWith(humanBlack ? "bN.png" : "wN.png"));
+    if (cancel) {
+        elements.get("promotion-cancel").listeners.click();
+        assert.equal(dialog.open, false);
+        assert.equal(requests.length, 0);
+        assert.equal(boardOptions.onDragStart(sourceSquare, humanBlack ? "bP" : "wP"), true);
+        process.exit(0);
+    }
+    choices[3].listeners.click();
+    assert.equal(dialog.open, false);
+    assert.deepEqual(requests, [{move: sourceSquare + targetSquare + "n"}]);
 }
 boardOptions.onSnapEnd();
 assert.equal(
