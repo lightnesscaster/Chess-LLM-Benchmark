@@ -995,6 +995,9 @@ async def run_probe_for_scheduler(
         )
 
         save_player_record(results_path, player_id, record)
+        if results_path.resolve() == STABILITY_RESULTS_PATH.resolve():
+            from position_benchmark.sync import sync_panel
+            await asyncio.to_thread(sync_panel, player_id, "stability", record)
 
         summary = record["summary"]
         return {
@@ -1279,6 +1282,9 @@ async def main_async() -> None:
             )
             save_player_record(output_path, player_id, record)
             print(f"Saved partial results to {output_path}", flush=True)
+            if output_path.resolve() == STABILITY_RESULTS_PATH.resolve():
+                from position_benchmark.sync import sync_panel
+                await asyncio.to_thread(sync_panel, player_id, "stability", record)
     finally:
         if stockfish is not None:
             stockfish.quit()

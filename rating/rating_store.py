@@ -419,15 +419,15 @@ class RatingStore:
                 ),
                 blunder_positions=blunder_positions,
                 game_like_model_data=(
-                    game_like_results_data.get(model_name)
-                    if isinstance(game_like_results_data, dict)
-                    else None
+                    model_data.get("supplements", {}).get("game_like")
+                    or (game_like_results_data.get(model_name)
+                        if isinstance(game_like_results_data, dict) else None)
                 ),
                 game_like_positions=game_like_positions,
                 stability_probe_model_data=(
-                    stability_results_data.get(model_name)
-                    if isinstance(stability_results_data, dict)
-                    else None
+                    model_data.get("supplements", {}).get("stability")
+                    or (stability_results_data.get(model_name)
+                        if isinstance(stability_results_data, dict) else None)
                 ),
                 require_ready=True,
             )

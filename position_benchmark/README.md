@@ -65,6 +65,21 @@ recorded actual cost includes those otherwise discarded generations.
 
 ## Artifact layout
 
+Canonical production panel runs sync each completed, ready panel to Firestore.
+When no local Firebase key is available, an authenticated Render CLI runs the
+writer using server-side credentials; no key needs to be copied to the laptop.
+Core data stays at `benchmark_results/<player_id>`; game-like and stability data
+are retained under that document's `supplements`, without replacing the core.
+Syncing results does not rewrite full-game ratings. Failed syncs can be retried
+without any model calls:
+
+```bash
+python -m position_benchmark.sync --player 'gpt-6-astra (medium)'
+```
+
+Use `--panels core`, `--panels game_like`, or `--panels stability` to retry just
+one panel. Research and optional historical panels are not published by this path.
+
 `benchmark_manifest.json` is the machine-readable directory of active artifacts:
 
 | Purpose | Positions | Results | Status |

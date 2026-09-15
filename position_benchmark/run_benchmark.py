@@ -29,7 +29,7 @@ from engines.stockfish_engine import StockfishEngine
 from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current
-from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH, RESULT_SCHEMA_VERSION
+from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, RESULT_SCHEMA_VERSION
 from position_benchmark.token_accounting import sum_result_row_tokens
 from position_benchmark.retry_protocol import (
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
@@ -825,18 +825,16 @@ async def run_benchmark_for_scheduler(
             json.dump(all_results, f, indent=2)
 
         should_sync_firestore = (
-            results_path.resolve() == CORE_RESULTS_PATH.resolve()
+            results_path.resolve() in {CORE_RESULTS_PATH.resolve(), GAME_LIKE_RESULTS_PATH.resolve()}
             if sync_firestore is None
             else sync_firestore
         )
         if should_sync_firestore:
             # Core rows are synced per model to avoid Firestore's 1 MiB document limit.
             try:
-                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
-                db = get_firestore_client()
-                db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
-                    all_results[player_id]
-                )
+                from position_benchmark.sync import sync_panel
+                panel = "game_like" if results_path.resolve() == GAME_LIKE_RESULTS_PATH.resolve() else "core"
+                await asyncio.to_thread(sync_panel, player_id, panel, all_results[player_id])
             except Exception as e:
                 print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
 
@@ -1166,7 +1164,7 @@ async def main():
     if args.retry_missing and args.refresh_retry_evidence:
         raise ValueError("Use only one of --retry-missing and --refresh-retry-evidence")
     default_output = CORE_RESULTS_PATH.resolve()
-    should_sync_firestore = args.sync_firestore or args.output.resolve() == default_output
+    should_sync_firestore = args.sync_firestore or args.output.resolve() in {default_output, GAME_LIKE_RESULTS_PATH.resolve()}
 
     # Load positions
     print(f"Loading positions from {args.positions}...")
@@ -1511,13 +1509,11 @@ async def main():
             if should_sync_firestore:
                 # Sync to Firestore (per-model document to avoid 1 MiB limit)
                 try:
-                    from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
-                    db = get_firestore_client()
-                    db.collection(BENCHMARK_RESULTS_COLLECTION).document(player_id).set(
-                        all_results[player_id]
-                    )
+                    from position_benchmark.sync import sync_panel
+                    panel = "game_like" if args.output.resolve() == GAME_LIKE_RESULTS_PATH.resolve() else "core"
+                    await asyncio.to_thread(sync_panel, player_id, panel, all_results[player_id])
                 except Exception as e:
-                    print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
+                    raise RuntimeError(f"Results saved locally but sync failed. Retry without model calls: python -m position_benchmark.sync --player {player_id!r} --panels {panel}") from e
 
     finally:
         stockfish.quit()
