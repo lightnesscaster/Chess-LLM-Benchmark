@@ -63,6 +63,89 @@ def _human_challenge(
 
 
 class RatingRecalculationSeedTests(IsolatedAsyncioTestCase):
+    async def test_unrelated_new_games_do_not_reorder_existing_rating_history(self):
+        from tempfile import TemporaryDirectory
+
+        games = [_human_challenge(60, game_id=f"historic-{i}",
+                 created_at=f"2026-09-02T12:0{i}:00+00:00",
+                 human_rating=1000 + 200 * i,
+                 winner="white" if i % 2 else "black") for i in range(6)]
+        extra = _human_challenge(60, game_id="new-unrelated", created_at="2026-09-03T12:00:00Z")
+        extra.black_id = "unrelated-model"
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config.yaml"
+            config.write_text(yaml.safe_dump({"engines": [], "llms": []}))
+            snapshots = []
+            for index, rows in enumerate((games, games + [extra])):
+                output = root / f"ratings-{index}.json"
+                args = SimpleNamespace(config=str(config), verbose=False,
+                    validation_output=output, validation_seed_rd=166.0,
+                    validation_disable_benchmark_seeds=True)
+                with patch("cli.PGNLogger.load_all_results", return_value=rows):
+                    self.assertEqual(await recalculate_ratings(args), 0)
+                snapshots.append(json.loads(output.read_text())["test-model"])
+            for field in ("rating", "rating_deviation", "games_rd", "games_played", "wins", "losses"):
+                self.assertEqual(snapshots[0][field], snapshots[1][field], field)
+
+    async def test_invalid_anchor_history_refuses_replay_before_touching_ratings(self) -> None:
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = root / "config.yaml"
+            output = root / "ratings.json"
+            original = '{"sentinel": {"player_id": "sentinel", "rating": 1750}}'
+            output.write_text(original)
+            config_path.write_text(yaml.safe_dump({"engines": [{
+                "player_id": "eubos", "rating": 2346,
+                "rating_history": [{"before": "invalid", "rating": 2211}],
+            }], "llms": []}))
+            args = SimpleNamespace(config=str(config_path), verbose=False,
+                validation_output=output, validation_seed_rd=166.0,
+                validation_disable_benchmark_seeds=True)
+            with patch("cli.PGNLogger.load_all_results", return_value=[_loss(1, "test-model", "eubos")]):
+                self.assertEqual(await recalculate_ratings(args), 1)
+            self.assertEqual(output.read_text(), original)
+
+    async def test_anchor_rating_change_preserves_past_games_in_both_colors(self) -> None:
+        from tempfile import TemporaryDirectory
+
+        async def replay(root, rating, history, timestamp, anchor_white):
+            game = _loss(1, "test-model", "eubos")
+            game.created_at = timestamp
+            if anchor_white:
+                game.white_id, game.black_id = game.black_id, game.white_id
+                game.winner = "white"
+            config_path = root / "config.yaml"
+            output = root / "ratings.json"
+            config_path.write_text(yaml.safe_dump({
+                "engines": [{"player_id": "eubos", "rating": rating,
+                             "rating_history": history}],
+                "llms": [{"player_id": "test-model", "model_name": "test/model"}],
+            }))
+            args = SimpleNamespace(config=str(config_path), verbose=False,
+                validation_output=output, validation_seed_rd=166.0,
+                validation_disable_benchmark_seeds=True)
+            with patch("cli.PGNLogger.load_all_results", return_value=[game]):
+                self.assertEqual(await recalculate_ratings(args), 0)
+            return json.loads(output.read_text())
+
+        cutoff = "2026-09-08T13:02:05+00:00"
+        history = [{"before": cutoff, "rating": 2211}]
+        with TemporaryDirectory() as directory:
+            for anchor_white in (False, True):
+                with self.subTest(anchor_white=anchor_white):
+                    root = Path(directory)
+                    old = await replay(root, 2211, [], "2026-09-07T12:00:00Z", anchor_white)
+                    preserved = await replay(root, 2346, history, "2026-09-07T12:00:00Z", anchor_white)
+                    current = await replay(root, 2346, history, cutoff, anchor_white)
+                    for field in ("rating", "rating_deviation", "games_rd", "losses"):
+                        self.assertEqual(old["test-model"][field], preserved["test-model"][field])
+                    self.assertGreater(current["test-model"]["rating"], preserved["test-model"]["rating"])
+                    self.assertEqual(preserved["eubos"]["rating"], 2346)
+                    self.assertEqual(preserved["eubos"]["games_played"], 1)
+
     async def test_human_replay_is_independent_of_storage_stream_order(self) -> None:
         from tempfile import TemporaryDirectory
 

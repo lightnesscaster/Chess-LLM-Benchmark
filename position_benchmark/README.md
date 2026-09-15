@@ -302,7 +302,8 @@ does not open until it has at least 12 mature holdouts, eight affected holdouts,
 six affected families, and four affected labs. Promotion then requires every
 predeclared MAE, RMSE, bias, family-bootstrap, lab-bootstrap, and
 leave-one-lab-out check to pass. Validation recalculation sorts source games and
-players deterministically, uses a local seeded shuffle, normalizes timestamps to
+players deterministically, orders games by SHA-256 of their stable game IDs
+(within anchor-first and LLM-only phases), normalizes timestamps to
 the latest included game, and serializes rating keys in sorted order.
 
 Affected prospective configurations receive a fixed 2x scheduling-priority

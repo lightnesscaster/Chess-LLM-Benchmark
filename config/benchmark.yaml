@@ -31,8 +31,13 @@ engines:
 
   - player_id: "eubos"
     type: uci
-    path: "/Volumes/MainStorage/Programming/EubosChess/eubos.sh"
-    rating: 2211
+    path: "data/engines_cache/eubos-4.5/eubos.sh"
+    rating: 2346
+    # Current official release's classical anchor, effective from the two-game
+    # Gemini 3.8 Flash high match. Older games retain their original calibration.
+    rating_history:
+      - before: "2026-09-08T13:02:05+00:00"
+        rating: 2211
     initial_time: 900
     increment: 10
 

@@ -283,7 +283,7 @@ class RatingStore:
         capped by a fresh game-like supplemental panel when available:
           rating = 1298.57 - 200.43*log(eq_cpl+1) + 15.39*best_pct + 5.85*surv_40
 
-        Tries Firestore first (if enabled), falls back to local files.
+        Prefers ready Firestore records, falling back per model to local files.
         Results are cached at module level (benchmark data rarely changes).
 
         Returns:
@@ -320,17 +320,16 @@ class RatingStore:
             except Exception as e:
                 logger.warning(f"Failed to load benchmark results from Firestore: {e}")
 
-        # Fall back to local file for results
-        if results_data is None:
-            results_path = CORE_RESULTS_PATH
-            if not results_path.exists():
-                return {}
+        # A partially synced collection must not hide valid bundled models.
+        cloud_results = results_data or {}
+        results_data = {}
+        results_path = CORE_RESULTS_PATH
+        if results_path.exists():
             try:
                 with open(results_path) as f:
                     results_data = json.load(f)
             except (json.JSONDecodeError, OSError) as e:
                 logger.warning(f"Failed to load benchmark results: {e}")
-                return {}
 
         # Positions file is static and always local
         positions_path = CORE_POSITIONS_PATH
@@ -344,6 +343,18 @@ class RatingStore:
             return {}
 
         positions = positions_data.get("positions", [])
+
+        for model_name, cloud_record in cloud_results.items():
+            if benchmark_result_readiness(cloud_record, positions).is_ready:
+                results_data[model_name] = cloud_record
+            elif model_name in results_data:
+                # Supplements sync independently of core. Keep them available to
+                # the predictor, which validates each panel before using it.
+                results_data[model_name] = {
+                    **results_data[model_name],
+                    "supplements": cloud_record.get("supplements", {}),
+                }
+                logger.info("Using bundled core fallback for %s", model_name)
 
         blunder_results_path = BLUNDER_RESULTS_PATH
         blunder_positions_path = BLUNDER_POSITIONS_PATH

@@ -43,22 +43,52 @@ def test_wrong_player_cannot_be_published():
         sync.sync_panel("different-player", "core", record)
 
 
-def test_rating_reader_passes_synced_supplements_to_predictor(monkeypatch):
+@pytest.mark.parametrize("stale_core", [False, True])
+def test_rating_reader_passes_synced_supplements_to_predictor(monkeypatch, stale_core):
     from types import SimpleNamespace
     import firebase_client
     import rating.rating_store as module
     pid = "gemini-3.1-pro-preview (medium)"
     core = json.loads(CORE_RESULTS_PATH.read_text())[pid]
+    if stale_core:
+        core["results"] = []
     core["supplements"] = {"game_like": {"remote": "game-like"}, "stability": {"remote": "stability"}}
     doc = SimpleNamespace(id=pid, to_dict=lambda: core)
     monkeypatch.setattr(firebase_client, "get_firestore_client", lambda: SimpleNamespace(collection=lambda name: SimpleNamespace(stream=lambda: [doc])))
     monkeypatch.setattr(module, "_benchmark_predictions_cache", None)
     monkeypatch.setattr(module, "_benchmark_predictions_cache_time", 0)
     def predict(data, positions, **kwargs):
-        assert kwargs["game_like_model_data"] == {"remote": "game-like"}
-        assert kwargs["stability_probe_model_data"] == {"remote": "stability"}
-        return 1234
+        if data.get("supplements"):
+            assert kwargs["game_like_model_data"] == {"remote": "game-like"}
+            assert kwargs["stability_probe_model_data"] == {"remote": "stability"}
+            assert data["results"]
+            return 1234
+        return 0
     monkeypatch.setattr(module, "predict_rating_from_model_data_with_supplement", predict)
     store = object.__new__(module.RatingStore)
     store._use_firestore = True
     assert store._load_benchmark_predictions(force_refresh=True)[pid] == 1234
+
+
+@pytest.mark.parametrize("remote_state", ["missing", "stale", "empty", "unavailable"])
+def test_rating_reader_falls_back_per_model(monkeypatch, remote_state):
+    from types import SimpleNamespace
+    import firebase_client
+    import rating.rating_store as module
+
+    pid = "gemini-3.1-pro-preview (medium)"
+    store = object.__new__(module.RatingStore)
+    store._use_firestore = False
+    expected = store._load_benchmark_predictions(force_refresh=True)[pid]
+    record = json.loads(CORE_RESULTS_PATH.read_text())[pid]
+    if remote_state == "stale":
+        record["results"] = []
+    docs = [] if remote_state == "empty" else [SimpleNamespace(
+        id=pid if remote_state == "stale" else "unrelated", to_dict=lambda: record)]
+    def client():
+        if remote_state == "unavailable":
+            raise RuntimeError("offline")
+        return SimpleNamespace(collection=lambda name: SimpleNamespace(stream=lambda: docs))
+    monkeypatch.setattr(firebase_client, "get_firestore_client", client)
+    store._use_firestore = True
+    assert store._load_benchmark_predictions(force_refresh=True).get(pid) == expected

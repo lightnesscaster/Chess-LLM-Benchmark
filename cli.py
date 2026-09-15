@@ -10,10 +10,10 @@ Commands:
 
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
 import os
-import random
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -36,6 +36,7 @@ from game.stats_collector import StatsCollector
 from game.match_scheduler import MatchScheduler
 from utils import is_reasoning_model, resolve_player_id
 from rating.glicko2 import Glicko2System, PlayerRating
+from rating.anchor_history import anchor_rating_at
 from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
 from position_benchmark.predictions import predict_rating_from_model_data_with_supplement
@@ -620,6 +621,7 @@ async def recalculate_ratings(args):
 
     # Build anchor map, non-anchor engine map, and ghost set from config
     anchors = {}
+    anchor_configs = {}
     non_anchor_engines = {}
     ghost_ids = set()
     for i, engine_cfg in enumerate(config.get("engines", [])):
@@ -633,6 +635,7 @@ async def recalculate_ratings(args):
         # Separate anchors (fixed ratings) from non-anchors (updatable ratings)
         if engine_cfg.get("anchor", True):
             anchors[player_id] = engine_cfg["rating"]
+            anchor_configs[player_id] = engine_cfg
         else:
             non_anchor_engines[player_id] = engine_cfg["rating"]
         # Track ghosts (opponents don't get rating updates)
@@ -654,6 +657,19 @@ async def recalculate_ratings(args):
     if not results:
         print("No game results found in data/results/")
         return 1
+
+    # Resolve history before reset/save so bad dates cannot erase stored ratings.
+    anchor_ratings_by_game = {}
+    for result in results:
+        try:
+            anchor_ratings_by_game[result.game_id] = {
+                player_id: anchor_rating_at(anchor_configs[player_id], result.created_at)
+                for player_id in (result.white_id, result.black_id)
+                if player_id in anchor_configs
+            }
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            print(f"Error: cannot resolve anchor history for {result.game_id}: {error}")
+            return 1
 
     # Sort by creation time for chronological processing (using datetime for robustness)
     invalid_timestamps = []
@@ -771,12 +787,14 @@ async def recalculate_ratings(args):
                 fixed_black = fixed_human
 
         valid_games.append({
+            'game_id': result.game_id,
             'white_id': result.white_id,
             'black_id': result.black_id,
             'white_score': white_score,
             'black_score': black_score,
             'fixed_white': fixed_white,
             'fixed_black': fixed_black,
+            'anchor_ratings': anchor_ratings_by_game[result.game_id],
         })
 
     if not valid_games:
@@ -785,7 +803,6 @@ async def recalculate_ratings(args):
 
     # Rating period configuration
     BATCH_SIZE = 1  # Games per rating period
-    rating_rng = random.Random(42)
 
     # Count actual games and W-L-D per player, get all unique player IDs
     all_players = set()
@@ -905,9 +922,15 @@ async def recalculate_ratings(args):
         else:
             llm_games.append(game)
 
-    # Shuffle games within each category for fairness
-    rating_rng.shuffle(anchor_games)
-    rating_rng.shuffle(llm_games)
+    # Stable pseudo-random order: appending games must not reshuffle history.
+    # Keep the existing anchor-first calibration policy. SHA-256 is stable
+    # across processes (unlike Python's hash) and independent of corpus size.
+    def replay_order(game):
+        game_id = game["game_id"]
+        return hashlib.sha256(game_id.encode("utf-8")).digest(), game_id
+
+    anchor_games.sort(key=replay_order)
+    llm_games.sort(key=replay_order)
 
     # Multi-pass convergence settings. Between passes we snapshot ratings and
     # reset non-anchor/non-configured-engine ratings so new pass re-seeds with
@@ -943,6 +966,13 @@ async def recalculate_ratings(args):
             white_id, black_id = game['white_id'], game['black_id']
             white_rating = game['fixed_white'] or period_ratings[white_id]
             black_rating = game['fixed_black'] or period_ratings[black_id]
+            # Copy the anchor for this game; keep its current leaderboard value.
+            if white_id in game['anchor_ratings']:
+                white_rating = PlayerRating.from_dict(dict(
+                    white_rating.to_dict(), rating=game['anchor_ratings'][white_id]))
+            if black_id in game['anchor_ratings']:
+                black_rating = PlayerRating.from_dict(dict(
+                    black_rating.to_dict(), rating=game['anchor_ratings'][black_id]))
 
             # Update white's rating if: not an anchor AND opponent is not a ghost
             if (
