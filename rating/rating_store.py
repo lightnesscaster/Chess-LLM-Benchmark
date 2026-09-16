@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -511,18 +512,7 @@ class RatingStore:
             logger.info(f"Using cached Firestore data ({cache_age:.0f}s old)")
             # Copy the entire cache dict efficiently
             self._ratings = {
-                pid: PlayerRating(
-                    player_id=pr.player_id,
-                    rating=pr.rating,
-                    rating_deviation=pr.rating_deviation,
-                    volatility=pr.volatility,
-                    games_played=pr.games_played,
-                    wins=pr.wins,
-                    losses=pr.losses,
-                    draws=pr.draws,
-                    unclamped_rating=pr.unclamped_rating,
-                    games_rd=pr.games_rd,
-                )
+                pid: replace(pr)
                 for pid, pr in _firestore_cache.items()
             }
             self._apply_benchmark_seeds_to_zero_game_players()
@@ -543,18 +533,7 @@ class RatingStore:
 
             # Update the cache on success
             _firestore_cache = {
-                pid: PlayerRating(
-                    player_id=pr.player_id,
-                    rating=pr.rating,
-                    rating_deviation=pr.rating_deviation,
-                    volatility=pr.volatility,
-                    games_played=pr.games_played,
-                    wins=pr.wins,
-                    losses=pr.losses,
-                    draws=pr.draws,
-                    unclamped_rating=pr.unclamped_rating,
-                    games_rd=pr.games_rd,
-                )
+                pid: replace(pr)
                 for pid, pr in self._ratings.items()
             }
             _firestore_cache_time = time.time()
@@ -568,18 +547,7 @@ class RatingStore:
             if _firestore_cache:
                 logger.info(f"Falling back to cached data ({len(_firestore_cache)} ratings)")
                 self._ratings = {
-                    pid: PlayerRating(
-                        player_id=pr.player_id,
-                        rating=pr.rating,
-                        rating_deviation=pr.rating_deviation,
-                        volatility=pr.volatility,
-                        games_played=pr.games_played,
-                        wins=pr.wins,
-                        losses=pr.losses,
-                        draws=pr.draws,
-                        unclamped_rating=pr.unclamped_rating,
-                        games_rd=pr.games_rd,
-                    )
+                    pid: replace(pr)
                     for pid, pr in _firestore_cache.items()
                 }
                 self._apply_benchmark_seeds_to_zero_game_players()
@@ -603,18 +571,7 @@ class RatingStore:
             # Update cache to maintain consistency
             if _firestore_cache:
                 rating = self._ratings[player_id]
-                _firestore_cache[player_id] = PlayerRating(
-                    player_id=rating.player_id,
-                    rating=rating.rating,
-                    rating_deviation=rating.rating_deviation,
-                    volatility=rating.volatility,
-                    games_played=rating.games_played,
-                    wins=rating.wins,
-                    losses=rating.losses,
-                    draws=rating.draws,
-                    unclamped_rating=rating.unclamped_rating,
-                    games_rd=rating.games_rd,
-                )
+                _firestore_cache[player_id] = replace(rating)
 
     def _save_all_to_firestore(self) -> None:
         """Save all ratings to Firestore and update cache."""
@@ -626,18 +583,7 @@ class RatingStore:
         batch.commit()
         # Update cache with all current ratings
         _firestore_cache = {
-            player_id: PlayerRating(
-                player_id=rating.player_id,
-                rating=rating.rating,
-                rating_deviation=rating.rating_deviation,
-                volatility=rating.volatility,
-                games_played=rating.games_played,
-                wins=rating.wins,
-                losses=rating.losses,
-                draws=rating.draws,
-                unclamped_rating=rating.unclamped_rating,
-                games_rd=rating.games_rd,
-            )
+            player_id: replace(rating)
             for player_id, rating in self._ratings.items()
         }
         _firestore_cache_time = time.time()
