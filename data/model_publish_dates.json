@@ -1,4 +1,24 @@
 {
+  "deepseek-v4.1-flash (no thinking)": {
+    "model_id": "deepseek/deepseek-v4.1-flash",
+    "created_timestamp": 1789021285,
+    "created_date": "2026-09-10"
+  },
+  "deepseek-v4.1-flash (low)": {
+    "model_id": "deepseek/deepseek-v4.1-flash",
+    "created_timestamp": 1789021285,
+    "created_date": "2026-09-10"
+  },
+  "deepseek-v4.1-flash (high)": {
+    "model_id": "deepseek/deepseek-v4.1-flash",
+    "created_timestamp": 1789021285,
+    "created_date": "2026-09-10"
+  },
+  "deepseek-v4.1-flash (max)": {
+    "model_id": "deepseek/deepseek-v4.1-flash",
+    "created_timestamp": 1789021285,
+    "created_date": "2026-09-10"
+  },
   "gpt-6-astra (low)": {
     "model_id": "openai/gpt-6-astra",
     "created_timestamp": 1788393600,

@@ -1232,12 +1232,16 @@ async def run_manual_game(args):
                 rating=400,
             )
         elif engine_type == "eubos":
+            engine_config = next(
+                engine for engine in load_config(str(Path(__file__).parent / "config/benchmark.yaml"))["engines"]
+                if engine["player_id"] == "eubos"
+            )
             return UCIEngine(
                 player_id="eubos",
-                rating=2344,
-                engine_path="/Volumes/MainStorage/Programming/EubosChess/eubos.sh",
-                initial_time=900,  # 15 minutes
-                increment=10,      # 10 seconds
+                rating=engine_config["rating"],
+                engine_path=engine_config["path"],
+                initial_time=engine_config["initial_time"],
+                increment=engine_config["increment"],
             )
         elif engine_type == "survival":
             book_path = Path(__file__).parent / "data" / "openings" / "gm2001.bin"
@@ -1259,6 +1263,7 @@ async def run_manual_game(args):
 
     # Look up api flag from benchmark.yaml (e.g. "completion" for text-completion models)
     _llm_api_by_model: dict = {}
+    _llm_configs_by_player: dict = {}
     try:
         import yaml as _yaml
         _cfg_path = Path(__file__).parent / "config" / "benchmark.yaml"
@@ -1266,6 +1271,7 @@ async def run_manual_game(args):
             with open(_cfg_path) as _f:
                 _cfg = _yaml.safe_load(_f) or {}
             for _entry in _cfg.get("llms", []) or []:
+                _llm_configs_by_player[_entry.get("player_id")] = _entry
                 _mn = _entry.get("model_name")
                 _api = _entry.get("api")
                 if _mn and _api:
@@ -1305,7 +1311,11 @@ async def run_manual_game(args):
             reasoning_max_tokens,
             custom_name,
         )
-        if api_backend == "gemini":
+        player_config = _llm_configs_by_player.get(player_id, {})
+        selected_backend = api_backend
+        if api_backend == "openrouter" and _llm_api_by_model.get(model_name) in {"codex", "completion"}:
+            selected_backend = _llm_api_by_model.get(model_name, api_backend)
+        if selected_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
             return GeminiPlayer(
                 player_id=player_id,
@@ -1314,7 +1324,7 @@ async def run_manual_game(args):
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
             )
-        if api_backend == "codex":
+        if selected_backend == "codex":
             return CodexSubagentPlayer(
                 player_id=player_id,
                 model_name=model_name,
@@ -1334,6 +1344,9 @@ async def run_manual_game(args):
             reasoning=reasoning,
             reasoning_effort=reasoning_effort,
             reasoning_max_tokens=reasoning_max_tokens,
+            provider_order=player_config.get("provider_order"),
+            provider_ignore=player_config.get("provider_ignore"),
+            timeout=player_config.get("timeout", 300),
         )
 
     # Track results across games
@@ -1341,9 +1354,18 @@ async def run_manual_game(args):
     total_illegal_white = 0
     total_illegal_black = 0
     api_error_count = 0
-    pgn_logger = PGNLogger() if args.save else None
+    # Always retain a local retry source before any production write. Explicit
+    # local experiments must stay local even when Firebase credentials exist.
+    pgn_logger = PGNLogger(use_firestore=False) if args.save else None
     from rating.prompt_context import rating_snapshot
     manual_rating_store = RatingStore(path="data/ratings.json")
+    if args.save and not getattr(args, "local_only", False):
+        from game.publication import load_production_ratings
+        try:
+            await asyncio.to_thread(load_production_ratings, manual_rating_store)
+        except Exception as error:
+            print(f"Error: cannot load production game history; game not started: {error}")
+            return 1
 
     if pgn_logger:
         from position_benchmark.stability_cap_shadow import (
@@ -1511,8 +1533,9 @@ async def run_manual_game(args):
                 print(f"Illegal moves - White: {result.illegal_moves_white}, Black: {result.illegal_moves_black}")
 
                 # Don't count or save games that ended due to API errors
-                if result.termination == "api_error":
-                    print("API error - game not saved or counted")
+                from game.publication import COMPLETED_TERMINATIONS
+                if result.termination not in COMPLETED_TERMINATIONS:
+                    print("Incomplete/error game - not saved or counted")
                     api_error_count += 1
                     continue
 
@@ -1530,6 +1553,16 @@ async def run_manual_game(args):
                 if pgn_logger:
                     saved_result = pgn_logger.save_game(result, pgn_str)
                     print(f"Saved to: {saved_result.pgn_path}")
+                    if not getattr(args, "local_only", False):
+                        from game.publication import publish_saved_game
+                        result_path = pgn_logger.results_dir / f"{result.game_id}.json"
+                        try:
+                            receipt = await asyncio.to_thread(publish_saved_game, result_path)
+                        except Exception as error:
+                            print(f"Publication pending/failed: {error}")
+                            print(f"Retry without replaying: python -m game.publication {result_path}")
+                            return 1
+                        print(f"Published and applied: {json.dumps(receipt)}")
 
             finally:
                 # Close players after each game
@@ -1560,8 +1593,7 @@ async def run_manual_game(args):
             print(f"Total illegal moves - White: {total_illegal_white}, Black: {total_illegal_black}")
 
         # Invalidate web cache if games were saved
-        if pgn_logger and sum(results_summary.values()) > 0:
-            invalidate_remote_cache()
+        # The publisher invalidates production caches after applying ratings.
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
@@ -1739,13 +1771,13 @@ def main():
     )
     manual_parser.add_argument(
         "--white-reasoning-effort",
-        choices=["minimal", "low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for white (minimal, low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high", "xhigh", "max"],
+        help="Reasoning effort level for white (minimal, low, medium, high, xhigh, max)",
     )
     manual_parser.add_argument(
         "--black-reasoning-effort",
-        choices=["minimal", "low", "medium", "high", "xhigh"],
-        help="Reasoning effort level for black (minimal, low, medium, high, xhigh)",
+        choices=["minimal", "low", "medium", "high", "xhigh", "max"],
+        help="Reasoning effort level for black (minimal, low, medium, high, xhigh, max)",
     )
     manual_parser.add_argument(
         "--white-reasoning-max-tokens",
@@ -1814,6 +1846,11 @@ def main():
         help="Don't save the game (saves by default)",
     )
     manual_parser.set_defaults(save=True)
+    manual_parser.add_argument(
+        "--local-only",
+        action="store_true",
+        help="Save locally without publishing or changing production ratings (default: publish and apply)",
+    )
     manual_parser.add_argument(
         "--allow-nonprospective-save",
         action="store_true",

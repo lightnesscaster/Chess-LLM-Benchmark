@@ -323,6 +323,11 @@
     "completion": 2.8e-07,
     "prompt": 1.4e-07
   },
+  "deepseek/deepseek-v4.1-flash": {
+    "completion": 6e-07,
+    "prompt": 1.5e-07,
+    "input_cache_read": 3e-09
+  },
   "deepseek/deepseek-v4-pro": {
     "completion": 8.7e-07,
     "prompt": 4.35e-07

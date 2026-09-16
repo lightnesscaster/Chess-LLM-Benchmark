@@ -9,6 +9,8 @@
 - Utility scripts: `scripts/fetch_pricing.py`, `cleanup_bad_games.py`, `migrate_to_firestore.py`, etc.
 
 ## Build, Test, and Development Commands
+- Requested rated matches must use `cli.py manual`: completed saved games publish and apply production ratings automatically, independent of chats or automations. Do not use ad-hoc `/tmp` runners that only save local results. Use `--local-only` for explicitly local experiments or `--no-save` for disposable smoke tests.
+- Publication requires an authenticated Render CLI and existing production player ratings. A failed publication retains its local result and job receipt; retry with `python -m game.publication /absolute/path/to/result.json`, never by replaying the match or manually applying ratings again. Do not backfill unrelated results.
 - Install deps: `pip install -r requirements.txt`
 - Run full benchmark: `python cli.py run -c config/benchmark.yaml -v`
 - Manual game (good smoke test): `python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine`

@@ -39,6 +39,23 @@ export OPENROUTER_API_KEY="your-key"
 
 ### Run Manual Games
 
+Saved manual games **automatically publish their replay and apply production ratings**
+when they finish. This is part of the CLI, not a chat automation. The local result
+is retained first; the production result and both rating updates are one idempotent
+transaction, followed by participant freeze checks and cache invalidation.
+
+This repository's publishing target is ChessBench on Render. Install and authenticate
+the Render CLI before playing rated games, and register/seed both players in production.
+Use `--local-only` to save an experiment without production writes, or `--no-save` for
+a disposable test. Failed/incomplete games are not rated.
+
+If publishing fails, the command exits nonzero and prints the retry command:
+`python -m game.publication /absolute/path/to/result.json`.
+The adjacent `.publication` receipt tracks the remote job, so retries wait for an
+existing job or safely retry a failed one; they do not count the same game twice.
+No web deployment is needed for this local CLI workflow: the publisher sends its
+worker code to an authenticated Render job without exporting server credentials.
+
 ```bash
 # LLM vs Stockfish (default engine)
 python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --stockfish-skill 5

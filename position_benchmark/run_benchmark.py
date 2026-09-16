@@ -1081,7 +1081,7 @@ async def main():
     )
     parser.add_argument(
         "--reasoning-effort",
-        choices=["minimal", "low", "medium", "high", "xhigh"],
+        choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         help="Reasoning effort for an ad-hoc LLM player",
     )
     parser.add_argument(

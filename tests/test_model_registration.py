@@ -64,6 +64,38 @@ class DeepSeekV4Flash0731RegistrationTests(unittest.TestCase):
         self.assertEqual(set(checker._models_by_model_id[MODEL_ID]), PLAYER_IDS)
 
 
+class DeepSeekV41FlashRegistrationTests(unittest.TestCase):
+    def test_variants_are_constructible_playable_and_priced(self):
+        from web.play_service import _select_model
+
+        config = yaml.safe_load((ROOT / "config/benchmark.yaml").read_text())
+        config["llms"] = [m for m in config["llms"] if m["player_id"].startswith("deepseek-v4.1-flash")]
+        players, reasoning = create_llm_players(config, api_key="registration-test")
+        expected = {f"deepseek-v4.1-flash ({e})" for e in ("no thinking", "low", "high", "max")}
+        self.assertEqual(set(players), expected)
+        self.assertEqual(reasoning, expected - {"deepseek-v4.1-flash (no thinking)"})
+        calculator = CostCalculator()
+        for label, effort in (("no thinking", None), ("low", "low"), ("high", "high"), ("max", "max")):
+            pid = f"deepseek-v4.1-flash ({label})"
+            player = players[pid]
+            self.assertEqual(player.model_name, "deepseek/deepseek-v4.1-flash")
+            self.assertEqual(player.reasoning_effort, effort)
+            self.assertEqual(calculator.get_model_for_player(pid), player.model_name)
+            selected = _select_model("deepseek-v4.1-flash", ROOT / "config/benchmark.yaml", {"OPENROUTER_API_KEY": "test"}, effort or "none")
+            self.assertEqual(selected["_rated_player_id"], pid)
+        self.assertFalse(players["deepseek-v4.1-flash (no thinking)"].reasoning)
+        self.assertAlmostEqual(calculator.calculate_game_cost({"prompt_tokens": 1000000, "completion_tokens": 1000000}, "deepseek/deepseek-v4.1-flash"), 0.75)
+
+    def test_release_metadata_reaches_freeze_checker(self):
+        checker = FreezeChecker.__new__(FreezeChecker)
+        for field in ("_publish_dates", "_player_providers", "_models_by_provider", "_player_model_ids", "_models_by_model_id"):
+            setattr(checker, field, {})
+        checker._load_publish_dates()
+        for effort in ("no thinking", "low", "high", "max"):
+            pid = f"deepseek-v4.1-flash ({effort})"
+            self.assertEqual(checker._publish_dates.get(pid), 1789021285)
+
+
 class Gemini38FlashRegistrationTests(unittest.TestCase):
     def test_benchmark_factory_registers_direct_medium_thinking(self) -> None:
         with open(ROOT / "config" / "benchmark.yaml") as config_file:

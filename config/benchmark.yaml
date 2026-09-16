@@ -353,6 +353,40 @@ llms:
     provider_ignore: ["deepinfra"]
     timeout: 1200
 
+  # DeepSeek V4.1 Flash, released 2026-09-10; max is a native API effort.
+  # Pricing snapshot: $0.15/M input, $0.60/M output; provider peak-hour rates vary.
+  - player_id: "deepseek-v4.1-flash (no thinking)"
+    model_name: "deepseek/deepseek-v4.1-flash"
+    temperature: 0.0
+    reasoning: false
+    provider_order: ["deepseek", "fireworks", "gmicloud", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4.1-flash (low)"
+    model_name: "deepseek/deepseek-v4.1-flash"
+    temperature: 0.0
+    reasoning_effort: low
+    provider_order: ["deepseek", "fireworks", "gmicloud", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4.1-flash (high)"
+    model_name: "deepseek/deepseek-v4.1-flash"
+    temperature: 0.0
+    reasoning_effort: high
+    provider_order: ["deepseek", "fireworks", "gmicloud", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
+  - player_id: "deepseek-v4.1-flash (max)"
+    model_name: "deepseek/deepseek-v4.1-flash"
+    temperature: 0.0
+    reasoning_effort: max
+    provider_order: ["deepseek", "fireworks", "gmicloud", "siliconflow"]
+    provider_ignore: ["deepinfra"]
+    timeout: 1200
+
   # deepseek-v3.2-exp (no thinking) (-107)
   - player_id: "deepseek-v3.2-exp (no thinking)"
     model_name: "deepseek/deepseek-v3.2-exp"
