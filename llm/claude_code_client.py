@@ -19,6 +19,9 @@ from .protocol import parse_resignation
 from .prompts import build_chess_prompt
 
 
+SECRET_PATTERN = re.compile(r"sk-ant-[A-Za-z0-9_-]+|Bearer\s+\S+", re.IGNORECASE)
+
+
 class ClaudeCodePlayer(BaseLLMPlayer):
     """Chess player that shells out to Claude Code for each move."""
 
@@ -163,13 +166,19 @@ class ClaudeCodePlayer(BaseLLMPlayer):
                 await process.wait()
                 raise
 
-        if process.returncode != 0:
-            raise RuntimeError(f"Claude Code exited with status {process.returncode}.")
-
         stdout = stdout_bytes.decode("utf-8", errors="replace").strip()
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Claude Code exited with status {process.returncode}: "
+                f"{self._failure_detail(stdout)}"
+            )
+
         payload = self._parse_payload(stdout)
         if payload.get("is_error") or payload.get("subtype") not in {None, "success"}:
-            raise RuntimeError("Claude Code returned an unsuccessful result.")
+            raise RuntimeError(
+                "Claude Code returned an unsuccessful result: "
+                f"{self._failure_detail(stdout)}"
+            )
         response_text = str(payload.get("result") or "").strip()
         if not response_text:
             raise RuntimeError("Claude Code returned an empty result.")
@@ -192,6 +201,19 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             if key in creation:
                 usage[f"cache_creation_{ttl}_input_tokens"] = int(creation[key] or 0)
         return response_text, usage
+
+    @classmethod
+    def _failure_detail(cls, stdout: str) -> str:
+        """Summarize CLI output for server logs, with credentials redacted."""
+        try:
+            payload = cls._parse_payload(stdout)
+            detail = str(payload.get("result") or payload.get("subtype") or "")
+        except RuntimeError:
+            detail = ""
+        if not detail:
+            lines = [line for line in stdout.splitlines() if line.strip()]
+            detail = lines[-1] if lines else "no output"
+        return SECRET_PATTERN.sub("[redacted]", " ".join(detail.split()))[:300]
 
     @staticmethod
     def _parse_payload(stdout: str) -> dict:

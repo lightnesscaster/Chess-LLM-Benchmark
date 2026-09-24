@@ -58,7 +58,9 @@ async def _probe_model(model_name: str) -> bool:
     )
     try:
         await player._run_cli("Reply with exactly: AVAILABLE")
-    except Exception:
+    except Exception as error:
+        reason = str(error) or type(error).__name__
+        print(f"Claude model {model_name} unavailable: {reason}", flush=True)
         return False
     return True
 

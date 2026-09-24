@@ -96,3 +96,27 @@ def test_cli_failure_is_reported_as_transient_provider_error(player, monkeypatch
 
     with pytest.raises(TransientAPIError, match="Claude Code call failed"):
         asyncio.run(player.select_move(chess.Board()))
+
+
+@pytest.mark.parametrize("output, exit_code, expected", [
+    ("Invalid API key · Please run /login", 1, "exited with status 1: Invalid API key · Please run /login"),
+    ('{"type":"result","subtype":"success","is_error":true,"result":"OAuth token has expired"}', 0,
+     "unsuccessful result: OAuth token has expired"),
+    ("Authorization: Bearer sk-ant-oat01-secret", 2, "exited with status 2: Authorization: [redacted]"),
+])
+def test_cli_failures_report_the_reason_without_credentials(tmp_path, output, exit_code, expected):
+    fake_cli = tmp_path / "claude"
+    fake_cli.write_text(
+        "#!/bin/sh\n"
+        "echo 'token sk-ant-oat01-secret rejected' >&2\n"
+        f"printf '%s\\n' '{output}'\n"
+        f"exit {exit_code}\n"
+    )
+    fake_cli.chmod(0o755)
+    player = ClaudeCodePlayer("probe", "claude-opus-5-5", claude_command=str(fake_cli), timeout=10)
+
+    with pytest.raises(RuntimeError) as error:
+        asyncio.run(player._run_cli("Reply with exactly: AVAILABLE"))
+
+    assert str(error.value).endswith(expected)
+    assert "sk-ant" not in str(error.value)

@@ -114,3 +114,18 @@ def test_refresh_catalog_probes_sequentially_for_small_host_memory(tmp_path):
     ))
 
     assert peak_active_probes == 1
+
+
+def test_probe_logs_why_a_model_is_unavailable(monkeypatch, capsys):
+    from llm.claude_code_client import ClaudeCodePlayer
+    from web.claude_catalog import _probe_model
+
+    async def fail(self, prompt):
+        raise RuntimeError("Claude Code exited with status 1: OAuth token has expired")
+
+    monkeypatch.setattr(ClaudeCodePlayer, "_run_cli", fail)
+    assert asyncio.run(_probe_model("claude-opus-5-5")) is False
+    assert (
+        "Claude model claude-opus-5-5 unavailable: Claude Code exited with status 1: "
+        "OAuth token has expired"
+    ) in capsys.readouterr().out
