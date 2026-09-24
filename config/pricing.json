@@ -13,6 +13,13 @@
     "input_cache_write": 1.25e-05,
     "input_cache_write_1h": 2e-05
   },
+  "anthropic/claude-opus-5-5": {
+    "prompt": 4e-06,
+    "completion": 2e-05,
+    "input_cache_read": 2e-07,
+    "input_cache_write": 5e-06,
+    "input_cache_write_1h": 8e-06
+  },
   "ai21/jamba-large-1.7": {
     "completion": 8e-06,
     "prompt": 2e-06

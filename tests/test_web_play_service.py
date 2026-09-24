@@ -380,7 +380,7 @@ def test_explicit_web_efforts_select_requested_claude_effort(tmp_path):
 def test_configured_claude_models_offer_separate_effort_choices(tmp_path):
     catalog_path = tmp_path / "claude-models.json"
     catalog_path.write_text(json.dumps({
-        "models": ["claude-fable-5-1", "claude-fable-5", "opus", "sonnet", "haiku"],
+        "models": ["claude-fable-5-1", "claude-fable-5", "claude-opus-5-5", "claude-opus-5", "sonnet", "haiku"],
     }))
 
     models = _service().list_playable_models(
@@ -391,7 +391,7 @@ def test_configured_claude_models_offer_separate_effort_choices(tmp_path):
         },
     )
 
-    assert len(models) == 5
+    assert len(models) == 6
     for model in models:
         assert [effort["id"] for effort in model["efforts"]] == [
             "low", "medium", "high", "xhigh", "max",

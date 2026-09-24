@@ -21,7 +21,7 @@ def test_premium_subscription_models_use_token_cost(player):
 
 @pytest.mark.parametrize("player", [
     "gpt-5.6-luna (xhigh)", "gpt-5.6-sol (medium)",
-    "claude-opus-5 (high)", "claude-sonnet-5 (max)", "claude-haiku-4.5 (low)",
+    "claude-opus-5 (high)", "claude-opus-5.5 (medium)", "claude-sonnet-5 (max)", "claude-haiku-4.5 (low)",
 ])
 def test_other_subscription_models_have_zero_budget_cost(player):
     calculator = CostCalculator()

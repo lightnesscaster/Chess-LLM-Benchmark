@@ -68,10 +68,22 @@ web_play_models:
     web_reasoning_efforts: [low, medium, high, xhigh, max]
     web_default_reasoning_effort: high
 
+  # Claude Opus 5.5, released 2026-09-22. Thinking cannot be disabled, so
+  # there is no "no thinking" variant; the API default effort is medium.
+  - player_id: "claude-opus-5.5"
+    model_name: "anthropic/claude-opus-5-5"
+    web_api: claude_code
+    web_model_name: claude-opus-5-5
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
+  # Pinned: the Claude Code "opus" alias resolves to the newest Opus.
   - player_id: "claude-opus-5"
     model_name: "anthropic/claude-opus-5"
     web_api: claude_code
-    web_model_name: opus
+    web_model_name: claude-opus-5
     budget_cost_per_game: 0.0
     exclude_runtime_tokens_from_cost: true
     web_reasoning_efforts: [low, medium, high, xhigh, max]

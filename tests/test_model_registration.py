@@ -211,5 +211,31 @@ class Fable51RegistrationTests(unittest.TestCase):
                 self.assertIn(player_id, checker._models_by_model_id["anthropic/claude-fable-5-1"])
 
 
+class Opus55RegistrationTests(unittest.TestCase):
+    def test_subscription_model_is_pinned_priced_and_dated(self) -> None:
+        checker = FreezeChecker.__new__(FreezeChecker)
+        for field in ("_publish_dates", "_player_providers", "_models_by_provider", "_player_model_ids", "_models_by_model_id"):
+            setattr(checker, field, {})
+        checker._load_publish_dates()
+
+        config = yaml.safe_load((ROOT / "config" / "benchmark.yaml").read_text())
+        models = {m["player_id"]: m for m in config["web_play_models"]}
+        model = models["claude-opus-5.5"]
+        self.assertEqual(model["web_model_name"], "claude-opus-5-5")
+        # The "opus" alias now resolves to Opus 5.5, so Opus 5 must stay pinned.
+        self.assertEqual(models["claude-opus-5"]["web_model_name"], "claude-opus-5")
+
+        calculator = CostCalculator()
+        for effort in model["web_reasoning_efforts"]:
+            player_id = f"claude-opus-5.5 ({effort})"
+            with self.subTest(player_id=player_id):
+                self.assertEqual(checker._publish_dates.get(player_id), 1790035200)
+                self.assertEqual(checker._player_providers.get(player_id), "anthropic")
+                self.assertIn(player_id, checker._models_by_model_id["anthropic/claude-opus-5-5"])
+                self.assertEqual(calculator.get_model_for_player(player_id), "anthropic/claude-opus-5-5")
+        self.assertAlmostEqual(calculator.calculate_game_cost(
+            {"prompt_tokens": 1000000, "completion_tokens": 1000000}, "anthropic/claude-opus-5-5"), 24.0)
+
+
 if __name__ == "__main__":
     unittest.main()
