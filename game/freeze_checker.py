@@ -71,6 +71,9 @@ class FreezeChecker:
     EXPENSIVE_INFERIOR_MIN_LOSSES = 3
     EXPENSIVE_INFERIOR_TIME_WINDOW = 3
     EXPENSIVE_INFERIOR_COST_RATIO = 2.0
+    # Models within combined RD of the #3 model need a gap larger than
+    # combined RD (as in proven-worse) before a cheaper model can freeze them.
+    TOP_CONTENDER_RANK = 3
 
     # Lost to much weaker model freezing
     LOST_TO_WEAKER_RATING_GAP = 600
@@ -481,13 +484,36 @@ class FreezeChecker:
 
         return False
 
+    def is_top_contender(self, player_id: str) -> bool:
+        """Check if model is within combined RD of the top-N LLM ratings."""
+        my_data = self.rating_store.get(player_id)
+        others = [
+            self.rating_store.get(other_id)
+            for other_id in self._publish_dates
+            if other_id != player_id
+            and other_id not in self.engine_ids
+            and self.rating_store.has_player(other_id)
+        ]
+        if len(others) < self.TOP_CONTENDER_RANK:
+            return True
+
+        others.sort(key=lambda r: r.rating, reverse=True)
+        cutoff = others[self.TOP_CONTENDER_RANK - 1]
+        return (cutoff.rating - my_data.rating
+                <= my_data.rating_deviation + cutoff.rating_deviation)
+
     def is_expensive_inferior(self, player_id: str) -> bool:
-        """Check if model is outperformed by a cheaper model (any provider)."""
+        """Check if model is outperformed by a cheaper model (any provider).
+
+        Top contenders are only frozen when the cheaper model is ahead by
+        more than their combined RD.
+        """
         my_timestamp = self._publish_dates.get(player_id)
         if my_timestamp is None:
             return False
 
-        my_rating = self.rating_store.get(player_id).rating
+        my_data = self.rating_store.get(player_id)
+        my_rating = my_data.rating
         my_cost = self.get_player_cost(player_id)
 
         if my_cost == 0:
@@ -495,6 +521,7 @@ class FreezeChecker:
 
         three_months = self.EXPENSIVE_INFERIOR_TIME_WINDOW * 30.44 * 24 * 60 * 60
         is_reasoning = player_id in self.reasoning_ids
+        top_contender = None
 
         for other_id, other_timestamp in self._publish_dates.items():
             if other_id == player_id:
@@ -506,8 +533,14 @@ class FreezeChecker:
             if not self.rating_store.has_player(other_id):
                 continue
 
-            other_rating = self.rating_store.get(other_id).rating
-            if other_rating <= my_rating:
+            other_data = self.rating_store.get(other_id)
+            if other_data.rating <= my_rating:
+                continue
+
+            if top_contender is None:
+                top_contender = self.is_top_contender(player_id)
+            if top_contender and (other_data.rating - my_rating
+                                  <= my_data.rating_deviation + other_data.rating_deviation):
                 continue
 
             other_cost = self.get_player_cost(other_id)

@@ -135,7 +135,9 @@ class MatchScheduler:
 
     # Expensive inferior model freezing (cross-provider)
     # Freeze if: RD < 150, lost >= 3 games, and a stronger model exists
-    # (released before or within 3 months after) that is at least 2x cheaper
+    # (released before or within 3 months after) that is at least 2x cheaper.
+    # Models within combined RD of the #3 model need the stronger model to lead
+    # by more than combined RD (see FreezeChecker.is_top_contender).
     EXPENSIVE_INFERIOR_RD_THRESHOLD = 150
     EXPENSIVE_INFERIOR_MIN_LOSSES = 3
     EXPENSIVE_INFERIOR_TIME_WINDOW = 3  # months after this model's release to consider
@@ -1886,7 +1888,8 @@ class MatchScheduler:
               f"(within {self.PROVIDER_INFERIOR_TIME_WINDOW}mo) unless {self.PROVIDER_INFERIOR_COST_RATIO}x cheaper")
         print(f"Expensive inferior freeze: RD < {self.EXPENSIVE_INFERIOR_RD_THRESHOLD} + "
               f">={self.EXPENSIVE_INFERIOR_MIN_LOSSES} losses + stronger model (any provider, "
-              f"within {self.EXPENSIVE_INFERIOR_TIME_WINDOW}mo) that is {self.EXPENSIVE_INFERIOR_COST_RATIO}x cheaper")
+              f"within {self.EXPENSIVE_INFERIOR_TIME_WINDOW}mo) that is {self.EXPENSIVE_INFERIOR_COST_RATIO}x cheaper "
+              f"(by combined RD if within uncertainty of top {self._freeze_checker.TOP_CONTENDER_RANK})")
         print(f"Lost to weaker freeze: lost to model {self.LOST_TO_WEAKER_RATING_GAP}+ pts lower "
               f"(within {self.LOST_TO_WEAKER_TIME_WINDOW}mo) unless {self.LOST_TO_WEAKER_COST_RATIO}x cheaper")
         print(f"Cost budget: ${max_cost:.2f}")

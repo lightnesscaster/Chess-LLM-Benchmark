@@ -76,6 +76,7 @@ def build_checker(
     for player_id, provider in checker._player_providers.items():
         checker._models_by_provider.setdefault(provider, []).append(player_id)
     checker.get_player_cost = lambda player_id: costs.get(player_id, 0.0)
+    checker.engine_ids = set()
     return checker, stats.get_player_stats()
 
 
@@ -132,6 +133,46 @@ class FreezeCheckerCalibrationTests(unittest.TestCase):
         )
 
         self.assertTrue(checker.is_frozen(HIGH, 116, player_stats))
+
+    def test_top_contender_needs_combined_rd_gap_for_expensive_inferior(self) -> None:
+        leaders = {f"leader-{i} (high)": (2050 - 50 * i, 60) for i in range(2)}
+        ratings = {
+            HIGH: (1838, 133),
+            EXTERNAL_OPPONENT: (2400, 30),
+            CHEAP_PEER: (1879, 82),
+            **leaders,
+        }
+        model_ids = {pid: f"other/{pid}" for pid in ratings}
+        model_ids[HIGH] = "openai/astra"
+        checker, player_stats = build_checker(
+            ratings=ratings,
+            results=[loss(HIGH, EXTERNAL_OPPONENT) for _ in range(3)],
+            costs={HIGH: 1.343, CHEAP_PEER: 0.353, **{pid: 5.0 for pid in leaders},
+                   EXTERNAL_OPPONENT: 5.0},
+            model_ids=model_ids,
+        )
+
+        self.assertTrue(checker.is_top_contender(HIGH))
+        self.assertFalse(checker.is_expensive_inferior(HIGH))
+        self.assertFalse(checker.is_frozen(HIGH, 133, player_stats))
+
+        # A decisive lead (more than combined RD) still freezes a contender.
+        checker.rating_store.ratings[CHEAP_PEER].rating = 2060
+        self.assertTrue(checker.is_expensive_inferior(HIGH))
+
+    def test_non_contender_expensive_inferior_ignores_uncertainty(self) -> None:
+        leaders = {f"leader-{i} (high)": (2400 - 10 * i, 30) for i in range(3)}
+        ratings = {HIGH: (1500, 100), CHEAP_PEER: (1540, 100), **leaders}
+        model_ids = {pid: f"other/{pid}" for pid in ratings}
+        checker, _ = build_checker(
+            ratings=ratings,
+            results=[],
+            costs={HIGH: 1.0, CHEAP_PEER: 0.1, **{pid: 5.0 for pid in leaders}},
+            model_ids=model_ids,
+        )
+
+        self.assertFalse(checker.is_top_contender(HIGH))
+        self.assertTrue(checker.is_expensive_inferior(HIGH))
 
 
 if __name__ == "__main__":
