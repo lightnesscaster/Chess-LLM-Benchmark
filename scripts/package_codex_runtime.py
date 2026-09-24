@@ -14,7 +14,11 @@ def package_runtime(binary: Path, destination: Path) -> Path:
     destination = destination.resolve()
     if destination == release or release in destination.parents or destination in release.parents:
         raise ValueError("Codex artifact must be separate from the installed release")
-    shutil.copytree(release, destination, dirs_exist_ok=True)
+    # Rebuild from scratch: releases ship read-only files, which a previous
+    # build's artifact would otherwise block copytree from overwriting.
+    if destination.exists():
+        shutil.rmtree(destination)
+    shutil.copytree(release, destination)
     return destination / "bin" / "codex"
 
 

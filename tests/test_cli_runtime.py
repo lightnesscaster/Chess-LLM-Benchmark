@@ -136,6 +136,30 @@ def test_packaged_codex_runs_without_original_installation(tmp_path):
     assert result.stdout == "runtime-ready"
 
 
+def test_packaging_replaces_previous_artifact_with_read_only_files(tmp_path):
+    from scripts.package_codex_runtime import package_runtime
+
+    release = tmp_path / "release"
+    (release / "bin").mkdir(parents=True)
+    for name in ("codex", "codex-code-mode-host"):
+        (release / "bin" / name).write_text("#!/bin/sh\n")
+    library = release / "codex-resources/voice/lib/libz.so.1"
+    library.parent.mkdir(parents=True)
+    library.write_text("v1")
+    library.chmod(0o555)
+    destination = tmp_path / "artifact"
+    package_runtime(release / "bin/codex", destination)
+    (destination / "stale-from-old-release").write_text("stale")
+
+    library.chmod(0o755)
+    library.write_text("v2")
+    library.chmod(0o555)
+    package_runtime(release / "bin/codex", destination)
+
+    assert (destination / "codex-resources/voice/lib/libz.so.1").read_text() == "v2"
+    assert not (destination / "stale-from-old-release").exists()
+
+
 def test_packaging_rejects_incomplete_codex_installation(tmp_path):
     import pytest
     from scripts.package_codex_runtime import package_runtime
