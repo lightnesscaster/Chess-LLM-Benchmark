@@ -169,6 +169,13 @@ Claude web opponent and writes an availability catalog. The admin dropdown
 fails closed and lists only models that the deployed subscription successfully
 accessed during that check.
 
+Adding a model to the arena does not need a deploy. On Render, the arena reads
+the `web_play_models` and `llms` sections of `config/benchmark.yaml` from `main`
+on GitHub (cached for two minutes, falling back to the bundled copy), and Claude
+models that appear after startup are verified in the background and listed once
+the check passes. Set `LIVE_MODEL_CONFIG_URL` to override the source, or to an
+empty value to use only the bundled config.
+
 For local development, set the same variables and run `python web/app.py`.
 The Firebase project ID and default auth domain are derived from the service
 account; set `FIREBASE_PROJECT_ID` or `FIREBASE_AUTH_DOMAIN` only when an

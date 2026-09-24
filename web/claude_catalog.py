@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from collections.abc import Awaitable, Callable
+import threading
+import time
+from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
 
 import yaml
@@ -14,7 +16,11 @@ from llm.claude_code_client import ClaudeCodePlayer
 
 
 DEFAULT_CATALOG_PATH = Path("/tmp/chessbench_claude_models.json")
+RETRY_FAILED_SECONDS = 1800
 Probe = Callable[[str], Awaitable[bool]]
+
+_background_lock = threading.Lock()
+_failed_at: dict[str, float] = {}
 
 
 def _configured_claude_models(config_path: Path) -> list[str]:
@@ -85,6 +91,55 @@ async def refresh_claude_catalog(
             available.append(model_name)
     _write_catalog(output_path, available)
     return available
+
+
+def _read_catalog(output_path: Path) -> list[str]:
+    try:
+        models = json.loads(Path(output_path).read_text()).get("models")
+    except (OSError, AttributeError, json.JSONDecodeError):
+        return []
+    return [m for m in models if isinstance(m, str)] if isinstance(models, list) else []
+
+
+def probe_new_models_in_background(
+    model_names: Iterable[str],
+    output_path: Path,
+    probe: Probe = _probe_model,
+) -> threading.Thread | None:
+    """Verify models added after startup without blocking the request.
+
+    Only one probe run happens at a time; failed models are retried after
+    RETRY_FAILED_SECONDS so an unavailable model is not probed on every page.
+    """
+    known = set(_read_catalog(output_path))
+    now = time.monotonic()
+    pending = [
+        name for name in dict.fromkeys(model_names)
+        if name not in known
+        and now - _failed_at.get(name, -RETRY_FAILED_SECONDS) >= RETRY_FAILED_SECONDS
+    ]
+    if not pending or not _background_lock.acquire(blocking=False):
+        return None
+
+    def run() -> None:
+        try:
+            for name in pending:
+                try:
+                    available = bool(asyncio.run(probe(name)))
+                except Exception:
+                    available = False
+                if available:
+                    _write_catalog(output_path, list(dict.fromkeys(
+                        _read_catalog(output_path) + [name]
+                    )))
+                else:
+                    _failed_at[name] = time.monotonic()
+        finally:
+            _background_lock.release()
+
+    thread = threading.Thread(target=run, name="claude-catalog-probe", daemon=True)
+    thread.start()
+    return thread
 
 
 def main() -> None:

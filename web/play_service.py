@@ -28,6 +28,8 @@ from llm import (
 )
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.codex_subagent_client import CodexAuthenticationError
+from web.claude_catalog import probe_new_models_in_background
+from web.live_models import apply_live_models, live_config_url
 
 
 logger = logging.getLogger(__name__)
@@ -116,13 +118,38 @@ def _configured_models(config: dict) -> list:
     )
 
 
-def _verified_claude_models(environ: Mapping[str, str]) -> set[str]:
-    catalog_path = Path(
+def _claude_catalog_path(environ: Mapping[str, str]) -> Path:
+    return Path(
         environ.get(
             "CLAUDE_MODEL_CATALOG_PATH",
             "/tmp/chessbench_claude_models.json",
         )
     )
+
+
+def _claude_model_name(model: dict) -> str:
+    return str(model.get("web_model_name") or model.get("model_name") or "").strip()
+
+
+def _web_play_config(config_path: Path, environ: Mapping[str, str]) -> dict:
+    """Load models from the live config and verify new Claude models."""
+    config = apply_live_models(_load_config(config_path), environ)
+    if live_config_url(environ) and environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+        probe_new_models_in_background(
+            (
+                _claude_model_name(model)
+                for model in _configured_models(config)
+                if isinstance(model, dict)
+                and _web_backend(model) == "claude_code"
+                and _claude_model_name(model)
+            ),
+            _claude_catalog_path(environ),
+        )
+    return config
+
+
+def _verified_claude_models(environ: Mapping[str, str]) -> set[str]:
+    catalog_path = _claude_catalog_path(environ)
     try:
         payload = json.loads(catalog_path.read_text())
     except (OSError, json.JSONDecodeError):
@@ -146,9 +173,8 @@ def _backend_is_configured(model: dict, environ: Mapping[str, str]) -> bool:
     if backend == "codex":
         return bool(environ.get("CODEX_AUTH_JSON_B64"))
     if backend == "claude_code":
-        model_name = str(model.get("web_model_name") or model.get("model_name") or "")
         return bool(environ.get("CLAUDE_CODE_OAUTH_TOKEN")) and (
-            model_name in _verified_claude_models(environ)
+            _claude_model_name(model) in _verified_claude_models(environ)
         )
     if backend == "gemini":
         return bool(environ.get("GEMINI_API_KEY"))
@@ -212,7 +238,7 @@ def _playable_model_groups(
 ) -> list[dict]:
     groups_by_model = {}
     used_ids = set()
-    for model in _configured_models(_load_config(config_path)):
+    for model in _configured_models(_web_play_config(config_path, environ)):
         if (
             not isinstance(model, dict)
             or model.get("unavailable") is True
