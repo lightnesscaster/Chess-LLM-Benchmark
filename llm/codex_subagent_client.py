@@ -32,7 +32,9 @@ class CodexSubagentPlayer(BaseLLMPlayer):
     """Chess player that shells out to `codex exec` for each move."""
 
     VALID_REASONING_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
-    NON_TOOL_ITEM_TYPES = {"agent_message", "reasoning"}
+    # "error" items are Codex diagnostics (config warnings, transport
+    # fallbacks), not tool use; real failures surface via the exit code.
+    NON_TOOL_ITEM_TYPES = {"agent_message", "reasoning", "error"}
     SUBPROCESS_ENV_ALLOWLIST = {
         "CODEX_HOME",
         "HOME",
@@ -328,7 +330,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                     return response_text, usage
                 else:
                     last_error = RuntimeError(
-                        f"codex exec exited {process.returncode}: {stdout[-1000:]}"
+                        f"codex exec exited {process.returncode}: "
+                        f"{self._turn_failure_message(stdout) or stdout[-1000:]}"
                     )
                     permanent_failure = self._is_permanent_model_failure(stdout)
             except asyncio.TimeoutError as exc:
@@ -362,6 +365,19 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                 "does not exist or you do not have access to it",
             )
         )
+
+    @staticmethod
+    def _turn_failure_message(stdout: str) -> str:
+        """Return the error message from Codex's turn.failed event, if any."""
+        message = ""
+        for line in stdout.splitlines():
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "turn.failed":
+                message = str((event.get("error") or {}).get("message", ""))
+        return message
 
     def _disallowed_item_types(self, stdout: str) -> list[str]:
         """Return JSONL item types that could affect a tool-free chess answer."""

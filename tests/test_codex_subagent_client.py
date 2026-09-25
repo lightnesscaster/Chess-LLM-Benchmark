@@ -67,6 +67,34 @@ class CodexSubagentPlayerTests(unittest.TestCase):
 
         self.assertEqual(self.player._disallowed_item_types(stdout), [])
 
+    def test_accepts_codex_diagnostic_error_items(self) -> None:
+        stdout = "\n".join(
+            [
+                json.dumps({"type": "item.completed", "item": {
+                    "type": "error",
+                    "message": "Codex is ignoring 1 unrecognized configuration setting.",
+                }}),
+                json.dumps({"type": "item.completed", "item": {"type": "agent_message"}}),
+            ]
+        )
+
+        self.assertEqual(self.player._disallowed_item_types(stdout), [])
+
+    def test_turn_failure_message_reports_codex_error(self) -> None:
+        stdout = "\n".join(
+            [
+                json.dumps({"type": "error", "message": "Reconnecting... 1/5"}),
+                json.dumps({"type": "turn.failed", "error": {
+                    "message": "unexpected status 401 Unauthorized",
+                }}),
+            ]
+        )
+
+        self.assertEqual(
+            self.player._turn_failure_message(stdout),
+            "unexpected status 401 Unauthorized",
+        )
+
     def test_rejects_command_and_other_tool_items(self) -> None:
         stdout = "\n".join(
             [
