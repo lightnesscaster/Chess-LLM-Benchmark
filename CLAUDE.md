@@ -23,6 +23,9 @@ python cli.py manual --white-model deepseek/deepseek-r1 --black-engine --white-r
 # Run full benchmark
 python cli.py run -c config/benchmark.yaml -v
 
+# Run benchmark games for specific models only (they play anchors and each other)
+python cli.py run -c config/benchmark.yaml --api codex --players "gpt-6-astra (high)" "gpt-6-astra (medium)" --max-cost 25
+
 # View leaderboard (sort by rating, legal move %, or cost)
 python cli.py leaderboard --min-games 5
 python cli.py leaderboard --sort legal

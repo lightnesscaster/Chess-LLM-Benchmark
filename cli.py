@@ -407,6 +407,19 @@ async def run_benchmark(args):
     # Create players
     engines, anchor_ids, ghost_ids = create_engines(config)
     llm_players, reasoning_ids = create_llm_players(config, api_key, api_backend)
+    if getattr(args, "players", None):
+        unknown = [pid for pid in args.players if pid not in llm_players]
+        if unknown:
+            print(f"Error: unknown player(s) for --api {api_backend}: {', '.join(unknown)}")
+            print("Available: " + ", ".join(sorted(llm_players)))
+            for llm in llm_players.values():
+                await llm.close()
+            for engine in engines.values():
+                engine.close()
+            return 1
+        for pid in set(llm_players) - set(args.players):
+            await llm_players.pop(pid).close()
+        print(f"Restricting run to: {', '.join(args.players)}")
     all_players = {**engines, **llm_players}
 
     # Set up rating store with anchors and ghosts
@@ -1641,6 +1654,13 @@ def main():
         choices=["openrouter", "gemini", "codex"],
         default="openrouter",
         help="API backend to use (default: openrouter; codex runs only llms with api: codex)",
+    )
+    run_parser.add_argument(
+        "--players",
+        nargs="+",
+        metavar="PLAYER_ID",
+        help="Only schedule these LLM player_ids (e.g. \"gpt-6-astra (high)\"); "
+             "they still play engine anchors and each other",
     )
     run_parser.add_argument(
         "--acquisition-plan",
