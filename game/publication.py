@@ -214,9 +214,15 @@ def publish_saved_game(result_path: str | Path, timeout: float = 900) -> dict:
     while time.monotonic() < deadline:
         # A success marker is printed only after the transaction, freeze check,
         # and cache invalidation. Job success alone is not enough.
-        process = subprocess.run(["render", "logs", "--resources", state["job_id"],
-                                  "--limit", "10", "--direction", "backward", "--output", "json", "--confirm"],
-                                 capture_output=True, text=True, timeout=90)
+        # A slow Render API read is not a failed publication; keep polling
+        # until the overall deadline instead of abandoning the batch.
+        try:
+            process = subprocess.run(["render", "logs", "--resources", state["job_id"],
+                                      "--limit", "10", "--direction", "backward", "--output", "json", "--confirm"],
+                                     capture_output=True, text=True, timeout=90)
+        except subprocess.TimeoutExpired:
+            time.sleep(10)
+            continue
         if process.returncode:
             raise RuntimeError(f"Cannot read publication job {state['job_id']}; retry saved result")
         text = process.stdout
@@ -232,7 +238,11 @@ def publish_saved_game(result_path: str | Path, timeout: float = 900) -> dict:
                 state.update(status="published", receipt=receipt)
                 receipt_path.write_text(json.dumps(state, indent=2))
                 return state
-        jobs = render_json(["jobs", "list", SERVICE_ID])
+        try:
+            jobs = render_json(["jobs", "list", SERVICE_ID])
+        except subprocess.TimeoutExpired:
+            time.sleep(10)
+            continue
         job = next((j for j in jobs if j.get("id") == state["job_id"]), {})
         if job.get("status") in {"failed", "canceled", "cancelled"}:
             state["status"] = "failed"

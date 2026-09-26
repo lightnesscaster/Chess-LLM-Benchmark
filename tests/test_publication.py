@@ -178,3 +178,25 @@ def test_pending_receipt_resumes_same_render_job(monkeypatch, tmp_path):
 
     monkeypatch.setattr(publication.subprocess, "run", render)
     assert publication.publish_saved_game(path)["status"] == "published"
+
+
+def test_slow_render_log_read_keeps_polling(monkeypatch, tmp_path):
+    r, pgn = payload()
+    path = tmp_path / "game.json"
+    pgn_path = tmp_path / "game.pgn"
+    pgn_path.write_text(pgn)
+    r.pgn_path = str(pgn_path)
+    path.write_text(json.dumps(r.to_json()))
+    path.with_suffix(".publication").write_text(json.dumps({"game_id": r.game_id, "job_id": "slow-job", "status": "pending"}))
+    calls = []
+
+    def render(args, **kwargs):
+        calls.append(args[1])
+        if len(calls) == 1:
+            raise publication.subprocess.TimeoutExpired(args, kwargs.get("timeout"))
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"message": "PUBLICATION_COMPLETE " + json.dumps({"game_id": r.game_id})}))
+
+    monkeypatch.setattr(publication.subprocess, "run", render)
+    monkeypatch.setattr(publication.time, "sleep", lambda seconds: None)
+    assert publication.publish_saved_game(path)["status"] == "published"
+    assert calls == ["logs", "logs"]
