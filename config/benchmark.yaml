@@ -31,15 +31,42 @@ engines:
 
   - player_id: "eubos"
     type: uci
-    path: "data/engines_cache/eubos-4.5/eubos.sh"
-    rating: 2346
-    # Current official release's classical anchor, effective from the two-game
-    # Gemini 3.8 Flash high match. Older games retain their original calibration.
+    # Reproduces lichess @eubos's classical conditions so its lichess classical
+    # rating (2357 on 2026-09-30) applies directly: Eubos v4.3, 1 thread, 512 MB
+    # hash, scaled to the bot's ~500k nodes/s (Raspberry Pi 5, per its bio), with
+    # each game's clock drawn from the bot's 510 most recent classical games.
+    path: "data/engines_cache/eubos-4.3/eubos.sh"
+    rating: 2357
+    options: {Threads: 1, Hash: 512}
+    reference_nps: 500000
+    time_controls:  # [initial_s, increment_s, games]
+      - [1200, 10, 104]
+      - [1800, 0, 81]
+      - [1800, 10, 63]
+      - [1800, 2, 51]
+      - [1800, 1, 50]
+      - [1800, 5, 22]
+      - [1500, 2, 18]
+      - [1500, 0, 17]
+      - [1560, 1, 17]
+      - [3600, 10, 16]
+      - [3600, 2, 14]
+      - [1200, 8, 11]
+      - [1800, 3, 11]
+      - [1500, 1, 10]
+      - [2400, 1, 7]
+      - [900, 15, 3]
+      - [2400, 0, 3]
+      - [1500, 10, 3]
+    # Earlier games ran the local build unscaled at 15+10, which measured
+    # +200 Elo stronger than the lichess-conditioned engine (95% +48..+410;
+    # 94 games via a speed-matched Cheng 4.39 reference, 2026-09-30). Each era
+    # keeps its lichess rating at the time plus that measured gap.
     rating_history:
       - before: "2026-09-08T13:02:05+00:00"
-        rating: 2211
-    initial_time: 900
-    increment: 10
+        rating: 2411  # lichess 2211 + 200
+      - before: "2026-09-30T21:44:45+00:00"
+        rating: 2546  # lichess 2346 + 200
 
   - player_id: "survival-bot"
     type: survival
