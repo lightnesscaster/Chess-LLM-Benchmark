@@ -182,6 +182,24 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
+def uci_engine_from_config(engine_cfg: dict, rating: float) -> UCIEngine:
+    """Build a UCI engine from its benchmark.yaml entry."""
+    return UCIEngine(
+        player_id=engine_cfg["player_id"],
+        rating=rating,
+        engine_path=engine_cfg["path"],
+        move_time=engine_cfg.get("move_time"),
+        nodes=engine_cfg.get("nodes"),
+        depth=engine_cfg.get("depth"),
+        initial_time=engine_cfg.get("initial_time"),
+        increment=engine_cfg.get("increment"),
+        options=engine_cfg.get("options"),
+        time_scale=engine_cfg.get("time_scale", 1.0),
+        time_controls=engine_cfg.get("time_controls"),
+        reference_nps=engine_cfg.get("reference_nps"),
+    )
+
+
 def create_engines(config: dict) -> tuple[dict, set, set]:
     """Create engine players from config.
 
@@ -232,16 +250,7 @@ def create_engines(config: dict) -> tuple[dict, set, set]:
         elif engine_type == "uci":
             if "path" not in engine_cfg:
                 raise ValueError(f"UCI engine '{player_id}' missing required 'path' field")
-            engines[player_id] = UCIEngine(
-                player_id=player_id,
-                rating=rating,
-                engine_path=engine_cfg["path"],
-                move_time=engine_cfg.get("move_time"),
-                nodes=engine_cfg.get("nodes"),
-                depth=engine_cfg.get("depth"),
-                initial_time=engine_cfg.get("initial_time"),
-                increment=engine_cfg.get("increment"),
-            )
+            engines[player_id] = uci_engine_from_config(engine_cfg, rating)
         elif engine_type == "survival":
             engines[player_id] = SurvivalEngine(
                 player_id=player_id,
@@ -1249,13 +1258,7 @@ async def run_manual_game(args):
                 engine for engine in load_config(str(Path(__file__).parent / "config/benchmark.yaml"))["engines"]
                 if engine["player_id"] == "eubos"
             )
-            return UCIEngine(
-                player_id="eubos",
-                rating=engine_config["rating"],
-                engine_path=engine_config["path"],
-                initial_time=engine_config["initial_time"],
-                increment=engine_config["increment"],
-            )
+            return uci_engine_from_config(engine_config, engine_config["rating"])
         elif engine_type == "survival":
             book_path = Path(__file__).parent / "data" / "openings" / "gm2001.bin"
             return SurvivalEngine(

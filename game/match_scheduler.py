@@ -1106,14 +1106,17 @@ class MatchScheduler:
                         f"{player.player_id}"
                     )
 
+            # LLMs and clocked engines carry per-game state (clocks, sessions), so
+            # each game gets its own instance; shared templates would leak one
+            # game's remaining time into the next or into concurrent games.
             white = (
                 task.white.clone_for_game()
-                if isinstance(task.white, BaseLLMPlayer)
+                if hasattr(task.white, "clone_for_game")
                 else task.white
             )
             black = (
                 task.black.clone_for_game()
-                if isinstance(task.black, BaseLLMPlayer)
+                if hasattr(task.black, "clone_for_game")
                 else task.black
             )
             if self.verbose:
@@ -1140,12 +1143,12 @@ class MatchScheduler:
                     (task.white, white),
                     (task.black, black),
                 ):
-                    if player is template or not isinstance(
-                        player,
-                        BaseLLMPlayer,
-                    ):
+                    if player is template:
                         continue
-                    await player.close()
+                    if isinstance(player, BaseLLMPlayer):
+                        await player.close()
+                    else:
+                        player.close()
 
             # Don't save games that ended due to API errors
             if result.termination == "api_error":
