@@ -1,0 +1,35 @@
+diff --git a/cheng4/tables.cpp b/cheng4/tables.cpp
+index 3dc765c..16dd538 100644
+--- a/cheng4/tables.cpp
++++ b/cheng4/tables.cpp
+@@ -424,6 +424,8 @@ void BitOp::init()
+ 		__cpuid(id, 1);
+ 		hwPopCnt = (id[2] & 0x800000) != 0;
+ 	}
++#elif defined(__aarch64__)
++	hwPopCnt = true;
+ #elif defined(__GNUC__) && !defined(__ANDROID__)
+ 	int id[4] = {0};
+ 	asm(
+diff --git a/cheng4/tables.h b/cheng4/tables.h
+index 4180189..9a37403 100644
+--- a/cheng4/tables.h
++++ b/cheng4/tables.h
+@@ -245,6 +245,8 @@ done:
+ 		"cc", "eax"
+ 			);
+ 		return (uint)res;
++	#elif defined(__aarch64__)
++		return (uint)(63 - __builtin_clzll(m));
+ 	#elif defined(__GNUC__) && defined(IS_X64)
+ 		u64 res;
+ 		asm(
+@@ -305,6 +307,8 @@ done:
+ 					return (uint)(__popcnt( (u32)(val & 0xffffffffu) ) + __popcnt( (u32)(val >> 32) ));
+ 				#endif
+ 			#endif
++		#elif defined(__aarch64__)
++			return (uint)__builtin_popcountll(val);
+ 		#elif defined(__GNUC__)
+ 			#if defined(IS_X64)
+ 				u64 res;

@@ -10,7 +10,7 @@ Author can be contacted at dfj2106@columbia.edu
 
 **Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move or exactly `resign`. Resignation is optional, is based only on the model's own assessment, and counts as a normal loss. The first illegal move in a game gets one retry with a warning; the player's second illegal response anywhere in that game is a forfeit, including a failed same-turn retry.
 
-**Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool.
+**Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool. Engines reproduce their lichess bot's classical conditions; see the [eubos anchor calibration](docs/anchor_calibration/2026-09-30-eubos/README.md).
 
 **Rating Calculation** Glicko-2 ratings are calculated based on game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
 
