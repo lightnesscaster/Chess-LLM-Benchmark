@@ -56,6 +56,25 @@ class CodexSubagentPlayerTests(unittest.TestCase):
             },
         )
 
+    def test_timeout_stops_codex_helper_processes(self) -> None:
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        marker = Path(tempfile.mkdtemp()) / "survived"
+        self.player.timeout = 1
+        self.player.max_retries = 1
+        # The direct child exits on kill, but its grandchild would survive
+        # unless the whole process group is stopped.
+        self.player._command = lambda output_path, prompt: [
+            "bash", "-c", f"(sleep 2; touch {marker}) & wait",
+        ]
+
+        with self.assertRaisesRegex(Exception, "timed out after 1s"):
+            asyncio.run(self.player._run_codex("prompt"))
+        subprocess.run(["sleep", "2.5"])
+        self.assertFalse(marker.exists())
+
     def test_accepts_agent_message_and_reasoning_items(self) -> None:
         stdout = "\n".join(
             [

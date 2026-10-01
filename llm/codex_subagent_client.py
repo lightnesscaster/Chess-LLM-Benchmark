@@ -10,6 +10,7 @@ import asyncio
 import json
 import os
 import re
+import signal
 import subprocess
 import tempfile
 import time
@@ -299,6 +300,9 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                         stdin=subprocess.DEVNULL,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,
+                        # Own process group, so a timeout can stop Codex's
+                        # helper processes too, not just the direct child.
+                        start_new_session=True,
                     )
                     stdout_bytes, _ = await asyncio.wait_for(
                         process.communicate(),
@@ -334,10 +338,13 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                         f"{self._turn_failure_message(stdout) or stdout[-1000:]}"
                     )
                     permanent_failure = self._is_permanent_model_failure(stdout)
-            except asyncio.TimeoutError as exc:
-                last_error = exc
+            except asyncio.TimeoutError:
+                last_error = TimeoutError(f"codex exec timed out after {self.timeout}s")
                 if "process" in locals() and process.returncode is None:
-                    process.kill()
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
                     await process.wait()
             finally:
                 try:
