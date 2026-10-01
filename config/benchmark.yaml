@@ -275,6 +275,38 @@ llms:
     temperature: 0.0
     reasoning_effort: xhigh
 
+  - player_id: "gpt-6.1-sol (low)"
+    model_name: "openai/gpt-6.1-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: low
+
+  - player_id: "gpt-6.1-sol (medium)"
+    model_name: "openai/gpt-6.1-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: medium
+
+  - player_id: "gpt-6.1-sol (high)"
+    model_name: "openai/gpt-6.1-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: high
+
+  - player_id: "gpt-6.1-sol (xhigh)"
+    model_name: "openai/gpt-6.1-sol"
+    api: codex
+    budget_cost_per_game: 0.0
+    exclude_runtime_tokens_from_cost: true
+    temperature: 0.0
+    reasoning_effort: xhigh
+
   - player_id: "gpt-5.6-terra (low)"
     model_name: "openai/gpt-5.6-terra"
     api: codex

@@ -628,6 +628,26 @@
     "created_timestamp": 1783555200,
     "created_date": "2026-07-09"
   },
+  "gpt-6.1-sol (low)": {
+    "model_id": "openai/gpt-6.1-sol",
+    "created_timestamp": 1790640000,
+    "created_date": "2026-09-29"
+  },
+  "gpt-6.1-sol (medium)": {
+    "model_id": "openai/gpt-6.1-sol",
+    "created_timestamp": 1790640000,
+    "created_date": "2026-09-29"
+  },
+  "gpt-6.1-sol (high)": {
+    "model_id": "openai/gpt-6.1-sol",
+    "created_timestamp": 1790640000,
+    "created_date": "2026-09-29"
+  },
+  "gpt-6.1-sol (xhigh)": {
+    "model_id": "openai/gpt-6.1-sol",
+    "created_timestamp": 1790640000,
+    "created_date": "2026-09-29"
+  },
   "gpt-5.6-terra (low)": {
     "model_id": "openai/gpt-5.6-terra",
     "created_timestamp": 1783555200,
