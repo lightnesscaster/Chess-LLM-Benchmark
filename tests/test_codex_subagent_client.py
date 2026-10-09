@@ -75,6 +75,24 @@ class CodexSubagentPlayerTests(unittest.TestCase):
         subprocess.run(["sleep", "2.5"])
         self.assertFalse(marker.exists())
 
+    def test_watchdog_stops_call_when_event_loop_timeout_never_fires(self) -> None:
+        import time
+        from llm import codex_subagent_client as module
+
+        real_wait_for = asyncio.wait_for
+
+        async def wait_without_timeout(awaitable, timeout):
+            return await real_wait_for(awaitable, timeout=None)
+
+        self.player.timeout = 1
+        self.player.max_retries = 1
+        self.player._command = lambda output_path, prompt: ["sleep", "20"]
+        started = time.monotonic()
+        with patch.object(module.asyncio, "wait_for", wait_without_timeout):
+            with self.assertRaisesRegex(Exception, "timed out after 1s"):
+                asyncio.run(self.player._run_codex("prompt"))
+        self.assertLess(time.monotonic() - started, 10)
+
     def test_accepts_agent_message_and_reasoning_items(self) -> None:
         stdout = "\n".join(
             [

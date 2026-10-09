@@ -13,6 +13,7 @@ import re
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -304,10 +305,30 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                         # helper processes too, not just the direct child.
                         start_new_session=True,
                     )
-                    stdout_bytes, _ = await asyncio.wait_for(
-                        process.communicate(),
-                        timeout=self.timeout,
-                    )
+                    # A thread watchdog enforces the limit even when the event
+                    # loop's own timer doesn't fire (seen in long engine games,
+                    # where a call outlived its 600s timeout by over 20 minutes).
+                    watchdog_fired = threading.Event()
+
+                    def _kill_process_group(pid=process.pid):
+                        watchdog_fired.set()
+                        try:
+                            os.killpg(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+
+                    watchdog = threading.Timer(self.timeout, _kill_process_group)
+                    watchdog.daemon = True
+                    watchdog.start()
+                    try:
+                        stdout_bytes, _ = await asyncio.wait_for(
+                            process.communicate(),
+                            timeout=self.timeout + 30,
+                        )
+                    finally:
+                        watchdog.cancel()
+                    if watchdog_fired.is_set():
+                        raise asyncio.TimeoutError
                 stdout = stdout_bytes.decode("utf-8", errors="replace")
                 if process.returncode != 0 and any(marker in stdout.lower() for marker in (
                     "refresh token was already used",
