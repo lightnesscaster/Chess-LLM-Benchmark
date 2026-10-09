@@ -438,6 +438,17 @@ class FreezeChecker:
 
         return False
 
+    def _recorded_human_ratings(self, player_id: str) -> Dict[str, float]:
+        """Lowest recorded lichess rating of each human this player lost to."""
+        ratings: Dict[str, float] = {}
+        for result in self.stats_collector.results:
+            rating = getattr(result, "human_rating", None)
+            if rating is None or player_id not in (result.white_id, result.black_id):
+                continue
+            human_id = result.black_id if result.white_id == player_id else result.white_id
+            ratings[human_id] = min(float(rating), ratings.get(human_id, float("inf")))
+        return ratings
+
     def lost_to_much_weaker(self, player_id: str) -> bool:
         """Check if model lost to a model far below its peer group."""
         my_timestamp = self._publish_dates.get(player_id)
@@ -453,8 +464,12 @@ class FreezeChecker:
             return False
 
         lost_to_ratings = {}
+        human_ratings = self._recorded_human_ratings(player_id)
         for opp_id in lost_to:
-            if self.rating_store.has_player(opp_id):
+            if opp_id in human_ratings:
+                # Humans aren't in the rating store; use their recorded rating.
+                lost_to_ratings[opp_id] = human_ratings[opp_id]
+            elif self.rating_store.has_player(opp_id):
                 lost_to_ratings[opp_id] = self.rating_store.get(opp_id).rating
 
         if not lost_to_ratings:

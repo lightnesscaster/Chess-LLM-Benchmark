@@ -175,5 +175,28 @@ class FreezeCheckerCalibrationTests(unittest.TestCase):
         self.assertTrue(checker.is_expensive_inferior(HIGH))
 
 
+    def test_loss_to_strong_human_is_judged_by_recorded_rating(self) -> None:
+        human = "lichess:strong-human"
+        for recorded, expect_frozen in ((2329, False), (1400, True)):
+            result = loss(HIGH, human)
+            result.human_rating = recorded
+            checker, _ = build_checker(
+                ratings={HIGH: (2035, 72), CHEAP_PEER: (2144, 90)},
+                results=[result],
+                costs={HIGH: 1.6, CHEAP_PEER: 4.0},
+                model_ids={HIGH: "openai/astra", CHEAP_PEER: "other/peer"},
+            )
+            self.assertEqual(checker.lost_to_much_weaker(HIGH), expect_frozen)
+
+    def test_cost_filter_does_not_invent_ratings_for_unknown_players(self) -> None:
+        from rating.cost_calculator import filter_results_by_rating_diff
+
+        store = RatingStoreStub({HIGH: (2035, 72)})
+        store.get = lambda pid: store.ratings.setdefault(
+            pid, SimpleNamespace(rating=1500, rating_deviation=350))
+        filter_results_by_rating_diff([loss(HIGH, "lichess:strong-human")], store)
+
+        self.assertFalse(store.has_player("lichess:strong-human"))
+
 if __name__ == "__main__":
     unittest.main()

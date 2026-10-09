@@ -51,7 +51,13 @@ def filter_results_by_rating_diff(
     filtered = []
     skipped_missing_rating = 0
 
+    has_player = getattr(rating_provider, "has_player", None)
     for result in results:
+        # RatingStore.get() creates a default 1500 entry for unknown ids (e.g.
+        # lichess humans), which other code would then treat as a real rating.
+        if has_player and not (has_player(result.white_id) and has_player(result.black_id)):
+            skipped_missing_rating += 1
+            continue
         white_rating = rating_provider.get(result.white_id)
         black_rating = rating_provider.get(result.black_id)
 
