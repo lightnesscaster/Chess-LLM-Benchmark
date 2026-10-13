@@ -417,3 +417,59 @@ def test_runner_publishes_start_and_accepted_move_before_next_inference_finishes
                     pass
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("cancel_inference", [False, True])
+def test_cancellation_during_runner_final_flush_propagates_and_stops_writer(monkeypatch, cancel_inference):
+    live = live_module()
+    from game.game_runner import GameRunner
+    from tests.test_game_runner import SequencePlayer
+    publishers = []
+    original_close = live.LiveGamePublisher.close
+
+    class Store:
+        def write(self, data):
+            pass
+
+    async def cancel_during_close(self, timeout=1.0):
+        publishers.append(self)
+        asyncio.get_running_loop().call_soon(asyncio.current_task().cancel, "flush")
+        await original_close(self, timeout=timeout)
+
+    monkeypatch.setattr(live, "get_live_game_store", lambda: Store())
+    monkeypatch.setattr(live.LiveGamePublisher, "close", cancel_during_close)
+
+    async def run():
+        runner = GameRunner(SequencePlayer(["e2e4"]), SequencePlayer(["e7e5"]),
+                            max_moves=2, publish_live=True)
+        entered = asyncio.Event()
+        inference_errors = []
+
+        async def wait_for_cancel(*a, **k):
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError as error:
+                inference_errors.append(error)
+                raise
+
+        if cancel_inference:
+            monkeypatch.setattr(runner, "_ask_player_for_move", wait_for_cancel)
+        task = asyncio.create_task(runner.play_game())
+        if cancel_inference:
+            await entered.wait()
+            task.cancel("inference")
+        with pytest.raises(asyncio.CancelledError) as cancelled:
+            await task
+        if cancel_inference:
+            assert cancelled.value is not inference_errors[0]
+        assert task.cancelled()
+        publisher = publishers[0]
+        assert publisher._closing
+        for _ in range(100):
+            if not publisher._thread.is_alive():
+                break
+            await asyncio.sleep(0.005)
+        assert not publisher._thread.is_alive()
+
+    asyncio.run(run())

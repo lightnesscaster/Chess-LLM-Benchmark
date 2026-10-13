@@ -273,15 +273,17 @@ class LiveGamePublisher:
 
     async def close(self, timeout: float = 1.0) -> None:
         """Stop heartbeats and allow at most timeout seconds for the final write."""
-        if self._heartbeat_task is not None:
-            self._heartbeat_task.cancel()
-            try:
-                await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
-        with self._condition:
-            self._closing = True
-            self._condition.notify()
+        try:
+            if self._heartbeat_task is not None:
+                self._heartbeat_task.cancel()
+                # Gather turns only the child's cancellation into a result.
+                # A new cancellation of this caller still propagates, including
+                # when close runs while handling an earlier inference cancel.
+                await asyncio.gather(self._heartbeat_task, return_exceptions=True)
+        finally:
+            with self._condition:
+                self._closing = True
+                self._condition.notify()
         deadline = time.monotonic() + timeout
         while self._thread.is_alive() and time.monotonic() < deadline:
             await asyncio.sleep(min(0.01, max(0, deadline - time.monotonic())))
