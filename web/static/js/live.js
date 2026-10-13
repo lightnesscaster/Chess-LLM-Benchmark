@@ -19,6 +19,7 @@
     let stopped = false;
     let selectorKey = "";
     let ledgerKey = "";
+    let ledgerGameId = null;
     let moveButtons = [];
     const archivedGames = new Set();
 
@@ -126,6 +127,7 @@
         const nextLedgerKey = JSON.stringify([game.game_id, game.san_moves]);
         if (nextLedgerKey !== ledgerKey) {
             const ledger = element("moves");
+            const focusedMove = ledgerGameId === game.game_id ? moveButtons.indexOf(document.activeElement) : -1;
             ledger.replaceChildren();
             moveButtons = [];
             if (!game.moves.length) {
@@ -151,6 +153,8 @@
                 ledger.append(row);
             }
             ledgerKey = nextLedgerKey;
+            ledgerGameId = game.game_id;
+            if (focusedMove >= 0 && moveButtons[focusedMove]) moveButtons[focusedMove].focus({preventScroll: true});
         }
         moveButtons.forEach((button, index) => {
             button.setAttribute("aria-current", index + 1 === position ? "step" : "false");

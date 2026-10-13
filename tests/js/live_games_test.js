@@ -36,6 +36,7 @@ class Element {
     append(...children) { this.children.push(...children); }
     appendChild(child) { this.children.push(child); }
     replaceChildren(...children) { this.children = children; }
+    focus() { this.ownerDocument.activeElement = this; }
     setAttribute(name, value) { this.attributes[name] = String(value); }
     removeAttribute(name) { delete this.attributes[name]; }
     set innerHTML(_value) { throw new Error("Fetched content must use textContent"); }
@@ -67,7 +68,7 @@ function harness() {
     const document = {
         hidden: false, listeners: {},
         getElementById: (id) => elements.get(id),
-        createElement: (tag) => new Element(tag),
+        createElement: (tag) => Object.assign(new Element(tag), {ownerDocument: document}),
         addEventListener(type, callback) { this.listeners[type] = callback; },
     };
     const positions = [], requests = [], queue = [], timers = new Map();
@@ -123,9 +124,11 @@ function harness() {
     assert.equal(h.positions.at(-1), E5, "The initial snapshot must show the latest board");
     h.click("live-previous");
     assert.equal(h.positions.at(-1), E4);
+    h.elements.get("live-moves").children[0].children[1].focus();
     h.queue.push(response([snapshot({moves: ["e2e4", "e7e5", "g1f3"], san_moves: ["e4", "e5", "Nf3"], fen: NF3, turn: "black"})]));
     await h.poll();
     assert.equal(h.positions.at(-1), E4, "A newer snapshot must preserve the chosen history position");
+    assert.equal(h.document.activeElement, h.elements.get("live-moves").children[0].children[1], "New moves must preserve focus on the same historical ply");
     h.click("live-follow");
     assert.equal(h.positions.at(-1), NF3);
     assert.equal(h.elements.get("live-follow").disabled, true);
