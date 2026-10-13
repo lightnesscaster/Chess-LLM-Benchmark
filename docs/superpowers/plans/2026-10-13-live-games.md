@@ -62,4 +62,6 @@
 - [x] Start the local Flask app, load `/live`, and visually inspect a deterministic simulated live game. Verify updates, history navigation, empty/error states, mobile layout, and terminal replay transition without consuming LLM tokens.
 - [x] Complete and verify the independently running Astra–Argon result publication; never replay a completed game to retry publication.
 - [x] Commit only the requested feature and prior authorized model-registration changes, preserving unrelated data/output changes.
-- [ ] Prepare a concrete reviewable delivery; shared-branch merge/production deployment follows the integration decision required by the applicable development skills.
+- [x] Prepare a concrete reviewable delivery; shared-branch merge/production deployment follows the integration decision required by the applicable development skills.
+
+**Delivery:** User selected a local merge into `main`; fast-forward completed at `4f55190`. Post-merge verification: 485 Python tests plus 21 subtests and all seven JavaScript test scripts passed. Both task reviews and the final integrated review approved. Production deployment was not requested by that integration choice.
