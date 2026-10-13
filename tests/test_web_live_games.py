@@ -1,7 +1,6 @@
 import importlib
 
 import pytest
-from jinja2 import DictLoader
 
 import web.app as web_app
 
@@ -45,10 +44,14 @@ def test_empty_live_list_is_distinct_from_unavailable_storage(tmp_path, monkeypa
 
 
 def test_live_page_is_anonymous_and_does_not_load_history(monkeypatch):
-    monkeypatch.setattr(web_app.app, "jinja_loader", DictLoader({"live.html": "live page"}))
+    monkeypatch.setitem(web_app.app.config, "SECRET_KEY", "live-page-test-only")
+    web_app.app.jinja_env.cache.clear()
     monkeypatch.setattr(web_app, "get_leaderboard_data", lambda *a, **k: pytest.fail("history loaded"))
     monkeypatch.setattr(web_app, "get_all_games", lambda *a, **k: pytest.fail("history loaded"))
     with web_app.app.test_client() as client:
         response = client.get("/live")
     assert response.status_code == 200
-    assert response.get_data(as_text=True) == "live page"
+    html = response.get_data(as_text=True)
+    assert 'id="live-app"' in html
+    assert '/static/js/live.js' in html
+    assert 'href="/live"' in html

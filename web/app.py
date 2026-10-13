@@ -621,7 +621,7 @@ def index():
 
 
 @app.route("/live")
-def live():
+def live_games():
     """Public live viewer; historical data is loaded only by its own pages."""
     return render_template("live.html")
 
