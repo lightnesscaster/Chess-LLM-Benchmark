@@ -37,6 +37,32 @@ Using anchor engines requires installing them individually. [Maia](https://maiac
 export OPENROUTER_API_KEY="your-key"
 ```
 
+### Follow Live Games
+
+Open `/live` on the web app to follow saved rated manual runs and scheduled
+benchmark games. `/api/live-games` exposes only player IDs, board/move history,
+status, timestamps, result, and illegal-move counts; it never includes model
+prompts, raw responses, or private human-game fields. `--local-only`, `--no-save`,
+and position/stability probes do not broadcast.
+
+Snapshots use the `live_games` Firestore collection when Firebase is configured
+(`FIREBASE_ENABLED`, `FIREBASE_CREDENTIALS_JSON`, `GOOGLE_APPLICATION_CREDENTIALS`,
+or the repository's `firebase-key.json`). Configure the game runner and web app
+for the same Firebase project to follow remote games. Without Firebase, snapshots
+are atomic per-game JSON files in `data/live_games/` and are visible only to a web
+app sharing that directory. Render authentication for completed-game publication
+alone does not provide remote live snapshots; no per-move Render jobs are created.
+
+Live publishing runs in a coalescing background writer with bounded RPC timeouts
+and at most one second of final flushing. Storage failures do not change moves,
+PGN, ratings, or completed-game publication. Heartbeats run every 15 seconds;
+after 90 seconds without one, an active game is shown as interrupted. Active and
+interrupted snapshots disappear after 30 minutes, and finished/error snapshots
+after 10 minutes. The API uses `Cache-Control: no-store`, caches backend reads for
+at most two seconds, and returns HTTP 503 during storage outages. Expiry is
+filtered on reads; expired local files and Firestore documents remain in storage
+until separate cleanup removes them.
+
 ### Run Manual Games
 
 Saved manual games **automatically publish their replay and apply production ratings**

@@ -29,6 +29,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     calls = []
     writes = []
     constructed = []
+    live_flags = []
     r, pgn = payload()
     r.termination = termination
 
@@ -48,7 +49,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
 
     class Runner:
         def __init__(self, **kwargs):
-            pass
+            live_flags.append(kwargs.get("publish_live", False))
 
         async def play_game(self):
             return r, pgn
@@ -78,6 +79,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     asyncio.run(original(captured[0]))
     assert len(calls) == published
     assert len(writes) == saved
+    assert live_flags == [not flags]
     if mixed == "gemini":
         assert [kind for kind, _ in constructed] == ["GeminiFake", "Player"]
         assert constructed[0][1]["model_name"] == "gemini-4-argon"

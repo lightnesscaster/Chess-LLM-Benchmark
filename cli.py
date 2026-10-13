@@ -1537,6 +1537,7 @@ async def run_manual_game(args):
                 max_moves=args.max_moves,
                 verbose=True,
                 pre_moves=pre_moves if game_num == 0 else None,
+                publish_live=bool(args.save and not getattr(args, "local_only", False)),
                 rating_snapshots={
                     player.player_id: rating_snapshot(manual_rating_store, player.player_id)
                     for player in (white, black)

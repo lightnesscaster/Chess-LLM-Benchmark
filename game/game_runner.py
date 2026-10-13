@@ -10,8 +10,8 @@ Handles:
 
 import uuid
 import asyncio
-import tempfile
-import os
+import time
+import logging
 import copy
 from datetime import datetime, timezone
 from typing import Union, Tuple, Optional
@@ -22,9 +22,9 @@ import chess.pgn
 from engines.base_engine import BaseEngine
 from llm import BaseLLMPlayer, TransientAPIError, request_llm_move
 from .models import GameResult
+from . import live_games
 
-# Live game file for following along
-LIVE_GAME_FILE = "/tmp/chess_llm_live_game.txt"
+logger = logging.getLogger(__name__)
 
 
 # Type alias for players (either engine or LLM)
@@ -48,6 +48,7 @@ class GameRunner:
         verbose: bool = False,
         pre_moves: list = None,
         rating_snapshots: dict | None = None,
+        publish_live: bool = False,
     ):
         """
         Initialize the game runner.
@@ -58,6 +59,7 @@ class GameRunner:
             max_moves: Maximum number of half-moves (plies) before draw
             verbose: Print moves as they happen
             pre_moves: List of UCI move strings to pre-play before starting
+            publish_live: Publish public snapshots for a saved rated run
         """
         self.white = white
         self.black = black
@@ -65,25 +67,58 @@ class GameRunner:
         self.verbose = verbose
         self.pre_moves = pre_moves
         self.rating_snapshots = copy.deepcopy(rating_snapshots)
+        self.publish_live = publish_live
 
-    def _write_live_game(self, white_id: str, black_id: str, board: chess.Board,
-                          moves_played: int, last_move: str = None, status: str = "in_progress"):
-        """Write current game state to live file for following along."""
+    def _publish_live(self, game_id: str, board: chess.Board, illegal_count: dict,
+                      **state) -> None:
+        """Keep all snapshot work outside move validation's error handling."""
+        if self._live_publisher is None:
+            return
         try:
-            with open(LIVE_GAME_FILE, 'w') as f:
-                f.write(f"=== LIVE GAME ===\n")
-                f.write(f"White: {white_id}\n")
-                f.write(f"Black: {black_id}\n")
-                f.write(f"Status: {status}\n")
-                f.write(f"Moves played: {moves_played}\n")
-                if last_move:
-                    f.write(f"Last move: {last_move}\n")
-                f.write(f"\nBoard:\n{board}\n")
-                f.write(f"\nFEN: {board.fen()}\n")
+            self._live_publisher.submit(live_games.build_snapshot(
+                game_id, self._get_player_id(self.white), self._get_player_id(self.black),
+                board, started_at=self._live_started_at,
+                illegal_moves_white=illegal_count[chess.WHITE],
+                illegal_moves_black=illegal_count[chess.BLACK], **state,
+            ))
         except Exception:
-            pass  # Don't fail the game if we can't write the live file
+            logger.warning("Live snapshot could not be queued")
+
+    def _finish_live(self, status: str, termination: str) -> None:
+        if self._live_publisher is None:
+            return
+        try:
+            self._live_publisher.finish(status, termination)
+        except Exception:
+            logger.warning("Live terminal snapshot could not be queued")
 
     async def play_game(self) -> Tuple[GameResult, str]:
+        """Play a game with optional, bounded best-effort live publication."""
+        self._live_publisher = None
+        self._live_started_at = time.time()
+        if self.publish_live:
+            try:
+                publisher = live_games.LiveGamePublisher(live_games.get_live_game_store())
+                publisher.start()
+                self._live_publisher = publisher
+            except Exception:
+                logger.warning("Live publication could not start")
+        try:
+            return await self._play_game()
+        except asyncio.CancelledError:
+            self._finish_live("interrupted", "cancelled")
+            raise
+        except Exception:
+            self._finish_live("error", "error")
+            raise
+        finally:
+            if self._live_publisher is not None:
+                try:
+                    await self._live_publisher.close()
+                except Exception:
+                    logger.warning("Live publication flush unavailable")
+
+    async def _play_game(self) -> Tuple[GameResult, str]:
         """
         Play a complete game.
 
@@ -138,12 +173,7 @@ class GameRunner:
                 print(f"  Position: {board.fen()}")
                 print()
 
-        # Write initial game state
-        self._write_live_game(
-            self._get_player_id(self.white),
-            self._get_player_id(self.black),
-            board, moves_played, status="starting" if not self.pre_moves else "resumed"
-        )
+        self._publish_live(game_id, board, illegal_count)
 
         while not board.is_game_over() and moves_played < self.max_moves:
             side = board.turn
@@ -216,13 +246,6 @@ class GameRunner:
                             token_info = f"  (tokens: {last_prompt}p/{last_completion}c)"
                     print(f"  {moves_played}. {side_name}: {move_uci}{token_info}")
 
-                # Write live game state
-                self._write_live_game(
-                    self._get_player_id(self.white),
-                    self._get_player_id(self.black),
-                    board, moves_played, move_uci
-                )
-
             except Exception as e:
                 # Should not happen if validation is correct, but safety check
                 print(f"Error applying move {move_uci}: {e}")
@@ -232,6 +255,8 @@ class GameRunner:
                     winner = "white"
                 termination = "error"
                 break
+
+            self._publish_live(game_id, board, illegal_count)
 
         # Determine final result if game ended naturally
         if board.is_game_over() and termination == "normal":
@@ -306,6 +331,11 @@ class GameRunner:
             illegal_move_details=illegal_move_details if illegal_move_details else None,
         )
 
+        self._publish_live(
+            game_id, board, illegal_count,
+            status="error" if termination in ("api_error", "error") else "finished",
+            winner=winner, termination=termination,
+        )
         return game_result, pgn_str
 
     async def _get_move_with_retry(

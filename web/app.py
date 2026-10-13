@@ -24,6 +24,7 @@ from flask import Flask, render_template, jsonify, abort, request, redirect, ses
 from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
+from game.live_games import get_live_game_store
 from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
@@ -617,6 +618,25 @@ def api_admin_play_move():
 def index():
     """Redirect to leaderboard."""
     return render_template("leaderboard.html", leaderboard=get_leaderboard_data(min_games=1))
+
+
+@app.route("/live")
+def live():
+    """Public live viewer; historical data is loaded only by its own pages."""
+    return render_template("live.html")
+
+
+@app.route("/api/live-games")
+def api_live_games():
+    """Public ephemeral snapshots, with outages distinct from an empty list."""
+    try:
+        response = jsonify({"games": get_live_game_store().list_games()})
+    except Exception:
+        app.logger.warning("Live games storage unavailable")
+        response = jsonify({"error": "Live games are temporarily unavailable."})
+        response.status_code = 503
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.route("/leaderboard")
