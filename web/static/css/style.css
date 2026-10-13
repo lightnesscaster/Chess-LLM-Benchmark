@@ -1473,3 +1473,49 @@ input:focus-visible {
         overflow-x: auto;
     }
 }
+
+/* Live viewer: the board leads, with a quiet selector and score sheet. */
+#live-app [hidden] { display: none !important; }
+.live-header .page-nav { flex-wrap: wrap; }
+.live-message { padding: 1.5rem; background: var(--bg-secondary); border-left: 3px solid var(--border); color: var(--text-primary); }
+.live-message[data-state="error"] { border-color: var(--accent); }
+.live-layout { display: grid; grid-template-columns: minmax(0, 600px) minmax(260px, 1fr); gap: 2rem; align-items: start; }
+.live-board-column, .live-sidebar { min-width: 0; }
+.live-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.live-players strong { display: block; overflow-wrap: anywhere; font-size: 1.05rem; font-weight: 600; }
+.live-label { display: block; margin-bottom: 0.35rem; color: var(--text-secondary); font-size: 0.875rem; }
+.live-board-wrapper { padding: 0.65rem; box-shadow: none; border-radius: 6px; }
+#live-board { width: 100%; }
+.live-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
+.live-controls button, .live-move-row button { border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.7rem; background: var(--bg-secondary); color: var(--text-primary); font: inherit; cursor: pointer; }
+.live-controls button:hover:not(:disabled), .live-move-row button:hover { background: var(--bg-card); }
+.live-controls button:disabled { opacity: 0.45; cursor: default; }
+#live-follow { border-color: var(--accent); }
+.live-position { margin-top: 0.75rem; font-size: 0.9rem; }
+.live-keyboard-hint, .live-updated { color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.4rem; }
+#live-selector { width: 100%; min-width: 0; font-size: 0.9rem; }
+.live-game-state { padding: 1.2rem 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.live-status { display: inline-block; padding: 0.15rem 0.55rem; margin-bottom: 0.5rem; background: var(--bg-card); border-radius: 4px; font-weight: 600; font-size: 0.85rem; }
+.live-status[data-status="active"] { border-left: 3px solid var(--success); }
+.live-status[data-status="interrupted"], .live-status[data-status="error"], .live-status[data-status="disconnected"] { border-left: 3px solid var(--accent); }
+#live-replay { margin-top: 0.8rem; }
+.live-ledger h2 { font-size: 1rem; font-weight: 600; padding: 1rem 0 0.6rem; }
+#live-moves { max-height: 380px; overflow-y: auto; padding: 0.3rem; background: var(--bg-secondary); border-radius: 4px; }
+#live-moves > p { padding: 0.8rem; color: var(--text-secondary); }
+.live-move-row { display: grid; grid-template-columns: 2.5rem repeat(2, minmax(0, 1fr)); gap: 0.35rem; align-items: center; padding: 0.2rem; }
+.live-move-row > span { color: var(--text-secondary); font-size: 0.85rem; padding-left: 0.4rem; }
+.live-move-row button { text-align: left; border-color: transparent; overflow-wrap: anywhere; font-size: 0.9rem; }
+.live-move-row button[aria-current="step"] { background: var(--accent); color: white; }
+.live-controls button:focus-visible, .live-move-row button:focus-visible, #live-selector:focus-visible { outline: 3px solid var(--accent-light); outline-offset: 2px; }
+/* Additional tabs wrap instead of overflowing small screens. */
+.page-nav { flex-wrap: wrap; }
+@media (max-width: 850px) {
+    .live-layout { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; max-width: 600px; margin: 0 auto; }
+}
+@media (max-width: 600px) {
+    .live-header .page-nav-link, .live-header h1 { font-size: 1.35rem; }
+    .live-players { gap: 0.6rem; }
+    .live-controls button { padding: 0.55rem 0.6rem; font-size: 0.85rem; }
+    .navbar { flex-wrap: wrap; gap: 0.5rem; }
+    .account-nav { flex-wrap: wrap; }
+}

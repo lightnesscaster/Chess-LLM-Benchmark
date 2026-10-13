@@ -20,6 +20,7 @@
             <a href="/">LLM Chess Benchmark</a>
         </div>
         <div class="account-nav">
+            <a href="{{ url_for('live_games') }}">Live Games</a>
             {% if auth_user %}
                 {% if auth_is_player %}<a href="{{ url_for('admin_play') }}">Play an LLM</a>{% endif %}
                 {% if auth_is_admin %}<a href="{{ url_for('admin_players') }}">Players</a>{% endif %}

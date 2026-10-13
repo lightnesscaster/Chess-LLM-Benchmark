@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Live Games - LLM Chess Benchmark{% endblock %}
+
+{% block content %}
+<div class="page-header live-header">
+    <div class="page-nav">
+        <a href="/leaderboard" class="page-nav-link">Leaderboard</a>
+        <a href="/games" class="page-nav-link">Games</a>
+        <h1 class="active">Live Games</h1>
+    </div>
+    <p class="subtitle">Watch benchmark games as the models play.</p>
+</div>
+<section id="live-app" data-api-url="{{ url_for('api_live_games') }}" data-game-api-base="/api/game/" data-replay-base="/game/" aria-label="Live chess viewer">
+    <p id="live-message" class="live-message" role="status" aria-live="polite" data-state="loading">Loading live games…</p>
+    <noscript><p class="live-message">Enable JavaScript to watch live games.</p></noscript>
+    <div id="live-viewer" class="live-layout" hidden>
+        <div class="live-board-column">
+            <div class="live-players">
+                <div><span class="live-label">White</span><strong id="live-white"></strong></div>
+                <div><span class="live-label">Black</span><strong id="live-black"></strong></div>
+            </div>
+            <div class="board-wrapper live-board-wrapper"><div id="live-board" role="img" aria-label="Selected game chessboard"></div></div>
+            <div class="live-controls" role="group" aria-label="Move navigation">
+                <button id="live-start" type="button" title="Start (Home)">Start</button>
+                <button id="live-previous" type="button" title="Previous move (Left arrow)">Previous</button>
+                <button id="live-next" type="button" title="Next move (Right arrow)">Next</button>
+                <button id="live-follow" type="button" title="Follow latest move (End)">Go live</button>
+                <button id="live-flip" type="button">Flip board</button>
+            </div>
+            <p id="live-position" class="live-position" aria-live="polite"></p>
+            <p class="live-keyboard-hint">Use Left / Right to browse moves, Home for the start, and End to go live.</p>
+        </div>
+        <aside class="live-sidebar" aria-label="Game details and moves">
+            <label for="live-selector" class="live-label">Select a game</label>
+            <select id="live-selector" class="filter-select"></select>
+            <div class="live-game-state">
+                <span id="live-status" class="live-status" role="status"></span>
+                <p id="live-detail"></p>
+                <p id="live-updated" class="live-updated"></p>
+                <a id="live-replay" class="view-btn" hidden>View completed replay</a>
+                <p id="live-replay-pending" class="live-updated" hidden>Replay is being saved.</p>
+            </div>
+            <section class="live-ledger" aria-label="Move ledger">
+                <h2>Moves</h2>
+                <div id="live-moves"></div>
+            </section>
+        </aside>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+{% endblock %}
