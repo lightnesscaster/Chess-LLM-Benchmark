@@ -423,6 +423,10 @@
     "completion": 3.75e-06,
     "prompt": 7.5e-07
   },
+  "google/gemini-4-argon": {
+    "completion": 1e-05,
+    "prompt": 2e-06
+  },
   "google/gemma-2-27b-it": {
     "completion": 6.5e-07,
     "prompt": 6.5e-07

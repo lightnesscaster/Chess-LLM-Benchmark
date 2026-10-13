@@ -159,6 +159,55 @@ class Gemini38FlashRegistrationTests(unittest.TestCase):
         self.assertEqual(model_family(GEMINI_38_PLAYER_ID), "gemini-3.8")
 
 
+class Gemini4ArgonRegistrationTests(unittest.TestCase):
+    def test_direct_benchmark_default_and_web_efforts(self) -> None:
+        from web.play_service import _select_model, list_playable_models
+
+        config_path = ROOT / "config/benchmark.yaml"
+        config = yaml.safe_load(config_path.read_text())
+        config["llms"] = [m for m in config["llms"]
+                          if m["model_name"] == "google/gemini-4-argon"]
+        players, reasoning_ids = create_llm_players(
+            config, api_key="registration-test", api_backend="gemini",
+        )
+        self.assertEqual(set(players), {"gemini-4-argon (low)", "gemini-4-argon (medium)"})
+        self.assertEqual(reasoning_ids, set(players))
+        player = players["gemini-4-argon (medium)"]
+        self.assertEqual(player.model_name, "gemini-4-argon")
+        self.assertEqual(player.reasoning_effort, "medium")
+        self.assertEqual(player.timeout, 1200)
+        self.assertEqual(players["gemini-4-argon (low)"].reasoning_effort, "low")
+
+        environ = {"GEMINI_API_KEY": "registration-test"}
+        models = list_playable_models(config_path, environ)
+        argon = next(m for m in models if m["id"] == "gemini-4-argon")
+        self.assertEqual(argon["default_effort"], "medium")
+        self.assertEqual([e["id"] for e in argon["efforts"]], ["low", "medium", "high"])
+        for effort in ("low", "medium", "high"):
+            selected = _select_model("gemini-4-argon", config_path, environ, effort)
+            self.assertEqual(selected["_rated_player_id"], f"gemini-4-argon ({effort})")
+            self.assertEqual(selected["api"], "gemini")
+            self.assertEqual(selected["reasoning_effort"], effort)
+
+    def test_all_efforts_have_pricing_and_release_metadata(self) -> None:
+        calculator = CostCalculator()
+        checker = FreezeChecker.__new__(FreezeChecker)
+        for field in ("_publish_dates", "_player_providers", "_models_by_provider",
+                      "_player_model_ids", "_models_by_model_id"):
+            setattr(checker, field, {})
+        checker._load_publish_dates()
+        for effort in ("low", "medium", "high"):
+            player_id = f"gemini-4-argon ({effort})"
+            with self.subTest(effort=effort):
+                self.assertEqual(calculator.get_model_for_player(player_id), "google/gemini-4-argon")
+                self.assertEqual(checker._publish_dates.get(player_id), 1791849600)
+                self.assertEqual(checker._player_model_ids.get(player_id), "google/gemini-4-argon")
+        self.assertAlmostEqual(calculator.calculate_game_cost(
+            {"prompt_tokens": 1_000_000, "completion_tokens": 1_000_000},
+            "google/gemini-4-argon",
+        ), 12.0)
+
+
 class AstraRegistrationTests(unittest.TestCase):
     def test_astra_variants_construct_with_exact_efforts_and_subscription_costs(self):
         config = yaml.safe_load((ROOT / "config/benchmark.yaml").read_text())

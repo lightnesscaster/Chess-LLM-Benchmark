@@ -1280,6 +1280,7 @@ async def run_manual_game(args):
     # Look up api flag from benchmark.yaml (e.g. "completion" for text-completion models)
     _llm_api_by_model: dict = {}
     _llm_configs_by_player: dict = {}
+    _llm_configs_by_model: dict = {}
     try:
         import yaml as _yaml
         _cfg_path = Path(__file__).parent / "config" / "benchmark.yaml"
@@ -1289,6 +1290,8 @@ async def run_manual_game(args):
             for _entry in _cfg.get("llms", []) or []:
                 _llm_configs_by_player[_entry.get("player_id")] = _entry
                 _mn = _entry.get("model_name")
+                if _mn:
+                    _llm_configs_by_model[_mn] = _entry
                 _api = _entry.get("api")
                 if _mn and _api:
                     _llm_api_by_model[_mn] = _api
@@ -1327,18 +1330,21 @@ async def run_manual_game(args):
             reasoning_max_tokens,
             custom_name,
         )
-        player_config = _llm_configs_by_player.get(player_id, {})
+        player_config = _llm_configs_by_player.get(
+            player_id, _llm_configs_by_model.get(model_name, {}),
+        )
         selected_backend = api_backend
-        if api_backend == "openrouter" and _llm_api_by_model.get(model_name) in {"codex", "completion"}:
+        if api_backend == "openrouter" and _llm_api_by_model.get(model_name) in {"codex", "completion", "gemini"}:
             selected_backend = _llm_api_by_model.get(model_name, api_backend)
         if selected_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
             return GeminiPlayer(
                 player_id=player_id,
                 model_name=gemini_model,
-                api_key=api_key,
+                api_key=api_key if api_backend == "gemini" else os.environ.get("GEMINI_API_KEY"),
                 reasoning=reasoning,
                 reasoning_effort=reasoning_effort,
+                timeout=player_config.get("timeout", 300),
             )
         if selected_backend == "codex":
             return CodexSubagentPlayer(

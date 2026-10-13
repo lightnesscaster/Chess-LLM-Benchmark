@@ -27,7 +27,7 @@ class _FakeClient:
 
 
 class GeminiGenerationConfigTests(unittest.IsolatedAsyncioTestCase):
-    async def _request_for(self, model_name: str) -> dict:
+    async def _request_for(self, model_name: str, effort: str = "medium") -> dict:
         player = GeminiPlayer.__new__(GeminiPlayer)
         BaseLLMPlayer.__init__(
             player,
@@ -36,7 +36,7 @@ class GeminiGenerationConfigTests(unittest.IsolatedAsyncioTestCase):
         )
         player.temperature = 0.0
         player.reasoning = None
-        player.reasoning_effort = "medium"
+        player.reasoning_effort = effort
         player._last_prompt_tokens = 0
         player._last_completion_tokens = 0
         player._genai = SimpleNamespace(
@@ -76,6 +76,17 @@ class GeminiGenerationConfigTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(
                     config.kwargs["thinking_config"].kwargs,
                     {"thinking_level": "medium"},
+                )
+
+    async def test_argon_sends_thinking_levels_without_sampling_parameters(self) -> None:
+        for effort in ("low", "medium", "high"):
+            with self.subTest(effort=effort):
+                request = await self._request_for("gemini-4-argon", effort)
+                self.assertEqual(request["model"], "gemini-4-argon")
+                self.assertEqual(set(request["config"].kwargs), {"thinking_config"})
+                self.assertEqual(
+                    request["config"].kwargs["thinking_config"].kwargs,
+                    {"thinking_level": effort},
                 )
 
 

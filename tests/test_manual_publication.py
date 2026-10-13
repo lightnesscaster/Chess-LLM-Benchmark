@@ -8,7 +8,7 @@ from game import publication
 from tests.test_publication import payload
 
 
-@pytest.mark.parametrize("mixed", [False, True])
+@pytest.mark.parametrize("mixed", [False, True, "gemini"])
 @pytest.mark.parametrize("flags,published,saved,termination", [([], 1, 1, "resignation"), (["--local-only"], 0, 1, "resignation"), (["--no-save"], 0, 0, "resignation"), ([], 0, 0, "api_error"), ([], 0, 0, "error")])
 def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatch, tmp_path, flags, published, saved, termination, mixed):
     captured = []
@@ -19,7 +19,11 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
 
     monkeypatch.setattr(cli, "run_manual_game", capture)
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-only")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-only")
     models = (["--api", "openrouter", "--white-model", "deepseek/deepseek-v4.1-flash", "--white-reasoning-effort", "high", "--black-model", "openai/gpt-5.6-sol", "--black-reasoning-effort", "medium"] if mixed else ["--api", "codex", "--white-model", "white", "--black-model", "black"])
+    if mixed == "gemini":
+        models = ["--white-model", "google/gemini-4-argon", "--white-reasoning-effort", "low",
+                  "--black-model", "openai/gpt-6-astra", "--black-reasoning-effort", "high"]
     monkeypatch.setattr("sys.argv", ["cli.py", "manual", *models, *flags])
     cli.main()
     calls = []
@@ -37,6 +41,9 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
             pass
 
     class OpenRouterFake(Player):
+        pass
+
+    class GeminiFake(Player):
         pass
 
     class Runner:
@@ -59,6 +66,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
 
     monkeypatch.setattr(cli, "CodexSubagentPlayer", Player)
     monkeypatch.setattr(cli, "OpenRouterPlayer", OpenRouterFake)
+    monkeypatch.setattr(cli, "GeminiPlayer", GeminiFake)
     monkeypatch.setattr(cli, "GameRunner", Runner)
     monkeypatch.setattr(cli, "PGNLogger", Logger)
     monkeypatch.setattr(cli, "RatingStore", lambda **kwargs: SimpleNamespace(get=lambda pid: SimpleNamespace(rating=1500, rating_deviation=100, games_played=3, games_rd=100)))
@@ -70,7 +78,14 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     asyncio.run(original(captured[0]))
     assert len(calls) == published
     assert len(writes) == saved
-    if mixed:
+    if mixed == "gemini":
+        assert [kind for kind, _ in constructed] == ["GeminiFake", "Player"]
+        assert constructed[0][1]["model_name"] == "gemini-4-argon"
+        assert constructed[0][1]["api_key"] == "gemini-test-only"
+        assert constructed[0][1]["reasoning_effort"] == "low"
+        assert constructed[0][1]["timeout"] == 1200
+        assert constructed[1][1]["reasoning_effort"] == "high"
+    elif mixed:
         assert [kind for kind, _ in constructed] == ["OpenRouterFake", "Player"]
         assert constructed[0][1]["provider_order"] == ["deepseek", "fireworks", "gmicloud", "siliconflow"]
         assert constructed[0][1]["provider_ignore"] == ["deepinfra"]

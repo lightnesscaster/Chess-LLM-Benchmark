@@ -161,24 +161,24 @@ class GeminiPlayer(BaseLLMPlayer):
         self.last_raw_response = ""
 
         # Build config
-        # Gemini 3.6 and later reject deprecated sampling parameters, so send
-        # only its supported thinking configuration.
-        gemini_3_minor = re.match(
-            r"^gemini-3\.(\d+)(?:-|$)",
+        # Gemini 3.6 and newer models deprecate sampling parameters.
+        gemini_version = re.match(
+            r"^gemini-(\d+)(?:\.(\d+))?(?:-|$)",
             self.model_name,
         )
+        major = int(gemini_version.group(1)) if gemini_version else 0
+        minor = int(gemini_version.group(2) or 0) if gemini_version else 0
         supports_sampling_parameters = not (
-            gemini_3_minor and int(gemini_3_minor.group(1)) >= 6
+            major > 3 or (major == 3 and minor >= 6)
         )
         config_kwargs = {}
         if supports_sampling_parameters:
             config_kwargs["temperature"] = self.temperature
 
         # Configure thinking/reasoning
-        # Gemini 3.x uses thinking_level (string), Gemini 2.5 uses thinking_budget (token count)
+        # Gemini 3 and newer use thinking_level; 2.5 uses thinking_budget.
         if self.reasoning or self.reasoning_effort:
-            is_gemini3 = "gemini-3" in self.model_name
-            if is_gemini3:
+            if major >= 3:
                 thinking_level = {
                     "minimal": "low",
                     "low": "low",
