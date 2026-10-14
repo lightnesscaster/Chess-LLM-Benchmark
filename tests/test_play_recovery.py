@@ -151,3 +151,64 @@ def test_recovery_claim_cannot_target_completed_or_different_games(recovery_stor
     with pytest.raises(RecoveryError):
         store.restore(state, email, key)
     assert not writes
+
+
+def test_recovery_discards_offer_from_overwritten_model_move(recovery_case, tmp_path):
+    from web.play_recovery import prepare_recovery
+    from web.play_service import GameStateError, game_view, human_draw_action
+
+    state, record = recovery_case
+    state.update(draw_offer="black", draw_events=[{"action": "offer", "by": "black", "ply": 4}])
+    original = copy.deepcopy(state)
+    restored = prepare_recovery(state, record, "player@example.com", now=2000)
+
+    assert restored["draw_offer"] is None
+    assert restored["draw_events"] == []
+    assert "[%draw_" not in game_view(restored)["pgn"]
+    config = tmp_path / "models.yaml"
+    config.write_text('llms:\n  - player_id: "test (medium)"\n    model_name: provider/test\n    reasoning_effort: medium\n')
+    with pytest.raises(GameStateError, match="no opponent draw offer"):
+        human_draw_action(restored, "accept_draw", config, {"OPENROUTER_API_KEY": "test"})
+    assert state == original
+
+
+@pytest.mark.parametrize("response", [None, "decline", "accept"])
+def test_recovery_consumes_retained_boundary_offer_once(recovery_case, response):
+    from web.play_recovery import prepare_recovery
+    from web.play_service import game_view
+
+    state, record = recovery_case
+    offer = {"action": "offer", "by": "black", "ply": 2}
+    state.update(draw_offer="black", draw_events=[offer])
+    if response:
+        state["draw_events"].append({"action": response, "by": "white", "ply": 2})
+    state["draw_events"].append({"action": "offer", "by": "black", "ply": 4})
+
+    restored = prepare_recovery(state, record, "player@example.com", now=2000)
+
+    assert restored["draw_offer"] is None
+    assert restored["draw_events"] == [offer, {"action": "decline", "by": "white", "ply": 2}]
+    pgn = game_view(restored)["pgn"]
+    assert pgn.count("[%draw_offer black]") == 1
+    assert pgn.count("[%draw_decline white]") == 1
+    assert "[%draw_accept" not in pgn
+
+
+def test_recovery_preserves_earlier_declined_history_without_reusing_replaced_events(recovery_case):
+    from web.play_recovery import prepare_recovery
+    from web.play_service import game_view
+
+    state, record = recovery_case
+    earlier = [{"action": "offer", "by": "white", "ply": 1}, {"action": "decline", "by": "black", "ply": 1}]
+    replaced = [{"action": "offer", "by": "white", "ply": 3}, {"action": "decline", "by": "black", "ply": 3}, {"action": "offer", "by": "black", "ply": 4}]
+    state.update(draw_offer="black", draw_events=earlier + replaced)
+    restored = prepare_recovery(state, record, "player@example.com", now=2000)
+
+    assert restored["draw_events"] == earlier
+    assert restored["draw_offer"] is None
+    pgn = game_view(restored)["pgn"]
+    assert "[%draw_offer white] [%draw_decline black]" in pgn
+    assert pgn.count("[%draw_offer") == 1
+    assert restored["llm_tokens"] == state["llm_tokens"]
+    assert restored["llm_accounting_status"] == "partial"
+    assert restored["game_id"] == state["game_id"]

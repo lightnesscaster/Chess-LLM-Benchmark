@@ -401,6 +401,13 @@ body {
 .keyboard-move-form input:disabled { cursor: not-allowed; opacity: 0.5; }
 .keyboard-move-form > span { display: block; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.75rem; }
 
+.draw-controls { margin-top: 0.8rem; font-size: 0.85rem; }
+.draw-controls > label { display: flex; align-items: center; gap: 0.5rem; }
+.draw-controls > span { display: block; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.75rem; }
+.draw-responses { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.draw-responses button { padding: 0.45rem 0.7rem; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; cursor: pointer; }
+.draw-controls button:disabled, .draw-controls input:disabled { cursor: not-allowed; opacity: 0.5; }
+
 @keyframes think-pulse { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
 .game-console { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }

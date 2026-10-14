@@ -12,7 +12,7 @@ import aiohttp
 import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
-from .protocol import parse_resignation
+from .protocol import parse_draw_action, parse_resignation, unparsed_response
 from .prompts import build_chess_prompt
 
 
@@ -141,6 +141,9 @@ class OpenRouterPlayer(BaseLLMPlayer):
         """
         if not response_text:
             return None
+        draw_action = parse_draw_action(response_text)
+        if draw_action:
+            return draw_action
 
         # Clean up the response
         text = response_text.strip()
@@ -493,6 +496,8 @@ Your response (just the UCI move or UNCLEAR):"""
             last_move_illegal,
             self.last_successful_response,
             allow_resignation=self.allow_resignation,
+            allow_draw_offers=self.allow_draw_offers,
+            opponent_draw_offer=self.opponent_draw_offer,
             rating_context=self.rating_context,
         )
         self.last_prompt = prompt  # Store for debugging illegal moves
@@ -517,7 +522,8 @@ Your response (just the UCI move or UNCLEAR):"""
         # Only set max_tokens if explicitly specified (non-zero)
         # Reasoning models need unlimited tokens to complete their analysis
         if self.max_tokens > 0:
-            payload["max_tokens"] = self.max_tokens
+            # Leave room for a promotion move and the optional draw-offer suffix.
+            payload["max_tokens"] = max(self.max_tokens, 16) if self.allow_draw_offers else self.max_tokens
 
         # Configure reasoning mode for hybrid models
         # - reasoning_effort set: enable with effort level
@@ -747,7 +753,7 @@ Your response (just the UCI move or UNCLEAR):"""
             elapsed = time.time() - move_start_time
             self.move_times.append(elapsed)
             self.total_move_time += elapsed
-            return response_text.strip()[:20] if response_text else ""
+            return unparsed_response(response_text, 20)
 
         elapsed = time.time() - move_start_time
         self.move_times.append(elapsed)

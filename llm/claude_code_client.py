@@ -15,8 +15,8 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
-from .protocol import parse_resignation
-from .prompts import build_chess_prompt
+from .protocol import parse_draw_action, parse_resignation, unparsed_response
+from .prompts import build_chess_prompt, format_action_constraint
 
 
 SECRET_PATTERN = re.compile(r"sk-ant-[A-Za-z0-9_-]+|Bearer\s+\S+", re.IGNORECASE)
@@ -52,6 +52,8 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         is_retry: bool,
         last_move_illegal: Optional[str],
         allow_resignation: bool = False,
+        allow_draw_offers: bool = False,
+        opponent_draw_offer: bool = False,
     ) -> str:
         prompt = build_chess_prompt(
             board,
@@ -59,6 +61,8 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             illegal_move=last_move_illegal,
             previous_response=self.last_successful_response,
             allow_resignation=allow_resignation,
+            allow_draw_offers=allow_draw_offers,
+            opponent_draw_offer=opponent_draw_offer,
             rating_context=self.rating_context,
         )
         output_constraint = (
@@ -66,6 +70,8 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             if allow_resignation
             else "- Return exactly one line containing a legal UCI move"
         )
+        if allow_draw_offers:
+            output_constraint = format_action_constraint(allow_resignation, opponent_draw_offer)
         return (
             f"{prompt}\n\n"
             "Claude Code chess constraints:\n"
@@ -118,6 +124,8 @@ class ClaudeCodePlayer(BaseLLMPlayer):
             is_retry,
             last_move_illegal,
             allow_resignation=self.allow_resignation,
+            allow_draw_offers=self.allow_draw_offers,
+            opponent_draw_offer=self.opponent_draw_offer,
         )
         self.last_prompt = prompt
         self.last_raw_response = ""
@@ -138,13 +146,16 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         self.last_raw_response = response_text
         self.record_chess_usage(usage, self.CHESS_SYSTEM_PROMPT + "\n\n" + prompt)
 
+        draw_action = parse_draw_action(response_text)
+        if draw_action:
+            return draw_action
         resignation = parse_resignation(response_text)
         if resignation:
             return resignation
         match = re.findall(r"\b([a-h][1-8][a-h][1-8][qrbn]?)\b", response_text.lower())
         if match:
             return match[-1]
-        return response_text.strip()[:80] if response_text else ""
+        return unparsed_response(response_text, 80)
 
     async def _run_cli(self, prompt: str) -> tuple[str, dict]:
         with tempfile.TemporaryDirectory(prefix="claude_chess_workspace_") as workdir:

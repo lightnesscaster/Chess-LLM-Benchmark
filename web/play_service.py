@@ -18,6 +18,7 @@ import chess
 import chess.pgn
 import yaml
 
+from game.draw_offers import annotate_draw_events
 from llm import (
     ClaudeCodePlayer,
     CodexSubagentPlayer,
@@ -28,6 +29,7 @@ from llm import (
 )
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.codex_subagent_client import CodexAuthenticationError
+from llm.protocol import split_draw_offer
 from web.claude_catalog import probe_new_models_in_background
 from web.live_models import apply_live_models, live_config_url
 
@@ -375,6 +377,8 @@ def _new_state(model: dict, human_color: str, human_profile: dict | None = None)
         "status": "active",
         "winner": None,
         "termination": None,
+        "draw_offer": None,
+        "draw_events": [],
         "llm_illegal_moves": 0,
         "llm_tokens": None,
         "llm_accounting_status": "complete",
@@ -441,6 +445,9 @@ def _validate_state(
     config_path: Path,
     environ: Mapping[str, str],
 ) -> tuple[dict, chess.Board]:
+    # Active games written before draw negotiation have no draw fields.
+    state.setdefault("draw_offer", None)
+    state.setdefault("draw_events", [])
     model = _select_model(
         state.get("model_id"),
         config_path,
@@ -470,6 +477,22 @@ def _validate_state(
 
 def _human_chess_color(state: dict) -> chess.Color:
     return chess.WHITE if state["human_color"] == "white" else chess.BLACK
+
+
+def _resolve_draw_offer(state: dict, action: str, by: str) -> None:
+    """Resolve an opponent's pending offer at the position where it was made."""
+    if state.get("draw_offer") is not None:
+        state.setdefault("draw_events", []).append({
+            "action": action, "by": by, "ply": len(state["moves"]),
+        })
+        state["draw_offer"] = None
+
+
+def _offer_draw(state: dict, by: str) -> None:
+    state["draw_offer"] = by
+    state.setdefault("draw_events", []).append({
+        "action": "offer", "by": by, "ply": len(state["moves"]),
+    })
 
 
 def _finish_from_board(state: dict, board: chess.Board) -> bool:
@@ -560,6 +583,8 @@ async def _request_model_move(
             is_retry=is_retry,
             last_move_illegal=last_illegal_move,
             allow_resignation=True,
+            allow_draw_offers=True,
+            opponent_draw_offer=model.get("opponent_draw_offer", False),
             rating_context=model.get("rating_context"),
         )
         attempt = {
@@ -657,7 +682,7 @@ def _apply_llm_turn(
 ) -> None:
     model = dict(model, rating_context=state.get("rating_context") or {
         "self": None, "opponent": None,
-    })
+    }, opponent_draw_offer=state.get("draw_offer") == state["human_color"])
     provider = move_provider
     last_illegal_move = None
 
@@ -690,22 +715,31 @@ def _apply_llm_turn(
             move_uci = attempt
             raw_response = str(attempt or "")
         normalized = str(move_uci or "").strip().lower()
+        llm_color = "white" if board.turn == chess.WHITE else "black"
         if normalized == "resign":
+            _resolve_draw_offer(state, "decline", llm_color)
             state.update(
                 status="finished",
                 winner="human",
                 termination="resignation",
             )
             return
+        if normalized == "accept_draw" and state.get("draw_offer") == state["human_color"]:
+            _resolve_draw_offer(state, "accept", llm_color)
+            state.update(status="finished", winner="draw", termination="draw_agreement")
+            return
+        move_action, offers_draw = split_draw_offer(normalized)
         try:
-            move = chess.Move.from_uci(normalized)
+            move = chess.Move.from_uci(move_action)
         except (ValueError, chess.InvalidMoveError):
             move = None
 
         if move is not None and move in board.legal_moves:
+            _resolve_draw_offer(state, "decline", llm_color)
             board.push(move)
             state["moves"].append(move.uci())
-            _finish_from_board(state, board)
+            if not _finish_from_board(state, board) and offers_draw:
+                _offer_draw(state, llm_color)
             return
 
         state["llm_illegal_moves"] += 1
@@ -766,6 +800,8 @@ def play_human_move(
     config_path: Path,
     environ: Mapping[str, str] = os.environ,
     move_provider: MoveProvider | None = None,
+    *,
+    offer_draw: bool = False,
 ) -> dict:
     """Apply a legal human move and, if needed, the configured LLM reply."""
     working_state = copy.deepcopy(state)
@@ -774,6 +810,8 @@ def play_human_move(
         raise GameStateError("This game is already finished.")
     if board.turn != _human_chess_color(working_state):
         raise GameStateError("It is not your turn.")
+    if not isinstance(offer_draw, bool):
+        raise GameStateError("Choose whether to offer a draw with your move.")
 
     normalized = str(move_uci or "").strip().lower()
     try:
@@ -783,9 +821,12 @@ def play_human_move(
     if move not in board.legal_moves:
         raise GameStateError("Choose a legal move.")
 
+    _resolve_draw_offer(working_state, "decline", working_state["human_color"])
     board.push(move)
     working_state["moves"].append(move.uci())
     if not _finish_from_board(working_state, board):
+        if offer_draw:
+            _offer_draw(working_state, working_state["human_color"])
         _ensure_rating_context(working_state, model)
         try:
             _apply_llm_turn(
@@ -804,6 +845,30 @@ def play_human_move(
                 "llm_accounting_status": "partial",
             }
             raise
+    return working_state
+
+
+def human_draw_action(
+    state: dict,
+    action: str,
+    config_path: Path,
+    environ: Mapping[str, str] = os.environ,
+) -> dict:
+    """Accept or explicitly decline an opponent offer without calling a model."""
+    working_state = copy.deepcopy(state)
+    _, board = _validate_state(working_state, config_path, environ)
+    if working_state["status"] != "active":
+        raise GameStateError("This game is already finished.")
+    if board.turn != _human_chess_color(working_state):
+        raise GameStateError("It is not your turn.")
+    opponent = "black" if working_state["human_color"] == "white" else "white"
+    if action not in ("accept_draw", "decline_draw"):
+        raise GameStateError("Choose a valid draw action.")
+    if working_state.get("draw_offer") != opponent:
+        raise GameStateError("There is no opponent draw offer to respond to.")
+    _resolve_draw_offer(working_state, "accept" if action == "accept_draw" else "decline", working_state["human_color"])
+    if action == "accept_draw":
+        working_state.update(status="finished", winner="draw", termination="draw_agreement")
     return working_state
 
 
@@ -829,6 +894,8 @@ def game_view(state: dict) -> dict:
         san_moves.append(board.san(move))
         board.push(move)
         pgn_node = pgn_node.add_variation(move)
+
+    annotate_draw_events(pgn_game, state.get("draw_events", []))
 
     result = "*"
     if state.get("status") == "finished":
@@ -863,6 +930,7 @@ def game_view(state: dict) -> dict:
         "status": state.get("status"),
         "winner": state.get("winner"),
         "termination": state.get("termination"),
+        "draw_offer": state.get("draw_offer"),
         "last_move": state.get("moves", [])[-1] if state.get("moves") else None,
         "llm_illegal_moves": state.get("llm_illegal_moves", 0),
         "llm_illegal_move_details": copy.deepcopy(

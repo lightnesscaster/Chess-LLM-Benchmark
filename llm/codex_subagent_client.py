@@ -22,8 +22,8 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
-from .protocol import parse_resignation
-from .prompts import build_chess_prompt
+from .protocol import parse_draw_action, parse_resignation, unparsed_response
+from .prompts import build_chess_prompt, format_action_constraint
 
 
 class CodexAuthenticationError(TransientAPIError):
@@ -131,6 +131,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
         is_retry: bool,
         last_move_illegal: Optional[str],
         allow_resignation: bool = False,
+        allow_draw_offers: bool = False,
+        opponent_draw_offer: bool = False,
     ) -> str:
         prompt = build_chess_prompt(
             board,
@@ -138,6 +140,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             illegal_move=last_move_illegal,
             previous_response=self.last_successful_response,
             allow_resignation=allow_resignation,
+            allow_draw_offers=allow_draw_offers,
+            opponent_draw_offer=opponent_draw_offer,
             rating_context=self.rating_context,
         )
 
@@ -150,9 +154,11 @@ class CodexSubagentPlayer(BaseLLMPlayer):
                 else "- Return exactly one line containing a legal UCI move"
             ),
         ]
+        if allow_draw_offers:
+            constraints[-1] = format_action_constraint(allow_resignation, opponent_draw_offer)
         if self.include_legal_moves:
             legal_moves = " ".join(move.uci() for move in board.legal_moves)
-            prefix = "If choosing a move, choose one" if allow_resignation else "Choose one"
+            prefix = "If choosing a move, choose one" if allow_resignation or allow_draw_offers else "Choose one"
             constraints.append(f"- {prefix} from these legal UCI moves: {legal_moves}")
 
         return f"{prompt}\n\n" + "\n".join(constraints)
@@ -221,6 +227,8 @@ class CodexSubagentPlayer(BaseLLMPlayer):
             is_retry,
             last_move_illegal,
             allow_resignation=self.allow_resignation,
+            allow_draw_offers=self.allow_draw_offers,
+            opponent_draw_offer=self.opponent_draw_offer,
         )
         self.last_prompt = prompt
         self.last_raw_response = ""
@@ -257,7 +265,7 @@ class CodexSubagentPlayer(BaseLLMPlayer):
 
         move = self._parse_move(response_text, board)
         if move is None:
-            return response_text.strip()[:80] if response_text else ""
+            return unparsed_response(response_text, 80)
         return move
 
     async def preflight(self, board: chess.Board) -> None:
@@ -471,6 +479,9 @@ class CodexSubagentPlayer(BaseLLMPlayer):
     def _parse_move(self, response_text: str, board: chess.Board) -> Optional[str]:
         if not response_text:
             return None
+        draw_action = parse_draw_action(response_text)
+        if draw_action:
+            return draw_action
 
         text = response_text.strip().replace("0-0-0", "O-O-O").replace("0-0", "O-O")
         if text.upper().startswith("MOVE:"):

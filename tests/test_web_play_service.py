@@ -535,6 +535,8 @@ def test_start_game_with_white_pieces_waits_for_human(config_path):
         "status": "active",
         "winner": None,
         "termination": None,
+        "draw_offer": None,
+        "draw_events": [],
         "llm_illegal_moves": 0,
         "rating_context": {"self": None, "opponent": None},
         "llm_tokens": None,

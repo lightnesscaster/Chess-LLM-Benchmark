@@ -71,6 +71,11 @@ def sanitize_snapshot(data: dict) -> dict:
     if termination is not None and not isinstance(termination, str):
         raise ValueError("Invalid live termination")
     result["termination"] = termination
+    draw_offer = data.get("draw_offer")
+    if (draw_offer not in (None, "white", "black")
+            or draw_offer is not None and draw_offer == result["turn"]):
+        raise ValueError("Invalid live draw offer")
+    result["draw_offer"] = draw_offer if result["status"] in ("active", "interrupted") else None
     return result
 
 
@@ -87,6 +92,7 @@ def build_snapshot(
     termination: str | None = None,
     illegal_moves_white: int = 0,
     illegal_moves_black: int = 0,
+    draw_offer: str | None = None,
 ) -> dict:
     """Replay the actual board history to retain castling and promotion SAN."""
     now = time.time() if now is None else now
@@ -107,6 +113,7 @@ def build_snapshot(
         "result": {"white": "1-0", "black": "0-1", "draw": "1/2-1/2"}.get(winner, "*"),
         "illegal_moves_white": illegal_moves_white,
         "illegal_moves_black": illegal_moves_black,
+        "draw_offer": draw_offer,
     })
 
 

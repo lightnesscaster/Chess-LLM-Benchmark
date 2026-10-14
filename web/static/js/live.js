@@ -61,6 +61,8 @@
                 || !["white", "black"].includes(game.turn)
                 || !["white", "black", "draw", null].includes(game.winner)
                 || !(game.termination === null || isText(game.termination))
+                || !(game.draw_offer === undefined || game.draw_offer === null
+                    || ["white", "black"].includes(game.draw_offer) && game.draw_offer !== game.turn)
                 || !["*", "1-0", "0-1", "1/2-1/2"].includes(game.result)
                 || !isCounter(game.illegal_moves_white) || !isCounter(game.illegal_moves_black)
                 || !isText(game.started_at) || !Number.isFinite(Date.parse(game.started_at))
@@ -110,9 +112,14 @@
         element("status").dataset.status = connected ? game.status : "disconnected";
         let detail;
         if (!connected) detail = "Showing the last received position. Reconnecting automatically.";
-        else if (game.status === "active") detail = `${game.turn === "white" ? game.white : game.black} is thinking.`;
+        else if (game.status === "active") {
+            const offer = game.draw_offer
+                ? `${game.draw_offer === "white" ? game.white : game.black} offered a draw. ` : "";
+            detail = offer + `${game.turn === "white" ? game.white : game.black} is thinking.`;
+        }
         else if (game.status === "interrupted") detail = "Updates stopped. This game may have been interrupted.";
         else if (game.status === "error") detail = `Game stopped${game.termination ? `: ${game.termination}` : "."}`;
+        else if (game.termination === "draw_agreement") detail = `${game.result} · Draw by agreement`;
         else detail = `${game.result}${game.termination ? ` · ${game.termination}` : ""}`;
         const illegalCount = game.illegal_moves_white + game.illegal_moves_black;
         element("detail").textContent = detail + (illegalCount ? ` Illegal moves: White ${game.illegal_moves_white}, Black ${game.illegal_moves_black}.` : "");

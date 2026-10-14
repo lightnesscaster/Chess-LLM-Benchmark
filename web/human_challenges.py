@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import chess
 import chess.pgn
 
+from game.draw_offers import annotate_draw_events
 from game.models import GameResult
 from game.pgn_logger import PGNLogger
 from rating.glicko2 import Glicko2System, PlayerRating
@@ -184,6 +185,7 @@ def _pgn_for_state(state: dict, result: GameResult) -> str:
             raise HumanChallengeError("The finished game moves are invalid.")
         node = node.add_variation(move)
         board.push(move)
+    annotate_draw_events(game, state.get("draw_events", []))
     return str(game)
 
 

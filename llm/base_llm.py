@@ -37,6 +37,8 @@ class BaseLLMPlayer(abc.ABC):
         self.last_successful_response: str = ""
         # Set per request by request_llm_move; position probes leave this disabled.
         self.allow_resignation: bool = False
+        self.allow_draw_offers: bool = False
+        self.opponent_draw_offer: bool = False
         self.rating_context: dict | None = None
 
     def reset_token_usage(self) -> None:
@@ -131,8 +133,8 @@ class BaseLLMPlayer(abc.ABC):
             last_move_illegal: The illegal move that was attempted (if retry)
 
         Returns:
-            A move in UCI format, or ``"resign"`` when the current request
-            explicitly allows resignation.
+            A move in UCI format or a canonical ``resign``, ``accept_draw``,
+            or ``<uci> offer_draw`` action. The game validates capabilities.
         """
         ...
 
@@ -157,11 +159,20 @@ async def request_llm_move(
     last_move_illegal: Optional[str],
     allow_resignation: bool,
     rating_context: dict | None = None,
+    allow_draw_offers: bool = False,
+    opponent_draw_offer: bool = False,
 ) -> Optional[str]:
     """Request a move using the production game prompt context and normalization."""
     previous_capability = player.allow_resignation
     previous_ratings = player.rating_context
+    missing = object()
+    previous_draw_state = {
+        name: getattr(player, name, missing)
+        for name in ("allow_draw_offers", "opponent_draw_offer")
+    }
     player.allow_resignation = bool(allow_resignation)
+    player.allow_draw_offers = bool(allow_draw_offers)
+    player.opponent_draw_offer = bool(allow_draw_offers and opponent_draw_offer)
     player.rating_context = copy.deepcopy(rating_context) if allow_resignation else None
     try:
         move_uci = await player.select_move(
@@ -172,4 +183,9 @@ async def request_llm_move(
     finally:
         player.allow_resignation = previous_capability
         player.rating_context = previous_ratings
+        for name, previous_value in previous_draw_state.items():
+            if previous_value is missing:
+                delattr(player, name)
+            else:
+                setattr(player, name, previous_value)
     return move_uci.strip() if move_uci else None

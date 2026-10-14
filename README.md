@@ -8,7 +8,11 @@ Author can be contacted at dfj2106@columbia.edu
 
 ## How It Works
 
-**Gameplay** LLMs receive the current position (FEN + ASCII board) and must return a single UCI move or exactly `resign`. Resignation is optional, is based only on the model's own assessment, and counts as a normal loss. The first illegal move in a game gets one retry with a warning; the player's second illegal response anywhere in that game is a forfeit, including a failed same-turn retry.
+**Gameplay** LLMs receive the current position (FEN + ASCII board) and return a single UCI move or exactly `resign`. In model-versus-model games and human challenges they may attach `offer_draw` to a legal move, or respond to a pending opponent offer with `accept_draw`. Resignation is optional, is based only on the model's own assessment, and counts as a normal loss. The first illegal move in a game gets one retry with a warning; the player's second illegal response anywhere in that game is a forfeit, including a failed same-turn retry.
+
+Draw offers accompany a move, for example `e2e4 offer_draw`. The opponent can accept with exactly `accept_draw` or decline by playing a legal move. An illegal retry preserves the pending offer; an offer attached to an illegal move is not created. Accepted offers end the game as `draw_agreement`, count as rated draws, and are annotated in the saved PGN. Engine opponents do not negotiate offers. Position-only probes keep their existing move-only protocol.
+
+In **Play an LLM**, select “Offer a draw with my next move” before moving, or use the accept/decline controls when the model offers. Live model matches show pending offers beside the board. These rules apply to newly started CLI games; already-running CLI processes retain their loaded rules.
 
 **Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool. Engines reproduce their lichess bot's classical conditions; see the [eubos anchor calibration](docs/anchor_calibration/2026-09-30-eubos/README.md).
 

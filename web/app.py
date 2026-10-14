@@ -53,6 +53,7 @@ from web.play_service import (
     GameStateError,
     ProviderError,
     game_view,
+    human_draw_action,
     list_playable_models,
     play_human_move,
     start_game,
@@ -681,7 +682,16 @@ def api_admin_play_move():
             return jsonify({"error": "Start a new game first."}), 400
         claim = get_active_play_store().begin(current_user()["email"], payload)
         with get_active_play_store().keep_alive(claim):
-            updated = play_human_move(claim.state, payload.get("move"), CONFIG_PATH, os.environ)
+            action = payload.get("action", "move")
+            if action in ("accept_draw", "decline_draw"):
+                updated = human_draw_action(claim.state, action, CONFIG_PATH, os.environ)
+            elif action == "move":
+                updated = play_human_move(
+                    claim.state, payload.get("move"), CONFIG_PATH, os.environ,
+                    offer_draw=payload.get("offer_draw", False),
+                )
+            else:
+                raise GameStateError("Choose a valid game action.")
     except PlayConflict as error:
         return _play_conflict(error)
     except (PlayConfigurationError, GameStateError, ProviderError) as error:

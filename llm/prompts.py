@@ -7,6 +7,31 @@ import math
 import chess
 
 
+def format_draw_instructions(opponent_draw_offer: bool = False) -> str:
+    """Describe the optional move-attached offer and any pending opponent offer."""
+    instructions = (
+        "- You may offer a draw with your legal move: output exactly <uci> offer_draw "
+        "(for example: e2e4 offer_draw). Use UCI notation for a move with an offer.\n"
+        "- A draw offer requires a legal move; never offer without a move."
+    )
+    if opponent_draw_offer:
+        instructions += (
+            "\n- Your opponent has offered a draw. To accept, output exactly: accept_draw"
+            "\n- Playing a legal move declines their offer; you may attach your own offer."
+        )
+    return instructions
+
+
+def format_action_constraint(allow_resignation: bool, opponent_draw_offer: bool) -> str:
+    """List the enabled one-line responses for CLI backends."""
+    actions = ["<uci>", "<uci> offer_draw"]
+    if allow_resignation:
+        actions.append("resign")
+    if opponent_draw_offer:
+        actions.append("accept_draw")
+    return "- Return exactly one line: " + " or ".join(actions)
+
+
 def format_rating_context(context: dict | None) -> str:
     """Describe game-start ratings without implying cross-pool equivalence."""
     if context is None:
@@ -163,6 +188,8 @@ def build_chess_prompt(
     previous_response: str = None,
     allow_resignation: bool = False,
     rating_context: dict | None = None,
+    allow_draw_offers: bool = False,
+    opponent_draw_offer: bool = False,
 ) -> str:
     """
     Build the prompt to send to the LLM.
@@ -206,6 +233,20 @@ def build_chess_prompt(
             "- Use UCI notation only (examples: e2e4, g1f3, e7e8q for promotion)."
         )
         output_instructions = "- Only the move in UCI, e.g.:\nb1c3"
+
+    if allow_draw_offers:
+        task_instructions = (
+            f"- Choose exactly ONE action for {side}.\n"
+            f"- For a move, play exactly ONE {legal_word} move in UCI notation "
+            "(examples: e2e4, g1f3, e7e8q for promotion)."
+        )
+        if allow_resignation:
+            task_instructions += (
+                "\n- If you independently choose to resign, output exactly: resign\n"
+                + resignation_guidance
+            )
+        task_instructions += "\n" + format_draw_instructions(opponent_draw_offer)
+        output_instructions = format_action_constraint(allow_resignation, opponent_draw_offer)
 
     # Build move history section
     move_history = format_move_history(board)

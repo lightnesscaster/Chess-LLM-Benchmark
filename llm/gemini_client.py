@@ -13,7 +13,7 @@ import chess
 from typing import Optional
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
-from .protocol import parse_resignation
+from .protocol import parse_draw_action, parse_resignation, unparsed_response
 from .prompts import build_chess_prompt
 
 
@@ -79,6 +79,9 @@ class GeminiPlayer(BaseLLMPlayer):
         """
         if not response_text:
             return None
+        draw_action = parse_draw_action(response_text)
+        if draw_action:
+            return draw_action
 
         text = response_text.strip()
         resignation = parse_resignation(text)
@@ -155,6 +158,8 @@ class GeminiPlayer(BaseLLMPlayer):
             last_move_illegal,
             self.last_successful_response,
             allow_resignation=self.allow_resignation,
+            allow_draw_offers=self.allow_draw_offers,
+            opponent_draw_offer=self.opponent_draw_offer,
             rating_context=self.rating_context,
         )
         self.last_prompt = prompt
@@ -245,7 +250,7 @@ class GeminiPlayer(BaseLLMPlayer):
                     elapsed = time.time() - move_start_time
                     self.move_times.append(elapsed)
                     self.total_move_time += elapsed
-                    return response_text.strip()[:20] if response_text else ""
+                    return unparsed_response(response_text, 20)
 
                 elapsed = time.time() - move_start_time
                 self.move_times.append(elapsed)

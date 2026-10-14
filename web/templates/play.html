@@ -110,6 +110,14 @@
                 <span class="console-label">Position</span>
                 <strong id="game-status" role="status" aria-live="polite">Start a game when you’re ready.</strong>
                 <span id="game-detail">Your current Lichess Classical rating and RD set the weight of this game.</span>
+                <div class="draw-controls" role="group" aria-label="Draw agreement">
+                    <label><input id="offer-draw" type="checkbox" aria-describedby="draw-offer-status" disabled> Offer a draw with my next move</label>
+                    <span id="draw-offer-status" role="status" aria-live="polite">A draw offer is sent with your next move.</span>
+                    <div class="draw-responses">
+                        <button id="accept-draw" type="button" hidden disabled>Accept draw</button>
+                        <button id="decline-draw" type="button" hidden disabled>Decline and play on</button>
+                    </div>
+                </div>
                 <button id="restore-game" type="button" hidden>Restore corrected turn</button>
                 <span id="recovery-note" hidden>An approved correction is available. Your game will remain rated.</span>
             </div>

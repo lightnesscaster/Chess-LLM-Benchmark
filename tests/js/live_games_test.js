@@ -172,6 +172,15 @@ function harness() {
     assert.ok(!h.elements.get("live-detail").textContent.includes("thinking"));
     assert.equal(h.elements.get("live-replay").hidden, true);
 
+    // Offers are visible while thinking, and accepted offers have a readable result.
+    h.queue.push(response([snapshot({draw_offer: "black"})])); await h.poll();
+    assert.ok(h.elements.get("live-detail").textContent.includes("Black model offered a draw"));
+    h.queue.push(response([snapshot({status: "finished", winner: "draw", result: "1/2-1/2",
+        termination: "draw_agreement", draw_offer: null})]), response(null, 404)); await h.poll();
+    assert.ok(h.elements.get("live-detail").textContent.includes("Draw by agreement"));
+    h.queue.push(response([snapshot({draw_offer: "invalid"})])); await h.poll();
+    assert.equal(h.elements.get("live-message").dataset.state, "error");
+
     // Error/invalid payloads preserve stale content and never masquerade as an empty list.
     h.queue.push(response(null, 503)); await h.poll();
     assert.equal(h.elements.get("live-message").dataset.state, "error");

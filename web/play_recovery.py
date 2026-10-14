@@ -91,6 +91,22 @@ def prepare_recovery(
         human = {"white": chess.WHITE, "black": chess.BLACK}[state["human_color"]]
         if board.turn != human or original_board.turn != human or board.is_game_over() or len(restored_moves) >= 200:
             raise RecoveryError(message)
+        prefix_ply = len(restored_moves) - 2
+        # Boundary responses belong to the overwritten turn, while an offer
+        # on the retained final move still belongs to the unchanged prefix.
+        events = [
+            event for event in restored.get("draw_events", [])
+            if event["ply"] < prefix_ply
+            or (event["ply"] == prefix_ply and event["action"] == "offer")
+        ]
+        if events and events[-1]["action"] == "offer":
+            events.append({
+                "action": "decline",
+                "by": "white" if prefix_ply % 2 == 0 else "black",
+                "ply": prefix_ply,
+            })
+        restored["draw_events"] = events
+        restored["draw_offer"] = None
     except (KeyError, TypeError, ValueError, GameStateError) as error:
         raise RecoveryError(message) from error
     # Preserve paid usage, but the overwritten response's usage is unrecoverable.

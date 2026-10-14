@@ -26,6 +26,10 @@
     const keyboardMoveForm = document.getElementById("keyboard-move-form");
     const keyboardMoveInput = document.getElementById("keyboard-move");
     const keyboardMoveButton = document.getElementById("play-keyboard-move");
+    const offerDrawInput = document.getElementById("offer-draw");
+    const drawOfferStatus = document.getElementById("draw-offer-status");
+    const acceptDrawButton = document.getElementById("accept-draw");
+    const declineDrawButton = document.getElementById("decline-draw");
     const fenValue = document.getElementById("fen-value");
     const copyFenButton = document.getElementById("copy-fen");
     const copyPgnButton = document.getElementById("copy-pgn");
@@ -96,6 +100,19 @@
         const enabled = keyboardMoveEnabled();
         keyboardMoveInput.disabled = !enabled;
         keyboardMoveButton.disabled = !enabled;
+        if (offerDrawInput) offerDrawInput.disabled = !enabled;
+        const opponentOffer = Boolean(game && game.status === "active"
+            && game.draw_offer && game.draw_offer !== game.human_color);
+        for (const button of [acceptDrawButton, declineDrawButton]) {
+            if (!button) continue;
+            button.hidden = !opponentOffer;
+            button.disabled = !enabled || !opponentOffer;
+        }
+        if (drawOfferStatus) {
+            drawOfferStatus.textContent = opponentOffer
+                ? game.model_id + " offers a draw. Accept, decline, or play a move to continue."
+                : "A draw offer is sent with your next move.";
+        }
     }
 
     function setBusy(value) {
@@ -232,6 +249,8 @@
                 + (count === 1 ? "." : "s.");
         } else if (game.termination === "stalemate") {
             title = "Draw by stalemate.";
+        } else if (game.termination === "draw_agreement") {
+            title = "Draw by agreement.";
         } else if (game.termination === "insufficient_material") {
             title = "Draw by insufficient material.";
         } else if (["threefold_repetition", "fivefold_repetition"].includes(game.termination)) {
@@ -441,6 +460,7 @@
 
     function submitMove(uciMove, optimisticFen, san) {
         const confirmedGame = game;
+        const offersDraw = Boolean(offerDrawInput && offerDrawInput.checked);
         game = {...game, fen: optimisticFen, turn: "llm",
             moves: [...(game.moves || []), uciMove],
             san_moves: [...game.san_moves, san]};
@@ -451,16 +471,19 @@
         postJSON(app.dataset.moveUrl, {
             move: uciMove, game_id: confirmedGame.game_id,
             expected_fen: confirmedGame.fen, expected_ply: (confirmedGame.moves || []).length,
+            ...(offersDraw ? {offer_draw: true} : {}),
         })
             .then((payload) => {
                 pendingFen = null;
                 game = payload.game;
+                if (offerDrawInput) offerDrawInput.checked = false;
                 keyboardMoveInput.value = "";
                 render();
             })
             .catch((error) => {
                 pendingFen = null;
                 game = error.game || confirmedGame;
+                if (error.game && offerDrawInput) offerDrawInput.checked = false;
                 if (error.game) viewedPly = null;
                 render();
                 statusElement.textContent = "Move not completed.";
@@ -468,6 +491,38 @@
             })
             .finally(() => setBusy(false));
     }
+
+    async function submitDrawAction(action) {
+        if (!keyboardMoveEnabled() || !game.draw_offer || game.draw_offer === game.human_color) return;
+        const confirmedGame = game;
+        setBusy(true);
+        thinkingRail.hidden = true;
+        statusElement.textContent = action === "accept_draw" ? "Accepting draw…" : "Declining draw…";
+        detailElement.textContent = "Saving your response.";
+        try {
+            const payload = await postJSON(app.dataset.moveUrl, {
+                action, game_id: confirmedGame.game_id,
+                expected_fen: confirmedGame.fen, expected_ply: (confirmedGame.moves || []).length,
+            });
+            game = payload.game;
+            if (offerDrawInput) offerDrawInput.checked = false;
+            render();
+        } catch (error) {
+            game = error.game || confirmedGame;
+            if (error.game) {
+                viewedPly = null;
+                if (offerDrawInput) offerDrawInput.checked = false;
+            }
+            render();
+            statusElement.textContent = "Draw response not completed.";
+            detailElement.textContent = error.message;
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    if (acceptDrawButton) acceptDrawButton.addEventListener("click", () => submitDrawAction("accept_draw"));
+    if (declineDrawButton) declineDrawButton.addEventListener("click", () => submitDrawAction("decline_draw"));
 
     board = window.Chessboard("play-board", {
         draggable: true,
@@ -539,6 +594,7 @@
                 expected_fen: game.fen, expected_ply: game.moves.length,
             });
             game = payload.game;
+            if (offerDrawInput) offerDrawInput.checked = false;
             viewedPly = null;
             pendingFen = null;
             render();
@@ -595,6 +651,7 @@
                     lichess_username: formData.get("lichess_username"),
                 });
                 game = payload.game;
+                if (offerDrawInput) offerDrawInput.checked = false;
                 viewedPly = null;
                 render();
             } catch (error) {

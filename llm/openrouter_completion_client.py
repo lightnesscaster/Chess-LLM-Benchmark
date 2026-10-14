@@ -18,8 +18,8 @@ import chess
 
 from .base_llm import BaseLLMPlayer
 from .openrouter_client import TransientAPIError
-from .protocol import parse_resignation
-from .prompts import format_rating_context
+from .protocol import parse_draw_action, parse_resignation, unparsed_response
+from .prompts import format_draw_instructions, format_rating_context
 
 
 class OpenRouterCompletionPlayer(BaseLLMPlayer):
@@ -116,6 +116,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         self,
         board: chess.Board,
         allow_resignation: bool = False,
+        allow_draw_offers: bool = False,
+        opponent_draw_offer: bool = False,
     ) -> str:
         """Build a PGN-continuation prompt ending with the move-number prefix."""
         instruction = self.ACTION_INSTRUCTION if allow_resignation else ""
@@ -126,6 +128,10 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             )
             instruction += format_rating_context(self.rating_context)
             headers = '[Event "ChessBench"]\n[White "White"]\n[Black "Black"]\n'
+        if allow_draw_offers:
+            if not allow_resignation:
+                instruction = "Continue the chess game with exactly one SAN move or a draw action below. Output no commentary.\n"
+            instruction += format_draw_instructions(opponent_draw_offer) + "\n\n"
         if board.move_stack:
             replay = chess.Board()
             tokens = []
@@ -167,6 +173,9 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         """Parse the first SAN move from a completion, return UCI or None."""
         if not completion_text:
             return None
+        draw_action = parse_draw_action(completion_text)
+        if draw_action:
+            return draw_action
         resignation = parse_resignation(completion_text)
         if resignation:
             return resignation
@@ -215,6 +224,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
         prompt = self._build_prompt(
             board,
             allow_resignation=self.allow_resignation,
+            allow_draw_offers=self.allow_draw_offers,
+            opponent_draw_offer=self.opponent_draw_offer,
         )
         self.last_prompt = prompt
         self.last_raw_response = ""
@@ -241,7 +252,8 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
             payload = {
                 "model": self.model_name,
                 "prompt": prompt,
-                "max_tokens": self.max_tokens,
+                # Promotion plus offer suffix exceeds the normal SAN response budget.
+                "max_tokens": max(self.max_tokens, 16) if self.allow_draw_offers else self.max_tokens,
                 "temperature": max(temperature, self.temperature),
                 "stop": ["\n"],
                 "logit_bias": bias,
@@ -262,7 +274,7 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
                 completion_text = first.get("text", "") or ""
             last_completion = completion_text
             move_uci = self._parse_san(completion_text, board)
-            if move_uci == "resign":
+            if move_uci == "resign" or parse_draw_action(move_uci):
                 break
             if move_uci is not None:
                 try:
@@ -279,7 +291,7 @@ class OpenRouterCompletionPlayer(BaseLLMPlayer):
 
         if move_uci is None:
             # Return raw completion so the caller can log the illegal/garbled attempt.
-            return last_completion.strip()[:20]
+            return unparsed_response(last_completion, 20)
         return move_uci
 
     async def _post_with_retries(self, session, headers, payload) -> dict:

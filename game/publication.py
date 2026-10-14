@@ -5,6 +5,7 @@ import copy
 import io
 import json
 import os
+import re
 from pathlib import Path
 import shlex
 import subprocess
@@ -25,6 +26,7 @@ COMPLETED_TERMINATIONS = {
     "resignation", "forfeit_illegal_move", "max_moves", "checkmate",
     "stalemate", "insufficient_material", "seventyfive_moves",
     "fivefold_repetition", "fifty_moves", "threefold_repetition",
+    "draw_agreement",
 }
 
 
@@ -76,6 +78,19 @@ def validate_result(result: GameResult, pgn: str) -> None:
             strikes = result.illegal_moves_white if board.turn else result.illegal_moves_black
             if strikes < 2:
                 raise ValueError("Forfeit requires two illegal-move strikes")
+    elif result.termination == "draw_agreement":
+        # Keep this check self-contained: running CLI games ship this worker
+        # source to the server independently of a web-code deployment.
+        comment = game.end().comment
+        offers = re.findall(r"\[%draw_offer (white|black)\]", comment)
+        accepts = re.findall(r"\[%draw_accept (white|black)\]", comment)
+        acceptor = "white" if board.turn == chess.WHITE else "black"
+        offering = "black" if acceptor == "white" else "white"
+        if (result.winner != "draw" or not moves or board.is_game_over()
+                or offers != [offering] or accepts != [acceptor]
+                or "[%draw_decline " in comment
+                or comment.find(f"[%draw_offer {offering}]") > comment.find(f"[%draw_accept {acceptor}]")):
+            raise ValueError("Draw agreement requires a matching opponent offer and acceptance")
     elif result.termination == "max_moves":
         if result.winner != "draw":
             raise ValueError("Move-limit result must be a draw")

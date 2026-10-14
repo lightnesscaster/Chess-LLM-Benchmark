@@ -21,8 +21,10 @@ import chess.pgn
 
 from engines.base_engine import BaseEngine
 from llm import BaseLLMPlayer, TransientAPIError, request_llm_move
+from llm.protocol import split_draw_offer
 from .models import GameResult
 from . import live_games
+from .draw_offers import annotate_draw_events
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +70,8 @@ class GameRunner:
         self.pre_moves = pre_moves
         self.rating_snapshots = copy.deepcopy(rating_snapshots)
         self.publish_live = publish_live
+        self._draw_offer = None
+        self._draw_events = []
 
     def _publish_live(self, game_id: str, board: chess.Board, illegal_count: dict,
                       **state) -> None:
@@ -79,7 +83,8 @@ class GameRunner:
                 game_id, self._get_player_id(self.white), self._get_player_id(self.black),
                 board, started_at=self._live_started_at,
                 illegal_moves_white=illegal_count[chess.WHITE],
-                illegal_moves_black=illegal_count[chess.BLACK], **state,
+                illegal_moves_black=illegal_count[chess.BLACK],
+                draw_offer=self._draw_offer, **state,
             ))
         except Exception:
             logger.warning("Live snapshot could not be queued")
@@ -127,6 +132,8 @@ class GameRunner:
         """
         game_id = str(uuid.uuid4())
         board = chess.Board()
+        self._draw_offer = None
+        self._draw_events = []
 
         # Reset token counters and timing for LLM players
         if isinstance(self.white, BaseLLMPlayer):
@@ -221,9 +228,22 @@ class GameRunner:
             # Valid move received
             move_uci, _ = move_result
             if move_uci == "resign":
+                self._draw_offer = None
                 winner = "black" if side == chess.WHITE else "white"
                 termination = "resignation"
                 break
+            side_name = "white" if side == chess.WHITE else "black"
+            if move_uci == "accept_draw":
+                self._draw_events.append({"action": "accept", "by": side_name, "ply": moves_played})
+                self._draw_offer = None
+                winner, termination = "draw", "draw_agreement"
+                if self.verbose:
+                    print(f"  {side_name.title()} accepted the draw offer")
+                break
+            move_uci, offer_draw = split_draw_offer(move_uci)
+            if self._draw_offer is not None:
+                self._draw_events.append({"action": "decline", "by": side_name, "ply": moves_played})
+                self._draw_offer = None
             total_moves[side] += 1
 
             try:
@@ -231,6 +251,9 @@ class GameRunner:
                 board.push(chess_move)
                 node = node.add_variation(chess_move)
                 moves_played += 1
+                if offer_draw and not board.is_game_over() and moves_played < self.max_moves:
+                    self._draw_offer = side_name
+                    self._draw_events.append({"action": "offer", "by": side_name, "ply": moves_played})
 
                 # Mark response as successful for LLM players (for context in next prompt)
                 if isinstance(player, BaseLLMPlayer):
@@ -244,7 +267,7 @@ class GameRunner:
                         last_completion = getattr(player, '_last_completion_tokens', 0)
                         if last_prompt or last_completion:
                             token_info = f"  (tokens: {last_prompt}p/{last_completion}c)"
-                    print(f"  {moves_played}. {side_name}: {move_uci}{token_info}")
+                    print(f"  {moves_played}. {side_name}: {move_uci}{' (draw offered)' if self._draw_offer else ''}{token_info}")
 
             except Exception as e:
                 # Should not happen if validation is correct, but safety check
@@ -280,6 +303,7 @@ class GameRunner:
         pgn_result_map = {"white": "1-0", "black": "0-1", "draw": "1/2-1/2"}
         pgn_game.headers["Result"] = pgn_result_map.get(winner, "*")
         pgn_game.headers["Termination"] = termination
+        annotate_draw_events(pgn_game, self._draw_events)
         pgn_str = str(pgn_game)
 
         # Collect token usage and timing from LLM players
@@ -383,14 +407,24 @@ class GameRunner:
             if isinstance(move_uci, str) and move_uci.strip().casefold() == "resign":
                 return ("resign", is_retry)
 
+            allow_draw = isinstance(self.white, BaseLLMPlayer) and isinstance(self.black, BaseLLMPlayer)
+            side_name = "white" if side == chess.WHITE else "black"
+            if (allow_draw and move_uci == "accept_draw"
+                    and self._draw_offer is not None and self._draw_offer != side_name):
+                if is_retry:
+                    retry_recoveries[side] += 1
+                return ("accept_draw", is_retry)
+
             # Validate the move
             if move_uci is not None:
-                is_legal, validated_move = self._validate_move(board, move_uci)
+                candidate, offer_draw = split_draw_offer(move_uci)
+                is_legal, validated_move = self._validate_move(board, candidate)
+                is_legal = is_legal and (not offer_draw or allow_draw)
 
                 if is_legal:
                     if is_retry:
                         retry_recoveries[side] += 1
-                    return (validated_move, is_retry)
+                    return (validated_move + (" offer_draw" if offer_draw else ""), is_retry)
 
             # Move was illegal
             illegal_count[side] += 1
@@ -457,6 +491,8 @@ class GameRunner:
                     is_retry=is_retry,
                     last_move_illegal=last_illegal_move,
                     allow_resignation=True,
+                    allow_draw_offers=isinstance(self.white, BaseLLMPlayer) and isinstance(self.black, BaseLLMPlayer),
+                    opponent_draw_offer=(self._draw_offer is not None and self._draw_offer != ("white" if board.turn else "black")),
                     rating_context={
                         "self": self.rating_snapshots.get(player.player_id),
                         "opponent": self.rating_snapshots.get(
