@@ -43,6 +43,9 @@ position_benchmark/results/*.failures.json
 data/*_cache/
 data/acquisition_cohort/
 
+# Private recovery state for local match workers
+data/checkpoints/
+
 # Position benchmark experiment artifacts
 position_benchmark/common_reached_*.json
 position_benchmark/nonopening_*.csv

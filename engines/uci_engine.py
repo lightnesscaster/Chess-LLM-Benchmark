@@ -2,6 +2,9 @@
 Generic UCI engine wrapper for any UCI-compatible chess engine.
 """
 
+import hashlib
+import json
+import math
 import random
 import statistics
 import time
@@ -103,6 +106,91 @@ class UCIEngine(BaseEngine):
         self._white_clock = initial * self.time_scale
         self._black_clock = initial * self.time_scale
 
+    def _clock_config_fingerprint(self) -> str:
+        """Identify the configured engine independently of its runtime clock."""
+        encoded = json.dumps(self._init_kwargs, sort_keys=True, separators=(",", ":"),
+                             allow_nan=False).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def snapshot_clock(self) -> Optional[dict]:
+        """Return a durable clock, choosing/probing a deferred control only once."""
+        if not self._use_clock:
+            return None
+        if self._white_clock is None or self._black_clock is None:
+            self.reset_clock()
+        return {
+            "version": 1,
+            "player_id": self.player_id,
+            "config_fingerprint": self._clock_config_fingerprint(),
+            "white_clock": self._white_clock,
+            "black_clock": self._black_clock,
+            "increment": self.increment,
+            "game_time_control": list(self.game_time_control),
+            "time_scale": self.time_scale,
+            "measured_nps": self.measured_nps,
+            "reference_nps": self.reference_nps,
+        }
+
+    def restore_clock(self, state: dict) -> None:
+        """Validate and restore a clock without probing speed or drawing a control."""
+        fields = {
+            "version", "player_id", "config_fingerprint", "white_clock", "black_clock",
+            "increment", "game_time_control", "time_scale", "measured_nps", "reference_nps",
+        }
+        if not self._use_clock or not isinstance(state, dict) or not fields <= state.keys():
+            raise ValueError("Invalid engine clock checkpoint")
+        if (type(state["version"]) is not int or state["version"] != 1
+                or state["player_id"] != self.player_id
+                or state["config_fingerprint"] != self._clock_config_fingerprint()):
+            raise ValueError("Engine clock checkpoint does not match this configuration")
+
+        def number(value: object, name: str, positive: bool = False) -> float:
+            try:
+                valid = (not isinstance(value, bool) and isinstance(value, (int, float))
+                         and math.isfinite(value) and value >= 0 and (not positive or value > 0))
+            except OverflowError:
+                valid = False
+            if not valid:
+                raise ValueError(f"Invalid engine clock checkpoint {name}")
+            return value
+
+        white = number(state["white_clock"], "white_clock")
+        black = number(state["black_clock"], "black_clock")
+        increment = number(state["increment"], "increment")
+        scale = number(state["time_scale"], "time_scale", positive=True)
+        control = state["game_time_control"]
+        if not isinstance(control, (list, tuple)) or len(control) != 2:
+            raise ValueError("Invalid engine clock checkpoint time control")
+        initial = number(control[0], "nominal initial time")
+        nominal_increment = number(control[1], "nominal increment")
+        controls = ([tuple(tc[:2]) for tc in self.time_controls] if self.time_controls
+                    else [(self.initial_time, self._nominal_increment)])
+        if ((initial, nominal_increment) not in controls
+                or not math.isclose(increment, nominal_increment * scale, rel_tol=1e-12)):
+            raise ValueError("Engine clock checkpoint time control is inconsistent")
+        reference = state["reference_nps"]
+        measured = state["measured_nps"]
+        if reference != self.reference_nps:
+            raise ValueError("Engine clock checkpoint reference speed does not match")
+        if reference is not None:
+            number(reference, "reference_nps", positive=True)
+            number(measured, "measured_nps", positive=True)
+            expected_scale = reference / measured
+        else:
+            if measured is not None:
+                raise ValueError("Unexpected measured speed in engine clock checkpoint")
+            expected_scale = self._init_kwargs["time_scale"]
+        if not math.isclose(scale, expected_scale, rel_tol=1e-12):
+            raise ValueError("Engine clock checkpoint speed scale is inconsistent")
+
+        # Do not mutate anything until all validation has succeeded.
+        self._white_clock = white
+        self._black_clock = black
+        self.increment = increment
+        self.game_time_control = (initial, nominal_increment)
+        self.time_scale = scale
+        self.measured_nps = measured
+
     def _measure_nps(self) -> None:
         """Probe local search speed and derive time_scale from reference_nps."""
         engine = self._ensure_engine()
@@ -201,8 +289,16 @@ class UCIEngine(BaseEngine):
 
     def close(self) -> None:
         """Close the engine process."""
-        if self._engine is not None:
+        engine = self._engine
+        if engine is not None:
             try:
-                self._engine.quit()
+                engine.quit()
             finally:
-                self._engine = None
+                # A timed-out quit can leave an active search and its transport
+                # alive. Retain the handle until forced shutdown is scheduled.
+                try:
+                    close = getattr(engine, "close", None)
+                    if callable(close):
+                        close()
+                finally:
+                    self._engine = None

@@ -1130,6 +1130,7 @@ class MatchScheduler:
                 black=black,
                 max_moves=self.max_moves,
                 verbose=self.verbose,
+                checkpoint_dir=Path("data/checkpoints"),
                 publish_live=True,
                 rating_snapshots={
                     player.player_id: rating_snapshot(self.rating_store, player.player_id)

@@ -115,6 +115,28 @@ python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --
 
 > Note: `eubos` is a hardcoded preset. For custom UCI engines in benchmarks, use `type: uci` in config.
 
+Saved manual and scheduled games write private, atomic checkpoints to
+`data/checkpoints/<game-id>.json`. These preserve the moves, engine clocks,
+selected time control and increment, speed scaling, retry counters, draw offers,
+reported usage, and rating context. Resume an interrupted game with its original
+matchup and settings plus the checkpoint path:
+
+```bash
+python cli.py manual --white-model meta-llama/llama-4-maverick --black-engine --engine-type eubos --resume-checkpoint data/checkpoints/<game-id>.json
+```
+
+Resume requires `--games 1` (the default) and cannot be combined with `--moves`
+or `--no-save`. It keeps the game ID and uses the normal save/publication flow;
+a completed checkpoint can be retried without replaying the game. `--local-only`
+saved experiments also get checkpoints. `--no-save` runs do not create them.
+
+Clocked engine searches checkpoint elapsed thinking every second. Resuming uses
+the last durable remaining time without charging offline downtime or granting a
+new increment. An in-flight model request may have unreported usage, which is
+marked as partial on resume. Existing processes started before checkpoint support
+cannot recover missing clocks. `--moves` remains available for LLM-only history
+continuations, but cannot restore a clocked engine game.
+
 ### Run Full Benchmark
 
 ```bash

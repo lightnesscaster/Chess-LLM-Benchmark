@@ -1201,6 +1201,44 @@ async def run_manual_game(args):
         print("Error: --games must be at least 1")
         return 1
 
+    resume_checkpoint = getattr(args, "resume_checkpoint", None)
+    if resume_checkpoint is not None:
+        if args.games != 1:
+            print("Error: --resume-checkpoint requires --games 1")
+            return 1
+        if args.moves:
+            print("Error: --resume-checkpoint cannot be combined with --moves")
+            return 1
+        if not args.save:
+            print("Error: --resume-checkpoint cannot be combined with --no-save")
+            return 1
+        try:
+            with Path(resume_checkpoint).open() as checkpoint_file:
+                checkpoint = json.load(checkpoint_file)
+            if not isinstance(checkpoint, dict):
+                raise ValueError("expected a JSON object")
+        except (OSError, UnicodeError, ValueError) as error:
+            print(f"Error: cannot read resume checkpoint: {error}")
+            return 1
+
+    # Move history alone cannot reconstruct a clocked engine's remaining time.
+    # Check presets before creating any client or contacting production.
+    if args.moves:
+        engine_types = {
+            getattr(args, f"{side}_engine_type", None) or args.engine_type
+            for side in ("white", "black")
+            if getattr(args, f"{side}_engine")
+        }
+        if "eubos" in engine_types:
+            engine_config = next(
+                engine for engine in load_config(
+                    str(Path(__file__).parent / "config/benchmark.yaml")
+                )["engines"] if engine["player_id"] == "eubos"
+            )
+            if engine_config.get("initial_time") is not None or engine_config.get("time_controls"):
+                print("Error: clocked-engine continuation requires --resume-checkpoint; --moves loses the clock")
+                return 1
+
     # Get API key based on backend
     api_backend = getattr(args, "api", "openrouter")
     if api_backend == "gemini":
@@ -1537,6 +1575,8 @@ async def run_manual_game(args):
                 max_moves=args.max_moves,
                 verbose=True,
                 pre_moves=pre_moves if game_num == 0 else None,
+                checkpoint_dir=Path("data/checkpoints") if args.save else None,
+                resume_checkpoint=resume_checkpoint,
                 publish_live=bool(args.save and not getattr(args, "local_only", False)),
                 rating_snapshots={
                     player.player_id: rating_snapshot(manual_rating_store, player.player_id)
@@ -1910,7 +1950,13 @@ def main():
         "--moves",
         type=str,
         default=None,
-        help="UCI moves to pre-play before starting (space-separated, for resuming crashed games)",
+        help="UCI moves to pre-play before starting (space-separated; cannot restore engine clocks)",
+    )
+
+    manual_parser.add_argument(
+        "--resume-checkpoint",
+        type=Path,
+        help="Resume one saved game from its private checkpoint using the original matchup flags",
     )
 
     args = parser.parse_args()

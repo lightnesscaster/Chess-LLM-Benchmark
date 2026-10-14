@@ -13,6 +13,11 @@ import asyncio
 import time
 import logging
 import copy
+import json
+import math
+import io
+from pathlib import Path
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from typing import Union, Tuple, Optional
 
@@ -25,6 +30,7 @@ from llm.protocol import split_draw_offer
 from .models import GameResult
 from . import live_games
 from .draw_offers import annotate_draw_events
+from .checkpoints import CheckpointStore, CheckpointError
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +57,8 @@ class GameRunner:
         pre_moves: list = None,
         rating_snapshots: dict | None = None,
         publish_live: bool = False,
+        checkpoint_dir: str | Path | None = None,
+        resume_checkpoint: str | Path | None = None,
     ):
         """
         Initialize the game runner.
@@ -62,6 +70,8 @@ class GameRunner:
             verbose: Print moves as they happen
             pre_moves: List of UCI move strings to pre-play before starting
             publish_live: Publish public snapshots for a saved rated run
+            checkpoint_dir: Private directory for durable saved-game recovery
+            resume_checkpoint: Restore a saved game instead of starting a new one
         """
         self.white = white
         self.black = black
@@ -72,6 +82,15 @@ class GameRunner:
         self.publish_live = publish_live
         self._draw_offer = None
         self._draw_events = []
+        self.checkpoint_dir = Path(checkpoint_dir) if checkpoint_dir is not None else None
+        self.resume_checkpoint = Path(resume_checkpoint) if resume_checkpoint is not None else None
+        if self.resume_checkpoint is not None and pre_moves:
+            raise ValueError("A checkpoint cannot be combined with pre-moves")
+        self._checkpoint_store = None
+        self._pending_request = None
+        self._pending_illegal_move = None
+        self._partial_accounting = set()
+        self._checkpoint_interval = 1.0
 
     def _publish_live(self, game_id: str, board: chess.Board, illegal_count: dict,
                       **state) -> None:
@@ -109,7 +128,13 @@ class GameRunner:
             except Exception:
                 logger.warning("Live publication could not start")
         try:
-            return await self._play_game()
+            self._game_id = str(uuid.uuid4())
+            path = self.resume_checkpoint
+            if path is None and self.checkpoint_dir is not None:
+                path = self.checkpoint_dir / f"{self._game_id}.json"
+            with CheckpointStore(path) if path is not None else nullcontext(None) as store:
+                self._checkpoint_store = store
+                return await self._play_game()
         except asyncio.CancelledError:
             self._finish_live("interrupted", "cancelled")
             raise
@@ -117,6 +142,7 @@ class GameRunner:
             self._finish_live("error", "error")
             raise
         finally:
+            self._checkpoint_store = None
             if self._live_publisher is not None:
                 try:
                     await self._live_publisher.close()
@@ -130,10 +156,13 @@ class GameRunner:
         Returns:
             Tuple of (GameResult, PGN string)
         """
-        game_id = str(uuid.uuid4())
+        game_id = self._game_id
         board = chess.Board()
         self._draw_offer = None
         self._draw_events = []
+        self._pending_request = None
+        self._pending_illegal_move = None
+        self._partial_accounting = set()
 
         # Reset token counters and timing for LLM players
         if isinstance(self.white, BaseLLMPlayer):
@@ -166,6 +195,23 @@ class GameRunner:
         termination = "normal"
         moves_played = 0
 
+        self._counter_state = {
+            "illegal_count": illegal_count, "retry_attempts": retry_attempts,
+            "retry_recoveries": retry_recoveries, "retry_failures": retry_failures,
+            "total_moves": total_moves,
+        }
+        self._game_board = board
+        self._pgn_game = pgn_game
+        self._illegal_move_details = illegal_move_details
+        if self.resume_checkpoint is not None:
+            state = self._checkpoint_store.read()
+            self._restore_checkpoint(state, board, pgn_game)
+            game_id = self._game_id
+            moves_played = len(board.move_stack)
+            node = pgn_game.end()
+            if state.get("completed") is not None:
+                return GameResult.from_json(state["completed"]["result"]), state["completed"]["pgn"]
+
         # Pre-play moves if resuming a game
         if self.pre_moves:
             for uci_str in self.pre_moves:
@@ -180,6 +226,9 @@ class GameRunner:
                 print(f"  Position: {board.fen()}")
                 print()
 
+        self._save_checkpoint()
+        if self.verbose and self._checkpoint_store is not None:
+            print(f"  Checkpoint: {self._checkpoint_store.path.resolve()}")
         self._publish_live(game_id, board, illegal_count)
 
         while not board.is_game_over() and moves_played < self.max_moves:
@@ -280,6 +329,9 @@ class GameRunner:
                 break
 
             self._publish_live(game_id, board, illegal_count)
+            self._pending_request = None
+            self._pending_illegal_move = None
+            self._save_checkpoint()
 
         # Determine final result if game ended naturally
         if board.is_game_over() and termination == "normal":
@@ -319,6 +371,10 @@ class GameRunner:
             timing_black = self.black.get_timing_usage()
 
         # Build result object
+        # Keep the initial and resumed result identical while keeping request text
+        # out of the durable checkpoint. No-save runs retain their debug details.
+        if self._checkpoint_store is not None:
+            illegal_move_details[:] = self._checkpoint_details(illegal_move_details)
         game_result = GameResult(
             game_id=game_id,
             white_id=self._get_player_id(self.white),
@@ -353,7 +409,17 @@ class GameRunner:
             timing_white=timing_white,
             timing_black=timing_black,
             illegal_move_details=illegal_move_details if illegal_move_details else None,
+            accounting_status_white="partial" if "white" in self._partial_accounting else None,
+            accounting_status_black="partial" if "black" in self._partial_accounting else None,
         )
+
+        # API failures remain resumable; they are not completed rated games.
+        if termination not in ("api_error", "error"):
+            self._pending_request = None
+            self._pending_illegal_move = None
+            self._save_checkpoint(completed={"result": game_result.to_json(), "pgn": pgn_str})
+        else:
+            self._save_checkpoint()
 
         self._publish_live(
             game_id, board, illegal_count,
@@ -361,6 +427,189 @@ class GameRunner:
             winner=winner, termination=termination,
         )
         return game_result, pgn_str
+
+    @staticmethod
+    def _checkpoint_details(details: list) -> list:
+        return [{key: value for key, value in detail.items()
+                 if key not in ("prompt", "raw_response")} for detail in details]
+
+    @staticmethod
+    def _player_identity(player: Player) -> dict:
+        """Whitelist reproducible settings, never credentials or request contents."""
+        fields = (
+            "model_name", "temperature", "max_tokens", "reasoning", "reasoning_effort",
+            "reasoning_max_tokens", "provider_order", "provider_ignore", "include_legal_moves",
+            "subscription_only", "extra_args", "engine_path", "options", "rating",
+            "move_time", "nodes", "depth", "weights_path", "skill_level",
+            "lc0_path", "stockfish_path", "opening_book_path", "base_depth",
+            "blunder_threshold_cp", "book_draw_threshold",
+        )
+        identity = {"class": f"{type(player).__module__}.{type(player).__qualname__}",
+                    "player_id": player.player_id}
+        for field in fields:
+            if hasattr(player, field):
+                identity[field] = getattr(player, field)
+        return json.loads(json.dumps(identity, default=str, allow_nan=False))
+
+    def _save_checkpoint(self, *, clock_overrides: dict | None = None,
+                         completed: dict | None = None) -> None:
+        if self._checkpoint_store is None:
+            return
+        players = {}
+        for side, player in (("white", self.white), ("black", self.black)):
+            clock = None
+            if clock_overrides is not None and side in clock_overrides:
+                clock = clock_overrides[side]
+            elif hasattr(player, "snapshot_clock"):
+                clock = player.snapshot_clock()
+            players[side] = {"identity": self._player_identity(player), "clock": clock}
+            if isinstance(player, BaseLLMPlayer):
+                players[side]["tokens"] = player.get_token_usage()
+                players[side]["timing"] = player.get_timing_usage()
+        state = {
+            "version": 1, "game_id": self._game_id,
+            "started_at": self._live_started_at, "max_moves": self.max_moves,
+            "moves": [move.uci() for move in self._game_board.move_stack],
+            "fen": self._game_board.fen(), "headers": dict(self._pgn_game.headers),
+            "players": players, "rating_snapshots": self.rating_snapshots,
+            "counters": {key: {"white": value[chess.WHITE], "black": value[chess.BLACK]}
+                         for key, value in self._counter_state.items()},
+            "draw_offer": self._draw_offer, "draw_events": self._draw_events,
+            "pending_request": self._pending_request,
+            "pending_illegal_move": self._pending_illegal_move,
+            "partial_accounting": sorted(self._partial_accounting),
+            "illegal_move_details": self._checkpoint_details(self._illegal_move_details),
+            "completed": completed,
+        }
+        self._checkpoint_store.write(state)
+
+    def _restore_checkpoint(self, state: dict, board: chess.Board,
+                            pgn_game: chess.pgn.Game) -> None:
+        """Validate the entire position and matchup before restoring mutable state."""
+        try:
+            if type(state["version"]) is not int or state["version"] != 1:
+                raise ValueError("Unsupported checkpoint version")
+            uuid.UUID(state["game_id"])
+            if type(state["max_moves"]) is not int or state["max_moves"] <= 0:
+                raise ValueError("Invalid checkpoint move limit")
+            if not isinstance(state["moves"], list):
+                raise ValueError("Invalid checkpoint moves")
+            replay = chess.Board()
+            for uci in state["moves"]:
+                move = chess.Move.from_uci(uci)
+                if move not in replay.legal_moves:
+                    raise ValueError("Illegal checkpoint history")
+                replay.push(move)
+            if replay.fen() != state["fen"] or len(replay.move_stack) > state["max_moves"]:
+                raise ValueError("Checkpoint position does not match its history")
+            for side, player in (("white", self.white), ("black", self.black)):
+                saved = state["players"][side]
+                if saved["identity"] != self._player_identity(player):
+                    raise ValueError(f"Checkpoint {side} player configuration does not match")
+                if bool(saved["clock"] is not None) != bool(getattr(player, "_use_clock", False)):
+                    raise ValueError("Checkpoint is missing the engine clock")
+                if isinstance(player, BaseLLMPlayer):
+                    tokens, timing = saved["tokens"], saved["timing"]
+                    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                        if type(tokens[key]) is not int or tokens[key] < 0:
+                            raise ValueError("Invalid checkpoint token accounting")
+                    values = [timing["total_time"], *timing["move_times"]]
+                    if any(isinstance(value, bool) or not isinstance(value, (int, float))
+                           or not math.isfinite(value) or value < 0 for value in values):
+                        raise ValueError("Invalid checkpoint timing")
+            for key in self._counter_state:
+                for side in ("white", "black"):
+                    value = state["counters"][key][side]
+                    if type(value) is not int or value < 0:
+                        raise ValueError("Invalid checkpoint counters")
+            events = copy.deepcopy(state["draw_events"])
+            proof = chess.pgn.Game.from_board(replay)
+            annotate_draw_events(proof, events)
+            pending_offer = None
+            for event in events:
+                pending_offer = event["by"] if event["action"] == "offer" else None
+            if state["draw_offer"] != pending_offer:
+                # A terminal resignation can clear a pending offer without a decline.
+                terminal = state.get("completed")
+                if not (terminal and terminal["result"]["termination"] == "resignation"
+                        and state["draw_offer"] is None):
+                    raise ValueError("Checkpoint draw context is inconsistent")
+            pending = state["pending_request"]
+            if pending is not None and (
+                pending["side"] != ("white" if replay.turn else "black")
+                or type(pending["is_retry"]) is not bool
+                or pending["last_illegal_move"] != state["pending_illegal_move"]
+            ):
+                raise ValueError("Invalid checkpoint pending request")
+            if not set(state["partial_accounting"]) <= {"white", "black"}:
+                raise ValueError("Invalid checkpoint accounting status")
+            completed = state.get("completed")
+            if completed is not None:
+                result = GameResult.from_json(completed["result"])
+                parsed = chess.pgn.read_game(io.StringIO(completed["pgn"]))
+                if (result.game_id != state["game_id"] or result.moves != len(replay.move_stack)
+                        or result.white_id != self.white.player_id or result.black_id != self.black.player_id
+                        or parsed is None or parsed.errors or parsed.end().board().fen() != replay.fen()):
+                    raise ValueError("Invalid completed checkpoint")
+        except (KeyError, TypeError, AttributeError, OverflowError) as exc:
+            raise ValueError("Malformed game checkpoint") from exc
+
+        for side, player in (("white", self.white), ("black", self.black)):
+            saved = state["players"][side]
+            if saved["clock"] is not None:
+                player.restore_clock(saved["clock"])
+            if isinstance(player, BaseLLMPlayer):
+                for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                    setattr(player, key, saved["tokens"][key])
+                player._input_accounting_requests = copy.deepcopy(saved["tokens"].get("input_accounting_requests", []))
+                player.move_times = list(saved["timing"]["move_times"])
+                player.total_move_time = saved["timing"]["total_time"]
+        for move in replay.move_stack:
+            board.push(move)
+        pgn_game.headers.clear()
+        pgn_game.headers.update(state["headers"])
+        node = pgn_game
+        for move in replay.move_stack:
+            node = node.add_variation(move)
+        for key, values in self._counter_state.items():
+            values.update({chess.WHITE: state["counters"][key]["white"],
+                           chess.BLACK: state["counters"][key]["black"]})
+        self._game_id = state["game_id"]
+        self.max_moves = state["max_moves"]
+        self._live_started_at = state["started_at"]
+        self.rating_snapshots = copy.deepcopy(state["rating_snapshots"])
+        self._draw_offer = state["draw_offer"]
+        self._draw_events = events
+        self._pending_request = pending
+        self._pending_illegal_move = state["pending_illegal_move"]
+        self._partial_accounting = set(state["partial_accounting"])
+        if pending is not None and isinstance(self.white if board.turn else self.black, BaseLLMPlayer):
+            self._partial_accounting.add(pending["side"])
+        self._illegal_move_details.extend(state["illegal_move_details"])
+
+    async def _clocked_engine_move(self, player: BaseEngine, board: chess.Board) -> chess.Move:
+        """Checkpoint the pre-move clock minus elapsed thinking, with no increment."""
+        side = "white" if board.turn else "black"
+        snapshot = player.snapshot_clock()
+        started = time.perf_counter()
+        search = asyncio.create_task(asyncio.to_thread(player.select_move, board.copy()))
+        try:
+            while True:
+                done, _ = await asyncio.wait({search}, timeout=self._checkpoint_interval)
+                if done:
+                    return search.result()
+                clock = copy.deepcopy(snapshot)
+                clock[f"{side}_clock"] = max(0.0, snapshot[f"{side}_clock"] - (time.perf_counter() - started))
+                self._save_checkpoint(clock_overrides={side: clock})
+        except BaseException:
+            # Threaded UCI searches cannot be cancelled by cancelling their awaiter.
+            # Stop the process before releasing the checkpoint lease.
+            try:
+                await asyncio.to_thread(player.close)
+            except Exception:
+                logger.warning("Interrupted engine could not close cleanly")
+            await asyncio.gather(search, return_exceptions=True)
+            raise
 
     async def _get_move_with_retry(
         self,
@@ -392,12 +641,20 @@ class GameRunner:
             TransientAPIError: If the API call fails due to network issues
         """
         max_attempts = 2
-        last_illegal_move = None
+        last_illegal_move = self._pending_illegal_move
+        if illegal_count[side] >= 2:
+            return None
 
         for attempt in range(max_attempts):
-            is_retry = attempt > 0
-            if is_retry:
+            is_retry = attempt > 0 or last_illegal_move is not None
+            if is_retry and self._pending_request is None:
                 retry_attempts[side] += 1
+
+            self._pending_request = {
+                "side": "white" if side else "black", "is_retry": is_retry,
+                "last_illegal_move": last_illegal_move,
+            }
+            self._save_checkpoint()
 
             # Get move from player (may raise TransientAPIError)
             move_uci = await self._ask_player_for_move(
@@ -431,6 +688,8 @@ class GameRunner:
             if is_retry:
                 retry_failures[side] += 1
             last_illegal_move = move_uci or "invalid"
+            self._pending_illegal_move = last_illegal_move
+            self._pending_request = None
 
             if self.verbose:
                 side_name = "White" if side == chess.WHITE else "Black"
@@ -446,6 +705,8 @@ class GameRunner:
                     "raw_response": player.last_raw_response,
                     "parsed_move": last_illegal_move,
                 })
+
+            self._save_checkpoint()
 
             # Check if this is the second illegal move
             if illegal_count[side] >= 2:
@@ -481,7 +742,10 @@ class GameRunner:
         try:
             if isinstance(player, BaseEngine):
                 # Engines return chess.Move directly
-                move = player.select_move(board)
+                if self._checkpoint_store is not None and getattr(player, "_use_clock", False):
+                    move = await self._clocked_engine_move(player, board)
+                else:
+                    move = player.select_move(board)
                 return move.uci()
             else:
                 # LLMs return UCI string
@@ -504,6 +768,9 @@ class GameRunner:
 
         except TransientAPIError:
             # Let transient API errors propagate - these aren't illegal moves
+            raise
+
+        except CheckpointError:
             raise
 
         except Exception as e:
