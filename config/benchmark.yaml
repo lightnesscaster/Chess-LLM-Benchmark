@@ -768,6 +768,12 @@ llms:
     web_reasoning_efforts: [low, medium, high]
     web_default_reasoning_effort: medium
 
+  - player_id: "gemini-4-argon (high)"
+    model_name: "google/gemini-4-argon"
+    api: gemini
+    reasoning_effort: high
+    timeout: 1200
+
   # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
   # - player_id: "grok-4-fast"
   #   model_name: "x-ai/grok-4-fast"

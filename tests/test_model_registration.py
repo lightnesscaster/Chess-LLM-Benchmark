@@ -170,13 +170,17 @@ class Gemini4ArgonRegistrationTests(unittest.TestCase):
         players, reasoning_ids = create_llm_players(
             config, api_key="registration-test", api_backend="gemini",
         )
-        self.assertEqual(set(players), {"gemini-4-argon (low)", "gemini-4-argon (medium)"})
+        self.assertEqual(set(players), {
+            "gemini-4-argon (low)", "gemini-4-argon (medium)", "gemini-4-argon (high)",
+        })
         self.assertEqual(reasoning_ids, set(players))
         player = players["gemini-4-argon (medium)"]
         self.assertEqual(player.model_name, "gemini-4-argon")
         self.assertEqual(player.reasoning_effort, "medium")
         self.assertEqual(player.timeout, 1200)
         self.assertEqual(players["gemini-4-argon (low)"].reasoning_effort, "low")
+        self.assertEqual(players["gemini-4-argon (high)"].reasoning_effort, "high")
+        self.assertEqual(players["gemini-4-argon (high)"].timeout, 1200)
 
         environ = {"GEMINI_API_KEY": "registration-test"}
         models = list_playable_models(config_path, environ)
