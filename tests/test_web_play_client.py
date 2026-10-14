@@ -2,6 +2,14 @@ import subprocess
 import pytest
 
 
+@pytest.mark.parametrize("outcome", ["success", "failure"])
+def test_approved_recovery_restores_board_without_requesting_model(outcome):
+    result = subprocess.run(
+        ["node", "tests/js/play_recovery_test.js", outcome], capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_game_navigation_keeps_page_scroll_position():
     result = subprocess.run(
         ["node", "tests/js/game_navigation_scroll_test.js"],

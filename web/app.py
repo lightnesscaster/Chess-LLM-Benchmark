@@ -46,6 +46,7 @@ from web.approved_players import is_approved_player, player_api_required, player
 from web.human_challenges import HumanChallengeError, record_human_challenge
 from web.lichess import LichessLookupError, fetch_classical_snapshot
 from web.memory_diagnostics import install_memory_diagnostics
+from web.play_recovery import RecoveryError, get_play_recovery_store
 from web.play_service import (
     ConfigurationError as PlayConfigurationError,
     GameStateError,
@@ -60,13 +61,10 @@ class PublicDataSessionInterface(SecureCookieSessionInterface):
     """Keep background public reads from reissuing a stale game cookie."""
 
     def should_set_cookie(self, app: Flask, session: SecureCookieSession) -> bool:
-        if (
-            request.method in {"GET", "HEAD"}
-            and request.endpoint in {
-                "api_live_games", "api_game", "api_games", "api_leaderboard", "static",
-            }
-            and not session.modified
-        ):
+        public_read = request.method in {"GET", "HEAD"} and request.endpoint in {
+            "api_live_games", "api_game", "api_games", "api_leaderboard", "static",
+        }
+        if not session.modified and (public_read or request.endpoint == "api_play_recover"):
             return False
         return super().should_set_cookie(app, session)
 
@@ -519,6 +517,12 @@ def admin_play():
     if session.get("admin_play_game"):
         try:
             current_game = game_view(session["admin_play_game"])
+            try:
+                current_game["recovery"] = get_play_recovery_store().lookup(
+                    session["admin_play_game"], user["email"],
+                )
+            except Exception:
+                app.logger.warning("Play recovery lookup unavailable")
         except GameStateError:
             session.pop("admin_play_game", None)
     return render_template(
@@ -586,6 +590,32 @@ def api_admin_play_start():
 
     session["admin_play_game"] = state
     return jsonify({"game": game_view(state)})
+
+
+@app.route("/api/play/recover", methods=["POST"])
+@player_api_required
+def api_play_recover():
+    """Restore an operator-approved turn in the original signed rated game."""
+    validate_csrf()
+    state = session.get("admin_play_game")
+    payload = request.get_json(silent=True)
+    if (
+        not isinstance(state, dict) or not isinstance(payload, dict)
+        or not payload.get("game_id") or payload.get("game_id") != state.get("game_id")
+        or not isinstance(payload.get("recovery_id"), str)
+    ):
+        return jsonify({"error": "This recovery does not match the current game."}), 409
+    try:
+        restored = get_play_recovery_store().restore(
+            state, current_user()["email"], payload["recovery_id"],
+        )
+    except RecoveryError as error:
+        return jsonify({"error": str(error)}), 409
+    except Exception:
+        app.logger.exception("Could not restore approved play position")
+        return jsonify({"error": "Recovery is temporarily unavailable. Please retry."}), 503
+    session["admin_play_game"] = restored
+    return jsonify({"game": game_view(restored)})
 
 
 @app.route("/api/play/move", methods=["POST"])

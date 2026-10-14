@@ -7,6 +7,8 @@
 
     const statusElement = document.getElementById("game-status");
     const detailElement = document.getElementById("game-detail");
+    const restoreButton = document.getElementById("restore-game");
+    const recoveryNote = document.getElementById("recovery-note");
     const moveList = document.getElementById("move-list");
     const moveCount = document.getElementById("move-count");
     const moveStartButton = document.getElementById("move-start");
@@ -100,6 +102,7 @@
         busy = value;
         thinkingRail.hidden = !value;
         if (startButton) startButton.disabled = value;
+        if (restoreButton) restoreButton.disabled = value;
         syncMoveControls();
         syncExportControls();
         if (value) clearExportFeedback();
@@ -360,6 +363,8 @@
         syncMoveControls();
         syncExportControls();
         syncHistoryControls();
+        if (restoreButton) restoreButton.hidden = !(game && game.recovery);
+        if (recoveryNote) recoveryNote.hidden = !(game && game.recovery);
     }
 
     async function postJSON(url, body) {
@@ -512,6 +517,28 @@
             return;
         }
         submitMove(uciMove, chess.fen(), localMove.san);
+    });
+
+    if (restoreButton) restoreButton.addEventListener("click", async () => {
+        if (busy || !game || !game.recovery) return;
+        setBusy(true);
+        thinkingRail.hidden = true;
+        statusElement.textContent = "Restoring position…";
+        detailElement.textContent = "Keeping your original rated game.";
+        try {
+            const payload = await postJSON(app.dataset.recoveryUrl, {
+                game_id: game.game_id, recovery_id: game.recovery.id,
+            });
+            game = payload.game;
+            viewedPly = null;
+            pendingFen = null;
+            render();
+        } catch (error) {
+            statusElement.textContent = "Position not restored.";
+            detailElement.textContent = error.message;
+        } finally {
+            setBusy(false);
+        }
     });
 
     if (copyFenButton) copyFenButton.addEventListener("click", () => copyGameData("FEN"));

@@ -80,6 +80,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("ADMIN_EMAILS", "johnstondaniel4@gmail.com")
     store = FakePlayerStore()
     monkeypatch.setattr(web_app, "get_approved_player_store", lambda: store)
+    monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: SimpleNamespace(lookup=lambda *_: None))
     monkeypatch.setattr(approved_players, "get_approved_player_store", lambda: store)
     monkeypatch.setattr(
         web_app,
@@ -354,6 +355,75 @@ def test_delayed_public_read_cannot_rewind_confirmed_play_moves(
 
     assert response.status_code == 200
     assert response.get_json()["game"]["san_moves"] == ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6"]
+
+
+def test_player_can_restore_an_approved_turn_without_model_calls_or_rerating(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    assert client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    }).status_code == 200
+    with client.session_transaction() as saved:
+        state = copy.deepcopy(saved["admin_play_game"])
+        state["moves"] = ["e2e4", "e7e5", "f1c4", "b8c6"]
+        saved["admin_play_game"] = state
+    restored = {**state, "moves": ["e2e4", "e7e5", "g1f3", "g8f6"]}
+    monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: SimpleNamespace(
+        restore=lambda *_args: copy.deepcopy(restored),
+    ), raising=False)
+    monkeypatch.setattr(web_app, "record_human_challenge", lambda *_: pytest.fail("Recovery must not rate a game"))
+    monkeypatch.setattr(web_app, "play_human_move", lambda *_: pytest.fail("Recovery must not request an LLM move"))
+
+    response = client.post("/api/play/recover", headers=headers, json={
+        "game_id": state["game_id"], "recovery_id": "approved-recovery",
+    })
+
+    assert response.status_code == 200
+    game = response.get_json()["game"]
+    assert game["game_id"] == state["game_id"]
+    assert game["san_moves"] == ["e4", "e5", "Nf3", "Nf6"]
+    assert game["turn"] == "human"
+    with client.session_transaction() as saved:
+        assert saved["admin_play_game"]["human_profile"] == state["human_profile"]
+
+
+def test_recovery_requires_authentication_and_csrf(client):
+    assert client.post("/api/play/recover", json={}).status_code == 403
+    _set_user(client)
+    assert client.post("/api/play/recover", json={}).status_code == 403
+
+
+def test_stale_recovery_request_does_not_replace_current_cookie(client, monkeypatch):
+    csrf = _set_user(client)
+    with client.session_transaction() as saved:
+        saved.permanent = True
+        saved["admin_play_game"] = {"game_id": "current-game"}
+    monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: pytest.fail("Stale request must not reach store"))
+
+    response = client.post("/api/play/recover", headers={"X-CSRF-Token": csrf}, json={
+        "game_id": "older-game", "recovery_id": "approval",
+    })
+
+    assert response.status_code == 409
+    assert not response.headers.getlist("Set-Cookie")
+    with client.session_transaction() as saved:
+        assert saved["admin_play_game"] == {"game_id": "current-game"}
+
+
+def test_play_page_offers_approved_recovery_only_for_its_signed_game(client, monkeypatch):
+    csrf = _set_user(client)
+    client.post("/api/play/start", headers={"X-CSRF-Token": csrf}, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    calls = []
+    monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: SimpleNamespace(
+        lookup=lambda state, email: calls.append((state, email)) or {"id": "approved-recovery"},
+    ))
+    page = client.get("/play")
+    assert page.status_code == 200
+    assert '"recovery": {"id": "approved-recovery"}' in page.get_data(as_text=True)
+    assert calls[0][0]["human_profile"]["rating"] == 1847
+    assert calls[0][1] == "johnstondaniel4@gmail.com"
 
 
 def test_invalid_start_request_returns_actionable_error(client):

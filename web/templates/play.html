@@ -6,6 +6,7 @@
 <div class="play-page" id="play-app"
      data-start-url="/api/play/start"
      data-move-url="/api/play/move"
+     data-recovery-url="/api/play/recover"
      data-csrf-token="{{ csrf_token }}">
     <header class="play-header">
         <div>
@@ -109,6 +110,8 @@
                 <span class="console-label">Position</span>
                 <strong id="game-status" role="status" aria-live="polite">Start a game when you’re ready.</strong>
                 <span id="game-detail">Your current Lichess Classical rating and RD set the weight of this game.</span>
+                <button id="restore-game" type="button" hidden>Restore corrected turn</button>
+                <span id="recovery-note" hidden>An approved correction is available. Your game will remain rated.</span>
             </div>
 
             <div class="move-ledger">

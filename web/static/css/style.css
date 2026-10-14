@@ -408,6 +408,8 @@ body {
 .move-ledger { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); }
 .turn-card { display: flex; flex-direction: column; gap: 0.35rem; padding: 1.2rem; }
 .turn-card strong { font-size: 1.25rem; }
+#restore-game { margin-top: 0.5rem; padding: 0.65rem 0.8rem; border: 1px solid var(--accent); border-radius: 5px; background: var(--bg-secondary); color: var(--text-primary); font: inherit; cursor: pointer; }
+#restore-game:disabled { opacity: 0.5; cursor: wait; }
 .turn-card > span:last-child { color: var(--text-secondary); font-size: 0.875rem; }
 
 .move-ledger { overflow: hidden; }
