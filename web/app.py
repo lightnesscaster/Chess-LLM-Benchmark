@@ -20,6 +20,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from flask import Flask, render_template, jsonify, abort, request, redirect, session, url_for
+from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
 
 from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
@@ -55,7 +56,23 @@ from web.play_service import (
     start_game,
 )
 
+class PublicDataSessionInterface(SecureCookieSessionInterface):
+    """Keep background public reads from reissuing a stale game cookie."""
+
+    def should_set_cookie(self, app: Flask, session: SecureCookieSession) -> bool:
+        if (
+            request.method in {"GET", "HEAD"}
+            and request.endpoint in {
+                "api_live_games", "api_game", "api_games", "api_leaderboard", "static",
+            }
+            and not session.modified
+        ):
+            return False
+        return super().should_set_cookie(app, session)
+
+
 app = Flask(__name__)
+app.session_interface = PublicDataSessionInterface()
 app.config.update(
     SECRET_KEY=os.environ.get("FLASK_SECRET_KEY"),
     SESSION_COOKIE_HTTPONLY=True,

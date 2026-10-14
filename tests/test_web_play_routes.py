@@ -1,5 +1,7 @@
 import copy
 from html.parser import HTMLParser
+from http.cookies import SimpleCookie
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -303,6 +305,55 @@ def test_admin_move_uses_saved_state_and_returns_authoritative_position(
     assert response.get_json()["game"]["san_moves"] == ["e4", "e5"]
     with client.session_transaction() as flask_session:
         assert flask_session["admin_play_game"]["moves"] == ["e2e4", "e7e5"]
+
+
+@pytest.mark.parametrize("poll_path, poll_status", [
+    ("/api/live-games", 200),
+    ("/api/game/11111111-1111-4111-8111-111111111111", 404),
+    ("/api/games", 200),
+    ("/api/leaderboard", 200),
+    ("/static/js/live.js", 200),
+])
+def test_delayed_public_read_cannot_rewind_confirmed_play_moves(
+    client, monkeypatch, poll_path, poll_status,
+):
+    """A read response arriving late must not replace the newer game cookie."""
+    csrf = _set_user(client)
+    with client.session_transaction() as saved:
+        saved.permanent = True
+    headers = {"X-CSRF-Token": csrf}
+    assert client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    }).status_code == 200
+    replies = {"e2e4": "e7e5", "g1f3": "b8c6", "f1c4": "g8f6"}
+    monkeypatch.setattr(
+        play_service, "_default_move_provider",
+        lambda _model, board, *_args: replies[board.peek().uci()],
+    )
+    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 200
+    cookie_name = web_app.app.config["SESSION_COOKIE_NAME"]
+    previous_cookie = client.get_cookie(cookie_name).value
+    monkeypatch.setattr(web_app, "get_live_game_store", lambda: SimpleNamespace(list_games=lambda: []))
+    monkeypatch.setattr(web_app, "get_game", lambda _game_id: None)
+    monkeypatch.setattr(web_app, "get_all_games", lambda: [])
+    monkeypatch.setattr(web_app, "get_leaderboard_data", lambda: [])
+
+    # Another tab sends its poll before Nf3, but delivers its response afterward.
+    with web_app.app.test_client() as reader:
+        reader.set_cookie(cookie_name, previous_cookie)
+        delayed_response = reader.get(poll_path)
+    assert delayed_response.status_code == poll_status
+    move_response = client.post("/api/play/move", headers=headers, json={"move": "g1f3"})
+    assert move_response.get_json()["game"]["san_moves"] == ["e4", "e5", "Nf3", "Nc6"]
+    for header in delayed_response.headers.getlist("Set-Cookie"):
+        cookies = SimpleCookie(header)
+        if cookie_name in cookies:
+            client.set_cookie(cookie_name, cookies[cookie_name].value)
+
+    response = client.post("/api/play/move", headers=headers, json={"move": "f1c4"})
+
+    assert response.status_code == 200
+    assert response.get_json()["game"]["san_moves"] == ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6"]
 
 
 def test_invalid_start_request_returns_actionable_error(client):
