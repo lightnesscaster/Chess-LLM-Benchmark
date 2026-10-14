@@ -47,6 +47,7 @@ from web.human_challenges import HumanChallengeError, record_human_challenge
 from web.lichess import LichessLookupError, fetch_classical_snapshot
 from web.memory_diagnostics import install_memory_diagnostics
 from web.play_recovery import RecoveryError, get_play_recovery_store
+from web.play_store import PlayConflict, get_active_play_store
 from web.play_service import (
     ConfigurationError as PlayConfigurationError,
     GameStateError,
@@ -505,30 +506,70 @@ def admin_remove_player_form(email):
     return redirect(url_for("admin_players"))
 
 
+def _load_active_play() -> dict | None:
+    """Read server state, importing this account's signed legacy game once."""
+    state = get_active_play_store().load(
+        current_user()["email"], session.get("admin_play_game"),
+    )
+    session.pop("admin_play_game", None)
+    return state
+
+
+def _play_conflict(error: PlayConflict):
+    state = get_active_play_store().load(current_user()["email"])
+    payload = {"error": str(error)}
+    if state:
+        payload["game"] = game_view(state)
+    return jsonify(payload), 409
+
+
+def _persist_play_turn(claim, state):
+    try:
+        get_active_play_store().finish(claim, state)
+    except PlayConflict as error:
+        return _play_conflict(error)
+    except Exception:
+        app.logger.exception("Could not confirm saved human turn")
+        return jsonify({"error": "Could not confirm the saved turn. Refresh the game before moving again."}), 503
+    return None
+
+
+def _score_finished_play(state: dict) -> None:
+    """Publish only after the completed board has been durably saved."""
+    if state.get("status") == "finished" and not state.get("rating_result"):
+        result = record_human_challenge(state, current_user()["email"])
+        get_active_play_store().annotate_rating(
+            current_user()["email"], state["game_id"], result,
+        )
+        state["rating_result"] = result
+
+
 @app.route("/play")
 @app.route("/admin/play")
 @player_required
 def admin_play():
-    """Approved-player interactive arena."""
+    """Approved-player arena backed by the account's authoritative saved game."""
     models = list_playable_models(CONFIG_PATH, os.environ)
     user = current_user()
     player_record = get_approved_player_store().get_player(user["email"])
     current_game = None
-    if session.get("admin_play_game"):
-        try:
-            current_game = game_view(session["admin_play_game"])
+    try:
+        state = _load_active_play()
+        if state:
             try:
-                current_game["recovery"] = get_play_recovery_store().lookup(
-                    session["admin_play_game"], user["email"],
-                )
+                _score_finished_play(state)
+            except Exception:
+                app.logger.exception("Could not retry completed human challenge publication")
+            current_game = game_view(state)
+            try:
+                current_game["recovery"] = get_play_recovery_store().lookup(state, user["email"])
             except Exception:
                 app.logger.warning("Play recovery lookup unavailable")
-        except GameStateError:
-            session.pop("admin_play_game", None)
+    except Exception:
+        app.logger.exception("Could not load saved human game")
+        abort(503, description="Your saved game is temporarily unavailable. Please retry.")
     return render_template(
-        "play.html",
-        models=models,
-        current_game=current_game,
+        "play.html", models=models, current_game=current_game,
         lichess_username=(player_record or {}).get("lichess_username", ""),
     )
 
@@ -537,7 +578,7 @@ def admin_play():
 @app.route("/api/admin/play/start", methods=["POST"])
 @player_api_required
 def api_admin_play_start():
-    """Start a new signed-session human-versus-LLM game."""
+    """Start a new game while excluding overlapping account turns."""
     validate_csrf()
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload, dict):
@@ -546,75 +587,82 @@ def api_admin_play_start():
     player_record = get_approved_player_store().get_player(current_user()["email"])
     linked_username = str((player_record or {}).get("lichess_username") or "").strip()
     if linked_username and linked_username.casefold() != submitted_username.casefold():
-        return jsonify({
-            "error": "This account is already linked to a different Lichess username. Ask an administrator to reset it."
-        }), 400
+        return jsonify({"error": "This account is already linked to a different Lichess username. Ask an administrator to reset it."}), 400
+    claim = None
     try:
+        previous = _load_active_play()
+        if previous:
+            _score_finished_play(previous)
         snapshot = fetch_classical_snapshot(submitted_username)
         get_approved_player_store().claim_lichess_username(
-            current_user()["email"],
-            snapshot.username,
-            allow_missing=is_admin(),
+            current_user()["email"], snapshot.username, allow_missing=is_admin(),
         )
-        state = start_game(
-            payload.get("model_id"),
-            payload.get("human_color"),
-            CONFIG_PATH,
-            os.environ,
-            reasoning_effort=payload.get("reasoning_effort"),
-            human_profile=snapshot.to_dict(),
-        )
-    except LichessLookupError as error:
-        return jsonify({"error": str(error)}), 400
-    except PlayConfigurationError as error:
-        status = 503 if not list_playable_models(CONFIG_PATH, os.environ) else 400
-        return jsonify({"error": str(error)}), status
-    except GameStateError as error:
-        return jsonify({"error": str(error)}), 400
-    except ProviderError as error:
-        return jsonify({"error": str(error)}), 502
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    if state.get("status") == "finished":
-        try:
-            state["rating_result"] = record_human_challenge(
-                state,
-                current_user()["email"],
+        claim = get_active_play_store().begin(current_user()["email"], {}, starting=True)
+        with get_active_play_store().keep_alive(claim):
+            state = start_game(
+                payload.get("model_id"), payload.get("human_color"), CONFIG_PATH, os.environ,
+                reasoning_effort=payload.get("reasoning_effort"), human_profile=snapshot.to_dict(),
             )
-        except HumanChallengeError as error:
-            return jsonify({"error": str(error)}), 400
-        except Exception:
-            app.logger.exception("Could not record rated human challenge")
-            return jsonify({"error": "The game finished but its rating could not be recorded."}), 503
-
-    session["admin_play_game"] = state
+    except PlayConflict as error:
+        return _play_conflict(error)
+    except (LichessLookupError, PlayConfigurationError, GameStateError, ProviderError, ValueError) as error:
+        if claim:
+            failure = _persist_play_turn(claim, claim.state)
+            if failure:
+                return failure
+        status = 502 if isinstance(error, ProviderError) else 400
+        if isinstance(error, PlayConfigurationError) and not list_playable_models(CONFIG_PATH, os.environ):
+            status = 503
+        return jsonify({"error": str(error)}), status
+    except Exception:
+        if claim:
+            failure = _persist_play_turn(claim, claim.state)
+            if failure:
+                return failure
+        app.logger.exception("Could not start saved human game")
+        return jsonify({"error": "Game storage is temporarily unavailable. Please retry."}), 503
+    failure = _persist_play_turn(claim, state)
+    if failure:
+        return failure
+    try:
+        _score_finished_play(state)
+    except Exception:
+        app.logger.exception("Could not record rated human challenge")
+        return jsonify({"error": "The completed game is saved, but its rating is pending. Refresh to retry.", "game": game_view(state)}), 503
     return jsonify({"game": game_view(state)})
 
 
 @app.route("/api/play/recover", methods=["POST"])
 @player_api_required
 def api_play_recover():
-    """Restore an operator-approved turn in the original signed rated game."""
+    """Correct an approved turn under the same exclusive account claim."""
     validate_csrf()
-    state = session.get("admin_play_game")
     payload = request.get_json(silent=True)
-    if (
-        not isinstance(state, dict) or not isinstance(payload, dict)
-        or not payload.get("game_id") or payload.get("game_id") != state.get("game_id")
-        or not isinstance(payload.get("recovery_id"), str)
-    ):
-        return jsonify({"error": "This recovery does not match the current game."}), 409
+    if not isinstance(payload, dict) or not isinstance(payload.get("recovery_id"), str):
+        return jsonify({"error": "Send a valid recovery request."}), 400
+    claim = None
     try:
-        restored = get_play_recovery_store().restore(
-            state, current_user()["email"], payload["recovery_id"],
-        )
+        _load_active_play()
+        claim = get_active_play_store().begin(current_user()["email"], payload)
+        restored = get_play_recovery_store().restore(claim.state, current_user()["email"], payload["recovery_id"])
+    except PlayConflict as error:
+        return _play_conflict(error)
     except RecoveryError as error:
+        if claim:
+            failure = _persist_play_turn(claim, claim.state)
+            if failure:
+                return failure
         return jsonify({"error": str(error)}), 409
     except Exception:
+        if claim:
+            failure = _persist_play_turn(claim, claim.state)
+            if failure:
+                return failure
         app.logger.exception("Could not restore approved play position")
         return jsonify({"error": "Recovery is temporarily unavailable. Please retry."}), 503
-    session["admin_play_game"] = restored
+    failure = _persist_play_turn(claim, restored)
+    if failure:
+        return failure
     return jsonify({"game": game_view(restored)})
 
 
@@ -622,43 +670,48 @@ def api_play_recover():
 @app.route("/api/admin/play/move", methods=["POST"])
 @player_api_required
 def api_admin_play_move():
-    """Apply one human move and return the authoritative resulting position."""
+    """Apply a move only to the exact server position displayed by the client."""
     validate_csrf()
-    state = session.get("admin_play_game")
-    if not isinstance(state, dict):
-        return jsonify({"error": "Start a new game first."}), 400
-
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Send a valid move."}), 400
+    claim = None
     try:
-        updated_state = play_human_move(
-            state,
-            payload.get("move"),
-            CONFIG_PATH,
-            os.environ,
-        )
-    except (PlayConfigurationError, GameStateError) as error:
-        return jsonify({"error": str(error)}), 400
-    except ProviderError as error:
-        if error.accounting_state is not None:
-            session["admin_play_game"] = dict(state, **error.accounting_state)
-        return jsonify({"error": str(error)}), 502
-
-    if updated_state.get("status") == "finished":
-        try:
-            updated_state["rating_result"] = record_human_challenge(
-                updated_state,
-                current_user()["email"],
-            )
-        except HumanChallengeError as error:
-            return jsonify({"error": str(error)}), 400
-        except Exception:
-            app.logger.exception("Could not record rated human challenge")
-            return jsonify({"error": "The game finished but its rating could not be recorded."}), 503
-
-    session["admin_play_game"] = updated_state
-    return jsonify({"game": game_view(updated_state)})
+        if _load_active_play() is None:
+            return jsonify({"error": "Start a new game first."}), 400
+        claim = get_active_play_store().begin(current_user()["email"], payload)
+        with get_active_play_store().keep_alive(claim):
+            updated = play_human_move(claim.state, payload.get("move"), CONFIG_PATH, os.environ)
+    except PlayConflict as error:
+        return _play_conflict(error)
+    except (PlayConfigurationError, GameStateError, ProviderError) as error:
+        state = claim.state if claim else None
+        if claim:
+            if isinstance(error, ProviderError) and error.accounting_state is not None:
+                state = dict(state, **error.accounting_state)
+            failure = _persist_play_turn(claim, state)
+            if failure:
+                return failure
+        body = {"error": str(error)}
+        if state:
+            body["game"] = game_view(state)
+        return jsonify(body), 502 if isinstance(error, ProviderError) else 400
+    except Exception:
+        if claim:
+            failure = _persist_play_turn(claim, claim.state)
+            if failure:
+                return failure
+        app.logger.exception("Could not apply saved human move")
+        return jsonify({"error": "Game storage is temporarily unavailable. Please retry."}), 503
+    failure = _persist_play_turn(claim, updated)
+    if failure:
+        return failure
+    try:
+        _score_finished_play(updated)
+    except Exception:
+        app.logger.exception("Could not record rated human challenge")
+        return jsonify({"error": "The completed game is saved, but its rating is pending. Refresh to retry.", "game": game_view(updated)}), 503
+    return jsonify({"game": game_view(updated)})
 
 
 @app.route("/")

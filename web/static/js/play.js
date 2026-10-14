@@ -377,7 +377,11 @@
             body: JSON.stringify(body),
         });
         const payload = await response.json().catch(() => ({error: "The server returned an invalid response."}));
-        if (!response.ok) throw new Error(payload.error || "The request failed.");
+        if (!response.ok) {
+            const error = new Error(payload.error || "The request failed.");
+            error.game = payload.game;
+            throw error;
+        }
         return payload;
     }
 
@@ -444,7 +448,10 @@
         board.position(pendingFen, false);
         renderLedger();
         setBusy(true);
-        postJSON(app.dataset.moveUrl, {move: uciMove})
+        postJSON(app.dataset.moveUrl, {
+            move: uciMove, game_id: confirmedGame.game_id,
+            expected_fen: confirmedGame.fen, expected_ply: (confirmedGame.moves || []).length,
+        })
             .then((payload) => {
                 pendingFen = null;
                 game = payload.game;
@@ -453,7 +460,8 @@
             })
             .catch((error) => {
                 pendingFen = null;
-                game = confirmedGame;
+                game = error.game || confirmedGame;
+                if (error.game) viewedPly = null;
                 render();
                 statusElement.textContent = "Move not completed.";
                 detailElement.textContent = error.message;
@@ -528,12 +536,18 @@
         try {
             const payload = await postJSON(app.dataset.recoveryUrl, {
                 game_id: game.game_id, recovery_id: game.recovery.id,
+                expected_fen: game.fen, expected_ply: game.moves.length,
             });
             game = payload.game;
             viewedPly = null;
             pendingFen = null;
             render();
         } catch (error) {
+            if (error.game) {
+                game = error.game;
+                viewedPly = null;
+                render();
+            }
             statusElement.textContent = "Position not restored.";
             detailElement.textContent = error.message;
         } finally {
@@ -570,6 +584,7 @@
         syncEffortChoices();
         setupForm.addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (busy) return;
             const formData = new FormData(setupForm);
             setBusy(true);
             try {
@@ -583,6 +598,11 @@
                 viewedPly = null;
                 render();
             } catch (error) {
+                if (error.game) {
+                    game = error.game;
+                    viewedPly = null;
+                    render();
+                }
                 statusElement.textContent = "Game not started.";
                 detailElement.textContent = error.message;
             } finally {

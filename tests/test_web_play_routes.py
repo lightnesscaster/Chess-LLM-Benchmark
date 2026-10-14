@@ -59,7 +59,7 @@ class ParentClassParser(HTMLParser):
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
+def client(tmp_path, monkeypatch, play_store):
     config_path = tmp_path / "benchmark.yaml"
     config_path.write_text(
         yaml.safe_dump({
@@ -95,6 +95,7 @@ def client(tmp_path, monkeypatch):
     )
     with web_app.app.test_client() as test_client:
         test_client.player_store = store
+        test_client.play_store = play_store
         yield test_client
 
 
@@ -109,6 +110,19 @@ def _set_user(client, email="johnstondaniel4@gmail.com") -> str:
         }
         flask_session["csrf_token"] = "c" * 43
         return flask_session["csrf_token"]
+
+
+def _move_payload(client, move):
+    state = client.play_store.load("johnstondaniel4@gmail.com")
+    if state is None:
+        return {"move": move}
+    return {"move": move, "game_id": state["game_id"],
+            "expected_ply": len(state["moves"]), "expected_fen": play_service.game_view(state)["fen"]}
+
+
+def _save_test_state(client, state):
+    claim = client.play_store.begin("johnstondaniel4@gmail.com", {}, starting=True)
+    client.play_store.finish(claim, state)
 
 
 def test_admin_play_page_lists_configured_models(client):
@@ -255,7 +269,7 @@ def test_admin_can_start_game_and_state_is_saved_in_session(client):
         "rating_pool": "classical",
     }
     with client.session_transaction() as flask_session:
-        assert flask_session["admin_play_game"]["moves"] == []
+        assert client.play_store.load("johnstondaniel4@gmail.com")["moves"] == []
 
 
 def test_admin_can_choose_reasoning_effort_separately(client):
@@ -275,7 +289,7 @@ def test_admin_can_choose_reasoning_effort_separately(client):
     assert response.status_code == 200
     assert response.get_json()["game"]["reasoning_effort"] == "default"
     with client.session_transaction() as flask_session:
-        assert flask_session["admin_play_game"]["reasoning_effort"] == "default"
+        assert client.play_store.load("johnstondaniel4@gmail.com")["reasoning_effort"] == "default"
 
 
 def test_admin_move_uses_saved_state_and_returns_authoritative_position(
@@ -297,7 +311,7 @@ def test_admin_move_uses_saved_state_and_returns_authoritative_position(
 
     response = client.post(
         "/api/admin/play/move",
-        json={"move": "e2e4"},
+        json=_move_payload(client, "e2e4"),
         headers={"X-CSRF-Token": csrf_token},
     )
 
@@ -305,7 +319,7 @@ def test_admin_move_uses_saved_state_and_returns_authoritative_position(
     assert response.get_json()["game"]["moves"] == ["e2e4", "e7e5"]
     assert response.get_json()["game"]["san_moves"] == ["e4", "e5"]
     with client.session_transaction() as flask_session:
-        assert flask_session["admin_play_game"]["moves"] == ["e2e4", "e7e5"]
+        assert client.play_store.load("johnstondaniel4@gmail.com")["moves"] == ["e2e4", "e7e5"]
 
 
 @pytest.mark.parametrize("poll_path, poll_status", [
@@ -314,6 +328,11 @@ def test_admin_move_uses_saved_state_and_returns_authoritative_position(
     ("/api/games", 200),
     ("/api/leaderboard", 200),
     ("/static/js/live.js", 200),
+    ("/live", 200),
+    ("/play", 200),
+    ("/login", 302),
+    ("/games", 200),
+    ("/", 200),
 ])
 def test_delayed_public_read_cannot_rewind_confirmed_play_moves(
     client, monkeypatch, poll_path, poll_status,
@@ -331,27 +350,27 @@ def test_delayed_public_read_cannot_rewind_confirmed_play_moves(
         play_service, "_default_move_provider",
         lambda _model, board, *_args: replies[board.peek().uci()],
     )
-    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 200
+    assert client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4")).status_code == 200
     cookie_name = web_app.app.config["SESSION_COOKIE_NAME"]
     previous_cookie = client.get_cookie(cookie_name).value
-    monkeypatch.setattr(web_app, "get_live_game_store", lambda: SimpleNamespace(list_games=lambda: []))
+    monkeypatch.setattr(web_app, "get_live_game_store", lambda: SimpleNamespace(list_games=lambda **_: []))
     monkeypatch.setattr(web_app, "get_game", lambda _game_id: None)
-    monkeypatch.setattr(web_app, "get_all_games", lambda: [])
-    monkeypatch.setattr(web_app, "get_leaderboard_data", lambda: [])
+    monkeypatch.setattr(web_app, "get_all_games", lambda **_: [])
+    monkeypatch.setattr(web_app, "get_leaderboard_data", lambda **_: [])
 
     # Another tab sends its poll before Nf3, but delivers its response afterward.
     with web_app.app.test_client() as reader:
         reader.set_cookie(cookie_name, previous_cookie)
         delayed_response = reader.get(poll_path)
     assert delayed_response.status_code == poll_status
-    move_response = client.post("/api/play/move", headers=headers, json={"move": "g1f3"})
+    move_response = client.post("/api/play/move", headers=headers, json=_move_payload(client, "g1f3"))
     assert move_response.get_json()["game"]["san_moves"] == ["e4", "e5", "Nf3", "Nc6"]
     for header in delayed_response.headers.getlist("Set-Cookie"):
         cookies = SimpleCookie(header)
         if cookie_name in cookies:
             client.set_cookie(cookie_name, cookies[cookie_name].value)
 
-    response = client.post("/api/play/move", headers=headers, json={"move": "f1c4"})
+    response = client.post("/api/play/move", headers=headers, json=_move_payload(client, "f1c4"))
 
     assert response.status_code == 200
     assert response.get_json()["game"]["san_moves"] == ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6"]
@@ -364,9 +383,9 @@ def test_player_can_restore_an_approved_turn_without_model_calls_or_rerating(cli
         "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
     }).status_code == 200
     with client.session_transaction() as saved:
-        state = copy.deepcopy(saved["admin_play_game"])
+        state = copy.deepcopy(client.play_store.load("johnstondaniel4@gmail.com"))
         state["moves"] = ["e2e4", "e7e5", "f1c4", "b8c6"]
-        saved["admin_play_game"] = state
+        _save_test_state(client, state)
     restored = {**state, "moves": ["e2e4", "e7e5", "g1f3", "g8f6"]}
     monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: SimpleNamespace(
         restore=lambda *_args: copy.deepcopy(restored),
@@ -375,7 +394,7 @@ def test_player_can_restore_an_approved_turn_without_model_calls_or_rerating(cli
     monkeypatch.setattr(web_app, "play_human_move", lambda *_: pytest.fail("Recovery must not request an LLM move"))
 
     response = client.post("/api/play/recover", headers=headers, json={
-        "game_id": state["game_id"], "recovery_id": "approved-recovery",
+        **_move_payload(client, ""), "recovery_id": "approved-recovery",
     })
 
     assert response.status_code == 200
@@ -384,7 +403,115 @@ def test_player_can_restore_an_approved_turn_without_model_calls_or_rerating(cli
     assert game["san_moves"] == ["e4", "e5", "Nf3", "Nf6"]
     assert game["turn"] == "human"
     with client.session_transaction() as saved:
-        assert saved["admin_play_game"]["human_profile"] == state["human_profile"]
+        assert client.play_store.load("johnstondaniel4@gmail.com")["human_profile"] == state["human_profile"]
+
+
+def test_duplicate_or_overlapping_requests_call_model_only_once(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    payload = _move_payload(client, "e2e4")
+    calls = []
+    def provider(*_):
+        calls.append(1)
+        with web_app.app.test_client() as other_tab:
+            other_tab.set_cookie("session", client.get_cookie("session").value)
+            assert other_tab.post("/api/play/move", headers=headers, json=payload).status_code == 409
+        return "e7e5"
+    monkeypatch.setattr(play_service, "_default_move_provider", provider)
+    assert client.post("/api/play/move", headers=headers, json=payload).status_code == 200
+    duplicate = client.post("/api/play/move", headers=headers, json=payload)
+    assert duplicate.status_code == 409
+    assert duplicate.get_json()["game"]["san_moves"] == ["e4", "e5"]
+    assert calls == [1]
+
+
+def test_reinstalled_legacy_cookie_cannot_replace_saved_game(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    old_state = client.play_store.load("johnstondaniel4@gmail.com")
+    monkeypatch.setattr(play_service, "_default_move_provider", lambda *_: "e7e5")
+    response = client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4"))
+    assert response.status_code == 200
+    with client.session_transaction() as saved:
+        saved["admin_play_game"] = old_state
+    assert '"san_moves": ["e4", "e5"]' in client.get("/play").get_data(as_text=True)
+    with client.session_transaction() as saved:
+        assert "admin_play_game" not in saved
+
+
+def test_missing_position_guard_is_rejected_before_provider_call(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    monkeypatch.setattr(web_app, "play_human_move", lambda *_: pytest.fail("Unguarded move must not reach model"))
+    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 409
+
+
+def test_paid_turn_is_recovered_after_commit_failure_without_another_model_call(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    calls = []
+    def provider(*_):
+        calls.append(1)
+        client.play_store._db.fail_next_write = True
+        return "e7e5"
+    monkeypatch.setattr(play_service, "_default_move_provider", provider)
+    response = client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4"))
+    assert response.status_code == 503
+    assert '"san_moves": ["e4", "e5"]' in client.get("/play").get_data(as_text=True)
+    assert calls == [1]
+
+
+def test_recovery_commit_failure_keeps_corrected_outcome_for_reload(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    client.post("/api/play/start", headers=headers, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    })
+    original = client.play_store.load("johnstondaniel4@gmail.com")
+    corrected = {**original, "moves": ["e2e4", "e7e5"]}
+    def restore(*_):
+        client.play_store._db.fail_next_write = True
+        return corrected
+    monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: SimpleNamespace(restore=restore, lookup=lambda *_: None))
+    response = client.post("/api/play/recover", headers=headers, json={
+        **_move_payload(client, ""), "recovery_id": "approved-recovery",
+    })
+    assert response.status_code == 503
+    assert '"san_moves": ["e4", "e5"]' in client.get("/play").get_data(as_text=True)
+    assert client.play_store.load("johnstondaniel4@gmail.com")["game_id"] == original["game_id"]
+
+
+def test_new_game_cannot_discard_a_finished_game_with_pending_rating(client, monkeypatch):
+    csrf = _set_user(client)
+    headers = {"X-CSRF-Token": csrf}
+    setup = {"model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player"}
+    first = client.post("/api/play/start", headers=headers, json=setup).get_json()["game"]
+    monkeypatch.setattr(play_service, "_default_move_provider", lambda *_: "invalid")
+    def fail_publication(*_):
+        raise OSError("Temporary publication outage")
+    monkeypatch.setattr(web_app, "record_human_challenge", fail_publication)
+    completed = client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4"))
+    assert completed.status_code == 503
+    assert completed.get_json()["game"]["status"] == "finished"
+    assert client.post("/api/play/start", headers=headers, json=setup).status_code == 503
+    assert client.play_store.load("johnstondaniel4@gmail.com")["game_id"] == first["game_id"]
+    calls = []
+    monkeypatch.setattr(web_app, "record_human_challenge", lambda state, email: calls.append(state["game_id"]) or {"recorded": True})
+    assert client.get("/play").status_code == 200
+    assert calls == [first["game_id"]]
+    assert client.play_store.load("johnstondaniel4@gmail.com")["rating_result"] == {"recorded": True}
 
 
 def test_recovery_requires_authentication_and_csrf(client):
@@ -397,7 +524,7 @@ def test_stale_recovery_request_does_not_replace_current_cookie(client, monkeypa
     csrf = _set_user(client)
     with client.session_transaction() as saved:
         saved.permanent = True
-        saved["admin_play_game"] = {"game_id": "current-game"}
+        _save_test_state(client, {"game_id": "current-game", "moves": [], "human_color": "white", "status": "active"})
     monkeypatch.setattr(web_app, "get_play_recovery_store", lambda: pytest.fail("Stale request must not reach store"))
 
     response = client.post("/api/play/recover", headers={"X-CSRF-Token": csrf}, json={
@@ -407,7 +534,7 @@ def test_stale_recovery_request_does_not_replace_current_cookie(client, monkeypa
     assert response.status_code == 409
     assert not response.headers.getlist("Set-Cookie")
     with client.session_transaction() as saved:
-        assert saved["admin_play_game"] == {"game_id": "current-game"}
+        assert client.play_store.load("johnstondaniel4@gmail.com")["game_id"] == "current-game"
 
 
 def test_play_page_offers_approved_recovery_only_for_its_signed_game(client, monkeypatch):
@@ -444,7 +571,7 @@ def test_move_without_active_game_returns_400(client):
 
     response = client.post(
         "/api/admin/play/move",
-        json={"move": "e2e4"},
+        json=_move_payload(client, "e2e4"),
         headers={"X-CSRF-Token": csrf_token},
     )
 
@@ -460,7 +587,7 @@ def test_provider_failure_keeps_previous_session_state(client, monkeypatch):
         headers={"X-CSRF-Token": csrf_token},
     ).status_code == 200
     with client.session_transaction() as flask_session:
-        original = copy.deepcopy(flask_session["admin_play_game"])
+        original = copy.deepcopy(client.play_store.load("johnstondaniel4@gmail.com"))
 
     def fail_provider(*_args):
         raise play_service.ProviderError("The LLM could not provide a move.")
@@ -469,7 +596,7 @@ def test_provider_failure_keeps_previous_session_state(client, monkeypatch):
 
     response = client.post(
         "/api/admin/play/move",
-        json={"move": "e2e4"},
+        json=_move_payload(client, "e2e4"),
         headers={"X-CSRF-Token": csrf_token},
     )
 
@@ -477,7 +604,7 @@ def test_provider_failure_keeps_previous_session_state(client, monkeypatch):
     assert response.get_json()["error"].startswith("The LLM could not provide a move. Reference: ")
     with client.session_transaction() as flask_session:
         original["llm_accounting_status"] = "partial"
-        assert flask_session["admin_play_game"] == original
+        assert client.play_store.load("johnstondaniel4@gmail.com") == original
 
 
 def test_failed_retry_preserves_billed_usage_without_advancing_board(client, monkeypatch):
@@ -497,15 +624,15 @@ def test_failed_retry_preserves_billed_usage_without_advancing_board(client, mon
             raise attempt
         return attempt
     monkeypatch.setattr(play_service, "_default_move_provider", provider)
-    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 502
+    assert client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4")).status_code == 502
     with client.session_transaction() as saved:
-        state = saved["admin_play_game"]
+        state = client.play_store.load("johnstondaniel4@gmail.com")
         assert state["moves"] == []
         assert state["llm_tokens"]["total_tokens"] == 150
         assert state["llm_accounting_status"] == "partial"
-    assert client.post("/api/play/move", headers=headers, json={"move": "e2e4"}).status_code == 200
+    assert client.post("/api/play/move", headers=headers, json=_move_payload(client, "e2e4")).status_code == 200
     with client.session_transaction() as saved:
-        state = saved["admin_play_game"]
+        state = client.play_store.load("johnstondaniel4@gmail.com")
         assert state["moves"] == ["e2e4", "e7e5"]
         assert state["llm_tokens"] == {"prompt_tokens": 300, "completion_tokens": 120, "total_tokens": 420}
         assert state["llm_accounting_status"] == "partial"
@@ -533,7 +660,7 @@ def test_finished_game_is_scored_and_rating_summary_is_returned(client, monkeypa
 
     response = client.post(
         "/api/play/move",
-        json={"move": "e2e4"},
+        json=_move_payload(client, "e2e4"),
         headers={"X-CSRF-Token": csrf_token},
     )
 

@@ -77,7 +77,7 @@ class FakeFirestore:
 
 
 @pytest.fixture
-def approved_client(monkeypatch):
+def approved_client(monkeypatch, play_store):
     store = FakeApprovedPlayerStore()
     web_app.app.config.update(
         TESTING=True,

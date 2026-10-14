@@ -33,12 +33,14 @@ class FakeElement {
 const humanBlack = process.argv.includes("black");
 const keyboard = process.argv.includes("keyboard");
 const fail = process.argv.includes("failure");
+const stale = process.argv.includes("stale");
 const promotion = process.argv.includes("promotion");
 const cancel = process.argv.includes("cancel");
 const sourceSquare = promotion ? (humanBlack ? "e2" : "e7") : (humanBlack ? "e7" : "e2");
 const targetSquare = promotion ? (humanBlack ? "e1" : "e8") : (humanBlack ? "e5" : "e4");
 const san = humanBlack ? "e5" : "e4";
 const initialGame = {
+    game_id: "active-game",
     fen: "before-e2e4",
     human_color: humanBlack ? "black" : "white",
     model_id: "test-model",
@@ -146,7 +148,8 @@ if (promotion) {
     }
     choices[3].listeners.click();
     assert.equal(dialog.open, false);
-    assert.deepEqual(requests, [{move: sourceSquare + targetSquare + "n"}]);
+    assert.deepEqual(requests, [{move: sourceSquare + targetSquare + "n", game_id: "active-game",
+        expected_fen: initialGame.fen, expected_ply: initialGame.moves.length}]);
 }
 boardOptions.onSnapEnd();
 assert.equal(
@@ -157,7 +160,7 @@ assert.equal(
 assert.equal(elements.get("move-count").textContent, humanBlack ? "2 plies" : "1 ply");
 assert.equal(elements.get("move-list").children[0].children[humanBlack ? 2 : 1].textContent, san);
 if (fail) rejectResponse(new Error("provider unavailable"));
-else resolveResponse({ok: true, json: async () => ({game: {
+else resolveResponse({ok: !stale, json: async () => ({error: stale ? "Position changed" : undefined, game: {
     ...initialGame, fen: "confirmed", moves: [...initialGame.moves, sourceSquare + targetSquare, "g8f6"],
     san_moves: [...initialGame.san_moves, san, "Nf6"],
 }})});
@@ -169,5 +172,6 @@ setImmediate(() => {
         assert.equal(boardPositions.at(-1), "confirmed");
         assert.equal(elements.get("move-count").textContent, humanBlack ? "3 plies" : "2 plies");
     }
+    if (stale) assert.equal(elements.get("game-detail").textContent, "Position changed");
     assert.equal(elements.get("thinking-rail").hidden, true);
 });

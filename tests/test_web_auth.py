@@ -9,7 +9,7 @@ from web.auth import safe_next_url
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, play_store):
     web_app.app.config.update(
         TESTING=True,
         SECRET_KEY="test-secret",

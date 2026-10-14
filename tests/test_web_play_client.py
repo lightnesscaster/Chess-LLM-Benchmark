@@ -31,7 +31,7 @@ def test_visual_promotion_waits_for_choice_and_can_cancel(input_method, human_co
 
 @pytest.mark.parametrize("input_method", ["drag", "keyboard"])
 @pytest.mark.parametrize("human_color", ["white", "black"])
-@pytest.mark.parametrize("outcome", ["success", "failure"])
+@pytest.mark.parametrize("outcome", ["success", "failure", "stale"])
 def test_human_drag_move_is_rendered_before_model_response(input_method, human_color, outcome):
     result = subprocess.run(
         ["node", "tests/js/play_immediate_move_test.js", input_method, human_color, outcome],

@@ -133,7 +133,8 @@ assert.equal(restore.hidden, false);
 assert.equal(typeof restore.listeners.click, "function", "approved game must have a restore action");
 restore.listeners.click();
 restore.listeners.click();
-assert.deepEqual(requests, [{game_id: "original-game", recovery_id: "approved-recovery"}]);
+assert.deepEqual(requests, [{game_id: "original-game", recovery_id: "approved-recovery",
+    expected_fen: initialGame.fen, expected_ply: initialGame.moves.length}]);
 assert.equal(restore.disabled, true);
 assert.equal(elements.get("thinking-rail").hidden, true, "recovery must not claim the model is thinking");
 if (fail) rejectResponse(new Error("Recovery unavailable"));
