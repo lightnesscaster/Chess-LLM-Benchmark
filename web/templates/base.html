@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LLM Chess Benchmark{% endblock %}</title>
+    {% set page_description %}{% block description %}Compare LLM chess-playing ability with Glicko-2 ratings, match results, and replayable games.{% endblock %}{% endset %}
+    {% set preview_image = config.PUBLIC_BASE_URL ~ url_for('static', filename='images/social-preview.png') %}
+    {% set preview_alt = 'LLM Chess Benchmark — ratings, results, and replayable games beside a chessboard.' %}
+    <meta name="description" content="{{ page_description|trim }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LLM Chess Benchmark">
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:description" content="{{ page_description|trim }}">
+    <meta property="og:url" content="{{ config.PUBLIC_BASE_URL }}{{ request.full_path.rstrip('?') }}">
+    <meta property="og:image" content="{{ preview_image }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ preview_alt }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.title() }}">
+    <meta name="twitter:description" content="{{ page_description|trim }}">
+    <meta name="twitter:image" content="{{ preview_image }}">
+    <meta name="twitter:image:alt" content="{{ preview_alt }}">
 
     <!-- Chess.js and Chessboard.js from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>

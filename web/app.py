@@ -75,6 +75,11 @@ app = Flask(__name__)
 app.session_interface = PublicDataSessionInterface()
 app.config.update(
     SECRET_KEY=os.environ.get("FLASK_SECRET_KEY"),
+    PUBLIC_BASE_URL=(
+        os.environ.get("WEB_APP_URL")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+        or "https://chessbenchllm.onrender.com"
+    ).rstrip("/"),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "").lower()

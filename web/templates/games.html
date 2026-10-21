@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Game Library - LLM Chess Benchmark{% endblock %}
+{% block description %}{% if model_filter %}Explore {{ total_games }} chess games featuring {{ model_filter }}. Replay moves and compare results against LLMs and chess engines.{% else %}Browse the LLM Chess Benchmark game library. Replay chess games and compare results across models, engines, and human players.{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
