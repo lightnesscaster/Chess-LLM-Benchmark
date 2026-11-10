@@ -112,12 +112,9 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         environment.pop("ANTHROPIC_API_KEY", None)
         environment.pop("ANTHROPIC_AUTH_TOKEN", None)
         if "CLAUDE_CODE_OAUTH_TOKEN" in environment:
-            # Terminal copies can wrap a token onto multiple physical lines.
-            environment["CLAUDE_CODE_OAUTH_TOKEN"] = (
-                environment["CLAUDE_CODE_OAUTH_TOKEN"]
-                .replace("\r", "")
-                .replace("\n", "")
-                .strip()
+            # Terminal copies can add spaces and line breaks at wrap boundaries.
+            environment["CLAUDE_CODE_OAUTH_TOKEN"] = "".join(
+                environment["CLAUDE_CODE_OAUTH_TOKEN"].split()
             )
         return environment
 

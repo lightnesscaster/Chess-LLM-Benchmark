@@ -52,9 +52,11 @@ def test_subscription_environment_ignores_api_billing_credentials(player):
 @pytest.mark.parametrize("pasted_token", [
     "  subscription-\ntoken\n",
     "\r\nsubscription-\r\ntoken\r\n",
+    "subscription- \ntoken",
+    "\tsubscription-\t token\r\n",
     "subscription-token",
 ])
-def test_subscription_environment_repairs_pasted_token_line_breaks(player, pasted_token):
+def test_subscription_environment_repairs_pasted_token_whitespace(player, pasted_token):
     original = {"CLAUDE_CODE_OAUTH_TOKEN": pasted_token, "PATH": "/usr/bin"}
 
     environment = player._subscription_environment(original)
