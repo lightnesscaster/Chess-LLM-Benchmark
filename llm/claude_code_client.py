@@ -111,6 +111,14 @@ class ClaudeCodePlayer(BaseLLMPlayer):
         environment = dict(environ)
         environment.pop("ANTHROPIC_API_KEY", None)
         environment.pop("ANTHROPIC_AUTH_TOKEN", None)
+        if "CLAUDE_CODE_OAUTH_TOKEN" in environment:
+            # Terminal copies can wrap a token onto multiple physical lines.
+            environment["CLAUDE_CODE_OAUTH_TOKEN"] = (
+                environment["CLAUDE_CODE_OAUTH_TOKEN"]
+                .replace("\r", "")
+                .replace("\n", "")
+                .strip()
+            )
         return environment
 
     async def select_move(
