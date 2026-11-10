@@ -1,4 +1,34 @@
 {
+  "claude-fable-5.2 (low)": {
+    "model_id": "anthropic/claude-fable-5-2",
+    "created_timestamp": 1794182400,
+    "created_date": "2026-11-09",
+    "source": "https://platform.claude.com/docs/en/models/fable-5-2/overview"
+  },
+  "claude-fable-5.2 (medium)": {
+    "model_id": "anthropic/claude-fable-5-2",
+    "created_timestamp": 1794182400,
+    "created_date": "2026-11-09",
+    "source": "https://platform.claude.com/docs/en/models/fable-5-2/overview"
+  },
+  "claude-fable-5.2 (high)": {
+    "model_id": "anthropic/claude-fable-5-2",
+    "created_timestamp": 1794182400,
+    "created_date": "2026-11-09",
+    "source": "https://platform.claude.com/docs/en/models/fable-5-2/overview"
+  },
+  "claude-fable-5.2 (xhigh)": {
+    "model_id": "anthropic/claude-fable-5-2",
+    "created_timestamp": 1794182400,
+    "created_date": "2026-11-09",
+    "source": "https://platform.claude.com/docs/en/models/fable-5-2/overview"
+  },
+  "claude-fable-5.2 (max)": {
+    "model_id": "anthropic/claude-fable-5-2",
+    "created_timestamp": 1794182400,
+    "created_date": "2026-11-09",
+    "source": "https://platform.claude.com/docs/en/models/fable-5-2/overview"
+  },
   "claude-opus-5.5 (low)": {
     "model_id": "anthropic/claude-opus-5-5",
     "created_timestamp": 1790035200,

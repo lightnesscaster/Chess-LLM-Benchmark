@@ -81,6 +81,13 @@ engines:
 # Admin-only subscription models. These never enter benchmark scheduling and
 # are displayed only after the deployed CLI successfully probes model access.
 web_play_models:
+  - player_id: "claude-fable-5.2"
+    model_name: "anthropic/claude-fable-5-2"
+    web_api: claude_code
+    web_model_name: claude-fable-5-2
+    web_reasoning_efforts: [low, medium, high, xhigh, max]
+    web_default_reasoning_effort: high
+
   - player_id: "claude-fable-5.1"
     model_name: "anthropic/claude-fable-5-1"
     web_api: claude_code
