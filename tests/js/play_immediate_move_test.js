@@ -36,6 +36,10 @@ const fail = process.argv.includes("failure");
 const stale = process.argv.includes("stale");
 const promotion = process.argv.includes("promotion");
 const cancel = process.argv.includes("cancel");
+const pendingReload = process.argv.includes("pending-reload");
+const pendingConflict = process.argv.includes("pending-conflict");
+const pendingDisconnect = process.argv.includes("pending-disconnect");
+const pendingRecovery = pendingReload || pendingConflict || pendingDisconnect;
 const sourceSquare = promotion ? (humanBlack ? "e2" : "e7") : (humanBlack ? "e7" : "e2");
 const targetSquare = promotion ? (humanBlack ? "e1" : "e8") : (humanBlack ? "e5" : "e4");
 const san = humanBlack ? "e5" : "e4";
@@ -67,6 +71,7 @@ for (const id of [
     "bottom-player-name",
     "top-player-dot",
     "bottom-player-dot",
+    "start-game",
 ]) {
     elements.set(id, new FakeElement());
 }
@@ -76,6 +81,10 @@ app.dataset = {
     moveUrl: "/api/admin/play/move",
     startUrl: "/api/admin/play/start",
 };
+if (pendingRecovery) {
+    app.dataset.stateUrl = "/api/play/state";
+    app.dataset.turnPending = String(pendingReload);
+}
 elements.set("play-app", app);
 const initialNode = new FakeElement();
 initialNode.textContent = JSON.stringify(initialGame);
@@ -113,6 +122,8 @@ const documentObject = {
 
 let resolveResponse, rejectResponse;
 const requests = [];
+const timers = [];
+let stateReads = 0;
 const pendingResponse = new Promise((resolve, reject) => {
     resolveResponse = resolve;
     rejectResponse = reject;
@@ -121,10 +132,56 @@ const source = fs.readFileSync("web/static/js/play.js", "utf8");
 vm.runInNewContext(source, {
     console,
     document: documentObject,
-    fetch(url, options) { requests.push(JSON.parse(options.body)); return pendingResponse; },
+    fetch(url, options) {
+        if (url === "/api/play/state") {
+            stateReads += 1;
+            if (stateReads === 1) return Promise.resolve({ok: false, status: 503});
+            return Promise.resolve({ok: true, json: async () => ({
+                turn_pending: stateReads < 3,
+                game: stateReads < 3 ? initialGame : {...initialGame, fen: "confirmed",
+                    moves: ["e2e4", "e7e5"], san_moves: ["e4", "e5"]},
+            })});
+        }
+        requests.push(JSON.parse(options.body));
+        return pendingResponse;
+    },
+    setTimeout(callback) { timers.push(callback); return timers.length; },
     FormData: class {},
     window: windowObject,
 });
+
+if (pendingRecovery) {
+    if (pendingConflict || pendingDisconnect) {
+        boardOptions.onDrop(sourceSquare, targetSquare, "wP");
+        if (pendingDisconnect) rejectResponse(new Error("The connection was interrupted"));
+        else resolveResponse({ok: false, status: 409, json: async () => ({
+            error: "Another turn is still processing", game: initialGame, turn_pending: true,
+        })});
+    }
+    setImmediate(async () => {
+        try {
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+                assert.equal(elements.get("keyboard-move").disabled, true);
+                assert.equal(elements.get("start-game").disabled, true);
+                assert.equal(elements.get("thinking-rail").hidden, false);
+                assert.equal(boardOptions.onDragStart("e2", "wP"), false);
+                assert.equal(timers.length, 1, "Only one state read may be scheduled");
+                await timers.shift()();
+            }
+            assert.equal(boardPositions.at(-1), "confirmed");
+            assert.equal(elements.get("move-count").textContent, "2 plies");
+            assert.equal(elements.get("keyboard-move").disabled, false);
+            assert.equal(elements.get("start-game").disabled, false);
+            assert.equal(elements.get("thinking-rail").hidden, true);
+            assert.equal(timers.length, 0, "Stop polling when the turn finishes");
+            assert.equal(requests.length, pendingReload ? 0 : 1, "Recovery never resubmits a move");
+        } catch (error) {
+            console.error(error);
+            process.exitCode = 1;
+        }
+    });
+    return;
+}
 
 if (keyboard) {
     elements.get("keyboard-move").value = sourceSquare + targetSquare;

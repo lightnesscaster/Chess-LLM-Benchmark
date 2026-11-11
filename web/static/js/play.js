@@ -42,7 +42,9 @@
 
     let game = initialNode ? JSON.parse(initialNode.textContent || "null") : null;
     const playableModels = modelsNode ? JSON.parse(modelsNode.textContent || "[]") : [];
-    let busy = false;
+    let serverPending = app.dataset.turnPending === "true";
+    let busy = serverPending;
+    let statePollTimer = null;
     let pendingFen = null;
     let viewedPly = null;
     let ledgerMoveButtons = [];
@@ -116,17 +118,44 @@
     }
 
     function setBusy(value) {
-        busy = value;
-        thinkingRail.hidden = !value;
-        if (startButton) startButton.disabled = value;
-        if (restoreButton) restoreButton.disabled = value;
+        busy = value || serverPending;
+        thinkingRail.hidden = !busy;
+        if (startButton) startButton.disabled = busy;
+        if (restoreButton) restoreButton.disabled = busy;
         syncMoveControls();
         syncExportControls();
-        if (value) clearExportFeedback();
-        if (value) {
+        if (busy) clearExportFeedback();
+        if (busy) {
             statusElement.textContent = "Waiting for the model…";
-            detailElement.textContent = "This can take a little while for reasoning models.";
+            detailElement.textContent = serverPending
+                ? "Your previous turn is still processing. This page will update automatically."
+                : "This can take a little while for reasoning models.";
         }
+    }
+
+    function scheduleStatePoll() {
+        if (!serverPending || statePollTimer !== null || !app.dataset.stateUrl) return;
+        statePollTimer = setTimeout(pollTurnState, 5000);
+    }
+
+    async function pollTurnState() {
+        statePollTimer = null;
+        try {
+            const response = await fetch(app.dataset.stateUrl, {cache: "no-store"});
+            if (!response.ok) throw new Error("Unable to check the saved turn yet.");
+            const payload = await response.json();
+            serverPending = Boolean(payload.turn_pending);
+            game = payload.game;
+            pendingFen = null;
+            if (!serverPending) viewedPly = null;
+            render();
+            setBusy(false);
+        } catch (_error) {
+            // A lost status request must not enable duplicate move submissions.
+            setBusy(false);
+            detailElement.textContent = "Reconnecting to your saved turn. This page will update automatically.";
+        }
+        scheduleStatePoll();
     }
 
     function syncExportControls() {
@@ -387,15 +416,27 @@
     }
 
     async function postJSON(url, body) {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-Token": app.dataset.csrfToken,
-            },
-            body: JSON.stringify(body),
-        });
-        const payload = await response.json().catch(() => ({error: "The server returned an invalid response."}));
+        let response, payload;
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": app.dataset.csrfToken,
+                },
+                body: JSON.stringify(body),
+            });
+            payload = await response.json();
+        } catch (error) {
+            // The server may still be processing a POST whose response was lost.
+            if (app.dataset.stateUrl) {
+                serverPending = true;
+                scheduleStatePoll();
+            }
+            throw error;
+        }
+        serverPending = Boolean(payload.turn_pending);
+        scheduleStatePoll();
         if (!response.ok) {
             const error = new Error(payload.error || "The request failed.");
             error.game = payload.game;
@@ -669,4 +710,6 @@
     }
 
     render();
+    setBusy(false);
+    scheduleStatePoll();
 })();

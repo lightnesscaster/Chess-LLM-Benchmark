@@ -66,7 +66,7 @@ class PublicDataSessionInterface(SecureCookieSessionInterface):
 
     def should_set_cookie(self, app: Flask, session: SecureCookieSession) -> bool:
         public_read = request.method in {"GET", "HEAD"} and request.endpoint in {
-            "api_live_games", "api_game", "api_games", "api_leaderboard", "api_positions", "static",
+            "api_live_games", "api_game", "api_games", "api_leaderboard", "api_positions", "api_play_state", "static",
         }
         if not session.modified and (public_read or request.endpoint == "api_play_recover"):
             return False
@@ -520,16 +520,22 @@ def admin_remove_player_form(email):
 
 def _load_active_play() -> dict | None:
     """Read server state, importing this account's signed legacy game once."""
-    state = get_active_play_store().load(
+    return _load_active_play_snapshot()["state"]
+
+
+def _load_active_play_snapshot() -> dict:
+    """Read the saved game together with its server-side processing status."""
+    snapshot = get_active_play_store().snapshot(
         current_user()["email"], session.get("admin_play_game"),
     )
     session.pop("admin_play_game", None)
-    return state
+    return snapshot
 
 
 def _play_conflict(error: PlayConflict):
-    state = get_active_play_store().load(current_user()["email"])
-    payload = {"error": str(error)}
+    snapshot = _load_active_play_snapshot()
+    state = snapshot["state"]
+    payload = {"error": str(error), "turn_pending": snapshot["turn_pending"]}
     if state:
         payload["game"] = game_view(state)
     return jsonify(payload), 409
@@ -565,8 +571,11 @@ def admin_play():
     user = current_user()
     player_record = get_approved_player_store().get_player(user["email"])
     current_game = None
+    turn_pending = False
     try:
-        state = _load_active_play()
+        snapshot = _load_active_play_snapshot()
+        state = snapshot["state"]
+        turn_pending = snapshot["turn_pending"]
         if state:
             try:
                 _score_finished_play(state)
@@ -581,9 +590,33 @@ def admin_play():
         app.logger.exception("Could not load saved human game")
         abort(503, description="Your saved game is temporarily unavailable. Please retry.")
     return render_template(
-        "play.html", models=models, current_game=current_game,
+        "play.html", models=models, current_game=current_game, turn_pending=turn_pending,
         lichess_username=(player_record or {}).get("lichess_username", ""),
     )
+
+
+@app.route("/api/play/state")
+@player_api_required
+def api_play_state():
+    """Resume observing an account's existing turn without starting model work."""
+    try:
+        snapshot = _load_active_play_snapshot()
+        state = snapshot["state"]
+        if state and not snapshot["turn_pending"]:
+            try:
+                _score_finished_play(state)
+            except Exception:
+                app.logger.exception("Could not retry completed human challenge publication")
+        response = jsonify({
+            "game": game_view(state) if state else None,
+            "turn_pending": snapshot["turn_pending"],
+        })
+    except Exception:
+        app.logger.exception("Could not load saved human turn status")
+        response = jsonify({"error": "Your saved turn is temporarily unavailable. Retrying…"})
+        response.status_code = 503
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.route("/api/play/start", methods=["POST"])

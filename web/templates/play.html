@@ -6,6 +6,8 @@
 <div class="play-page" id="play-app"
      data-start-url="/api/play/start"
      data-move-url="/api/play/move"
+     data-state-url="/api/play/state"
+     data-turn-pending="{{ 'true' if turn_pending else 'false' }}"
      data-recovery-url="/api/play/recover"
      data-csrf-token="{{ csrf_token }}">
     <header class="play-header">

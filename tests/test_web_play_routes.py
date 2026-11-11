@@ -135,6 +135,49 @@ def test_admin_play_page_lists_configured_models(client):
     assert b"route-model" in response.data
 
 
+def test_refresh_and_poll_preserve_pending_turn_without_calling_model(client, monkeypatch):
+    csrf = _set_user(client)
+    assert client.post("/api/play/start", headers={"X-CSRF-Token": csrf}, json={
+        "model_id": "route-model", "human_color": "white", "lichess_username": "Some_Player",
+    }).status_code == 200
+    original = client.play_store.load("johnstondaniel4@gmail.com")
+    expected = _move_payload(client, "e2e4")
+    claim = client.play_store.begin("johnstondaniel4@gmail.com", expected)
+    monkeypatch.setattr(play_service, "_default_move_provider", lambda *_: pytest.fail("Polling must not call the model"))
+
+    page = client.get("/admin/play")
+    assert b'data-turn-pending="true"' in page.data
+    response = client.get("/api/play/state")
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["turn_pending"] is True
+    assert payload["game"]["moves"] == []
+    assert "nonce" not in response.get_data(as_text=True)
+    assert "no-store" in response.headers["Cache-Control"]
+    assert not response.headers.getlist("Set-Cookie")
+    conflict = client.post("/api/play/move", headers={"X-CSRF-Token": csrf}, json=expected)
+    assert conflict.status_code == 409
+    assert conflict.get_json()["turn_pending"] is True
+
+    completed = {**original, "moves": ["e2e4", "e7e5"]}
+    client.play_store.finish(claim, completed)
+    payload = client.get("/api/play/state").get_json()
+    assert payload["turn_pending"] is False
+    assert payload["game"]["san_moves"] == ["e4", "e5"]
+
+
+def test_pending_opening_and_state_poll_are_account_scoped(client):
+    _set_user(client)
+    claim = client.play_store.begin("johnstondaniel4@gmail.com", {}, starting=True)
+    response = client.get("/api/play/state")
+    assert response.status_code == 200
+    assert response.get_json() == {"game": None, "turn_pending": True}
+    assert b'data-turn-pending="true"' in client.get("/play").data
+    _set_user(client, "someone-else@example.com")
+    assert client.get("/api/play/state").status_code == 403
+    client.play_store.finish(claim, None)
+
+
 def test_approved_non_admin_can_open_player_arena(client):
     client.player_store.records["player@example.com"] = {
         "email": "player@example.com",

@@ -18,6 +18,22 @@ def expected(state):
     return {'game_id': state['game_id'], 'expected_fen': board.fen(), 'expected_ply': len(state['moves'])}
 
 
+def test_snapshot_reports_pending_turn_atomically_and_expires_it(play_store, state, monkeypatch):
+    from web import play_store as module
+
+    now = [1000]
+    monkeypatch.setattr(module.time, "time", lambda: now[0])
+    play_store.load("owner@example.com", state)
+    assert play_store.snapshot("owner@example.com") == {"state": state, "turn_pending": False}
+    claim = play_store.begin("owner@example.com", expected(state))
+    assert play_store.snapshot("owner@example.com") == {"state": state, "turn_pending": True}
+    assert play_store.snapshot("other@example.com") == {"state": None, "turn_pending": False}
+    now[0] += module.TURN_LEASE_SECONDS + 1
+    assert play_store.snapshot("owner@example.com")["turn_pending"] is False
+    play_store.finish(claim, {**state, "moves": state["moves"] + ["g1f3", "b8c6"]})
+    assert play_store.snapshot("owner@example.com")["state"]["moves"][-2:] == ["g1f3", "b8c6"]
+
+
 def test_legacy_cookie_migrates_once_and_cannot_overwrite_server_turn(play_store, state):
     assert play_store.load('owner@example.com', state) == state
     claim = play_store.begin('owner@example.com', expected(state))

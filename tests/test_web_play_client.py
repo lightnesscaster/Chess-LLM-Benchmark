@@ -2,6 +2,15 @@ import subprocess
 import pytest
 
 
+@pytest.mark.parametrize("mode", ["pending-reload", "pending-conflict", "pending-disconnect"])
+def test_pending_turn_survives_refresh_and_recovers_without_another_post(mode):
+    result = subprocess.run(
+        ["node", "tests/js/play_immediate_move_test.js", mode],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("outcome", ["success", "failure"])
 def test_approved_recovery_restores_board_without_requesting_model(outcome):
     result = subprocess.run(

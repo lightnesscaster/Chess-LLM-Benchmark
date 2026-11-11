@@ -54,6 +54,10 @@ class ActivePlayStore:
 
     def load(self, email: str, legacy: dict | None = None) -> dict | None:
         """Import an existing signed-cookie game once; never overwrite newer data."""
+        return self.snapshot(email, legacy)["state"]
+
+    def snapshot(self, email: str, legacy: dict | None = None) -> dict:
+        """Read the saved board and active turn lease from the same transaction."""
         from firebase_admin import firestore
 
         self._drain_journal(email)
@@ -63,13 +67,17 @@ class ActivePlayStore:
         def read(transaction):
             snapshot = reference.get(transaction=transaction)
             if snapshot.exists:
-                return copy.deepcopy((snapshot.to_dict() or {}).get("state"))
+                record = snapshot.to_dict() or {}
+                return {
+                    "state": copy.deepcopy(record.get("state")),
+                    "turn_pending": (record.get("pending") or {}).get("expires_at", 0) > time.time(),
+                }
             if legacy is not None:
                 uuid.UUID(legacy["game_id"])
                 _board_from_state(legacy)
                 transaction.set(reference, {"state": copy.deepcopy(legacy), "updated_at": time.time()})
-                return copy.deepcopy(legacy)
-            return None
+                return {"state": copy.deepcopy(legacy), "turn_pending": False}
+            return {"state": None, "turn_pending": False}
 
         return read(self._db.transaction())
 
