@@ -1,0 +1,6436 @@
+{
+  "experiment_id": "corrected-cpl-calibration-20261111-v1",
+  "policy": {
+    "experiment_id": "corrected-cpl-calibration-20261111-v1",
+    "status": "frozen-before-target-replay-and-analysis",
+    "scoring_version": "root-reference-v1",
+    "target": "all-production-games-replayed-with-all-benchmark-seeds-disabled-RD350",
+    "primary_cohort": {
+      "minimum_games": 8,
+      "maximum_game_only_rd": 200,
+      "exclude_family": "gemini-4-carbon"
+    },
+    "reliable_cohort": {
+      "minimum_games": 20,
+      "maximum_game_only_rd": 150
+    },
+    "mature_cohort": {
+      "minimum_games": 30,
+      "maximum_game_only_rd": 120
+    },
+    "candidates": [
+      "fixed",
+      "offset",
+      "affine",
+      "core-ridge-0",
+      "core-ridge-1",
+      "core-ridge-10",
+      "core-ridge-100"
+    ],
+    "features": [
+      "log1p-core-mean-cpl",
+      "core-best-percent",
+      "survival40-percent"
+    ],
+    "coefficient_constraints": {
+      "log_cpl": "nonpositive",
+      "best": "nonnegative",
+      "survival": "nonnegative",
+      "affine_slope": "nonnegative"
+    },
+    "weighting": "equal-total-weight-per-model-line-family",
+    "selection": "inner-leave-family-out-macro-MAE-then-macro-RMSE-then-simplicity",
+    "evaluation": "outer-leave-family-out-of-complete-selection-procedure",
+    "stress_evaluation": "outer-leave-provider-out-with-inner-family-selection",
+    "bootstrap": {
+      "resamples": 5000,
+      "seed": 1729,
+      "unit": "model-line-family"
+    },
+    "mean_promotion_gate": {
+      "minimum_configurations": 30,
+      "minimum_families": 8,
+      "minimum_macro_mae_improvement_fraction": 0.1,
+      "minimum_macro_rmse_improvement_fraction": 0.05,
+      "minimum_bootstrap_mae_improvement_probability": 0.9,
+      "minimum_family_win_fraction": 0.5,
+      "maximum_single_family_mae_worsening": 100,
+      "maximum_reliable_subset_metric_ratio": 1.05,
+      "maximum_mature_subset_metric_ratio": 1.05,
+      "maximum_provider_heldout_metric_ratio": 1.05,
+      "stress_metrics": [
+        "mae",
+        "rmse",
+        "macro_mae",
+        "macro_rmse"
+      ]
+    },
+    "uncertainty_gate": {
+      "minimum_configurations": 30,
+      "minimum_families": 8,
+      "existing_rd": 166,
+      "bootstrap_rmse_lower_percentile": 5,
+      "lower_bound_must_exceed_existing_rd": true,
+      "estimate": "larger-of-row-and-macro-family-heldout-RMSE-rounded-up-to-next25",
+      "maximum_rd": 350,
+      "allow_reducing_rd": false,
+      "bootstrap_statistic": "max(row-weighted-RMSE, macro-family-RMSE), identical to point-estimate statistic"
+    },
+    "carbon_policy": "excluded-from-training-and-model-selection-diagnostic-only",
+    "production_policy": "publish-only-components-that-pass-their-predeclared-gates",
+    "model_calls": 0,
+    "simplicity_order": [
+      "fixed",
+      "offset",
+      "affine",
+      "core-ridge-100",
+      "core-ridge-10",
+      "core-ridge-1",
+      "core-ridge-0"
+    ],
+    "numeric_tie_tolerance": 1e-09,
+    "macro_metrics": "mean-family-MAE and sqrt(mean-family-MSE)",
+    "limitations": [
+      "Retrospective validation on the existing game graph, not independent prospective evidence.",
+      "Incumbent formula/cap development may overlap historical model cohorts; family holdout excludes families from this audit refit only.",
+      "Keep the separate frozen prospective stability-cap study unchanged."
+    ]
+  },
+  "cohort": {
+    "configurations": 40,
+    "families": 21,
+    "family_names": [
+      "claude",
+      "deepseek-v4",
+      "gemini-2.5",
+      "gemini-3",
+      "gemini-3.1",
+      "gemini-3.5",
+      "gemini-4-argon",
+      "glm",
+      "gpt-3.5",
+      "gpt-5.1",
+      "gpt-5.2",
+      "gpt-5.5",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-6-astra",
+      "gpt-oss",
+      "kimi-k2",
+      "llama-4",
+      "mistral",
+      "qwen3"
+    ],
+    "providers": [
+      "Alibaba",
+      "Anthropic",
+      "DeepSeek",
+      "Google",
+      "Meta",
+      "Mistral",
+      "Moonshot",
+      "OpenAI",
+      "Zhipu"
+    ],
+    "player_ids": [
+      "claude-fable-5.2 (high)",
+      "deepseek-v4-flash (max)",
+      "deepseek-v4-flash-0731 (high)",
+      "deepseek-v4-flash-0731 (max)",
+      "gemini-2.5-flash (no thinking)",
+      "gemini-3-flash-preview (medium)",
+      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-pro-preview (high)",
+      "gemini-3.1-pro-preview (medium)",
+      "gemini-3.5-flash (medium)",
+      "gemini-3.6-flash (medium)",
+      "gemini-4-argon (medium)",
+      "glm-4.6 (no thinking)",
+      "gpt-3.5-turbo",
+      "gpt-3.5-turbo-instruct",
+      "gpt-5.1 (high)",
+      "gpt-5.1 (no thinking)",
+      "gpt-5.1-chat",
+      "gpt-5.2 (high)",
+      "gpt-5.5 (low)",
+      "gpt-5.5 (xhigh)",
+      "gpt-5.6-luna (high)",
+      "gpt-5.6-luna (low)",
+      "gpt-5.6-luna (medium)",
+      "gpt-5.6-luna (xhigh)",
+      "gpt-5.6-sol (high)",
+      "gpt-5.6-sol (low)",
+      "gpt-5.6-sol (medium)",
+      "gpt-5.6-sol (xhigh)",
+      "gpt-5.6-terra (high)",
+      "gpt-5.6-terra (low)",
+      "gpt-5.6-terra (medium)",
+      "gpt-5.6-terra (xhigh)",
+      "gpt-6-astra (high)",
+      "gpt-6-astra (medium)",
+      "gpt-oss-120b (low)",
+      "kimi-k2-0905",
+      "llama-4-maverick",
+      "mistral-medium-3",
+      "qwen3-235b-a22b-2507"
+    ]
+  },
+  "excluded_rows": [
+    {
+      "player_id": "claude-fable-5.1 (high)",
+      "family": "claude",
+      "games": 4,
+      "game_only_rd": 320.75208952364125
+    },
+    {
+      "player_id": "claude-opus-5.5 (high)",
+      "family": "claude",
+      "games": 2,
+      "game_only_rd": 346.8746316793093
+    },
+    {
+      "player_id": "deepseek-v4-flash (no thinking)",
+      "family": "deepseek-v4",
+      "games": 1,
+      "game_only_rd": 302.8865649829569
+    },
+    {
+      "player_id": "deepseek-v4-flash-0731 (no thinking)",
+      "family": "deepseek-v4",
+      "games": 1,
+      "game_only_rd": 302.8865649829569
+    },
+    {
+      "player_id": "deepseek-v4-pro (no thinking)",
+      "family": "deepseek-v4",
+      "games": 3,
+      "game_only_rd": 221.90527828556029
+    },
+    {
+      "player_id": "deepseek-v4.1-flash (high)",
+      "family": "deepseek-v4",
+      "games": 3,
+      "game_only_rd": 204.93716676080007
+    },
+    {
+      "player_id": "gemini-3.8-flash (high)",
+      "family": "gemini-3",
+      "games": 5,
+      "game_only_rd": 248.58569942434895
+    },
+    {
+      "player_id": "gemini-3.8-flash (medium)",
+      "family": "gemini-3",
+      "games": 12,
+      "game_only_rd": 245.07313290907427
+    },
+    {
+      "player_id": "gemini-4-argon (high)",
+      "family": "gemini-4-argon",
+      "games": 5,
+      "game_only_rd": 160.3504993841789
+    },
+    {
+      "player_id": "gemini-4-argon (low)",
+      "family": "gemini-4-argon",
+      "games": 5,
+      "game_only_rd": 249.00707957766477
+    },
+    {
+      "player_id": "gemini-4-carbon (low)",
+      "family": "gemini-4-carbon",
+      "games": 10,
+      "game_only_rd": 143.5474990875607
+    },
+    {
+      "player_id": "gemini-4-carbon (medium)",
+      "family": "gemini-4-carbon",
+      "games": 11,
+      "game_only_rd": 128.2274562027915
+    },
+    {
+      "player_id": "gemma-4-31b-it (high)",
+      "family": "gemma",
+      "games": 2,
+      "game_only_rd": 221.36096836217558
+    },
+    {
+      "player_id": "gemma-4-31b-it (no thinking)",
+      "family": "gemma",
+      "games": 4,
+      "game_only_rd": 197.49298487887413
+    },
+    {
+      "player_id": "gpt-6.1-sol (high)",
+      "family": "gpt-6.1-sol",
+      "games": 7,
+      "game_only_rd": 188.30574230398682
+    },
+    {
+      "player_id": "gpt-6.1-sol (medium)",
+      "family": "gpt-6.1-sol",
+      "games": 5,
+      "game_only_rd": 187.26255693585003
+    }
+  ],
+  "fixed_metrics": {
+    "row_mae": 224.2313627088155,
+    "row_rmse": 281.36451794627396,
+    "macro_mae": 210.81398531840046,
+    "macro_rmse": 259.66963649627,
+    "bias": -97.57847578143287,
+    "max_error": 833.8699052100415
+  },
+  "adaptive_metrics": {
+    "row_mae": 225.02166662855075,
+    "row_rmse": 274.7621398396607,
+    "macro_mae": 215.17211154991213,
+    "macro_rmse": 266.47732284936313,
+    "bias": -1.976638298643445,
+    "max_error": 715.3235128995393
+  },
+  "provider_stress": {
+    "metrics": {
+      "row_mae": 218.5052543601233,
+      "row_rmse": 271.480929885731,
+      "macro_mae": 198.49003145593468,
+      "macro_rmse": 245.6157983634782,
+      "bias": 26.368172813072704,
+      "max_error": 810.4429212210794
+    },
+    "ratios": {
+      "row_mae": 0.9744633922769846,
+      "row_rmse": 0.9648726565357817,
+      "macro_mae": 0.941541099164496,
+      "macro_rmse": 0.9458780074466131
+    }
+  },
+  "family_results": [
+    {
+      "family": "claude",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 85.91217481313447,
+        "row_rmse": 85.91217481313447,
+        "macro_mae": 85.91217481313447,
+        "macro_rmse": 85.91217481313447,
+        "bias": -85.91217481313447,
+        "max_error": 85.91217481313447
+      },
+      "adaptive": {
+        "row_mae": 140.36280643667124,
+        "row_rmse": 140.36280643667124,
+        "macro_mae": 140.36280643667124,
+        "macro_rmse": 140.36280643667124,
+        "bias": -140.36280643667124,
+        "max_error": 140.36280643667124
+      },
+      "mae_improvement": -54.450631623536765
+    },
+    {
+      "family": "deepseek-v4",
+      "configurations": 3,
+      "fixed": {
+        "row_mae": 226.80158697694574,
+        "row_rmse": 242.14504930731383,
+        "macro_mae": 226.80158697694574,
+        "macro_rmse": 242.14504930731383,
+        "bias": 226.80158697694574,
+        "max_error": 333.2002209030893
+      },
+      "adaptive": {
+        "row_mae": 306.69411810847566,
+        "row_rmse": 319.3176129042602,
+        "macro_mae": 306.69411810847566,
+        "macro_rmse": 319.3176129042602,
+        "bias": 306.69411810847566,
+        "max_error": 395.4147659085256
+      },
+      "mae_improvement": -79.89253113152992
+    },
+    {
+      "family": "gemini-2.5",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 186.95409907192823,
+        "row_rmse": 186.95409907192823,
+        "macro_mae": 186.95409907192823,
+        "macro_rmse": 186.95409907192823,
+        "bias": -186.95409907192823,
+        "max_error": 186.95409907192823
+      },
+      "adaptive": {
+        "row_mae": 55.667205811633266,
+        "row_rmse": 55.667205811633266,
+        "macro_mae": 55.667205811633266,
+        "macro_rmse": 55.667205811633266,
+        "bias": -55.667205811633266,
+        "max_error": 55.667205811633266
+      },
+      "mae_improvement": 131.28689326029496
+    },
+    {
+      "family": "gemini-3",
+      "configurations": 2,
+      "fixed": {
+        "row_mae": 131.22576574343782,
+        "row_rmse": 173.55379838600717,
+        "macro_mae": 131.22576574343782,
+        "macro_rmse": 173.55379838600717,
+        "bias": -113.58133358637417,
+        "max_error": 244.807099329812
+      },
+      "adaptive": {
+        "row_mae": 188.02751763859283,
+        "row_rmse": 238.15557759488246,
+        "macro_mae": 188.02751763859283,
+        "macro_rmse": 238.15557759488246,
+        "bias": -188.02751763859283,
+        "max_error": 334.19089112942584
+      },
+      "mae_improvement": -56.80175189515501
+    },
+    {
+      "family": "gemini-3.1",
+      "configurations": 3,
+      "fixed": {
+        "row_mae": 203.66212209900587,
+        "row_rmse": 248.4549458757554,
+        "macro_mae": 203.66212209900587,
+        "macro_rmse": 248.4549458757554,
+        "bias": -26.99177421006387,
+        "max_error": 338.9878339891843
+      },
+      "adaptive": {
+        "row_mae": 173.47602075094707,
+        "row_rmse": 189.01217163674937,
+        "macro_mae": 173.47602075094707,
+        "macro_rmse": 189.01217163674937,
+        "bias": -7.984732505787292,
+        "max_error": 248.23693236773966
+      },
+      "mae_improvement": 30.1861013480588
+    },
+    {
+      "family": "gemini-3.5",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 140.73296692032704,
+        "row_rmse": 140.73296692032704,
+        "macro_mae": 140.73296692032704,
+        "macro_rmse": 140.73296692032704,
+        "bias": 140.73296692032704,
+        "max_error": 140.73296692032704
+      },
+      "adaptive": {
+        "row_mae": 300.93250234814536,
+        "row_rmse": 300.93250234814536,
+        "macro_mae": 300.93250234814536,
+        "macro_rmse": 300.93250234814536,
+        "bias": 300.93250234814536,
+        "max_error": 300.93250234814536
+      },
+      "mae_improvement": -160.19953542781832
+    },
+    {
+      "family": "gemini-4-argon",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 350.0642214752711,
+        "row_rmse": 350.0642214752711,
+        "macro_mae": 350.0642214752711,
+        "macro_rmse": 350.0642214752711,
+        "bias": 350.0642214752711,
+        "max_error": 350.0642214752711
+      },
+      "adaptive": {
+        "row_mae": 617.7977119817433,
+        "row_rmse": 617.7977119817433,
+        "macro_mae": 617.7977119817433,
+        "macro_rmse": 617.7977119817433,
+        "bias": 617.7977119817433,
+        "max_error": 617.7977119817433
+      },
+      "mae_improvement": -267.7334905064722
+    },
+    {
+      "family": "glm",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 175.61899077890826,
+        "row_rmse": 175.61899077890826,
+        "macro_mae": 175.61899077890826,
+        "macro_rmse": 175.61899077890826,
+        "bias": -175.61899077890826,
+        "max_error": 175.61899077890826
+      },
+      "adaptive": {
+        "row_mae": 49.95915771158457,
+        "row_rmse": 49.95915771158457,
+        "macro_mae": 49.95915771158457,
+        "macro_rmse": 49.95915771158457,
+        "bias": 49.95915771158457,
+        "max_error": 49.95915771158457
+      },
+      "mae_improvement": 125.65983306732369
+    },
+    {
+      "family": "gpt-3.5",
+      "configurations": 2,
+      "fixed": {
+        "row_mae": 165.07138262197063,
+        "row_rmse": 168.84792052889378,
+        "macro_mae": 165.07138262197063,
+        "macro_rmse": 168.84792052889378,
+        "bias": -165.07138262197063,
+        "max_error": 200.58277383947433
+      },
+      "adaptive": {
+        "row_mae": 102.92712875871518,
+        "row_rmse": 116.72670197982573,
+        "macro_mae": 102.92712875871518,
+        "macro_rmse": 116.72670197982573,
+        "bias": -55.05569108252041,
+        "max_error": 157.9828198412356
+      },
+      "mae_improvement": 62.14425386325544
+    },
+    {
+      "family": "gpt-5.1",
+      "configurations": 3,
+      "fixed": {
+        "row_mae": 113.22104202093392,
+        "row_rmse": 144.47131520243167,
+        "macro_mae": 113.22104202093392,
+        "macro_rmse": 144.47131520243167,
+        "bias": -46.85276359451294,
+        "max_error": 240.1107084231703
+      },
+      "adaptive": {
+        "row_mae": 132.99951775131964,
+        "row_rmse": 141.57662290786683,
+        "macro_mae": 132.99951775131964,
+        "macro_rmse": 141.57662290786683,
+        "bias": 49.81383865875421,
+        "max_error": 196.11776279968262
+      },
+      "mae_improvement": -19.778475730385722
+    },
+    {
+      "family": "gpt-5.2",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 180.68994152566802,
+        "row_rmse": 180.68994152566802,
+        "macro_mae": 180.68994152566802,
+        "macro_rmse": 180.68994152566802,
+        "bias": 180.68994152566802,
+        "max_error": 180.68994152566802
+      },
+      "adaptive": {
+        "row_mae": 280.3989590620614,
+        "row_rmse": 280.3989590620614,
+        "macro_mae": 280.3989590620614,
+        "macro_rmse": 280.3989590620614,
+        "bias": 280.3989590620614,
+        "max_error": 280.3989590620614
+      },
+      "mae_improvement": -99.70901753639339
+    },
+    {
+      "family": "gpt-5.5",
+      "configurations": 2,
+      "fixed": {
+        "row_mae": 488.3453820430056,
+        "row_rmse": 497.92891757146305,
+        "macro_mae": 488.3453820430056,
+        "macro_rmse": 497.92891757146305,
+        "bias": -488.3453820430056,
+        "max_error": 585.566752076346
+      },
+      "adaptive": {
+        "row_mae": 432.00899422937044,
+        "row_rmse": 445.9650426385556,
+        "macro_mae": 432.00899422937044,
+        "macro_rmse": 445.9650426385556,
+        "bias": -432.00899422937044,
+        "max_error": 542.7024816644335
+      },
+      "mae_improvement": 56.336387813635156
+    },
+    {
+      "family": "gpt-5.6-luna",
+      "configurations": 4,
+      "fixed": {
+        "row_mae": 430.72804047810365,
+        "row_rmse": 495.7544277686804,
+        "macro_mae": 430.72804047810365,
+        "macro_rmse": 495.7544277686804,
+        "bias": -317.6014878900052,
+        "max_error": 833.8699052100415
+      },
+      "adaptive": {
+        "row_mae": 394.97642520313735,
+        "row_rmse": 445.2848321942347,
+        "macro_mae": 394.97642520313735,
+        "macro_rmse": 445.2848321942347,
+        "bias": -108.52822729521466,
+        "max_error": 715.3235128995393
+      },
+      "mae_improvement": 35.7516152749663
+    },
+    {
+      "family": "gpt-5.6-sol",
+      "configurations": 4,
+      "fixed": {
+        "row_mae": 169.5500458654082,
+        "row_rmse": 181.3602762951562,
+        "macro_mae": 169.5500458654082,
+        "macro_rmse": 181.3602762951562,
+        "bias": -32.906791786242195,
+        "max_error": 280.2626430514183
+      },
+      "adaptive": {
+        "row_mae": 178.5654304718268,
+        "row_rmse": 185.75436708436578,
+        "macro_mae": 178.5654304718268,
+        "macro_rmse": 185.75436708436578,
+        "bias": -16.119035721281364,
+        "max_error": 263.3257110925158
+      },
+      "mae_improvement": -9.015384606418593
+    },
+    {
+      "family": "gpt-5.6-terra",
+      "configurations": 4,
+      "fixed": {
+        "row_mae": 245.63129331524541,
+        "row_rmse": 316.0717758056314,
+        "macro_mae": 245.63129331524541,
+        "macro_rmse": 316.0717758056314,
+        "bias": -229.673827804799,
+        "max_error": 513.1853917762037
+      },
+      "adaptive": {
+        "row_mae": 229.207057369446,
+        "row_rmse": 271.5214377549198,
+        "macro_mae": 229.207057369446,
+        "macro_rmse": 271.5214377549198,
+        "bias": -147.2376304132873,
+        "max_error": 440.94657165226704
+      },
+      "mae_improvement": 16.42423594579941
+    },
+    {
+      "family": "gpt-6-astra",
+      "configurations": 2,
+      "fixed": {
+        "row_mae": 132.42064508775445,
+        "row_rmse": 160.9751721112865,
+        "macro_mae": 132.42064508775445,
+        "macro_rmse": 160.9751721112865,
+        "bias": 132.42064508775445,
+        "max_error": 223.95085207321517
+      },
+      "adaptive": {
+        "row_mae": 124.70262961248113,
+        "row_rmse": 156.0123427292932,
+        "macro_mae": 124.70262961248113,
+        "macro_rmse": 156.0123427292932,
+        "bias": 124.70262961248113,
+        "max_error": 218.45285762081608
+      },
+      "mae_improvement": 7.718015475273319
+    },
+    {
+      "family": "gpt-oss",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 2.667641534510551,
+        "row_rmse": 2.667641534510551,
+        "macro_mae": 2.667641534510551,
+        "macro_rmse": 2.667641534510551,
+        "bias": 2.667641534510551,
+        "max_error": 2.667641534510551
+      },
+      "adaptive": {
+        "row_mae": 202.19541973686742,
+        "row_rmse": 202.19541973686742,
+        "macro_mae": 202.19541973686742,
+        "macro_rmse": 202.19541973686742,
+        "bias": 202.19541973686742,
+        "max_error": 202.19541973686742
+      },
+      "mae_improvement": -199.52777820235687
+    },
+    {
+      "family": "kimi-k2",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 308.03681963068396,
+        "row_rmse": 308.03681963068396,
+        "macro_mae": 308.03681963068396,
+        "macro_rmse": 308.03681963068396,
+        "bias": -308.03681963068396,
+        "max_error": 308.03681963068396
+      },
+      "adaptive": {
+        "row_mae": 132.12166511331,
+        "row_rmse": 132.12166511331,
+        "macro_mae": 132.12166511331,
+        "macro_rmse": 132.12166511331,
+        "bias": -132.12166511331,
+        "max_error": 132.12166511331
+      },
+      "mae_improvement": 175.91515451737396
+    },
+    {
+      "family": "llama-4",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 227.0384998381599,
+        "row_rmse": 227.0384998381599,
+        "macro_mae": 227.0384998381599,
+        "macro_rmse": 227.0384998381599,
+        "bias": -227.0384998381599,
+        "max_error": 227.0384998381599
+      },
+      "adaptive": {
+        "row_mae": 34.177850626384554,
+        "row_rmse": 34.177850626384554,
+        "macro_mae": 34.177850626384554,
+        "macro_rmse": 34.177850626384554,
+        "bias": -34.177850626384554,
+        "max_error": 34.177850626384554
+      },
+      "mae_improvement": 192.86064921177535
+    },
+    {
+      "family": "mistral",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 55.22626393634721,
+        "row_rmse": 55.22626393634721,
+        "macro_mae": 55.22626393634721,
+        "macro_rmse": 55.22626393634721,
+        "bias": -55.22626393634721,
+        "max_error": 55.22626393634721
+      },
+      "adaptive": {
+        "row_mae": 208.07275831905577,
+        "row_rmse": 208.07275831905577,
+        "macro_mae": 208.07275831905577,
+        "macro_rmse": 208.07275831905577,
+        "bias": 208.07275831905577,
+        "max_error": 208.07275831905577
+      },
+      "mae_improvement": -152.84649438270856
+    },
+    {
+      "family": "qwen3",
+      "configurations": 1,
+      "fixed": {
+        "row_mae": 407.4947659096592,
+        "row_rmse": 407.4947659096592,
+        "macro_mae": 407.4947659096592,
+        "macro_rmse": 407.4947659096592,
+        "bias": -407.4947659096592,
+        "max_error": 407.4947659096592
+      },
+      "adaptive": {
+        "row_mae": 233.34346550638588,
+        "row_rmse": 233.34346550638588,
+        "macro_mae": 233.34346550638588,
+        "macro_rmse": 233.34346550638588,
+        "bias": -233.34346550638588,
+        "max_error": 233.34346550638588
+      },
+      "mae_improvement": 174.1513004032733
+    }
+  ],
+  "sensitivity_subsets": {
+    "reliable": {
+      "configurations": 25,
+      "families": 17,
+      "fixed": {
+        "row_mae": 208.64590882828884,
+        "row_rmse": 250.1691272957818,
+        "macro_mae": 207.88433299249849,
+        "macro_rmse": 248.09682458312497,
+        "bias": -93.06379143484905,
+        "max_error": 585.566752076346
+      },
+      "adaptive": {
+        "row_mae": 203.15351142026933,
+        "row_rmse": 246.6265140478589,
+        "macro_mae": 204.2909217537168,
+        "macro_rmse": 251.9104659361866,
+        "bias": 7.7294415800972205,
+        "max_error": 617.7977119817433
+      },
+      "ratios": {
+        "row_mae": 0.9736759879986928,
+        "row_rmse": 0.985839126968955,
+        "macro_mae": 0.9827143720401894,
+        "macro_rmse": 1.0153715847007299
+      }
+    },
+    "mature": {
+      "configurations": 19,
+      "families": 15,
+      "fixed": {
+        "row_mae": 212.9941423767149,
+        "row_rmse": 258.8155873215462,
+        "macro_mae": 211.13532376338256,
+        "macro_rmse": 252.2614923074706,
+        "bias": -93.03887624631771,
+        "max_error": 585.566752076346
+      },
+      "adaptive": {
+        "row_mae": 199.53468038081428,
+        "row_rmse": 253.33466265366644,
+        "macro_mae": 199.3482512496498,
+        "macro_rmse": 253.8756588327449,
+        "bias": 26.486926891940822,
+        "max_error": 617.7977119817433
+      },
+      "ratios": {
+        "row_mae": 0.9368082997695995,
+        "row_rmse": 0.9788230503247457,
+        "macro_mae": 0.9441729015134274,
+        "macro_rmse": 1.0063987829078045
+      }
+    }
+  },
+  "family_folds": [
+    {
+      "held_out_group": "claude",
+      "train_groups": [
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "claude"
+      ],
+      "train_families": [
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "claude"
+      ],
+      "train_player_ids": [
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "claude-fable-5.2 (high)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -207.36085328757702,
+        "slope": 1.137702312849826
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 227.77800855229455,
+          "row_rmse": 284.6166462050963,
+          "macro_mae": 217.05907584366372,
+          "macro_rmse": 265.3878125215137,
+          "bias": -97.87761170369696,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 229.3357955121322,
+          "row_rmse": 275.4289489231362,
+          "macro_mae": 218.1994390881067,
+          "macro_rmse": 260.19368672279916,
+          "bias": -11.02816078377663,
+          "max_error": 758.5848688262427
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 216.99987312246122,
+          "row_rmse": 266.85989580174544,
+          "macro_mae": 198.06772628562325,
+          "macro_rmse": 242.75309281799682,
+          "bias": -33.60711014137814,
+          "max_error": 799.9182917937924
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 223.6645690305631,
+          "row_rmse": 286.6211441005099,
+          "macro_mae": 206.93884252573548,
+          "macro_rmse": 270.94289767772517,
+          "bias": 82.74821558471348,
+          "max_error": 717.380069886125
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 222.39842617441994,
+          "row_rmse": 282.9561582493189,
+          "macro_mae": 206.31345944861224,
+          "macro_rmse": 267.1617435100137,
+          "bias": 78.36122951341422,
+          "max_error": 710.5116586945444
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 230.50519330897447,
+          "row_rmse": 279.37956285639854,
+          "macro_mae": 218.97167451113364,
+          "macro_rmse": 265.780892161724,
+          "bias": 65.52563964245464,
+          "max_error": 686.7088325957627
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 243.04635753573015,
+          "row_rmse": 289.9982788440277,
+          "macro_mae": 228.95148116159467,
+          "macro_rmse": 275.65001944302514,
+          "bias": 68.93462237801863,
+          "max_error": 666.8436588123822
+        }
+      ]
+    },
+    {
+      "held_out_group": "deepseek-v4",
+      "train_groups": [
+        "claude",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "deepseek-v4"
+      ],
+      "train_families": [
+        "claude",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "deepseek-v4"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -214.5179142449541,
+        "slope": 1.1223456134626815
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 224.02296614653469,
+          "row_rmse": 284.3074565122613,
+          "macro_mae": 210.01460523547317,
+          "macro_rmse": 260.5149225645398,
+          "bias": -123.87956195103114,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 214.5131403121709,
+          "row_rmse": 263.6587548572471,
+          "macro_mae": 201.8779752052034,
+          "macro_rmse": 248.19508437288394,
+          "bias": -21.940015686755732,
+          "max_error": 742.1262497846594
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 204.13685761426217,
+          "row_rmse": 254.72593957557632,
+          "macro_mae": 188.85277571146867,
+          "macro_rmse": 233.30063948837508,
+          "bias": -38.58111406735251,
+          "max_error": 773.2407191839247
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 210.9731328828786,
+          "row_rmse": 278.05692035469565,
+          "macro_mae": 196.16350922240963,
+          "macro_rmse": 262.8160151219714,
+          "bias": 67.63614472268829,
+          "max_error": 707.4724071204992
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 210.2986029943208,
+          "row_rmse": 271.08588193924675,
+          "macro_mae": 196.25220058040634,
+          "macro_rmse": 257.12880634093807,
+          "bias": 61.81158451474677,
+          "max_error": 695.3625616406432
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 216.78486676372202,
+          "row_rmse": 268.3142499102424,
+          "macro_mae": 204.43213132195297,
+          "macro_rmse": 256.41319553376263,
+          "bias": 56.02944968131288,
+          "max_error": 667.8514699102905
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 222.79077847847233,
+          "row_rmse": 271.2213363110359,
+          "macro_mae": 213.83312450071972,
+          "macro_rmse": 261.8360928807785,
+          "bias": 62.92438486922352,
+          "max_error": 651.669244403317
+        }
+      ]
+    },
+    {
+      "held_out_group": "gemini-2.5",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gemini-2.5"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-2.5"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-2.5-flash (no thinking)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -199.42273036165363,
+        "slope": 1.1246930352181728
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 225.18718998155623,
+          "row_rmse": 283.37199630049435,
+          "macro_mae": 212.00697963072403,
+          "macro_rmse": 262.7777470906173,
+          "bias": -95.28679313295864,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 226.65076319340338,
+          "row_rmse": 275.129353166643,
+          "macro_mae": 212.92414713923426,
+          "macro_rmse": 259.08206977438846,
+          "bias": -13.6189793545149,
+          "max_error": 763.9028648398632
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.0313253820107,
+          "row_rmse": 266.21275684515575,
+          "macro_mae": 202.08241121458138,
+          "macro_rmse": 243.96566933551182,
+          "bias": -29.738129288752518,
+          "max_error": 791.818104742629
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 226.45512365832568,
+          "row_rmse": 289.2157600298316,
+          "macro_mae": 211.27033341071743,
+          "macro_rmse": 273.93365603708116,
+          "bias": 84.10889822124861,
+          "max_error": 716.7065921400808
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 224.7281877249485,
+          "row_rmse": 284.3429983791603,
+          "macro_mae": 209.05476606089505,
+          "macro_rmse": 268.8875500280852,
+          "bias": 77.74050043244549,
+          "max_error": 707.1186241213445
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 224.16054596963934,
+          "row_rmse": 277.50176080107525,
+          "macro_mae": 207.23791396672559,
+          "macro_rmse": 261.6501669609924,
+          "bias": 65.23266458878905,
+          "max_error": 688.637328286436
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 230.26918111167927,
+          "row_rmse": 281.5209916092904,
+          "macro_mae": 215.49051656750908,
+          "macro_rmse": 266.41576722986645,
+          "bias": 70.25998775180094,
+          "max_error": 678.5641193331004
+        }
+      ]
+    },
+    {
+      "held_out_group": "gemini-3",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gemini-3"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-3"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.6-flash (medium)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -210.9042714244698,
+        "slope": 1.144019540759378
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 229.12639412804592,
+          "row_rmse": 285.9148675511067,
+          "macro_mae": 214.79339629714855,
+          "macro_rmse": 263.23694664180346,
+          "bias": -96.73622010748862,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 228.42892069475405,
+          "row_rmse": 277.38413540195074,
+          "macro_mae": 211.63155342641917,
+          "macro_rmse": 258.45652115795224,
+          "bias": -11.282967460043595,
+          "max_error": 760.0411403406235
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 215.74497123337696,
+          "row_rmse": 265.3816032567418,
+          "macro_mae": 195.33893969070408,
+          "macro_rmse": 238.51581515762535,
+          "bias": -30.510845809606035,
+          "max_error": 803.9193964052154
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 229.2975527674329,
+          "row_rmse": 290.7926820805313,
+          "macro_mae": 209.46185061444248,
+          "macro_rmse": 272.02783494575095,
+          "bias": 86.79786666675193,
+          "max_error": 715.6820359423396
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 228.3799682087978,
+          "row_rmse": 286.93923852814333,
+          "macro_mae": 208.620913354091,
+          "macro_rmse": 267.89786519287526,
+          "bias": 81.67475047282751,
+          "max_error": 708.8540910404315
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 229.40402274572477,
+          "row_rmse": 281.47262642716504,
+          "macro_mae": 210.676570737501,
+          "macro_rmse": 263.6326310296458,
+          "bias": 71.05234067870256,
+          "max_error": 686.8065445216907
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 237.75793991798045,
+          "row_rmse": 287.93626488273634,
+          "macro_mae": 222.03357035871173,
+          "macro_rmse": 271.74849130025785,
+          "bias": 77.12947242357409,
+          "max_error": 668.3102886325796
+        }
+      ]
+    },
+    {
+      "held_out_group": "gemini-3.1",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gemini-3.1"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-3.1"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -197.99332543761852,
+        "slope": 1.120672208168692
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 225.89913897447576,
+          "row_rmse": 283.865694259993,
+          "macro_mae": 211.17157847937014,
+          "macro_rmse": 260.21768409834107,
+          "bias": -103.30172185478713,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 223.27522985977964,
+          "row_rmse": 273.11842910521796,
+          "macro_mae": 206.94732512642136,
+          "macro_rmse": 253.84842049472925,
+          "bias": -13.636676700552028,
+          "max_error": 755.4837951102916
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 217.47643554011034,
+          "row_rmse": 268.0869809374184,
+          "macro_mae": 196.79528140657845,
+          "macro_rmse": 241.14279422021426,
+          "bias": -29.31682205464266,
+          "max_error": 788.8891782227593
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 217.9608116883025,
+          "row_rmse": 279.20711717594816,
+          "macro_mae": 203.72009608685943,
+          "macro_rmse": 267.3228881229013,
+          "bias": 80.52924724039906,
+          "max_error": 687.0125238583043
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 218.62587704363054,
+          "row_rmse": 275.5650478608927,
+          "macro_mae": 203.67533630738805,
+          "macro_rmse": 261.07329763394534,
+          "bias": 73.59019764840568,
+          "max_error": 688.9034668593492
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 219.49442134242418,
+          "row_rmse": 271.6744806476459,
+          "macro_mae": 203.06181253366503,
+          "macro_rmse": 255.21517195856813,
+          "bias": 62.046745826361985,
+          "max_error": 685.3305944079598
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 224.62333339599786,
+          "row_rmse": 275.6229718956324,
+          "macro_mae": 211.7593341309178,
+          "macro_rmse": 260.8270097288653,
+          "bias": 68.43839826662986,
+          "max_error": 675.3451017751801
+        }
+      ]
+    },
+    {
+      "held_out_group": "gemini-3.5",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gemini-3.5"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-3.5"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-3.5-flash (medium)"
+      ],
+      "selected_candidate": "core-ridge-0",
+      "selected_model": {
+        "kind": "core",
+        "candidate": "core-ridge-0",
+        "alpha": 0.0,
+        "coefficients": [
+          2478.447456105832,
+          -357.84515510839225,
+          1.408769935819626,
+          8.929898875761957
+        ],
+        "normalization": {
+          "mean": [
+            6.20746526012248,
+            38.86666666666665,
+            51.805013288482584
+          ],
+          "scale": [
+            1.2599992626413745,
+            18.996900331954738,
+            43.97842858792557
+          ]
+        },
+        "weight_sum": 39.000000000000014
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 226.37234721621266,
+          "row_rmse": 284.05641866412986,
+          "macro_mae": 214.3180362383041,
+          "macro_rmse": 264.21477575090375,
+          "bias": -103.68902559429851,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 223.52438162153064,
+          "row_rmse": 272.2420979410463,
+          "macro_mae": 206.3701531818427,
+          "macro_rmse": 254.31319637209353,
+          "bias": -5.216746893175028,
+          "max_error": 746.6561771560605
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 215.5527676609371,
+          "row_rmse": 264.97453057956807,
+          "macro_mae": 198.2860877434749,
+          "macro_rmse": 243.16568754902914,
+          "bias": -24.2072613755802,
+          "max_error": 781.4983144938005
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 217.99090486023627,
+          "row_rmse": 285.69291042018665,
+          "macro_mae": 195.82488460288417,
+          "macro_rmse": 266.48919096009206,
+          "bias": 79.46865561778436,
+          "max_error": 716.1759902814877
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 218.03337118046815,
+          "row_rmse": 281.5234202452494,
+          "macro_mae": 196.4741701670982,
+          "macro_rmse": 262.39574204626666,
+          "bias": 73.8805500173183,
+          "max_error": 708.4863533090281
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 223.36146584836976,
+          "row_rmse": 275.67699922376454,
+          "macro_mae": 205.76594794952808,
+          "macro_rmse": 258.7774560999611,
+          "bias": 57.52913279454045,
+          "max_error": 687.222087213247
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 235.97478428301454,
+          "row_rmse": 285.4179875742636,
+          "macro_mae": 216.31178859073034,
+          "macro_rmse": 267.1730601720101,
+          "bias": 59.74977124231107,
+          "max_error": 670.1414671366431
+        }
+      ]
+    },
+    {
+      "held_out_group": "gemini-4-argon",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gemini-4-argon"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-4-argon"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-4-argon (medium)"
+      ],
+      "selected_candidate": "core-ridge-0",
+      "selected_model": {
+        "kind": "core",
+        "candidate": "core-ridge-0",
+        "alpha": 0.0,
+        "coefficients": [
+          2425.182085151592,
+          -350.89554923776444,
+          1.5314525147609894,
+          8.947130584440005
+        ],
+        "normalization": {
+          "mean": [
+            6.1993176295128105,
+            39.26666666666666,
+            51.8050132884826
+          ],
+          "scale": [
+            1.2721331433114165,
+            19.596655043371275,
+            43.978428587925585
+          ]
+        },
+        "weight_sum": 39.00000000000001
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 221.0048791507013,
+          "row_rmse": 279.3809419930702,
+          "macro_mae": 203.8514735105569,
+          "macro_rmse": 254.30786099952917,
+          "bias": -109.0564936598099,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 218.15691355601936,
+          "row_rmse": 264.39433687622386,
+          "macro_mae": 195.44453068533468,
+          "macro_rmse": 237.84831514851905,
+          "bias": 0.15072117233636215,
+          "max_error": 735.6387427058003
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 206.9096335167476,
+          "row_rmse": 256.693949202552,
+          "macro_mae": 183.80018269660343,
+          "macro_rmse": 227.73988682337443,
+          "bias": -15.768130383525682,
+          "max_error": 765.2784649698269
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 209.651377184436,
+          "row_rmse": 272.9619206951874,
+          "macro_mae": 178.73430285939315,
+          "macro_rmse": 236.98520808003866,
+          "bias": 76.79726141959895,
+          "max_error": 712.7613789658017
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 212.0619486961849,
+          "row_rmse": 270.2348144011617,
+          "macro_mae": 181.5148219410359,
+          "macro_rmse": 235.27252824990669,
+          "bias": 72.6820621778803,
+          "max_error": 704.6468347095115
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 219.7627895955612,
+          "row_rmse": 268.3253029433336,
+          "macro_mae": 194.65063787942324,
+          "macro_rmse": 239.42868733182652,
+          "bias": 60.33679477146629,
+          "max_error": 679.1697288238614
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 233.50659181237768,
+          "row_rmse": 279.8721539833922,
+          "macro_mae": 208.0521875180462,
+          "macro_rmse": 252.10278689297837,
+          "bias": 63.88380093713535,
+          "max_error": 659.7345028090774
+        }
+      ]
+    },
+    {
+      "held_out_group": "glm",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "glm"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "glm"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "glm-4.6 (no thinking)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -209.94725287953054,
+        "slope": 1.1306641778275643
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 225.47783378394132,
+          "row_rmse": 283.5578740024762,
+          "macro_mae": 212.57373504537503,
+          "macro_rmse": 263.1684529496271,
+          "bias": -95.57743693534378,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 226.9414069957885,
+          "row_rmse": 275.2156001014198,
+          "macro_mae": 213.51078870878527,
+          "macro_rmse": 259.32108595692716,
+          "bias": -13.32833555212977,
+          "max_error": 763.3062801928622
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.49465803981855,
+          "row_rmse": 266.0747630525368,
+          "macro_mae": 203.0232542551969,
+          "macro_rmse": 244.59143060144345,
+          "bias": -27.96765269049286,
+          "max_error": 787.7635768702967
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 222.30918840998007,
+          "row_rmse": 287.33935209116333,
+          "macro_mae": 205.0541782143323,
+          "macro_rmse": 272.0675017182396,
+          "bias": 82.51220454108272,
+          "max_error": 717.149960859671
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 222.22148293984168,
+          "row_rmse": 283.48618462702296,
+          "macro_mae": 205.46610605124033,
+          "macro_rmse": 267.8017582411132,
+          "bias": 77.58997293433632,
+          "max_error": 711.3661961442926
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 226.81057559140376,
+          "row_rmse": 278.4470135658214,
+          "macro_mae": 212.82057166819004,
+          "macro_rmse": 264.127004345724,
+          "bias": 63.07319518625045,
+          "max_error": 691.3762103288559
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 242.19251273335925,
+          "row_rmse": 288.4373570769595,
+          "macro_mae": 228.99086175529663,
+          "macro_rmse": 273.68794249504197,
+          "bias": 59.55406502047452,
+          "max_error": 676.6029118745707
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-3.5",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-3.5"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-3.5"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -208.25469946688156,
+        "slope": 1.134259182627106
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 227.34504587128106,
+          "row_rmse": 286.06313426417734,
+          "macro_mae": 213.10111545322192,
+          "macro_rmse": 263.3899297821837,
+          "bias": -94.02621752666774,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 230.92994107727841,
+          "row_rmse": 278.4147995822483,
+          "macro_mae": 214.05667369234612,
+          "macro_rmse": 259.3959221557674,
+          "bias": -11.140335745263554,
+          "max_error": 762.7511429214444
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 220.4616660286434,
+          "row_rmse": 269.067924839925,
+          "macro_mae": 200.4602423646382,
+          "macro_rmse": 243.47710428074996,
+          "bias": -30.534557255445776,
+          "max_error": 794.2139020718223
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 226.78090056530723,
+          "row_rmse": 291.0698463564234,
+          "macro_mae": 206.3734026720258,
+          "macro_rmse": 271.8853450988552,
+          "bias": 87.47707050446742,
+          "max_error": 724.9850382517131
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 227.2686884432281,
+          "row_rmse": 287.43159920849274,
+          "macro_mae": 207.17648542983517,
+          "macro_rmse": 268.23700095730055,
+          "bias": 82.32570088433607,
+          "max_error": 714.9689987071297
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 235.49827059540888,
+          "row_rmse": 283.00819175479717,
+          "macro_mae": 218.36727603173995,
+          "macro_rmse": 265.898617493753,
+          "bias": 67.17944584527586,
+          "max_error": 687.1318100660018
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 245.07147201440455,
+          "row_rmse": 289.7763687459746,
+          "macro_mae": 228.12600846806808,
+          "macro_rmse": 273.3938828907781,
+          "bias": 73.0794343049295,
+          "max_error": 668.7873918088219
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.1",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.1"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.1"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -206.58968643628566,
+        "slope": 1.1270229956460123
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 233.2321995213465,
+          "row_rmse": 289.64208088029085,
+          "macro_mae": 215.69363248327377,
+          "macro_rmse": 264.1138733164054,
+          "bias": -101.69137136415613,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 230.2302898404655,
+          "row_rmse": 279.71790439673197,
+          "macro_mae": 211.21014590040858,
+          "macro_rmse": 258.20868254300984,
+          "bias": -12.986886151700926,
+          "max_error": 756.529110341052
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 220.49116168065817,
+          "row_rmse": 270.0103944114737,
+          "macro_mae": 198.4902448354199,
+          "macro_rmse": 242.34984517967453,
+          "bias": -31.67931859505842,
+          "max_error": 787.1985785446673
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 221.8918417016287,
+          "row_rmse": 291.46797032082435,
+          "macro_mae": 206.17564694394633,
+          "macro_rmse": 278.0239053013231,
+          "bias": 83.62988541453628,
+          "max_error": 685.5516823064186
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 219.8049431163253,
+          "row_rmse": 285.71859872850877,
+          "macro_mae": 203.1347780299255,
+          "macro_rmse": 269.30843766685865,
+          "bias": 78.00946083115092,
+          "max_error": 685.5710969940578
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 228.7411397550334,
+          "row_rmse": 281.19831321304946,
+          "macro_mae": 209.4116599938492,
+          "macro_rmse": 263.2681735525107,
+          "bias": 67.32983487928352,
+          "max_error": 674.7463560162037
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 240.67136255873473,
+          "row_rmse": 289.7504009830197,
+          "macro_mae": 222.61411536298448,
+          "macro_rmse": 271.8831905531013,
+          "bias": 70.56666220901732,
+          "max_error": 661.8873049737089
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.2",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.2"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.2"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.2 (high)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -216.83399577880357,
+        "slope": 1.1262232480309482
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 225.34780940581933,
+          "row_rmse": 283.4761701827191,
+          "macro_mae": 212.32018750803704,
+          "macro_rmse": 262.99675544687386,
+          "bias": -104.71356340469188,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 222.49984381113734,
+          "row_rmse": 271.1174109597445,
+          "macro_mae": 204.28467950726568,
+          "macro_rmse": 252.0359563201636,
+          "bias": -4.192209082781657,
+          "max_error": 744.5531784926213
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 211.23560934533518,
+          "row_rmse": 260.8127865462088,
+          "macro_mae": 190.35238429678878,
+          "macro_rmse": 235.8468544792422,
+          "bias": -21.239837517025354,
+          "max_error": 775.4291368105344
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 220.3685431583523,
+          "row_rmse": 287.72272693153013,
+          "macro_mae": 195.22609826338572,
+          "macro_rmse": 263.8739611669959,
+          "bias": 72.99275240557282,
+          "max_error": 751.8510559488273
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 217.90188980431338,
+          "row_rmse": 281.25070039900237,
+          "macro_mae": 194.26978716106814,
+          "macro_rmse": 258.8766753679861,
+          "bias": 67.12519663110498,
+          "max_error": 739.6344725594427
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 219.04126366984383,
+          "row_rmse": 272.80462678817844,
+          "macro_mae": 197.56800904298433,
+          "macro_rmse": 252.56503232042826,
+          "bias": 55.48845040778401,
+          "max_error": 701.1548963402797
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 227.14066391420624,
+          "row_rmse": 278.4139760712555,
+          "macro_mae": 208.81692397249566,
+          "macro_rmse": 259.62142547313687,
+          "bias": 61.61531231326626,
+          "max_error": 675.6116411757173
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.5",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.5"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.5"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -186.55016879692687,
+        "slope": 1.1301792662612151
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 210.3306248491213,
+          "row_rmse": 265.1103675064697,
+          "macro_mae": 196.9374154821702,
+          "macro_rmse": 241.66728321457956,
+          "bias": -77.011796504508,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 213.0200242118471,
+          "row_rmse": 260.71149139926524,
+          "macro_mae": 197.32582635388903,
+          "macro_rmse": 240.56907102367882,
+          "bias": -10.244839901991996,
+          "max_error": 779.7655639436043
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 202.69253347854794,
+          "row_rmse": 251.07881709199322,
+          "macro_mae": 182.36789658295984,
+          "macro_rmse": 221.83899312694064,
+          "bias": -29.48653286624657,
+          "max_error": 812.2356995385021
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 218.10217077324083,
+          "row_rmse": 282.38898730611425,
+          "macro_mae": 197.28562590386892,
+          "macro_rmse": 261.62734815406907,
+          "bias": 84.56247189450187,
+          "max_error": 730.2536825337868
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 217.2853627635895,
+          "row_rmse": 277.95686307888633,
+          "macro_mae": 197.57250122816333,
+          "macro_rmse": 257.08214941107735,
+          "bias": 79.43536808331822,
+          "max_error": 724.163867219796
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 216.33662018363648,
+          "row_rmse": 270.3535248337577,
+          "macro_mae": 197.7026749313747,
+          "macro_rmse": 250.6626342801479,
+          "bias": 70.37860570998521,
+          "max_error": 702.6353101067472
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 221.74090760514082,
+          "row_rmse": 273.8986759892974,
+          "macro_mae": 206.73308128641943,
+          "macro_rmse": 256.52990392837455,
+          "bias": 77.64905313990653,
+          "max_error": 685.8484750914383
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.6-luna",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.6-luna"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.6-luna"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)"
+      ],
+      "selected_candidate": "core-ridge-0",
+      "selected_model": {
+        "kind": "core",
+        "candidate": "core-ridge-0",
+        "alpha": 0.0,
+        "coefficients": [
+          2347.6996503115997,
+          -339.3890241618394,
+          0.8247648883015332,
+          9.831429388163114
+        ],
+        "normalization": {
+          "mean": [
+            6.104676054848843,
+            40.29166666666668,
+            53.66865566196185
+          ],
+          "scale": [
+            1.33008517917939,
+            20.296098078749576,
+            44.6202968174001
+          ]
+        },
+        "weight_sum": 35.99999999999999
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 201.2872874011168,
+          "row_rmse": 246.28065899139887,
+          "macro_mae": 199.8182825604153,
+          "macro_rmse": 241.89070567385937,
+          "bias": -73.13147443603596,
+          "max_error": 585.566752076346
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 204.6253489920438,
+          "row_rmse": 243.60002769374734,
+          "macro_mae": 198.9289725733473,
+          "macro_rmse": 239.52291955304628,
+          "bias": 2.8262303886628186,
+          "max_error": 531.4624108099089
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 195.12810207330512,
+          "row_rmse": 231.53363286122274,
+          "macro_mae": 185.53616641045627,
+          "macro_rmse": 221.33045914869928,
+          "bias": -15.710817476016096,
+          "max_error": 557.5388778201328
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 192.2796997672797,
+          "row_rmse": 252.72675009683945,
+          "macro_mae": 181.9416034460729,
+          "macro_rmse": 244.99925162169336,
+          "bias": 96.46507201704564,
+          "max_error": 645.7435515244051
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 195.10400116831573,
+          "row_rmse": 250.68302305507652,
+          "macro_mae": 183.6597418999691,
+          "macro_rmse": 242.67929556806763,
+          "bias": 92.25481863868339,
+          "max_error": 616.4364202075972
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 206.80935650400832,
+          "row_rmse": 251.30219968998182,
+          "macro_mae": 194.98318693744528,
+          "macro_rmse": 243.65540188506446,
+          "bias": 82.70952804884945,
+          "max_error": 538.4825244325466
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 219.7936237466994,
+          "row_rmse": 262.2628175187169,
+          "macro_mae": 209.9466804456305,
+          "macro_rmse": 254.91175291380154,
+          "bias": 86.0838751823456,
+          "max_error": 516.214185530459
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.6-sol",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.6-sol"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.6-sol"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -204.30137924309884,
+        "slope": 1.1279481702875365
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 230.3070645803052,
+          "row_rmse": 290.35770463602984,
+          "macro_mae": 212.87718229105002,
+          "macro_rmse": 262.9736842977211,
+          "bias": -104.76421844756518,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 229.8067330960413,
+          "row_rmse": 279.6226677736881,
+          "macro_mae": 209.96302441707547,
+          "macro_rmse": 256.7842266205988,
+          "bias": -15.487463512748839,
+          "max_error": 755.7951118248272
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.3511289585268,
+          "row_rmse": 270.3815868254941,
+          "macro_mae": 196.44019919785464,
+          "macro_rmse": 241.0623164287844,
+          "bias": -30.159015568327884,
+          "max_error": 791.0088166860403
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 228.4645782573507,
+          "row_rmse": 294.3005228082175,
+          "macro_mae": 204.9257025913063,
+          "macro_rmse": 271.4532718218115,
+          "bias": 76.06822579233855,
+          "max_error": 714.1767456762202
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 226.3834134431374,
+          "row_rmse": 288.83035710189637,
+          "macro_mae": 203.15443367938485,
+          "macro_rmse": 265.69741910411824,
+          "bias": 70.88944250660649,
+          "max_error": 708.0702736265116
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 229.24062756275757,
+          "row_rmse": 282.4127683646211,
+          "macro_mae": 207.47606296796593,
+          "macro_rmse": 261.06113993255826,
+          "bias": 61.449364913440235,
+          "max_error": 686.1109291462687
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 239.71790249782185,
+          "row_rmse": 288.92429726248474,
+          "macro_mae": 220.45877186036168,
+          "macro_rmse": 269.361238105312,
+          "bias": 64.14006340625221,
+          "max_error": 668.0321256496179
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-5.6-terra",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-5.6-terra"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-5.6-terra"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -198.26135841797327,
+        "slope": 1.1281695568513534
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 221.85359264143437,
+          "row_rmse": 277.24007889883006,
+          "macro_mae": 209.07311991855818,
+          "macro_rmse": 256.5242050001597,
+          "bias": -82.90121444550331,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 225.44875265366315,
+          "row_rmse": 272.83224450130086,
+          "macro_mae": 208.10668040509972,
+          "macro_rmse": 253.30740962723203,
+          "bias": -2.8299348799762054,
+          "max_error": 766.1512716152777
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 212.41335702837677,
+          "row_rmse": 262.38089471244336,
+          "macro_mae": 193.46827879146556,
+          "macro_rmse": 236.53672531054048,
+          "bias": -22.487998639220653,
+          "max_error": 797.3939901288752
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 215.7733434071536,
+          "row_rmse": 281.23653004933334,
+          "macro_mae": 195.99307032350683,
+          "macro_rmse": 260.45068548649783,
+          "bias": 78.60196978537095,
+          "max_error": 743.2259411128625
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 213.90798708584123,
+          "row_rmse": 278.4149639441228,
+          "macro_mae": 194.4335759624284,
+          "macro_rmse": 257.1564361991657,
+          "bias": 76.58688155601453,
+          "max_error": 729.6919520278061
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 218.670662601092,
+          "row_rmse": 274.51697101681043,
+          "macro_mae": 201.56719366529182,
+          "macro_rmse": 255.10268214280188,
+          "bias": 72.7677045507606,
+          "max_error": 696.4028945906468
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 231.90338605689826,
+          "row_rmse": 284.7864055493475,
+          "macro_mae": 215.23519723419167,
+          "macro_rmse": 265.3475673596938,
+          "bias": 78.97796936668081,
+          "max_error": 677.8184086457013
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-6-astra",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-6-astra"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-6-astra"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -201.64103304149398,
+        "slope": 1.1177698893414687
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 229.06350574150298,
+          "row_rmse": 286.30190479967524,
+          "macro_mae": 214.73365232993274,
+          "macro_rmse": 263.6362756188862,
+          "bias": -109.68369266928487,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 223.23370913508998,
+          "row_rmse": 272.38129605701124,
+          "macro_mae": 206.80399804942,
+          "macro_rmse": 253.91504423520394,
+          "bias": -11.964413384348674,
+          "max_error": 747.0936677788275
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 217.51162635775123,
+          "row_rmse": 266.53915412382634,
+          "macro_mae": 198.301504199796,
+          "macro_rmse": 242.18745953012336,
+          "bias": -28.648676193402515,
+          "max_error": 781.6471071959804
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 227.1943520359392,
+          "row_rmse": 291.79861375192115,
+          "macro_mae": 206.95239416332097,
+          "macro_rmse": 272.9930676107256,
+          "bias": 85.33103388737031,
+          "max_error": 712.633261003378
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 227.3544344720241,
+          "row_rmse": 288.21029746222894,
+          "macro_mae": 206.76780233959425,
+          "macro_rmse": 269.2887931334795,
+          "bias": 79.84494983324217,
+          "max_error": 703.095547608661
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 228.2033676076768,
+          "row_rmse": 281.9519937852166,
+          "macro_mae": 209.76545475324684,
+          "macro_rmse": 264.9087866980384,
+          "bias": 70.0647434592607,
+          "max_error": 674.0269062266041
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 235.47255818610702,
+          "row_rmse": 285.7243059979633,
+          "macro_mae": 219.70303681251798,
+          "macro_rmse": 270.3348863688082,
+          "bias": 72.62637021231849,
+          "max_error": 653.8562994060953
+        }
+      ]
+    },
+    {
+      "held_out_group": "gpt-oss",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "gpt-oss"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-oss"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-oss-120b (low)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -224.5677347091106,
+        "slope": 1.1386744675501523
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 229.91248376456693,
+          "row_rmse": 284.9486036451813,
+          "macro_mae": 221.2213025075949,
+          "macro_rmse": 266.08152943870874,
+          "bias": -100.14888904594426,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 227.06451816988496,
+          "row_rmse": 274.8223106892565,
+          "macro_mae": 213.5761942875059,
+          "macro_rmse": 259.2869171885558,
+          "bias": -8.756883441529284,
+          "max_error": 753.922773228998
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 214.10926766960105,
+          "row_rmse": 263.361463375613,
+          "macro_mae": 194.653037614145,
+          "macro_rmse": 240.01312514588767,
+          "bias": -25.336116102582775,
+          "max_error": 782.1260426227843
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 221.50394775583567,
+          "row_rmse": 286.97884844005245,
+          "macro_mae": 202.42375986181145,
+          "macro_rmse": 269.3397734576354,
+          "bias": 86.03780807069496,
+          "max_error": 716.5137765145541
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 221.90234013574823,
+          "row_rmse": 283.54911781358925,
+          "macro_mae": 202.3509541758526,
+          "macro_rmse": 265.45889864905234,
+          "bias": 81.95338246134884,
+          "max_error": 708.5824272511118
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 226.24164049947447,
+          "row_rmse": 278.0752733343856,
+          "macro_mae": 207.1009656865884,
+          "macro_rmse": 261.3435769199487,
+          "bias": 73.73130777146248,
+          "max_error": 680.7290249920178
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 234.21074388498678,
+          "row_rmse": 284.64291997332657,
+          "macro_mae": 219.06603593360487,
+          "macro_rmse": 269.851563424936,
+          "bias": 80.26908288285063,
+          "max_error": 660.1287710695077
+        }
+      ]
+    },
+    {
+      "held_out_group": "kimi-k2",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "kimi-k2"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "kimi-k2"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "kimi-k2-0905"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -189.3072975924497,
+        "slope": 1.117656863719296
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 222.08250483902404,
+          "row_rmse": 280.6472827880986,
+          "macro_mae": 205.95284360278623,
+          "macro_rmse": 257.0124549736859,
+          "bias": -92.18210799042646,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 223.54607805087116,
+          "row_rmse": 273.3723844449441,
+          "macro_mae": 206.6575852857548,
+          "macro_rmse": 254.69047445174482,
+          "bias": -16.72366449704709,
+          "max_error": 770.2756396061136
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 215.68334959296357,
+          "row_rmse": 265.72907126074165,
+          "macro_mae": 197.67291095084425,
+          "macro_rmse": 242.3895274118662,
+          "bias": -30.460523131677736,
+          "max_error": 793.832811468319
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 225.75524611002314,
+          "row_rmse": 288.8150130584728,
+          "macro_mae": 210.94386503521795,
+          "macro_rmse": 273.68690472375687,
+          "bias": 85.24096464923092,
+          "max_error": 714.954297718908
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 225.4028634493712,
+          "row_rmse": 284.66103127328086,
+          "macro_mae": 211.1329459377627,
+          "macro_rmse": 269.3552435815625,
+          "bias": 79.79096168112373,
+          "max_error": 708.8520779899484
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 229.453903723368,
+          "row_rmse": 279.29452870033214,
+          "macro_mae": 217.28087333341372,
+          "macro_rmse": 265.6666797531571,
+          "bias": 64.31761992194254,
+          "max_error": 688.8417247023021
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 240.3333833833803,
+          "row_rmse": 288.18830273513237,
+          "macro_mae": 225.11497731643558,
+          "macro_rmse": 273.0684236096859,
+          "bias": 65.21475472586596,
+          "max_error": 674.3438983933606
+        }
+      ]
+    },
+    {
+      "held_out_group": "llama-4",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "mistral",
+        "qwen3"
+      ],
+      "test_groups": [
+        "llama-4"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "llama-4"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "llama-4-maverick"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -199.7864142504152,
+        "slope": 1.1239762207145219
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 224.15938483370417,
+          "row_rmse": 282.62021258748445,
+          "macro_mae": 210.00275959241245,
+          "macro_rmse": 261.19420380929614,
+          "bias": -94.25898798510656,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 225.62295804555126,
+          "row_rmse": 274.717314977108,
+          "macro_mae": 210.84960359080645,
+          "macro_rmse": 258.0028059465644,
+          "bias": -14.646784502366977,
+          "max_error": 766.0125701433492
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.67523725071797,
+          "row_rmse": 266.2909383938819,
+          "macro_mae": 203.5019891271007,
+          "macro_rmse": 244.45712541321865,
+          "bias": -28.98229597718757,
+          "max_error": 790.4214649820772
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 225.17871557601276,
+          "row_rmse": 288.8238666924235,
+          "macro_mae": 209.79309375591848,
+          "macro_rmse": 273.6111882808407,
+          "bias": 85.68269832268413,
+          "max_error": 714.4278231859134
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 224.51380566244754,
+          "row_rmse": 284.83752980846634,
+          "macro_mae": 209.31624846000523,
+          "macro_rmse": 269.4321854715495,
+          "bias": 80.70947076088622,
+          "max_error": 708.0397582748824
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 230.2268964001441,
+          "row_rmse": 279.4773101341978,
+          "macro_mae": 218.13842318253847,
+          "macro_rmse": 266.0439709317649,
+          "bias": 66.00539536795479,
+          "max_error": 686.4483182190193
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 243.29099128923315,
+          "row_rmse": 289.098266775235,
+          "macro_mae": 230.477736445981,
+          "macro_rmse": 274.7204675601165,
+          "bias": 67.1856682034664,
+          "max_error": 670.5203290684583
+        }
+      ]
+    },
+    {
+      "held_out_group": "mistral",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "qwen3"
+      ],
+      "test_groups": [
+        "mistral"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "qwen3"
+      ],
+      "test_families": [
+        "mistral"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "mistral-medium-3"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -231.44539978636328,
+        "slope": 1.1458443561268565
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 228.56482677990448,
+          "row_rmse": 284.8116668840331,
+          "macro_mae": 218.5933713875031,
+          "macro_rmse": 265.79548361962793,
+          "bias": -98.66442993130688,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 228.54897728452232,
+          "row_rmse": 275.3108582335939,
+          "macro_mae": 216.5978498800639,
+          "macro_rmse": 260.0786745528693,
+          "bias": -10.241342556166664,
+          "max_error": 756.969820885359
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 214.12727604893016,
+          "row_rmse": 263.3532499429377,
+          "macro_mae": 194.08613608095806,
+          "macro_rmse": 239.53020027877136,
+          "bias": -26.704987655012275,
+          "max_error": 783.459087187905
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 224.47129305194096,
+          "row_rmse": 288.5671039146576,
+          "macro_mae": 206.99713043758211,
+          "macro_rmse": 272.5301388702575,
+          "bias": 86.46432100305263,
+          "max_error": 703.8302855417048
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 223.368834318601,
+          "row_rmse": 284.8198395984433,
+          "macro_mae": 205.5188972519918,
+          "macro_rmse": 268.14243951056443,
+          "bias": 82.33117853344623,
+          "max_error": 696.64867662607
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 226.40257322082564,
+          "row_rmse": 277.9899358602227,
+          "macro_mae": 208.42954649321237,
+          "macro_rmse": 261.9526281713573,
+          "bias": 73.19786893005679,
+          "max_error": 675.6799662649046
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 233.91495851787366,
+          "row_rmse": 284.2908813582967,
+          "macro_mae": 219.53519573088823,
+          "macro_rmse": 270.0610788203017,
+          "bias": 78.99919300607279,
+          "max_error": 661.3053578263252
+        }
+      ]
+    },
+    {
+      "held_out_group": "qwen3",
+      "train_groups": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral"
+      ],
+      "test_groups": [
+        "qwen3"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral"
+      ],
+      "test_families": [
+        "qwen3"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3"
+      ],
+      "test_player_ids": [
+        "qwen3-235b-a22b-2507"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -176.73360646203014,
+        "slope": 1.1092309405686347
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 219.5323010882811,
+          "row_rmse": 277.377262952685,
+          "macro_mae": 200.9799462888375,
+          "macro_rmse": 249.994273758064,
+          "bias": -89.63190423968351,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 220.99587430012826,
+          "row_rmse": 270.7695150025495,
+          "macro_mae": 201.5102003467552,
+          "macro_rmse": 248.47122146033786,
+          "bias": -19.27386824779005,
+          "max_error": 775.5102683576386
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 212.44542691769237,
+          "row_rmse": 264.0122890257004,
+          "macro_mae": 191.50019540592686,
+          "macro_rmse": 237.77619389593093,
+          "bias": -31.577383958338288,
+          "max_error": 796.8610154252794
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 217.6906386690457,
+          "row_rmse": 284.5937530458814,
+          "macro_mae": 196.74428103297433,
+          "macro_rmse": 267.3164644356289,
+          "bias": 80.70533346808624,
+          "max_error": 716.808849859566
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 217.4783603527851,
+          "row_rmse": 280.81109371354427,
+          "macro_mae": 197.43673279867016,
+          "macro_rmse": 262.8916620754936,
+          "bias": 76.36971829666828,
+          "max_error": 712.6599325493205
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 223.57263725462923,
+          "row_rmse": 276.34870018441035,
+          "macro_mae": 207.22810342206648,
+          "macro_rmse": 260.32786402832585,
+          "bias": 61.87782816380453,
+          "max_error": 694.0354860049599
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 236.4039902358433,
+          "row_rmse": 285.88927006853737,
+          "macro_mae": 218.03927808565513,
+          "macro_rmse": 268.5662630730965,
+          "bias": 62.87361710024556,
+          "max_error": 679.2108883848618
+        }
+      ]
+    }
+  ],
+  "provider_folds": [
+    {
+      "held_out_group": "Alibaba",
+      "train_groups": [
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Alibaba"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral"
+      ],
+      "test_families": [
+        "qwen3"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3"
+      ],
+      "test_player_ids": [
+        "qwen3-235b-a22b-2507"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -176.73360646203014,
+        "slope": 1.1092309405686347
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 219.5323010882811,
+          "row_rmse": 277.377262952685,
+          "macro_mae": 200.9799462888375,
+          "macro_rmse": 249.994273758064,
+          "bias": -89.63190423968351,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 220.99587430012826,
+          "row_rmse": 270.7695150025495,
+          "macro_mae": 201.5102003467552,
+          "macro_rmse": 248.47122146033786,
+          "bias": -19.27386824779005,
+          "max_error": 775.5102683576386
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 212.44542691769237,
+          "row_rmse": 264.0122890257004,
+          "macro_mae": 191.50019540592686,
+          "macro_rmse": 237.77619389593093,
+          "bias": -31.577383958338288,
+          "max_error": 796.8610154252794
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 217.6906386690457,
+          "row_rmse": 284.5937530458814,
+          "macro_mae": 196.74428103297433,
+          "macro_rmse": 267.3164644356289,
+          "bias": 80.70533346808624,
+          "max_error": 716.808849859566
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 217.4783603527851,
+          "row_rmse": 280.81109371354427,
+          "macro_mae": 197.43673279867016,
+          "macro_rmse": 262.8916620754936,
+          "bias": 76.36971829666828,
+          "max_error": 712.6599325493205
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 223.57263725462923,
+          "row_rmse": 276.34870018441035,
+          "macro_mae": 207.22810342206648,
+          "macro_rmse": 260.32786402832585,
+          "bias": 61.87782816380453,
+          "max_error": 694.0354860049599
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 236.4039902358433,
+          "row_rmse": 285.88927006853737,
+          "macro_mae": 218.03927808565513,
+          "macro_rmse": 268.5662630730965,
+          "bias": 62.87361710024556,
+          "max_error": 679.2108883848618
+        }
+      ]
+    },
+    {
+      "held_out_group": "Anthropic",
+      "train_groups": [
+        "Alibaba",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Anthropic"
+      ],
+      "train_families": [
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "claude"
+      ],
+      "train_player_ids": [
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "claude-fable-5.2 (high)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -207.36085328757702,
+        "slope": 1.137702312849826
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 227.77800855229455,
+          "row_rmse": 284.6166462050963,
+          "macro_mae": 217.05907584366372,
+          "macro_rmse": 265.3878125215137,
+          "bias": -97.87761170369696,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 229.3357955121322,
+          "row_rmse": 275.4289489231362,
+          "macro_mae": 218.1994390881067,
+          "macro_rmse": 260.19368672279916,
+          "bias": -11.02816078377663,
+          "max_error": 758.5848688262427
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 216.99987312246122,
+          "row_rmse": 266.85989580174544,
+          "macro_mae": 198.06772628562325,
+          "macro_rmse": 242.75309281799682,
+          "bias": -33.60711014137814,
+          "max_error": 799.9182917937924
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 223.6645690305631,
+          "row_rmse": 286.6211441005099,
+          "macro_mae": 206.93884252573548,
+          "macro_rmse": 270.94289767772517,
+          "bias": 82.74821558471348,
+          "max_error": 717.380069886125
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 222.39842617441994,
+          "row_rmse": 282.9561582493189,
+          "macro_mae": 206.31345944861224,
+          "macro_rmse": 267.1617435100137,
+          "bias": 78.36122951341422,
+          "max_error": 710.5116586945444
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 230.50519330897447,
+          "row_rmse": 279.37956285639854,
+          "macro_mae": 218.97167451113364,
+          "macro_rmse": 265.780892161724,
+          "bias": 65.52563964245464,
+          "max_error": 686.7088325957627
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 243.04635753573015,
+          "row_rmse": 289.9982788440277,
+          "macro_mae": 228.95148116159467,
+          "macro_rmse": 275.65001944302514,
+          "bias": 68.93462237801863,
+          "max_error": 666.8436588123822
+        }
+      ]
+    },
+    {
+      "held_out_group": "DeepSeek",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "Google",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "DeepSeek"
+      ],
+      "train_families": [
+        "claude",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "deepseek-v4"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -214.5179142449541,
+        "slope": 1.1223456134626815
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 224.02296614653469,
+          "row_rmse": 284.3074565122613,
+          "macro_mae": 210.01460523547317,
+          "macro_rmse": 260.5149225645398,
+          "bias": -123.87956195103114,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 214.5131403121709,
+          "row_rmse": 263.6587548572471,
+          "macro_mae": 201.8779752052034,
+          "macro_rmse": 248.19508437288394,
+          "bias": -21.940015686755732,
+          "max_error": 742.1262497846594
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 204.13685761426217,
+          "row_rmse": 254.72593957557632,
+          "macro_mae": 188.85277571146867,
+          "macro_rmse": 233.30063948837508,
+          "bias": -38.58111406735251,
+          "max_error": 773.2407191839247
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 210.9731328828786,
+          "row_rmse": 278.05692035469565,
+          "macro_mae": 196.16350922240963,
+          "macro_rmse": 262.8160151219714,
+          "bias": 67.63614472268829,
+          "max_error": 707.4724071204992
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 210.2986029943208,
+          "row_rmse": 271.08588193924675,
+          "macro_mae": 196.25220058040634,
+          "macro_rmse": 257.12880634093807,
+          "bias": 61.81158451474677,
+          "max_error": 695.3625616406432
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 216.78486676372202,
+          "row_rmse": 268.3142499102424,
+          "macro_mae": 204.43213132195297,
+          "macro_rmse": 256.41319553376263,
+          "bias": 56.02944968131288,
+          "max_error": 667.8514699102905
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 222.79077847847233,
+          "row_rmse": 271.2213363110359,
+          "macro_mae": 213.83312450071972,
+          "macro_rmse": 261.8360928807785,
+          "bias": 62.92438486922352,
+          "max_error": 651.669244403317
+        }
+      ]
+    },
+    {
+      "held_out_group": "Google",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Google"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)"
+      ],
+      "selected_candidate": "core-ridge-10",
+      "selected_model": {
+        "kind": "core",
+        "candidate": "core-ridge-10",
+        "alpha": 10.0,
+        "coefficients": [
+          1585.5391145413219,
+          -261.7210218688237,
+          12.523377251863856,
+          6.4860893643083495
+        ],
+        "normalization": {
+          "mean": [
+            6.491183028231211,
+            34.0625,
+            46.00767461886503
+          ],
+          "scale": [
+            1.1548382015801755,
+            17.611438340370345,
+            43.77806599445705
+          ]
+        },
+        "weight_sum": 32.00000000000001
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 231.81454134691253,
+          "row_rmse": 292.82597721448013,
+          "macro_mae": 213.40340727352745,
+          "macro_rmse": 267.72670056430536,
+          "bias": -121.83887908681392,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 226.84260337624414,
+          "row_rmse": 276.27392579354324,
+          "macro_mae": 201.78218596411705,
+          "macro_rmse": 248.01262676941153,
+          "bias": 3.1851513422351445,
+          "max_error": 721.8967153678718
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 223.93117157965105,
+          "row_rmse": 274.02178132366026,
+          "macro_mae": 199.63704722443725,
+          "macro_rmse": 244.50087219731824,
+          "bias": -13.085168284109471,
+          "max_error": 764.7377820775869
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 226.02295289395244,
+          "row_rmse": 281.5006767919448,
+          "macro_mae": 198.02830936951017,
+          "macro_rmse": 253.8503250136596,
+          "bias": 76.62197333145586,
+          "max_error": 684.1774495701111
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 224.8137980829743,
+          "row_rmse": 277.94734817535846,
+          "macro_mae": 197.58732607411991,
+          "macro_rmse": 249.66026855713187,
+          "bias": 67.34267910339673,
+          "max_error": 679.9938575070905
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 220.01380783145692,
+          "row_rmse": 273.53174791622166,
+          "macro_mae": 189.93050571851356,
+          "macro_rmse": 244.10238261943152,
+          "bias": 51.63665257240864,
+          "max_error": 681.099759835467
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 225.92285580367727,
+          "row_rmse": 277.18925529843534,
+          "macro_mae": 198.11786488833027,
+          "macro_rmse": 248.1753102735136,
+          "bias": 55.08938399833544,
+          "max_error": 674.8492567155783
+        }
+      ]
+    },
+    {
+      "held_out_group": "Meta",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Mistral",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Meta"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "llama-4"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "llama-4-maverick"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -199.7864142504152,
+        "slope": 1.1239762207145219
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 224.15938483370417,
+          "row_rmse": 282.62021258748445,
+          "macro_mae": 210.00275959241245,
+          "macro_rmse": 261.19420380929614,
+          "bias": -94.25898798510656,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 225.62295804555126,
+          "row_rmse": 274.717314977108,
+          "macro_mae": 210.84960359080645,
+          "macro_rmse": 258.0028059465644,
+          "bias": -14.646784502366977,
+          "max_error": 766.0125701433492
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.67523725071797,
+          "row_rmse": 266.2909383938819,
+          "macro_mae": 203.5019891271007,
+          "macro_rmse": 244.45712541321865,
+          "bias": -28.98229597718757,
+          "max_error": 790.4214649820772
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 225.17871557601276,
+          "row_rmse": 288.8238666924235,
+          "macro_mae": 209.79309375591848,
+          "macro_rmse": 273.6111882808407,
+          "bias": 85.68269832268413,
+          "max_error": 714.4278231859134
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 224.51380566244754,
+          "row_rmse": 284.83752980846634,
+          "macro_mae": 209.31624846000523,
+          "macro_rmse": 269.4321854715495,
+          "bias": 80.70947076088622,
+          "max_error": 708.0397582748824
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 230.2268964001441,
+          "row_rmse": 279.4773101341978,
+          "macro_mae": 218.13842318253847,
+          "macro_rmse": 266.0439709317649,
+          "bias": 66.00539536795479,
+          "max_error": 686.4483182190193
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 243.29099128923315,
+          "row_rmse": 289.098266775235,
+          "macro_mae": 230.477736445981,
+          "macro_rmse": 274.7204675601165,
+          "bias": 67.1856682034664,
+          "max_error": 670.5203290684583
+        }
+      ]
+    },
+    {
+      "held_out_group": "Mistral",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Moonshot",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Mistral"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "qwen3"
+      ],
+      "test_families": [
+        "mistral"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "mistral-medium-3"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -231.44539978636328,
+        "slope": 1.1458443561268565
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 228.56482677990448,
+          "row_rmse": 284.8116668840331,
+          "macro_mae": 218.5933713875031,
+          "macro_rmse": 265.79548361962793,
+          "bias": -98.66442993130688,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 228.54897728452232,
+          "row_rmse": 275.3108582335939,
+          "macro_mae": 216.5978498800639,
+          "macro_rmse": 260.0786745528693,
+          "bias": -10.241342556166664,
+          "max_error": 756.969820885359
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 214.12727604893016,
+          "row_rmse": 263.3532499429377,
+          "macro_mae": 194.08613608095806,
+          "macro_rmse": 239.53020027877136,
+          "bias": -26.704987655012275,
+          "max_error": 783.459087187905
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 224.47129305194096,
+          "row_rmse": 288.5671039146576,
+          "macro_mae": 206.99713043758211,
+          "macro_rmse": 272.5301388702575,
+          "bias": 86.46432100305263,
+          "max_error": 703.8302855417048
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 223.368834318601,
+          "row_rmse": 284.8198395984433,
+          "macro_mae": 205.5188972519918,
+          "macro_rmse": 268.14243951056443,
+          "bias": 82.33117853344623,
+          "max_error": 696.64867662607
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 226.40257322082564,
+          "row_rmse": 277.9899358602227,
+          "macro_mae": 208.42954649321237,
+          "macro_rmse": 261.9526281713573,
+          "bias": 73.19786893005679,
+          "max_error": 675.6799662649046
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 233.91495851787366,
+          "row_rmse": 284.2908813582967,
+          "macro_mae": 219.53519573088823,
+          "macro_rmse": 270.0610788203017,
+          "bias": 78.99919300607279,
+          "max_error": 661.3053578263252
+        }
+      ]
+    },
+    {
+      "held_out_group": "Moonshot",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Mistral",
+        "OpenAI",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "Moonshot"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "kimi-k2"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "kimi-k2-0905"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -189.3072975924497,
+        "slope": 1.117656863719296
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 222.08250483902404,
+          "row_rmse": 280.6472827880986,
+          "macro_mae": 205.95284360278623,
+          "macro_rmse": 257.0124549736859,
+          "bias": -92.18210799042646,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 223.54607805087116,
+          "row_rmse": 273.3723844449441,
+          "macro_mae": 206.6575852857548,
+          "macro_rmse": 254.69047445174482,
+          "bias": -16.72366449704709,
+          "max_error": 770.2756396061136
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 215.68334959296357,
+          "row_rmse": 265.72907126074165,
+          "macro_mae": 197.67291095084425,
+          "macro_rmse": 242.3895274118662,
+          "bias": -30.460523131677736,
+          "max_error": 793.832811468319
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 225.75524611002314,
+          "row_rmse": 288.8150130584728,
+          "macro_mae": 210.94386503521795,
+          "macro_rmse": 273.68690472375687,
+          "bias": 85.24096464923092,
+          "max_error": 714.954297718908
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 225.4028634493712,
+          "row_rmse": 284.66103127328086,
+          "macro_mae": 211.1329459377627,
+          "macro_rmse": 269.3552435815625,
+          "bias": 79.79096168112373,
+          "max_error": 708.8520779899484
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 229.453903723368,
+          "row_rmse": 279.29452870033214,
+          "macro_mae": 217.28087333341372,
+          "macro_rmse": 265.6666797531571,
+          "bias": 64.31761992194254,
+          "max_error": 688.8417247023021
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 240.3333833833803,
+          "row_rmse": 288.18830273513237,
+          "macro_mae": 225.11497731643558,
+          "macro_rmse": 273.0684236096859,
+          "bias": 65.21475472586596,
+          "max_error": 674.3438983933606
+        }
+      ]
+    },
+    {
+      "held_out_group": "OpenAI",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "Zhipu"
+      ],
+      "test_groups": [
+        "OpenAI"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "glm",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "glm-4.6 (no thinking)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)"
+      ],
+      "selected_candidate": "core-ridge-1",
+      "selected_model": {
+        "kind": "core",
+        "candidate": "core-ridge-1",
+        "alpha": 1.0,
+        "coefficients": [
+          1214.0710463904315,
+          -208.31164374456947,
+          7.552690644521634,
+          11.285850545665074
+        ],
+        "normalization": {
+          "mean": [
+            6.061563192640142,
+            39.63888888888889,
+            48.13863419238307
+          ],
+          "scale": [
+            1.5083658255443009,
+            22.772611202663043,
+            46.939898819756266
+          ]
+        },
+        "weight_sum": 17.0
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 205.34832124053824,
+          "row_rmse": 236.6922397518136,
+          "macro_mae": 208.23068976615073,
+          "macro_rmse": 238.31799258831103,
+          "bias": -34.30692085031328,
+          "max_error": 407.4947659096592
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 215.93907616347047,
+          "row_rmse": 253.63211950574666,
+          "macro_mae": 203.15046862467648,
+          "macro_rmse": 244.93591111897877,
+          "bias": 41.59753601808693,
+          "max_error": 460.91150946417883
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 199.6302978830514,
+          "row_rmse": 229.68253218243424,
+          "macro_mae": 181.29903003271514,
+          "macro_rmse": 213.29677114518685,
+          "bias": 9.9862906857189,
+          "max_error": 427.59276733874185
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 184.99779118775496,
+          "row_rmse": 259.825272981555,
+          "macro_mae": 188.68254081967007,
+          "macro_rmse": 275.9163217350998,
+          "bias": 127.41909825191199,
+          "max_error": 741.8473620209725
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 200.79133245497593,
+          "row_rmse": 266.87339248510534,
+          "macro_mae": 178.6289194754569,
+          "macro_rmse": 251.6266803297767,
+          "bias": 118.48190070268905,
+          "max_error": 628.3939963151665
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 223.8210254719211,
+          "row_rmse": 276.3336417619873,
+          "macro_mae": 193.7734717462756,
+          "macro_rmse": 250.1633625302502,
+          "bias": 116.65716941527914,
+          "max_error": 528.1021573365178
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 245.1865138042115,
+          "row_rmse": 295.69436333690203,
+          "macro_mae": 211.65352147927686,
+          "macro_rmse": 265.4181004893076,
+          "bias": 121.42823020110224,
+          "max_error": 533.8849901266738
+        }
+      ]
+    },
+    {
+      "held_out_group": "Zhipu",
+      "train_groups": [
+        "Alibaba",
+        "Anthropic",
+        "DeepSeek",
+        "Google",
+        "Meta",
+        "Mistral",
+        "Moonshot",
+        "OpenAI"
+      ],
+      "test_groups": [
+        "Zhipu"
+      ],
+      "train_families": [
+        "claude",
+        "deepseek-v4",
+        "gemini-2.5",
+        "gemini-3",
+        "gemini-3.1",
+        "gemini-3.5",
+        "gemini-4-argon",
+        "gpt-3.5",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-6-astra",
+        "gpt-oss",
+        "kimi-k2",
+        "llama-4",
+        "mistral",
+        "qwen3"
+      ],
+      "test_families": [
+        "glm"
+      ],
+      "train_player_ids": [
+        "claude-fable-5.2 (high)",
+        "deepseek-v4-flash (max)",
+        "deepseek-v4-flash-0731 (high)",
+        "deepseek-v4-flash-0731 (max)",
+        "gemini-2.5-flash (no thinking)",
+        "gemini-3-flash-preview (medium)",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview (high)",
+        "gemini-3.1-pro-preview (medium)",
+        "gemini-3.5-flash (medium)",
+        "gemini-3.6-flash (medium)",
+        "gemini-4-argon (medium)",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-instruct",
+        "gpt-5.1 (high)",
+        "gpt-5.1 (no thinking)",
+        "gpt-5.1-chat",
+        "gpt-5.2 (high)",
+        "gpt-5.5 (low)",
+        "gpt-5.5 (xhigh)",
+        "gpt-5.6-luna (high)",
+        "gpt-5.6-luna (low)",
+        "gpt-5.6-luna (medium)",
+        "gpt-5.6-luna (xhigh)",
+        "gpt-5.6-sol (high)",
+        "gpt-5.6-sol (low)",
+        "gpt-5.6-sol (medium)",
+        "gpt-5.6-sol (xhigh)",
+        "gpt-5.6-terra (high)",
+        "gpt-5.6-terra (low)",
+        "gpt-5.6-terra (medium)",
+        "gpt-5.6-terra (xhigh)",
+        "gpt-6-astra (high)",
+        "gpt-6-astra (medium)",
+        "gpt-oss-120b (low)",
+        "kimi-k2-0905",
+        "llama-4-maverick",
+        "mistral-medium-3",
+        "qwen3-235b-a22b-2507"
+      ],
+      "test_player_ids": [
+        "glm-4.6 (no thinking)"
+      ],
+      "selected_candidate": "affine",
+      "selected_model": {
+        "kind": "affine",
+        "candidate": "affine",
+        "intercept": -209.94725287953054,
+        "slope": 1.1306641778275643
+      },
+      "inner_scores": [
+        {
+          "candidate": "fixed",
+          "row_mae": 225.47783378394132,
+          "row_rmse": 283.5578740024762,
+          "macro_mae": 212.57373504537503,
+          "macro_rmse": 263.1684529496271,
+          "bias": -95.57743693534378,
+          "max_error": 833.8699052100415
+        },
+        {
+          "candidate": "offset",
+          "row_mae": 226.9414069957885,
+          "row_rmse": 275.2156001014198,
+          "macro_mae": 213.51078870878527,
+          "macro_rmse": 259.32108595692716,
+          "bias": -13.32833555212977,
+          "max_error": 763.3062801928622
+        },
+        {
+          "candidate": "affine",
+          "row_mae": 218.49465803981855,
+          "row_rmse": 266.0747630525368,
+          "macro_mae": 203.0232542551969,
+          "macro_rmse": 244.59143060144345,
+          "bias": -27.96765269049286,
+          "max_error": 787.7635768702967
+        },
+        {
+          "candidate": "core-ridge-0",
+          "row_mae": 222.30918840998007,
+          "row_rmse": 287.33935209116333,
+          "macro_mae": 205.0541782143323,
+          "macro_rmse": 272.0675017182396,
+          "bias": 82.51220454108272,
+          "max_error": 717.149960859671
+        },
+        {
+          "candidate": "core-ridge-1",
+          "row_mae": 222.22148293984168,
+          "row_rmse": 283.48618462702296,
+          "macro_mae": 205.46610605124033,
+          "macro_rmse": 267.8017582411132,
+          "bias": 77.58997293433632,
+          "max_error": 711.3661961442926
+        },
+        {
+          "candidate": "core-ridge-10",
+          "row_mae": 226.81057559140376,
+          "row_rmse": 278.4470135658214,
+          "macro_mae": 212.82057166819004,
+          "macro_rmse": 264.127004345724,
+          "bias": 63.07319518625045,
+          "max_error": 691.3762103288559
+        },
+        {
+          "candidate": "core-ridge-100",
+          "row_mae": 242.19251273335925,
+          "row_rmse": 288.4373570769595,
+          "macro_mae": 228.99086175529663,
+          "macro_rmse": 273.68794249504197,
+          "bias": 59.55406502047452,
+          "max_error": 676.6029118745707
+        }
+      ]
+    }
+  ],
+  "bootstrap": {
+    "fixed": {
+      "row_rmse_ci95": [
+        205.28715787330083,
+        349.12752538666484
+      ],
+      "macro_rmse_ci95": [
+        198.05422485487668,
+        316.4782915689065
+      ],
+      "conservative_rmse_ci95": [
+        208.0286437269556,
+        349.12752538666484
+      ],
+      "conservative_rmse_lower": 217.91266150441302
+    },
+    "adaptive": {
+      "row_rmse_ci95": [
+        204.96319087688846,
+        336.1782213589706
+      ],
+      "macro_rmse_ci95": [
+        194.82970707862563,
+        337.87944003876964
+      ],
+      "conservative_rmse_ci95": [
+        206.59139131217165,
+        343.78138399741175
+      ],
+      "conservative_rmse_lower": 218.1371009348988
+    },
+    "mae_improvement_probability": 0.4422,
+    "paired_macro_mae_improvement_ci95": [
+      -58.02637992482718,
+      48.972394990570805
+    ],
+    "resamples": 5000,
+    "seed": 1729,
+    "unit": "model-line-family"
+  },
+  "oof_predictions": [
+    {
+      "player_id": "claude-fable-5.2 (high)",
+      "family": "claude",
+      "lab": "Anthropic",
+      "target": 1815.373863836321,
+      "fixed": 1901.2860386494556,
+      "adaptive": 1955.7366702729923,
+      "provider_stress": 1955.7366702729923
+    },
+    {
+      "player_id": "deepseek-v4-flash (max)",
+      "family": "deepseek-v4",
+      "lab": "DeepSeek",
+      "target": 1011.4163874505523,
+      "fixed": 789.8308328767569,
+      "adaptive": 671.9452564118502,
+      "provider_stress": 671.9452564118502
+    },
+    {
+      "player_id": "deepseek-v4-flash-0731 (high)",
+      "family": "deepseek-v4",
+      "lab": "DeepSeek",
+      "target": 1578.0619280698452,
+      "fixed": 1244.8617071667559,
+      "adaptive": 1182.6471621613196,
+      "provider_stress": 1182.6471621613196
+    },
+    {
+      "player_id": "deepseek-v4-flash-0731 (max)",
+      "family": "deepseek-v4",
+      "lab": "DeepSeek",
+      "target": 1392.0349846509184,
+      "fixed": 1266.415999196966,
+      "adaptive": 1206.8385272727191,
+      "provider_stress": 1206.8385272727191
+    },
+    {
+      "player_id": "gemini-2.5-flash (no thinking)",
+      "family": "gemini-2.5",
+      "lab": "Google",
+      "target": 359.4744723566432,
+      "fixed": 546.4285714285714,
+      "adaptive": 415.1416781682765,
+      "provider_stress": 524.0027408739174
+    },
+    {
+      "player_id": "gemini-3-flash-preview (medium)",
+      "family": "gemini-3",
+      "lab": "Google",
+      "target": 1840.2437322499964,
+      "fixed": 2085.0508315798083,
+      "adaptive": 2174.434623379422,
+      "provider_stress": 1967.1418515516066
+    },
+    {
+      "player_id": "gemini-3.1-flash-lite-preview",
+      "family": "gemini-3.1",
+      "lab": "Google",
+      "target": 161.0121660108157,
+      "fixed": 500.0,
+      "adaptive": 362.3427786467274,
+      "provider_stress": 530.5557244350866
+    },
+    {
+      "player_id": "gemini-3.1-pro-preview (high)",
+      "family": "gemini-3.1",
+      "lab": "Google",
+      "target": 2163.0247275479405,
+      "fixed": 2170.017738022361,
+      "adaptive": 2233.8852447971303,
+      "provider_stress": 2108.3828318193214
+    },
+    {
+      "player_id": "gemini-3.1-pro-preview (medium)",
+      "family": "gemini-3.1",
+      "lab": "Google",
+      "target": 2044.7186650873148,
+      "fixed": 1779.7131432539018,
+      "adaptive": 1796.4817327195751,
+      "provider_stress": 1598.724011368799
+    },
+    {
+      "player_id": "gemini-3.5-flash (medium)",
+      "family": "gemini-3.5",
+      "lab": "Google",
+      "target": 2000.3712120821212,
+      "fixed": 1859.6382451617942,
+      "adaptive": 1699.4387097339759,
+      "provider_stress": 1729.5949909037936
+    },
+    {
+      "player_id": "gemini-3.6-flash (medium)",
+      "family": "gemini-3",
+      "lab": "Google",
+      "target": 1895.2566388303794,
+      "fixed": 1877.6122066733158,
+      "adaptive": 1937.1207829781392,
+      "provider_stress": 1802.288862727533
+    },
+    {
+      "player_id": "gemini-4-argon (medium)",
+      "family": "gemini-4-argon",
+      "lab": "Google",
+      "target": 2020.2398884527802,
+      "fixed": 1670.175666977509,
+      "adaptive": 1402.4421764710369,
+      "provider_stress": 1521.726928211257
+    },
+    {
+      "player_id": "glm-4.6 (no thinking)",
+      "family": "glm",
+      "lab": "Zhipu",
+      "target": -295.2454704372435,
+      "fixed": -119.62647965833527,
+      "adaptive": -345.2046281488281,
+      "provider_stress": -345.2046281488281
+    },
+    {
+      "player_id": "gpt-3.5-turbo",
+      "family": "gpt-3.5",
+      "lab": "OpenAI",
+      "target": -500.0,
+      "fixed": -299.4172261605257,
+      "adaptive": -547.8714376761948,
+      "provider_stress": -463.6399079927396
+    },
+    {
+      "player_id": "gpt-3.5-turbo-instruct",
+      "family": "gpt-3.5",
+      "lab": "OpenAI",
+      "target": 1633.2805329640069,
+      "fixed": 1762.8405243684738,
+      "adaptive": 1791.2633528052424,
+      "provider_stress": 1744.3990608298097
+    },
+    {
+      "player_id": "gpt-5.1 (high)",
+      "family": "gpt-5.1",
+      "lab": "OpenAI",
+      "target": 1436.1191514337374,
+      "fixed": 1388.2649884688099,
+      "adaptive": 1358.0168796183093,
+      "provider_stress": 1388.863841828801
+    },
+    {
+      "player_id": "gpt-5.1 (no thinking)",
+      "family": "gpt-5.1",
+      "lab": "OpenAI",
+      "target": 478.32217207887595,
+      "fixed": 718.4328805020463,
+      "adaptive": 603.1006907177241,
+      "provider_stress": 445.98147804551036
+    },
+    {
+      "player_id": "gpt-5.1-chat",
+      "family": "gpt-5.1",
+      "lab": "OpenAI",
+      "target": 541.1385957335999,
+      "fixed": 489.440341058896,
+      "adaptive": 345.0208329339173,
+      "provider_stress": 185.96961915601196
+    },
+    {
+      "player_id": "gpt-5.2 (high)",
+      "family": "gpt-5.2",
+      "lab": "OpenAI",
+      "target": 1108.6091645652516,
+      "fixed": 927.9192230395836,
+      "adaptive": 828.2102055031902,
+      "provider_stress": 1045.4956010172716
+    },
+    {
+      "player_id": "gpt-5.5 (low)",
+      "family": "gpt-5.5",
+      "lab": "OpenAI",
+      "target": 518.1873441919282,
+      "fixed": 1103.7540962682742,
+      "adaptive": 1060.8898258563618,
+      "provider_stress": 860.6794960465254
+    },
+    {
+      "player_id": "gpt-5.5 (xhigh)",
+      "family": "gpt-5.5",
+      "lab": "OpenAI",
+      "target": 505.65215622681535,
+      "fixed": 896.7761682364805,
+      "adaptive": 826.9676630211227,
+      "provider_stress": 713.1024411327471
+    },
+    {
+      "player_id": "gpt-5.6-luna (high)",
+      "family": "gpt-5.6-luna",
+      "lab": "OpenAI",
+      "target": 709.475984009564,
+      "fixed": 1132.8368430011749,
+      "adaptive": 1001.1617761067287,
+      "provider_stress": 1108.6652111814358
+    },
+    {
+      "player_id": "gpt-5.6-luna (low)",
+      "family": "gpt-5.6-luna",
+      "lab": "OpenAI",
+      "target": 427.3363826153684,
+      "fixed": 666.7646751499337,
+      "adaptive": 267.85443522566493,
+      "provider_stress": 261.61384192775824
+    },
+    {
+      "player_id": "gpt-5.6-luna (medium)",
+      "family": "gpt-5.6-luna",
+      "lab": "OpenAI",
+      "target": 317.90331319195093,
+      "fixed": 1151.7732184019924,
+      "adaptive": 1033.2268260914902,
+      "provider_stress": 1128.3462344130303
+    },
+    {
+      "player_id": "gpt-5.6-luna (xhigh)",
+      "family": "gpt-5.6-luna",
+      "lab": "OpenAI",
+      "target": 1570.24572916646,
+      "fixed": 1343.9926239902632,
+      "adaptive": 1156.831280740318,
+      "provider_stress": 1260.5844075753173
+    },
+    {
+      "player_id": "gpt-5.6-sol (high)",
+      "family": "gpt-5.6-sol",
+      "lab": "OpenAI",
+      "target": 1584.5679982074914,
+      "fixed": 1439.605712661021,
+      "adaptive": 1419.4992502883847,
+      "provider_stress": 1359.9573540628733
+    },
+    {
+      "player_id": "gpt-5.6-sol (low)",
+      "family": "gpt-5.6-sol",
+      "lab": "OpenAI",
+      "target": 1184.1150566306824,
+      "fixed": 1464.3776996821007,
+      "adaptive": 1447.4407677231982,
+      "provider_stress": 1335.0484625151782
+    },
+    {
+      "player_id": "gpt-5.6-sol (medium)",
+      "family": "gpt-5.6-sol",
+      "lab": "OpenAI",
+      "target": 1478.8832801164842,
+      "fixed": 1350.5590575046226,
+      "adaptive": 1319.0592385345,
+      "provider_stress": 1278.688613373754
+    },
+    {
+      "player_id": "gpt-5.6-sol (xhigh)",
+      "family": "gpt-5.6-sol",
+      "lab": "OpenAI",
+      "target": 1482.9809317118388,
+      "fixed": 1607.6319639637213,
+      "adaptive": 1609.0241530055393,
+      "provider_stress": 1583.0871297758642
+    },
+    {
+      "player_id": "gpt-5.6-terra (high)",
+      "family": "gpt-5.6-terra",
+      "lab": "OpenAI",
+      "target": 471.8454789301902,
+      "fixed": 831.194689512661,
+      "adaptive": 739.4671861067237,
+      "provider_stress": 605.7214870283337
+    },
+    {
+      "player_id": "gpt-5.6-terra (low)",
+      "family": "gpt-5.6-terra",
+      "lab": "OpenAI",
+      "target": 470.063215692988,
+      "fixed": 983.2486074691917,
+      "adaptive": 911.0097873452551,
+      "provider_stress": 819.8602956348843
+    },
+    {
+      "player_id": "gpt-5.6-terra (medium)",
+      "family": "gpt-5.6-terra",
+      "lab": "OpenAI",
+      "target": 548.7103163975355,
+      "fixed": 516.7953853766427,
+      "adaptive": 384.7714624852181,
+      "provider_stress": 117.83854704744249
+    },
+    {
+      "player_id": "gpt-5.6-terra (xhigh)",
+      "family": "gpt-5.6-terra",
+      "lab": "OpenAI",
+      "target": 1205.4336373178046,
+      "fixed": 1283.509277199219,
+      "adaptive": 1249.7547340544706,
+      "provider_stress": 1118.360790964036
+    },
+    {
+      "player_id": "gpt-6-astra (high)",
+      "family": "gpt-6-astra",
+      "lab": "OpenAI",
+      "target": 1982.796246699531,
+      "fixed": 1758.8453946263157,
+      "adaptive": 1764.3433890787148,
+      "provider_stress": 1790.9018319944205
+    },
+    {
+      "player_id": "gpt-6-astra (medium)",
+      "family": "gpt-6-astra",
+      "lab": "OpenAI",
+      "target": 1837.4368280388348,
+      "fixed": 1796.5463899365411,
+      "adaptive": 1806.4844264346887,
+      "provider_stress": 1813.2003675489007
+    },
+    {
+      "player_id": "gpt-oss-120b (low)",
+      "family": "gpt-oss",
+      "lab": "OpenAI",
+      "target": 183.23409294488215,
+      "fixed": 180.5664514103716,
+      "adaptive": -18.96132679198527,
+      "provider_stress": -41.08346536426029
+    },
+    {
+      "player_id": "kimi-k2-0905",
+      "family": "kimi-k2",
+      "lab": "Moonshot",
+      "target": -194.21308974590215,
+      "fixed": 113.8237298847818,
+      "adaptive": -62.09142463259215,
+      "provider_stress": -62.09142463259215
+    },
+    {
+      "player_id": "llama-4-maverick",
+      "family": "llama-4",
+      "lab": "Meta",
+      "target": -171.1748430923417,
+      "fixed": 55.863656745818204,
+      "adaptive": -136.99699246595713,
+      "provider_stress": -136.99699246595713
+    },
+    {
+      "player_id": "mistral-medium-3",
+      "family": "mistral",
+      "lab": "Mistral",
+      "target": -273.6345953587381,
+      "fixed": -218.40833142239092,
+      "adaptive": -481.7073536777939,
+      "provider_stress": -481.7073536777939
+    },
+    {
+      "player_id": "qwen3-235b-a22b-2507",
+      "family": "qwen3",
+      "lab": "Alibaba",
+      "target": -383.85397287689875,
+      "fixed": 23.64079303276042,
+      "adaptive": -150.51050737051287,
+      "provider_stress": -150.51050737051287
+    }
+  ],
+  "mean_gate": {
+    "passed": false,
+    "checks": {
+      "minimum_configurations": true,
+      "minimum_families": true,
+      "macro_mae_improvement": false,
+      "macro_rmse_improvement": false,
+      "bootstrap_probability": false,
+      "family_win_fraction": true,
+      "maximum_family_worsening": false,
+      "reliable_subset": true,
+      "mature_subset": true,
+      "provider_stress": true
+    },
+    "macro_mae_improvement_fraction": -0.020672851589658148,
+    "macro_rmse_improvement_fraction": -0.026216720772399116
+  },
+  "final_selection": {
+    "candidate": "affine",
+    "inner_scores": [
+      {
+        "candidate": "fixed",
+        "row_mae": 224.2313627088155,
+        "row_rmse": 281.36451794627396,
+        "macro_mae": 210.81398531840046,
+        "macro_rmse": 259.66963649627,
+        "bias": -97.57847578143287,
+        "max_error": 833.8699052100415
+      },
+      {
+        "candidate": "offset",
+        "row_mae": 223.32032854647218,
+        "row_rmse": 271.5700081056202,
+        "macro_mae": 207.49263903399802,
+        "macro_rmse": 253.45130723392435,
+        "bias": -10.760931870738636,
+        "max_error": 758.0535119047759
+      },
+      {
+        "candidate": "affine",
+        "row_mae": 213.69306572425313,
+        "row_rmse": 262.4224975422558,
+        "macro_mae": 194.90444227853507,
+        "macro_rmse": 237.99942850281255,
+        "bias": -27.79381878135224,
+        "max_error": 788.9068275589934
+      },
+      {
+        "candidate": "core-ridge-0",
+        "row_mae": 219.94292064719065,
+        "row_rmse": 284.5507046191839,
+        "macro_mae": 201.02551405864358,
+        "macro_rmse": 266.4453526390638,
+        "bias": 82.50499763550457,
+        "max_error": 715.3235128995393
+      },
+      {
+        "candidate": "core-ridge-1",
+        "row_mae": 219.32367374214354,
+        "row_rmse": 280.598053717296,
+        "macro_mae": 200.53620325778155,
+        "macro_rmse": 262.2768800639077,
+        "bias": 77.61567445957985,
+        "max_error": 708.6303224440271
+      },
+      {
+        "candidate": "core-ridge-10",
+        "row_mae": 222.86884942543708,
+        "row_rmse": 275.1631478282986,
+        "macro_mae": 205.03237404790343,
+        "macro_rmse": 258.1020776312552,
+        "bias": 67.38753785247484,
+        "max_error": 686.5829653850184
+      },
+      {
+        "candidate": "core-ridge-100",
+        "row_mae": 233.55661844323748,
+        "row_rmse": 281.9836713449466,
+        "macro_mae": 217.8616318345064,
+        "macro_rmse": 266.22114626634595,
+        "bias": 69.46167759856306,
+        "max_error": 669.5168762666758
+      }
+    ],
+    "model": {
+      "kind": "affine",
+      "candidate": "affine",
+      "intercept": -203.64494993920516,
+      "slope": 1.126400692120174
+    }
+  },
+  "carbon_diagnostics": [
+    {
+      "player_id": "gemini-4-carbon (low)",
+      "target": 2098.258119589284,
+      "baseline_prediction": 2029.1501654565936,
+      "proposed_prediction": 2081.9912008468673
+    },
+    {
+      "player_id": "gemini-4-carbon (medium)",
+      "target": 2146.2003741092594,
+      "baseline_prediction": 2410.491617054089,
+      "proposed_prediction": 2511.534475860398
+    }
+  ],
+  "uncertainty": {
+    "method": "fixed",
+    "metrics": {
+      "row_mae": 224.2313627088155,
+      "row_rmse": 281.36451794627396,
+      "macro_mae": 210.81398531840046,
+      "macro_rmse": 259.66963649627,
+      "bias": -97.57847578143287,
+      "max_error": 833.8699052100415
+    },
+    "checks": {
+      "minimum_configurations": true,
+      "minimum_families": true,
+      "lower_bound_exceeds_existing_rd": true
+    },
+    "passed": true,
+    "existing_rd": 166,
+    "bootstrap_rmse_lower": 217.91266150441302,
+    "estimated_rd": 300,
+    "recommended_rd": 300
+  },
+  "recommendation": {
+    "mean_action": "retain",
+    "production_model": {
+      "kind": "fixed",
+      "candidate": "fixed"
+    },
+    "rd_action": "widen",
+    "seed_rd": 300,
+    "forced_refit": false
+  },
+  "analysis_environment": {
+    "python": "3.14.2",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "manifest_verification": {
+    "mode": "verified-inputs-targets-policy",
+    "checks": [
+      {
+        "file": "data/calibration_20261111/inputs.json",
+        "manifest_key": "inputs_sha256",
+        "sha256": "8d211bab23c81d0465e84d14bbb2990794a4a38a3e8a0470f259e9ad903abda8"
+      },
+      {
+        "file": "data/calibration_20261111/game_only_ratings.json",
+        "manifest_key": "game_only_target_sha256",
+        "sha256": "760c1efc71523ce5224320dd75ef1ad182331e80b41a51ba11d8f097d7e2e5f5"
+      },
+      {
+        "file": "position_benchmark/validation/2026-11-11-corrected-cpl-calibration-plan.json",
+        "manifest_key": "files.position_benchmark/validation/2026-11-11-corrected-cpl-calibration-plan.json",
+        "sha256": "88625f603e0bdda1574dace650e220ab7768fa703abe463e816c2c22c20ad0e0"
+      }
+    ]
+  },
+  "source_hashes": {
+    "data/calibration_20261111/inputs.json": "8d211bab23c81d0465e84d14bbb2990794a4a38a3e8a0470f259e9ad903abda8",
+    "data/calibration_20261111/game_only_ratings.json": "760c1efc71523ce5224320dd75ef1ad182331e80b41a51ba11d8f097d7e2e5f5",
+    "data/calibration_20261111/snapshot_manifest.json": "30ee3d43bade4168d05efc03a582a95e5385daac6ef73dec5703711bb5c8f401",
+    "position_benchmark/validation/2026-11-11-corrected-cpl-calibration-plan.json": "88625f603e0bdda1574dace650e220ab7768fa703abe463e816c2c22c20ad0e0"
+  },
+  "implementation_hashes": {
+    "scripts/validate_corrected_calibration.py": "332d083560e1972956f5a986babeaf1894b2a4e46f76bd207676aa144b39fdf9",
+    "position_benchmark/calibration_validation.py": "e32bdce75fe145f27f796bec983792dc615d5b4f89a5789279fcc8bcecf8ba93",
+    "position_benchmark/predictions.py": "7d1bbc11354b6d4e970da811fd9ae35dab83c67721ca152737542fc544a13b7e"
+  }
+}

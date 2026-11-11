@@ -220,9 +220,13 @@ def load_position_benchmark_inputs(
     )
 
 
-# Benchmark-seeded initial rating parameters (from position benchmark RMSE=166)
-BENCHMARK_SEED_RD = 166.0
+# Corrected-CPL held-out uncertainty; retain the existing prediction means/caps.
+# See position_benchmark/validation/2026-11-11-corrected-cpl-calibration-analysis.md.
+BENCHMARK_CALIBRATION_VERSION = "root-reference-v1-20261111-rd300"
+BENCHMARK_SEED_RD = 300.0
 BENCHMARK_SEED_GAMES_RD = 350.0
+# Sibling-only priors were not part of the benchmark uncertainty calibration.
+SIBLING_SEED_RD = 166.0
 
 # Canonical effort-level ordering for reasoning variants. This is the single
 # source of truth — freeze_checker.FreezeChecker.EFFORT_LEVELS aliases this.
@@ -319,7 +323,7 @@ class RatingStore:
         anchor_ids: Set[str] = None,
         ghost_ids: Set[str] = None,
         use_firestore: bool = None,
-        benchmark_seed_rd: float = BENCHMARK_SEED_RD,
+        benchmark_seed_rd: Optional[float] = None,
         use_benchmark_predictions: bool = True,
     ):
         """
@@ -332,9 +336,9 @@ class RatingStore:
                       affect opponents' ratings/RD (but their own rating updates)
             use_firestore: If True, use Firestore. If None, auto-detect based on
                           FIREBASE_ENABLED env var or presence of firebase-key.json
-            benchmark_seed_rd: Initial RD for position-benchmark seeds. The
-                               production default remains BENCHMARK_SEED_RD;
-                               alternate values are for isolated validation runs.
+            benchmark_seed_rd: Explicit validation RD for benchmark and sibling
+                               seeds. None uses production defaults: benchmark
+                               RD BENCHMARK_SEED_RD and sibling-only RD SIBLING_SEED_RD.
             use_benchmark_predictions: Load and apply position-benchmark seeds.
                                        Disable only for isolated counterfactual
                                        validation; production defaults to True.
@@ -342,7 +346,8 @@ class RatingStore:
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
         self.ghost_ids = ghost_ids or set()
-        self._benchmark_seed_rd = benchmark_seed_rd
+        self._benchmark_seed_rd = BENCHMARK_SEED_RD if benchmark_seed_rd is None else benchmark_seed_rd
+        self._sibling_seed_rd = SIBLING_SEED_RD if benchmark_seed_rd is None else benchmark_seed_rd
         self._use_benchmark_predictions = use_benchmark_predictions
         self._ratings: Dict[str, PlayerRating] = {}
 
@@ -451,7 +456,10 @@ class RatingStore:
             sibling_rating = self._lower_effort_max_rating(player_id)
             if sibling_rating is not None and sibling_rating > restored.rating:
                 restored.rating = sibling_rating
-                restored.rating_deviation = self._benchmark_seed_rd
+                restored.rating_deviation = (
+                    self._benchmark_seed_rd if player_id in self._benchmark_predictions
+                    else self._sibling_seed_rd
+                )
                 restored.games_rd = BENCHMARK_SEED_GAMES_RD
             self._ratings[player_id] = restored
 
@@ -674,7 +682,7 @@ class RatingStore:
                 self._ratings[player_id] = PlayerRating(
                     player_id=player_id,
                     rating=seed,
-                    rating_deviation=self._benchmark_seed_rd,
+                    rating_deviation=(self._benchmark_seed_rd if predicted is not None else self._sibling_seed_rd),
                     games_rd=BENCHMARK_SEED_GAMES_RD,
                 )
             else:

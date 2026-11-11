@@ -1,0 +1,20 @@
+{
+  "experiment_id": "corrected-cpl-calibration-20261111-v1",
+  "matrix_sha256": "45a254db5446e714fc44adb9f7e4bffa4a2138ba851f93cb5152a372389a87ab",
+  "files": {
+    "position_benchmark/validation/2026-11-11-corrected-cpl-calibration-plan.json": "88625f603e0bdda1574dace650e220ab7768fa703abe463e816c2c22c20ad0e0"
+  },
+  "raw_inputs_sha256": "8d211bab23c81d0465e84d14bbb2990794a4a38a3e8a0470f259e9ad903abda8",
+  "game_only_target_sha256": "760c1efc71523ce5224320dd75ef1ad182331e80b41a51ba11d8f097d7e2e5f5",
+  "production_generation": 15,
+  "saved_records": 6570,
+  "eligible_records": 6565,
+  "rating_count": 140,
+  "scoring_version": "root-reference-v1",
+  "analysis_environment": {
+    "python": "3.14.2",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "source_verification": "Raw input/target hashes were checked before deriving the matrix; public reproduction verifies the matrix and policy. Private raw game snapshot is not published."
+}

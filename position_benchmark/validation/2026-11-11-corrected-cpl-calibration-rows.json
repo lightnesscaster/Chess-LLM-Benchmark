@@ -1,0 +1,1214 @@
+[
+  {
+    "player_id": "claude-fable-5.1 (high)",
+    "family": "claude",
+    "lab": "Anthropic",
+    "games": 4,
+    "game_only_rd": 320.75208952364125,
+    "games_rd": 320.75208952364125,
+    "target": 1166.5512704527089,
+    "core_features": [
+      6.281481391856482,
+      44.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.384686176024262,
+      58.333333333333336,
+      30.96781012186086
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1190.3121036446187
+  },
+  {
+    "player_id": "claude-fable-5.2 (high)",
+    "family": "claude",
+    "lab": "Anthropic",
+    "games": 9,
+    "game_only_rd": 151.24391266890663,
+    "games_rd": 151.24391266890663,
+    "target": 1815.373863836321,
+    "core_features": [
+      4.3651347670036635,
+      58.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      2.5471639250283205,
+      72.91666666666667,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1901.2860386494556
+  },
+  {
+    "player_id": "claude-opus-5.5 (high)",
+    "family": "claude",
+    "lab": "Anthropic",
+    "games": 2,
+    "game_only_rd": 346.8746316793093,
+    "games_rd": 346.8746316793093,
+    "target": 1196.5755090808832,
+    "core_features": [
+      4.73162660994065,
+      54.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      3.1199758762133185,
+      68.75,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1766.2700785695954
+  },
+  {
+    "player_id": "deepseek-v4-flash (max)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 15,
+    "game_only_rd": 192.63184218571334,
+    "games_rd": 192.63184218571334,
+    "target": 1011.4163874505523,
+    "core_features": [
+      6.362372716407435,
+      30.0,
+      52.097640414752014
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.94334603233159,
+      37.5,
+      52.097640414752014
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 789.8308328767569
+  },
+  {
+    "player_id": "deepseek-v4-flash (no thinking)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 1,
+    "game_only_rd": 302.8865649829569,
+    "games_rd": 302.8865649829569,
+    "target": -48.2452136314721,
+    "core_features": [
+      7.9626455387590145,
+      16.0,
+      1.552962410286373e-10
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.550387371045694,
+      10.416666666666666,
+      1.552962410286373e-10
+    ],
+    "ready_stability_cap": 146.66666666666666,
+    "baseline_prediction": -51.14304533256096
+  },
+  {
+    "player_id": "deepseek-v4-flash-0731 (high)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 13,
+    "game_only_rd": 128.47370639997266,
+    "games_rd": 128.47370639997266,
+    "target": 1578.0619280698452,
+    "core_features": [
+      5.548609049781258,
+      38.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.760149680511918,
+      39.583333333333336,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1244.8617071667559
+  },
+  {
+    "player_id": "deepseek-v4-flash-0731 (max)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 11,
+    "game_only_rd": 136.03739095470985,
+    "games_rd": 136.03739095470985,
+    "target": 1392.0349846509184,
+    "core_features": [
+      4.98784420579544,
+      38.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.437626307782946,
+      43.75,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1266.415999196966
+  },
+  {
+    "player_id": "deepseek-v4-flash-0731 (no thinking)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 1,
+    "game_only_rd": 302.8865649829569,
+    "games_rd": 302.8865649829569,
+    "target": -48.2452136314721,
+    "core_features": [
+      8.008418795775993,
+      8.0,
+      4.786325376336089e-12
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.671720054097718,
+      14.583333333333334,
+      4.786325376336089e-12
+    ],
+    "ready_stability_cap": 58.33333333333333,
+    "baseline_prediction": -183.43737923735452
+  },
+  {
+    "player_id": "deepseek-v4-pro (no thinking)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 3,
+    "game_only_rd": 221.90527828556029,
+    "games_rd": 221.90527828556029,
+    "target": -137.61827548873612,
+    "core_features": [
+      7.666493551532544,
+      14.0,
+      4.1520906022292065e-05
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.353242061439787,
+      22.916666666666668,
+      4.1520906022292065e-05
+    ],
+    "ready_stability_cap": 352.27272727272725,
+    "baseline_prediction": -22.565059636367618
+  },
+  {
+    "player_id": "deepseek-v4.1-flash (high)",
+    "family": "deepseek-v4",
+    "lab": "DeepSeek",
+    "games": 3,
+    "game_only_rd": 204.93716676080007,
+    "games_rd": 204.93716676080007,
+    "target": 1196.0662075563748,
+    "core_features": [
+      5.878407824815685,
+      42.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.526697184657492,
+      41.666666666666664,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1351.740719672192
+  },
+  {
+    "player_id": "gemini-2.5-flash (no thinking)",
+    "family": "gemini-2.5",
+    "lab": "Google",
+    "games": 287,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": 359.4744723566432,
+    "core_features": [
+      6.460842980959799,
+      42.0,
+      15.944925062893791
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.613747686992455,
+      41.666666666666664,
+      6.937876203001234
+    ],
+    "ready_stability_cap": 546.4285714285714,
+    "baseline_prediction": 546.4285714285714
+  },
+  {
+    "player_id": "gemini-3-flash-preview (medium)",
+    "family": "gemini-3",
+    "lab": "Google",
+    "games": 27,
+    "game_only_rd": 99.79359657105337,
+    "games_rd": 99.79359657105337,
+    "target": 1840.2437322499964,
+    "core_features": [
+      4.369700984983244,
+      70.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 2085.0508315798083
+  },
+  {
+    "player_id": "gemini-3.1-flash-lite-preview",
+    "family": "gemini-3.1",
+    "lab": "Google",
+    "games": 20,
+    "game_only_rd": 99.05895416145641,
+    "games_rd": 99.05895416145641,
+    "target": 161.0121660108157,
+    "core_features": [
+      6.016791105053991,
+      58.0,
+      52.097640414752014
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.182300103945722,
+      43.75,
+      2.336809590156875
+    ],
+    "ready_stability_cap": 500.0,
+    "baseline_prediction": 500.0
+  },
+  {
+    "player_id": "gemini-3.1-pro-preview (high)",
+    "family": "gemini-3.1",
+    "lab": "Google",
+    "games": 18,
+    "game_only_rd": 104.90657977046888,
+    "games_rd": 104.90657977046888,
+    "target": 2163.0247275479405,
+    "core_features": [
+      3.6386382376771897,
+      66.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 2170.017738022361
+  },
+  {
+    "player_id": "gemini-3.1-pro-preview (medium)",
+    "family": "gemini-3.1",
+    "lab": "Google",
+    "games": 58,
+    "game_only_rd": 60.3618379058413,
+    "games_rd": 60.3618379058413,
+    "target": 2044.7186650873148,
+    "core_features": [
+      5.5859744386873125,
+      66.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      2.5487939172392515,
+      72.91666666666667,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1779.7131432539018
+  },
+  {
+    "player_id": "gemini-3.5-flash (medium)",
+    "family": "gemini-3.5",
+    "lab": "Google",
+    "games": 11,
+    "game_only_rd": 115.93426150538028,
+    "games_rd": 115.93426150538028,
+    "target": 2000.3712120821212,
+    "core_features": [
+      4.23642266081509,
+      72.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.918459087153647,
+      62.5,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1859.6382451617942
+  },
+  {
+    "player_id": "gemini-3.6-flash (medium)",
+    "family": "gemini-3",
+    "lab": "Google",
+    "games": 30,
+    "game_only_rd": 112.76812456468903,
+    "games_rd": 112.76812456468903,
+    "target": 1895.2566388303794,
+    "core_features": [
+      4.3296801543016725,
+      56.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.326888238048226,
+      66.66666666666667,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1877.6122066733158
+  },
+  {
+    "player_id": "gemini-3.8-flash (high)",
+    "family": "gemini-3",
+    "lab": "Google",
+    "games": 5,
+    "game_only_rd": 248.58569942434895,
+    "games_rd": 248.58569942434895,
+    "target": 1818.309172038076,
+    "core_features": [
+      4.237000862623624,
+      66.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.803166854880345,
+      64.58333333333333,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 2050.087917104347
+  },
+  {
+    "player_id": "gemini-3.8-flash (medium)",
+    "family": "gemini-3",
+    "lab": "Google",
+    "games": 12,
+    "game_only_rd": 245.07313290907427,
+    "games_rd": 245.07313290907427,
+    "target": 1422.839451714663,
+    "core_features": [
+      5.916902625781077,
+      66.0,
+      29.90423915096191
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.339939041238856,
+      68.75,
+      29.90423915096191
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1303.3250057478258
+  },
+  {
+    "player_id": "gemini-4-argon (high)",
+    "family": "gemini-4-argon",
+    "lab": "Google",
+    "games": 5,
+    "game_only_rd": 160.3504993841789,
+    "games_rd": 160.3504993841789,
+    "target": 2090.0811786048516,
+    "core_features": [
+      4.316954637930166,
+      66.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.418781988720489,
+      64.58333333333333,
+      79.7418334881707
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1672.910751906551
+  },
+  {
+    "player_id": "gemini-4-argon (low)",
+    "family": "gemini-4-argon",
+    "lab": "Google",
+    "games": 5,
+    "game_only_rd": 249.00707957766477,
+    "games_rd": 249.00707957766477,
+    "target": 1592.7338651010296,
+    "core_features": [
+      4.385520523928138,
+      64.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.194692536056382,
+      70.83333333333333,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1989.5401213890832
+  },
+  {
+    "player_id": "gemini-4-argon (medium)",
+    "family": "gemini-4-argon",
+    "lab": "Google",
+    "games": 36,
+    "game_only_rd": 64.18499082526145,
+    "games_rd": 64.18499082526145,
+    "target": 2020.2398884527802,
+    "core_features": [
+      4.399375273008495,
+      64.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.862876181651412,
+      62.5,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1670.175666977509
+  },
+  {
+    "player_id": "gemini-4-carbon (low)",
+    "family": "gemini-4-carbon",
+    "lab": "Google",
+    "games": 10,
+    "game_only_rd": 143.5474990875607,
+    "games_rd": 143.5474990875607,
+    "target": 2098.258119589284,
+    "core_features": [
+      4.341465022917759,
+      66.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.1883913179796535,
+      62.5,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 2029.1501654565936
+  },
+  {
+    "player_id": "gemini-4-carbon (medium)",
+    "family": "gemini-4-carbon",
+    "lab": "Google",
+    "games": 11,
+    "game_only_rd": 128.2274562027915,
+    "games_rd": 128.2274562027915,
+    "target": 2146.2003741092594,
+    "core_features": [
+      2.7459880404426023,
+      70.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      2.8526314299133175,
+      72.91666666666667,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 2410.491617054089
+  },
+  {
+    "player_id": "gemma-4-31b-it (high)",
+    "family": "gemma",
+    "lab": "Google",
+    "games": 2,
+    "game_only_rd": 221.36096836217558,
+    "games_rd": 221.36096836217558,
+    "target": 183.39822568027398,
+    "core_features": [
+      6.9714246725377285,
+      26.0,
+      0.349071676050614
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.6976770451431396,
+      27.083333333333332,
+      0.349071676050614
+    ],
+    "ready_stability_cap": 470.3703703703704,
+    "baseline_prediction": 303.46942218815894
+  },
+  {
+    "player_id": "gemma-4-31b-it (no thinking)",
+    "family": "gemma",
+    "lab": "Google",
+    "games": 4,
+    "game_only_rd": 197.49298487887413,
+    "games_rd": 197.49298487887413,
+    "target": -313.4643882223693,
+    "core_features": [
+      7.560746909564988,
+      22.0,
+      0.003252697053131116
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.344719054149673,
+      22.916666666666668,
+      2.8077144292977217e-05
+    ],
+    "ready_stability_cap": 232.89473684210526,
+    "baseline_prediction": 121.76852519365019
+  },
+  {
+    "player_id": "glm-4.6 (no thinking)",
+    "family": "glm",
+    "lab": "Zhipu",
+    "games": 269,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": -295.2454704372435,
+    "core_features": [
+      7.565917562639123,
+      18.0,
+      0.00039585623316321816
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.71564383700566,
+      8.333333333333334,
+      2.494480248738259e-06
+    ],
+    "ready_stability_cap": 157.89473684210526,
+    "baseline_prediction": -119.62647965833527
+  },
+  {
+    "player_id": "gpt-3.5-turbo",
+    "family": "gpt-3.5",
+    "lab": "OpenAI",
+    "games": 299,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": -500.0,
+    "core_features": [
+      8.126364447241063,
+      2.0,
+      1.0294754486065379e-13
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      8.272559965541534,
+      0.0,
+      1.503647519106371e-27
+    ],
+    "ready_stability_cap": -75.0,
+    "baseline_prediction": -299.4172261605257
+  },
+  {
+    "player_id": "gpt-3.5-turbo-instruct",
+    "family": "gpt-3.5",
+    "lab": "OpenAI",
+    "games": 118,
+    "game_only_rd": 56.04054503207819,
+    "games_rd": 56.04054503207819,
+    "target": 1633.2805329640069,
+    "core_features": [
+      4.902307417210627,
+      56.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.260329699696362,
+      56.25,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1762.8405243684738
+  },
+  {
+    "player_id": "gpt-5.1 (high)",
+    "family": "gpt-5.1",
+    "lab": "OpenAI",
+    "games": 39,
+    "game_only_rd": 81.20729663615653,
+    "games_rd": 81.20729663615653,
+    "target": 1436.1191514337374,
+    "core_features": [
+      6.46402739874864,
+      52.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 1388.2649884688099
+  },
+  {
+    "player_id": "gpt-5.1 (no thinking)",
+    "family": "gpt-5.1",
+    "lab": "OpenAI",
+    "games": 59,
+    "game_only_rd": 57.98441915533663,
+    "games_rd": 57.98441915533663,
+    "target": 478.32217207887595,
+    "core_features": [
+      6.685111602709578,
+      38.0,
+      29.90423915096191
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.0638821032179875,
+      29.166666666666668,
+      29.90423915096191
+    ],
+    "ready_stability_cap": 575.0,
+    "baseline_prediction": 718.4328805020463
+  },
+  {
+    "player_id": "gpt-5.1-chat",
+    "family": "gpt-5.1",
+    "lab": "OpenAI",
+    "games": 295,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": 541.1385957335999,
+    "core_features": [
+      6.959474482657449,
+      32.0,
+      15.944925062893791
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.679860876893426,
+      31.25,
+      14.276937402941615
+    ],
+    "ready_stability_cap": 519.8275862068965,
+    "baseline_prediction": 489.440341058896
+  },
+  {
+    "player_id": "gpt-5.2 (high)",
+    "family": "gpt-5.2",
+    "lab": "OpenAI",
+    "games": 62,
+    "game_only_rd": 102.24063991194198,
+    "games_rd": 102.24063991194198,
+    "target": 1108.6091645652516,
+    "core_features": [
+      6.4781409106409695,
+      50.0,
+      100.0
+    ],
+    "blunder_features": [
+      7.532259526819419,
+      36.0,
+      100.0
+    ],
+    "game_like_features": [
+      5.446916953241723,
+      43.75,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 927.9192230395836
+  },
+  {
+    "player_id": "gpt-5.5 (low)",
+    "family": "gpt-5.5",
+    "lab": "OpenAI",
+    "games": 47,
+    "game_only_rd": 55.34767391194905,
+    "games_rd": 55.34767391194905,
+    "target": 518.1873441919282,
+    "core_features": [
+      6.331822083311005,
+      50.0,
+      52.097640414752014
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 1103.7540962682742
+  },
+  {
+    "player_id": "gpt-5.5 (xhigh)",
+    "family": "gpt-5.5",
+    "lab": "OpenAI",
+    "games": 55,
+    "game_only_rd": 70.43255601766435,
+    "games_rd": 70.43255601766435,
+    "target": 505.65215622681535,
+    "core_features": [
+      6.750212184751876,
+      42.0,
+      52.097640414752014
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.0637810383053425,
+      47.916666666666664,
+      52.097640414752014
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 896.7761682364805
+  },
+  {
+    "player_id": "gpt-5.6-luna (high)",
+    "family": "gpt-5.6-luna",
+    "lab": "OpenAI",
+    "games": 14,
+    "game_only_rd": 121.58488729087566,
+    "games_rd": 121.58488729087566,
+    "target": 709.475984009564,
+    "core_features": [
+      6.414671336692304,
+      42.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.252709633069904,
+      50.0,
+      80.95374684007068
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1132.8368430011749
+  },
+  {
+    "player_id": "gpt-5.6-luna (low)",
+    "family": "gpt-5.6-luna",
+    "lab": "OpenAI",
+    "games": 13,
+    "game_only_rd": 120.85564164647506,
+    "games_rd": 120.85564164647506,
+    "target": 427.3363826153684,
+    "core_features": [
+      6.458526353432797,
+      40.0,
+      8.047369601447729
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.314227163450904,
+      41.666666666666664,
+      8.047369601447729
+    ],
+    "ready_stability_cap": 575.0,
+    "baseline_prediction": 666.7646751499337
+  },
+  {
+    "player_id": "gpt-5.6-luna (medium)",
+    "family": "gpt-5.6-luna",
+    "lab": "OpenAI",
+    "games": 17,
+    "game_only_rd": 100.45400210016719,
+    "games_rd": 100.45400210016719,
+    "target": 317.90331319195093,
+    "core_features": [
+      6.320192588995764,
+      42.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.950588297643732,
+      39.583333333333336,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1151.7732184019924
+  },
+  {
+    "player_id": "gpt-5.6-luna (xhigh)",
+    "family": "gpt-5.6-luna",
+    "lab": "OpenAI",
+    "games": 17,
+    "game_only_rd": 120.6765269901298,
+    "games_rd": 120.6765269901298,
+    "target": 1570.24572916646,
+    "core_features": [
+      5.975436786030785,
+      50.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.499215308914927,
+      56.25,
+      79.7418334881707
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1343.9926239902632
+  },
+  {
+    "player_id": "gpt-5.6-sol (high)",
+    "family": "gpt-5.6-sol",
+    "lab": "OpenAI",
+    "games": 23,
+    "game_only_rd": 89.28575748151506,
+    "games_rd": 89.28575748151506,
+    "target": 1584.5679982074914,
+    "core_features": [
+      5.498396978263695,
+      50.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.482060488825983,
+      56.25,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1439.605712661021
+  },
+  {
+    "player_id": "gpt-5.6-sol (low)",
+    "family": "gpt-5.6-sol",
+    "lab": "OpenAI",
+    "games": 23,
+    "game_only_rd": 103.30151953262852,
+    "games_rd": 103.30151953262852,
+    "target": 1184.1150566306824,
+    "core_features": [
+      5.835512245334096,
+      56.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.920740266883325,
+      47.916666666666664,
+      79.7418334881707
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1464.3776996821007
+  },
+  {
+    "player_id": "gpt-5.6-sol (medium)",
+    "family": "gpt-5.6-sol",
+    "lab": "OpenAI",
+    "games": 21,
+    "game_only_rd": 107.73091840144079,
+    "games_rd": 107.73091840144079,
+    "target": 1478.8832801164842,
+    "core_features": [
+      4.732331331604771,
+      52.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.747334073747322,
+      47.916666666666664,
+      79.7418334881707
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1350.5590575046226
+  },
+  {
+    "player_id": "gpt-5.6-sol (xhigh)",
+    "family": "gpt-5.6-sol",
+    "lab": "OpenAI",
+    "games": 17,
+    "game_only_rd": 106.78921963455856,
+    "games_rd": 106.78921963455856,
+    "target": 1482.9809317118388,
+    "core_features": [
+      5.676685306771834,
+      56.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.740574822994295,
+      58.333333333333336,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1607.6319639637213
+  },
+  {
+    "player_id": "gpt-5.6-terra (high)",
+    "family": "gpt-5.6-terra",
+    "lab": "OpenAI",
+    "games": 17,
+    "game_only_rd": 124.77177354242195,
+    "games_rd": 124.77177354242195,
+    "target": 471.8454789301902,
+    "core_features": [
+      6.425873381605924,
+      52.0,
+      29.90423915096191
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.084119690268254,
+      37.5,
+      29.90423915096191
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 831.194689512661
+  },
+  {
+    "player_id": "gpt-5.6-terra (low)",
+    "family": "gpt-5.6-terra",
+    "lab": "OpenAI",
+    "games": 16,
+    "game_only_rd": 105.17767450903217,
+    "games_rd": 105.17767450903217,
+    "target": 470.063215692988,
+    "core_features": [
+      6.165207748127065,
+      40.0,
+      52.097640414752014
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.718397377007283,
+      39.583333333333336,
+      52.097640414752014
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 983.2486074691917
+  },
+  {
+    "player_id": "gpt-5.6-terra (medium)",
+    "family": "gpt-5.6-terra",
+    "lab": "OpenAI",
+    "games": 21,
+    "game_only_rd": 132.13259735853808,
+    "games_rd": 132.13259735853808,
+    "target": 548.7103163975355,
+    "core_features": [
+      6.778079301825747,
+      36.0,
+      3.8830461267653376
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.867234995999237,
+      39.583333333333336,
+      3.8830461267653376
+    ],
+    "ready_stability_cap": 598.3870967741935,
+    "baseline_prediction": 516.7953853766427
+  },
+  {
+    "player_id": "gpt-5.6-terra (xhigh)",
+    "family": "gpt-5.6-terra",
+    "lab": "OpenAI",
+    "games": 18,
+    "game_only_rd": 115.05916513101849,
+    "games_rd": 115.05916513101849,
+    "target": 1205.4336373178046,
+    "core_features": [
+      5.418586198938981,
+      48.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      5.832248979028503,
+      50.0,
+      65.70887864374389
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1283.509277199219
+  },
+  {
+    "player_id": "gpt-6-astra (high)",
+    "family": "gpt-6-astra",
+    "lab": "OpenAI",
+    "games": 60,
+    "game_only_rd": 52.87397576222144,
+    "games_rd": 52.87397576222144,
+    "target": 1982.796246699531,
+    "core_features": [
+      4.46153073578648,
+      50.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.044147158355187,
+      60.416666666666664,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1758.8453946263157
+  },
+  {
+    "player_id": "gpt-6-astra (medium)",
+    "family": "gpt-6-astra",
+    "lab": "OpenAI",
+    "games": 14,
+    "game_only_rd": 115.37265119751831,
+    "games_rd": 115.37265119751831,
+    "target": 1837.4368280388348,
+    "core_features": [
+      4.427000000316613,
+      52.0,
+      100.0
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      4.7687406457674,
+      52.083333333333336,
+      100.0
+    ],
+    "ready_stability_cap": null,
+    "baseline_prediction": 1796.5463899365411
+  },
+  {
+    "player_id": "gpt-6.1-sol (high)",
+    "family": "gpt-6.1-sol",
+    "lab": "OpenAI",
+    "games": 7,
+    "game_only_rd": 188.30574230398682,
+    "games_rd": 188.30574230398682,
+    "target": 1531.5287259952418,
+    "core_features": [
+      5.2323912164318696,
+      48.0,
+      80.95374684007068
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 1462.1412475049738
+  },
+  {
+    "player_id": "gpt-6.1-sol (medium)",
+    "family": "gpt-6.1-sol",
+    "lab": "OpenAI",
+    "games": 5,
+    "game_only_rd": 187.26255693585003,
+    "games_rd": 187.26255693585003,
+    "target": 1412.2920130100817,
+    "core_features": [
+      6.19244428572047,
+      46.0,
+      15.944925062893791
+    ],
+    "blunder_features": null,
+    "game_like_features": null,
+    "ready_stability_cap": null,
+    "baseline_prediction": 858.6362034309749
+  },
+  {
+    "player_id": "gpt-oss-120b (low)",
+    "family": "gpt-oss",
+    "lab": "OpenAI",
+    "games": 45,
+    "game_only_rd": 65.46903770638622,
+    "games_rd": 65.46903770638622,
+    "target": 183.23409294488215,
+    "core_features": [
+      7.041464155855398,
+      16.0,
+      8.047369601447729
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      6.758675055967984,
+      25.0,
+      8.047369601447729
+    ],
+    "ready_stability_cap": 600.0,
+    "baseline_prediction": 180.5664514103716
+  },
+  {
+    "player_id": "kimi-k2-0905",
+    "family": "kimi-k2",
+    "lab": "Moonshot",
+    "games": 277,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": -194.21308974590215,
+    "core_features": [
+      7.60030227947005,
+      22.0,
+      0.00039585623316321816
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.2723405205251215,
+      12.5,
+      0.00039585623316321816
+    ],
+    "ready_stability_cap": 360.8695652173913,
+    "baseline_prediction": 113.8237298847818
+  },
+  {
+    "player_id": "llama-4-maverick",
+    "family": "llama-4",
+    "lab": "Meta",
+    "games": 392,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": -171.1748430923417,
+    "core_features": [
+      7.582341261353818,
+      18.0,
+      0.00039585623316321816
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.367063899129007,
+      12.5,
+      0.00039585623316321816
+    ],
+    "ready_stability_cap": 315.2173913043478,
+    "baseline_prediction": 55.863656745818204
+  },
+  {
+    "player_id": "mistral-medium-3",
+    "family": "mistral",
+    "lab": "Mistral",
+    "games": 279,
+    "game_only_rd": 45.0,
+    "games_rd": 45,
+    "target": -273.6345953587381,
+    "core_features": [
+      8.02932860062076,
+      6.0,
+      4.786325376336089e-12
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.996899273376554,
+      4.166666666666667,
+      6.189071390849409e-14
+    ],
+    "ready_stability_cap": 200.0,
+    "baseline_prediction": -218.40833142239092
+  },
+  {
+    "player_id": "qwen3-235b-a22b-2507",
+    "family": "qwen3",
+    "lab": "Alibaba",
+    "games": 50,
+    "game_only_rd": 79.659223285318,
+    "games_rd": 79.659223285318,
+    "target": -383.85397287689875,
+    "core_features": [
+      7.435992438367564,
+      14.0,
+      0.0011551204737649209
+    ],
+    "blunder_features": null,
+    "game_like_features": [
+      7.259218750089084,
+      14.583333333333334,
+      4.291726429741902e-07
+    ],
+    "ready_stability_cap": 152.94117647058823,
+    "baseline_prediction": 23.64079303276042
+  }
+]

@@ -2,6 +2,17 @@
   "schema_version": 3,
   "result_schema_version": 3,
   "production_benchmark_version": "history-replay-v2",
+  "rating_calibration": {
+    "version": "root-reference-v1-20261111-rd300",
+    "seed_rd": 300,
+    "games_rd": 350,
+    "predictor_coefficients": "unchanged",
+    "caps": "unchanged",
+    "validation_policy": "position_benchmark/validation/2026-11-11-corrected-cpl-calibration-plan.json",
+    "validation_report": "position_benchmark/validation/2026-11-11-corrected-cpl-calibration-analysis.md",
+    "mean_gate": "failed-retain",
+    "uncertainty_gate": "passed-widen"
+  },
   "scoring": {
     "version": "root-reference-v1",
     "reference_policy": "same-history-root-depth30-searchmoves",

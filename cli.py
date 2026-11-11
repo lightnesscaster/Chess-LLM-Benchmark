@@ -599,8 +599,9 @@ def show_cap_holdout_status(args):
     return 0
 
 
-async def recalculate_ratings(args, *, results_snapshot=None, benchmark_predictions=None):
-    """Recalculate ratings from stored game results."""
+async def recalculate_ratings(args, *, results_snapshot=None, benchmark_predictions=None,
+                              production_seed_defaults: bool = False):
+    """Replay saved games, optionally using production priors in an isolated store."""
     from datetime import datetime
 
     validation_output = getattr(args, "validation_output", None)
@@ -730,7 +731,7 @@ async def recalculate_ratings(args, *, results_snapshot=None, benchmark_predicti
         anchor_ids=set(anchors.keys()),
         ghost_ids=ghost_ids,
         use_firestore=False if validation_mode else None,
-        benchmark_seed_rd=benchmark_seed_rd,
+        benchmark_seed_rd=None if production_seed_defaults else validation_seed_rd,
         use_benchmark_predictions=not disable_benchmark_seeds and benchmark_predictions is None,
     )
 
@@ -871,6 +872,8 @@ async def recalculate_ratings(args, *, results_snapshot=None, benchmark_predicti
         {} if disable_benchmark_seeds else
         (benchmark_predictions if benchmark_predictions is not None else load_benchmark_predictions())
     )
+    # Explicit snapshots must also identify benchmark-backed priors during pass resets.
+    rating_store._benchmark_predictions = dict(benchmark_preds)
     # Include models with benchmark predictions even if they haven't played games yet
     all_players |= set(benchmark_preds.keys())
     benchmark_count = 0
@@ -1794,7 +1797,7 @@ def main():
     recalc_parser.add_argument(
         "--validation-seed-rd",
         type=float,
-        help="Benchmark seed RD for --validation-output (production remains 166)",
+        help=f"Benchmark seed RD for --validation-output (production remains {BENCHMARK_SEED_RD:g})",
     )
     recalc_parser.add_argument(
         "--validation-disable-benchmark-seeds",

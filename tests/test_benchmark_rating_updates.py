@@ -188,9 +188,16 @@ def test_failed_sync_keeps_panel_and_retries_without_replaying_games(db, monkeyp
 def test_first_benchmark_can_seed_a_player_before_any_saved_games(db):
     del db.docs[("results", "draw-1")]
     del db.docs[("ratings", PID)]
-    updates.recalculate_pending(db)
+    receipt = updates.recalculate_pending(db)
     assert db.docs[("ratings", PID)]["rating"] == pytest.approx(PREDICTION)
     assert db.docs[("ratings", PID)]["games_played"] == 0
+    assert db.docs[("ratings", PID)]["rating_deviation"] == 300.0
+    assert db.docs[("ratings", PID)]["games_rd"] == 350.0
+    assert receipt["seed_rd"] == 300.0
+    assert receipt["calibration_version"] == "root-reference-v1-20261111-rd300"
+    state = db.docs[(updates.STATE_COLLECTION, updates.STATE_ID)]
+    assert state["calibration_version"] == receipt["calibration_version"]
+    assert db.docs[("rating_recalculations", "benchmark-1")]["calibration_version"] == receipt["calibration_version"]
 
 
 def test_same_panel_retry_does_not_increment_revision(db):

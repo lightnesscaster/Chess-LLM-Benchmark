@@ -29,7 +29,10 @@ from position_benchmark.predictions import (
 )
 from rating.benchmark_recalculation import _calculate, state_reference
 from rating.glicko2 import PlayerRating
-from rating.rating_store import BENCHMARK_SEED_RD, PositionBenchmarkInputs, benchmark_predictions_from_inputs
+from rating.rating_store import (
+    BENCHMARK_CALIBRATION_VERSION, BENCHMARK_SEED_RD,
+    PositionBenchmarkInputs, benchmark_predictions_from_inputs,
+)
 
 BACKUP_COLLECTION = "position_scoring_backups"
 AUDIT_COLLECTION = "position_scoring_migrations"
@@ -218,6 +221,8 @@ def _writes(plan: dict) -> list[tuple[str, str, dict]]:
     state = {**plan["snapshot"]["state"], "generation": receipt["generation"],
              "applied_generation": receipt["generation"], "receipt": receipt,
              "scoring_version": receipt["scoring_version"], "scoring_profile": plan["scoring_profile"]}
+    if "calibration_version" in receipt:
+        state["calibration_version"] = receipt["calibration_version"]
     writes = [("benchmark_results", player, plan["benchmark_after"][player]) for player in plan["changed_models"]]
     writes.extend(("ratings", player, data) for player, data in sorted(plan["ratings_after"].items()))
     writes.extend([
@@ -336,6 +341,7 @@ def prepare(db, candidate_core: dict, candidate_game_like: dict, candidate_stabi
         "scoring_version": provenance[0], "scoring_profile_hash": _hash(provenance[1]),
         "models": len(ratings_after), "games": len(games), "changed_benchmark_models": len(changed_models),
         "corrected_panels": corrected_counts, "seed_rd": BENCHMARK_SEED_RD, "prepared_at": time(),
+        "calibration_version": BENCHMARK_CALIBRATION_VERSION,
         "before_hash": _hash(snapshot["ratings"]), "after_hash": _hash(ratings_after),
         "benchmark_before_hash": _hash(snapshot["benchmark_results"]), "benchmark_after_hash": _hash(after),
         "results_hash": _hash(snapshot["results"]), "predictions_before_hash": _hash(predictions_before),

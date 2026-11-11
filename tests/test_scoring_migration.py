@@ -136,6 +136,38 @@ def test_preparation_is_read_only_and_apply_is_atomic_and_idempotent(migration, 
     assert len(db.commits) == commits
 
 
+def test_rd_only_migration_reuses_corrected_panels_and_preserves_scorer(migration, tmp_path, monkeypatch):
+    from rating.benchmark_recalculation import _calculate
+
+    db = database()
+    corrected = panel(corrected=True)
+    db.docs[("benchmark_results", "model")] = corrected
+    state = db.docs[("benchmark_rating_updates", "current")]
+    state.update(scoring_version="v2", scoring_profile={"engine": "test"})
+    monkeypatch.setattr(migration, "_calculate", _calculate)
+    original = copy.deepcopy(db.docs)
+
+    plan = migration.prepare(db, {"model": corrected}, {}, {}, tmp_path)
+
+    assert db.docs == original
+    assert plan["changed_models"] == []
+    assert plan["receipt"]["changed_benchmark_models"] == 0
+    assert plan["predictions_before"] == plan["predictions_after"] == {"model": 1800.0}
+    receipt = migration.apply(db, plan)
+    assert receipt["seed_rd"] == 300.0
+    assert receipt["calibration_version"] == "root-reference-v1-20261111-rd300"
+    assert db.docs[("ratings", "model")]["rating"] == 1800.0
+    assert db.docs[("ratings", "model")]["rating_deviation"] == 300.0
+    assert db.docs[("ratings", "model")]["games_rd"] == 350.0
+    assert db.docs[("benchmark_results", "model")] == corrected
+    state = db.docs[("benchmark_rating_updates", "current")]
+    assert state["calibration_version"] == receipt["calibration_version"]
+    assert state["scoring_version"] == "v2"
+    assert state["scoring_profile"] == {"engine": "test"}
+    assert all(collection not in {"results", "benchmark_results"} for collection, _ in db.commits[-1])
+    assert db.docs[(migration.AUDIT_COLLECTION, plan["migration_id"])]["calibration_version"] == receipt["calibration_version"]
+
+
 @pytest.mark.parametrize("change", ["response", "tokens", "move"])
 def test_changed_raw_evidence_refuses_preparation(migration, tmp_path, change):
     db = database()

@@ -687,19 +687,41 @@ The default `--limit 8` invokes the stratified selector. `--position-indices` is
 an explicit research override and is recorded as such in the result summary.
 
 For non-production validation, ratings can be recalculated from the same benchmark
-means with a looser seed RD. This command is intentionally guarded: both options
+means with an explicit seed RD. This command is intentionally guarded: both options
 are required, rating writes are forced to the specified local file, and
 `data/ratings.json` is rejected as an output target. Game results may still be
 read from the configured production store.
 
 ```bash
 python cli.py recalculate \
-  --validation-seed-rd 300 \
-  --validation-output /tmp/chess-ratings-rd300.json
+  --validation-seed-rd 350 \
+  --validation-output /tmp/chess-ratings-rd350.json
 ```
 
 This counterfactual reduces, but does not eliminate, circularity because its prior
-mean still comes from the position benchmark. Production remains fixed at RD 166.
+mean still comes from the position benchmark. Production uses RD 300 following
+the [corrected-CPL calibration audit](validation/2026-11-11-corrected-cpl-calibration-analysis.md).
+Its benchmark-seed-free targets covered 40 eligible configurations in 21 families,
+excluding Carbon from fitting and selection. Nested family-held-out refitting did
+not pass the frozen improvement gates, so prediction coefficients and caps remain
+unchanged. Held-out error supported widening seed RD from 166 to 300; game-only
+initial RD remains 350. This is retrospective evidence on the existing game graph,
+and RD is a conservative predictive-error proxy rather than a coverage guarantee.
+
+Reproduce the offline audit from the public feature matrix (no API calls or writes):
+
+```bash
+pip install -r requirements-analysis.txt
+python scripts/validate_corrected_calibration.py \
+  --rows position_benchmark/validation/2026-11-11-corrected-cpl-calibration-rows.json \
+  --manifest position_benchmark/validation/2026-11-11-corrected-cpl-calibration-manifest.json \
+  --output /tmp/chess-calibration.json \
+  --report /tmp/chess-calibration.md
+```
+
+The frozen policy, fold membership, bootstrap results, source hashes and limitations
+are recorded beside the report. Historical calibration and prospective stability-cap
+artifacts retain their original assumptions.
 
 Audit freshness, coverage, prediction error, and any available supplemental caps:
 

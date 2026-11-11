@@ -17,7 +17,8 @@ from types import SimpleNamespace
 from game.models import GameResult
 from rating.glicko2 import PlayerRating
 from rating.rating_store import (
-    BENCHMARK_SEED_RD, benchmark_predictions_from_inputs, load_position_benchmark_inputs,
+    BENCHMARK_CALIBRATION_VERSION, BENCHMARK_SEED_RD,
+    benchmark_predictions_from_inputs, load_position_benchmark_inputs,
 )
 
 STATE_COLLECTION = "benchmark_rating_updates"
@@ -59,6 +60,7 @@ def _calculate(results: list[GameResult], predictions: dict) -> dict:
         )
         status = asyncio.run(recalculate_ratings(
             args, results_snapshot=results, benchmark_predictions=predictions,
+            production_seed_defaults=True,
         ))
         if status:
             raise RuntimeError("Benchmark rating recalculation failed; published panels remain saved.")
@@ -110,6 +112,7 @@ def recalculate_pending(db, *, max_attempts: int = 3) -> dict:
             receipt = {
                 "status": "applied", "generation": generation, "models": len(after),
                 "games": len(results), "applied_at": time(), "seed_rd": BENCHMARK_SEED_RD,
+                "calibration_version": BENCHMARK_CALIBRATION_VERSION,
                 "before_hash": _fingerprint(before), "after_hash": _fingerprint(after),
             }
 
@@ -130,6 +133,7 @@ def recalculate_pending(db, *, max_attempts: int = 3) -> dict:
                 })
                 transaction.set(state_reference(db), {
                     **current_state, "applied_generation": generation, "receipt": receipt,
+                    "calibration_version": BENCHMARK_CALIBRATION_VERSION,
                 })
                 return receipt
 
