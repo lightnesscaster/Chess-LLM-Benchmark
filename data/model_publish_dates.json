@@ -180,6 +180,24 @@
     "created_timestamp": 1788307200,
     "created_date": "2026-09-02"
   },
+  "gemini-4-carbon (low)": {
+    "model_id": "google/gemini-4-carbon",
+    "created_timestamp": 1794268800,
+    "created_date": "2026-11-10",
+    "source": "https://aistudio.google.com/docs/changelog#11-10-2026"
+  },
+  "gemini-4-carbon (medium)": {
+    "model_id": "google/gemini-4-carbon",
+    "created_timestamp": 1794268800,
+    "created_date": "2026-11-10",
+    "source": "https://aistudio.google.com/docs/changelog#11-10-2026"
+  },
+  "gemini-4-carbon (high)": {
+    "model_id": "google/gemini-4-carbon",
+    "created_timestamp": 1794268800,
+    "created_date": "2026-11-10",
+    "source": "https://aistudio.google.com/docs/changelog#11-10-2026"
+  },
   "gemini-4-argon (low)": {
     "model_id": "google/gemini-4-argon",
     "created_timestamp": 1791849600,

@@ -228,6 +228,13 @@ models that appear after startup are verified in the background and listed once
 the check passes. Set `LIVE_MODEL_CONFIG_URL` to override the source, or to an
 empty value to use only the bundled config.
 
+Model additions become available after committing and pushing the configuration
+to `main`; local edits alone are not visible to the site. Include `[skip render]`
+in a model-only commit message to prevent Render from starting an automatic
+deploy. Allow up to two minutes for the arena's model list to refresh. The
+leaderboard separately requires at least one completed published rated game;
+adding an arena opponent does not create a leaderboard result.
+
 For local development, set the same variables and run `python web/app.py`.
 The Firebase project ID and default auth domain are derived from the service
 account; set `FIREBASE_PROJECT_ID` or `FIREBASE_AUTH_DOMAIN` only when an

@@ -781,6 +781,29 @@ llms:
     reasoning_effort: high
     timeout: 1200
 
+  # Gemini 4 Carbon, GA 2026-11-10; direct Gemini API.
+  # Introductory pricing through 2026-11-30: $2 input / $10 output per 1M tokens.
+  # Standard pricing from 2026-12-01: $4 input / $20 output per 1M tokens.
+  - player_id: "gemini-4-carbon (low)"
+    model_name: "google/gemini-4-carbon"
+    api: gemini
+    reasoning_effort: low
+    timeout: 1200
+
+  - player_id: "gemini-4-carbon (medium)"
+    model_name: "google/gemini-4-carbon"
+    api: gemini
+    reasoning_effort: medium
+    timeout: 1200
+    web_reasoning_efforts: [low, medium, high]
+    web_default_reasoning_effort: medium
+
+  - player_id: "gemini-4-carbon (high)"
+    model_name: "google/gemini-4-carbon"
+    api: gemini
+    reasoning_effort: high
+    timeout: 1200
+
   # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
   # - player_id: "grok-4-fast"
   #   model_name: "x-ai/grok-4-fast"
