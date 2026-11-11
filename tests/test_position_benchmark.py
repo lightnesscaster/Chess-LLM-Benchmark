@@ -115,6 +115,7 @@ from scripts.run_stability_probe import (
     stamp_probe_record,
 )
 from scripts.merge_stability_probe_shards import merge_shards
+from scripts.migrate_position_benchmark_layout import migrate_results
 from scripts.repair_stability_probe_rows import merge_repair_rows
 from scripts.select_legality_stress_panel import select_panel
 
@@ -571,35 +572,59 @@ class ProductionContractTests(unittest.TestCase):
             ):
                 run_depth30_cap_audit()
 
-    def test_shadow_cap_candidates_match_frozen_development_audit(self) -> None:
-        audit_path = (
+    def test_shadow_cap_formulas_match_frozen_development_features(self) -> None:
+        freeze = json.loads((
             ROOT
-            / "position_benchmark/validation/2026-07-21-depth30-stability-cap-analysis.json"
+            / "position_benchmark/validation/2026-07-23-depth30-cap-development-freeze.json"
+        ).read_text())
+        audit_path = ROOT / freeze["development_audit"]["path"]
+        self.assertEqual(
+            hashlib.sha256(audit_path.read_bytes()).hexdigest(),
+            freeze["development_audit"]["sha256"],
         )
         audit = json.loads(audit_path.read_text())
-        core_results = json.loads(CORE_RESULTS_PATH.read_text())
-        core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
-        game_results = json.loads(GAME_LIKE_RESULTS_PATH.read_text())
-        game_positions = json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"]
-        stability_results = json.loads(STABILITY_RESULTS_PATH.read_text())
-        blunder_results = json.loads(BLUNDER_RESULTS_PATH.read_text())
-        blunder_positions = json.loads(BLUNDER_POSITIONS_PATH.read_text())["positions"]
 
         self.assertEqual(
             audit["production_reference_candidate"],
             "deduplicated_move_exposure_cap",
         )
         for row in audit["rows"]:
-            player_id = row["player_id"]
-            shadow = calculate_candidate_predictions(
-                core_record=core_results[player_id],
-                core_positions=core_positions,
-                game_like_record=game_results[player_id],
-                game_like_positions=game_positions,
-                stability_record=stability_results[player_id],
-                blunder_record=blunder_results.get(player_id),
-                blunder_positions=blunder_positions,
-            )
+            # The frozen audit retains the actual inputs to the cap formulas.
+            # Inject those features at the extraction boundary: current scored
+            # records intentionally change when the corpus is corrected.
+            episodes = {key: row[key] for key in (
+                "attempted_positions", "scored_moves", "catastrophe_positions",
+                "forfeit_positions", "affected_positions", "catastrophe_episodes",
+                "at_risk_moves", "raw_catastrophe_moves", "catastrophe_hazard_pct",
+                "forfeit_pct",
+            )}
+            stability = {"summary": {
+                "score_depth": row["score_depth"],
+                "model_forfeit_pct": row["forfeit_pct"],
+                "model_1000cp_catastrophe_pct": (
+                    100.0 * row["raw_catastrophe_moves"] / row["scored_moves"]
+                ),
+            }}
+            with (
+                patch("position_benchmark.stability_cap_shadow.benchmark_result_readiness",
+                      return_value=PredictionReadiness(True, "ready")),
+                patch("position_benchmark.stability_cap_shadow.stability_probe_readiness",
+                      return_value=PredictionReadiness(True, "ready")),
+                patch("position_benchmark.stability_cap_shadow.continuation_episode_metrics",
+                      return_value=episodes),
+                patch("position_benchmark.stability_cap_shadow.predict_rating_from_model_data_with_supplement",
+                      side_effect=[
+                          row["candidates"][audit["production_reference_candidate"]],
+                          row["candidates"]["no_hard_cap"],
+                      ]),
+            ):
+                shadow = calculate_candidate_predictions(
+                    core_record={}, core_positions=[],
+                    game_like_record={}, game_like_positions=[],
+                    stability_record=stability,
+                )
+            for key in ("current_cap", "hazard_cap", "deduplicated_cap"):
+                self.assertEqual(shadow["evidence"][key], row[key])
             for candidate, expected in row["candidates"].items():
                 self.assertAlmostEqual(
                     shadow["candidates"][candidate],
@@ -1056,26 +1081,19 @@ class ProductionContractTests(unittest.TestCase):
         legacy_results = json.loads(
             (ROOT / "position_benchmark" / "legacy" / "combined_results_75.json").read_text()
         )
-        core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
-        core_results = json.loads(CORE_RESULTS_PATH.read_text())
+        core_data = json.loads(CORE_POSITIONS_PATH.read_text())
+        core_positions = core_data["positions"]
+        # Compare the layout transformation on identical evidence. Production
+        # records may subsequently be rerun or rescored under a new scorer.
+        core_results = migrate_results(
+            legacy_results,
+            core_data,
+            source_index_for_local=[position["legacy_position_idx"] for position in core_positions],
+            panel="core",
+        )
 
-        self.assertLessEqual(set(legacy_results), set(core_results))
-        rerun_after_migration = {
-            "deepseek-v4-pro (no thinking)",
-            "deepseek-v4-flash (max)",
-            "gemma-4-31b-it (high)",
-            "gemma-4-31b-it (no thinking)",
-            "gpt-3.5-turbo",
-            "gpt-oss-120b (low)",
-            "gpt-5.5 (xhigh)",
-            "kimi-k2-0905",
-            "llama-4-maverick",
-            "mistral-medium-3",
-            "qwen3-235b-a22b-2507",
-        }
+        self.assertEqual(set(legacy_results), set(core_results))
         for player_id, legacy_data in legacy_results.items():
-            if player_id in rerun_after_migration:
-                continue
             legacy_prediction = predict_rating_from_results(
                 legacy_data["results"],
                 legacy_positions,

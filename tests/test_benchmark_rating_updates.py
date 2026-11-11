@@ -7,12 +7,14 @@ from types import SimpleNamespace
 import pytest
 
 from game.models import GameResult
-from position_benchmark.layout import CORE_RESULTS_PATH
+from position_benchmark.layout import CORE_POSITIONS_PATH
+from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION
 from rating.glicko2 import PlayerRating
+from rating.rating_store import PositionBenchmarkInputs
 from rating import benchmark_recalculation as updates
 
 PID = "gemini-4-carbon (low)"
-PREDICTION = 1835.6717949866338
+PREDICTION = 1800.0
 
 
 class Database:
@@ -69,10 +71,42 @@ def draw(game_id):
     )
 
 
+def panel_record(positions):
+    return {
+        "summary": {"player_id": PID},
+        "results": [
+            {
+                "position_idx": index,
+                "fen": position["fen"],
+                "model_move": position["best_move"],
+                "cpl": 0,
+                "is_legal": True,
+                "position_benchmark_version": CURRENT_BENCHMARK_VERSION,
+                "prompt_history_replay": True,
+                "stockfish_depth": 30,
+            }
+            for index, position in enumerate(positions)
+        ],
+    }
+
+
 @pytest.fixture
 def db(monkeypatch):
     from firebase_admin import firestore
+    from rating import rating_store
     database = Database()
+    positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+    # These tests exercise transactional replay from a known seed, independently
+    # of model acquisitions and later corrections to the production CPL corpus.
+    record = panel_record(positions)
+    inputs = PositionBenchmarkInputs(
+        core_results={PID: record}, core_positions=positions,
+        blunder_results=None, blunder_positions=None,
+        game_like_results=None, game_like_positions=None, stability_results=None,
+    )
+    monkeypatch.setattr(updates, "load_position_benchmark_inputs", lambda *_, **__: inputs)
+    monkeypatch.setattr(rating_store, "load_position_benchmark_inputs", lambda *_, **__: inputs)
+    monkeypatch.setattr(updates, "benchmark_predictions_from_inputs", lambda _: {PID: PREDICTION})
 
     def transactional(function):
         def run(transaction):
@@ -83,7 +117,7 @@ def db(monkeypatch):
 
     monkeypatch.setattr(firestore, "transactional", transactional)
     database.docs[(updates.STATE_COLLECTION, updates.STATE_ID)] = {"generation": 1, "applied_generation": 0}
-    database.docs[("benchmark_results", PID)] = json.loads(CORE_RESULTS_PATH.read_text())[PID]
+    database.docs[("benchmark_results", PID)] = record
     database.docs[("ratings", PID)] = PlayerRating(player_id=PID, rating=1200, games_played=1, draws=1).to_dict()
     database.docs[("results", "draw-1")] = draw("draw-1").to_json()
     return database
@@ -172,14 +206,14 @@ def test_same_panel_retry_does_not_increment_revision(db):
 
 def test_supplement_publication_queues_update_for_bundled_core(db, monkeypatch):
     from position_benchmark import sync
-    from position_benchmark.layout import GAME_LIKE_RESULTS_PATH
-    pid = "gpt-6-astra (medium)"
-    panel = json.loads(GAME_LIKE_RESULTS_PATH.read_text())[pid]
+    from position_benchmark.layout import GAME_LIKE_POSITIONS_PATH
+    panel = panel_record(json.loads(GAME_LIKE_POSITIONS_PATH.read_text())["positions"])
+    db.docs.pop(("benchmark_results", PID))
     db.docs.pop((updates.STATE_COLLECTION, updates.STATE_ID))
     monkeypatch.setattr(updates, "recalculate_pending", lambda _: {"status": "pending"})
-    sync.write_panel(db, {"player_id": pid, "panel": "game_like", "record": panel})
+    sync.write_panel(db, {"player_id": PID, "panel": "game_like", "record": panel})
     assert db.docs[(updates.STATE_COLLECTION, updates.STATE_ID)]["generation"] == 1
-    assert "results" not in db.docs[("benchmark_results", pid)]
+    assert "results" not in db.docs[("benchmark_results", PID)]
 
 
 def test_new_benchmark_revision_cannot_be_marked_applied_by_old_calculation(db, monkeypatch):

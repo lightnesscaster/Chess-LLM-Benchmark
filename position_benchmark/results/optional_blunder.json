@@ -8053,18 +8053,77 @@
       "positions_skipped": 0,
       "legal_moves": 25,
       "legal_pct": 100.0,
-      "best_moves": 9,
-      "best_pct": 36.0,
-      "avg_cpl": 3805.28,
-      "avg_cpl_legal": 3805.28,
-      "median_cpl": 990.0,
+      "best_moves": 8,
+      "best_pct": 32.0,
+      "avg_cpl": 3543.64,
+      "avg_cpl_legal": 3543.64,
+      "median_cpl": 123,
       "current_result_rows": 25,
       "legacy_or_mixed_result_rows": 0,
       "avoided_blunders": 18,
       "avoided_pct": 72.0,
       "position_benchmark_version": "history-replay-v2",
       "prompt_history_replay": true,
-      "stockfish_depth": 30
+      "stockfish_depth": 30,
+      "scoring_engine_profile": {
+        "scoring_version": "root-reference-v1",
+        "depth": 30,
+        "engine": {
+          "name": "Stockfish 15.1",
+          "author": "the Stockfish developers (see AUTHORS file)"
+        },
+        "options": {
+          "Debug Log File": "",
+          "Threads": 1,
+          "Hash": 64,
+          "Ponder": false,
+          "MultiPV": 1,
+          "Skill Level": 20,
+          "Move Overhead": 10,
+          "Slow Mover": 100,
+          "nodestime": 0,
+          "UCI_Chess960": false,
+          "UCI_AnalyseMode": true,
+          "UCI_LimitStrength": false,
+          "UCI_Elo": 1350,
+          "UCI_ShowWDL": false,
+          "SyzygyPath": "",
+          "SyzygyProbeDepth": 1,
+          "Syzygy50MoveRule": true,
+          "SyzygyProbeLimit": 7,
+          "Use NNUE": true,
+          "EvalFile": "nn-ad9b42354671.nnue"
+        },
+        "nnue": {
+          "EvalFile": {
+            "file": "nn-ad9b42354671.nnue"
+          }
+        }
+      },
+      "scoring_version": "root-reference-v1",
+      "scoring_profile": {
+        "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+        "engine": "Stockfish 15.1",
+        "depth": 30
+      },
+      "blunder": {
+        "total_positions": 25,
+        "legal_moves": 25,
+        "legal_pct": 100.0,
+        "best_moves": 8,
+        "best_pct": 32.0,
+        "avoided_blunders": 18,
+        "avoided_pct": 72.0,
+        "avg_cpl": 3543.64,
+        "avg_cpl_legal": 3543.64,
+        "median_cpl": 123,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
+      }
     },
     "results": [
       {
@@ -8075,13 +8134,13 @@
         "best_move": "f7d6",
         "best_move_san": "Nd6+",
         "blunder_move": "h5h7",
-        "cpl": 1010,
+        "cpl": 20,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": 9970,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 9960,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8094,7 +8153,13 @@
         "position_id": "optional-blunder-001",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 0
+        "legacy_position_idx": 0,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 1,
@@ -8104,13 +8169,13 @@
         "best_move": "c8d7",
         "best_move_san": "Bd7",
         "blunder_move": "c6d4",
-        "cpl": 553,
+        "cpl": 549,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -83,
-        "eval_best": 470,
-        "eval_before": 470,
+        "eval_model": -67,
+        "eval_best": 482,
+        "eval_before": 482,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8123,23 +8188,29 @@
         "position_id": "optional-blunder-002",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 1
+        "legacy_position_idx": 1,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 2,
         "fen": "r1b3k1/p2pP1q1/8/2p5/8/1PK5/PP2BPPP/R1B3NR w - - 1 39",
         "model_move": "c3c2",
         "model_move_san": "Kc2",
-        "best_move": "c3c2",
-        "best_move_san": "Kc2",
+        "best_move": "c3d2",
+        "best_move_san": "Kd2",
         "blunder_move": "c3c4",
         "cpl": 0,
         "is_legal": true,
-        "is_best": true,
+        "is_best": false,
         "avoided_blunder": true,
-        "eval_model": 385,
-        "eval_best": 360,
-        "eval_before": 360,
+        "eval_model": 368,
+        "eval_best": 350,
+        "eval_before": 350,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8152,7 +8223,13 @@
         "position_id": "optional-blunder-003",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 2
+        "legacy_position_idx": 2,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 3,
@@ -8162,13 +8239,13 @@
         "best_move": "d1h5",
         "best_move_san": "Qh5+",
         "blunder_move": "g5f7",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 9990,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 9980,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8181,7 +8258,13 @@
         "position_id": "optional-blunder-004",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 3
+        "legacy_position_idx": 3,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 4,
@@ -8191,13 +8274,13 @@
         "best_move": "a8c7",
         "best_move_san": "Nc7+",
         "blunder_move": "d7d8",
-        "cpl": 10047,
+        "cpl": 8797,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": 893,
-        "eval_best": 10940,
-        "eval_before": 10940,
+        "eval_model": 1143,
+        "eval_best": 9940,
+        "eval_before": 9940,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8210,7 +8293,13 @@
         "position_id": "optional-blunder-005",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 4
+        "legacy_position_idx": 4,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 5,
@@ -8220,13 +8309,13 @@
         "best_move": "a8c6",
         "best_move_san": "Bxc6+",
         "blunder_move": "g4d7",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 9960,
-        "eval_best": 10950,
-        "eval_before": 10950,
+        "eval_model": 9950,
+        "eval_best": 9950,
+        "eval_before": 9950,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8239,7 +8328,13 @@
         "position_id": "optional-blunder-006",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 5
+        "legacy_position_idx": 5,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 6,
@@ -8249,13 +8344,13 @@
         "best_move": "c4e6",
         "best_move_san": "Qe6",
         "blunder_move": "f6e4",
-        "cpl": 125,
+        "cpl": 123,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -125,
-        "eval_best": 0,
-        "eval_before": 0,
+        "eval_model": -131,
+        "eval_best": -8,
+        "eval_before": -8,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8268,7 +8363,13 @@
         "position_id": "optional-blunder-007",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 6
+        "legacy_position_idx": 6,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 7,
@@ -8278,13 +8379,13 @@
         "best_move": "f6e4",
         "best_move_san": "Ne4+",
         "blunder_move": "g4e2",
-        "cpl": 10980,
+        "cpl": 9980,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
         "eval_model": 0,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8297,23 +8398,29 @@
         "position_id": "optional-blunder-008",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 7
+        "legacy_position_idx": 7,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 8,
         "fen": "r5k1/ppp2ppp/P1n5/3r4/2b3K1/8/8/8 b - - 50 68",
         "model_move": "d5d4",
         "model_move_san": "Rd4+",
-        "best_move": "b7b6",
-        "best_move_san": "b6",
+        "best_move": "b7a6",
+        "best_move_san": "bxa6",
         "blunder_move": "d5d4",
-        "cpl": 10930,
+        "cpl": 9940,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
         "eval_model": 0,
-        "eval_best": 10930,
-        "eval_before": 10930,
+        "eval_best": 9940,
+        "eval_before": 9940,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8326,7 +8433,13 @@
         "position_id": "optional-blunder-009",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 8
+        "legacy_position_idx": 8,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 9,
@@ -8340,9 +8453,9 @@
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": false,
-        "eval_model": -9940,
-        "eval_best": -9940,
-        "eval_before": -9940,
+        "eval_model": 0,
+        "eval_best": 0,
+        "eval_before": 0,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8355,7 +8468,13 @@
         "position_id": "optional-blunder-010",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 9
+        "legacy_position_idx": 9,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 10,
@@ -8365,13 +8484,13 @@
         "best_move": "c8e6",
         "best_move_san": "Be6",
         "blunder_move": "g7g6",
-        "cpl": 16,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": -135,
-        "eval_best": -119,
-        "eval_before": -119,
+        "eval_model": -108,
+        "eval_best": -108,
+        "eval_before": -108,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8384,7 +8503,13 @@
         "position_id": "optional-blunder-011",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 10
+        "legacy_position_idx": 10,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 11,
@@ -8394,13 +8519,13 @@
         "best_move": "d8h4",
         "best_move_san": "Qh4+",
         "blunder_move": "e5f4",
-        "cpl": 10822,
+        "cpl": 9840,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
-        "eval_model": 158,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 140,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8413,23 +8538,29 @@
         "position_id": "optional-blunder-012",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 11
+        "legacy_position_idx": 11,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 12,
         "fen": "r1b1k2r/ppp2ppp/2n5/3pp3/3qnP2/bP6/P1PPK1PR/1RBQ1BN1 b kq - 9 12",
         "model_move": "d4d2",
         "model_move_san": "Qxd2+",
-        "best_move": "d4f2",
-        "best_move_san": "Qf2+",
+        "best_move": "c8g4",
+        "best_move_san": "Bg4+",
         "blunder_move": "d4d2",
-        "cpl": 10876,
+        "cpl": 9882,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
-        "eval_model": 104,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 88,
+        "eval_best": 9970,
+        "eval_before": 9970,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8442,7 +8573,13 @@
         "position_id": "optional-blunder-013",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 12
+        "legacy_position_idx": 12,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 13,
@@ -8452,13 +8589,13 @@
         "best_move": "d1h5",
         "best_move_san": "Qh5+",
         "blunder_move": "e5f6",
-        "cpl": 10765,
+        "cpl": 9795,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
-        "eval_model": 215,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 185,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8471,23 +8608,29 @@
         "position_id": "optional-blunder-014",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 13
+        "legacy_position_idx": 13,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 14,
         "fen": "r1bq1b1r/ppp3pp/4k3/3Bp3/3n4/2N2Q2/PPPP1PPP/R1B1K2R b KQ - 0 9",
         "model_move": "d8d5",
         "model_move_san": "Qxd5",
-        "best_move": "e6d6",
-        "best_move_san": "Kd6",
+        "best_move": "e6d7",
+        "best_move_san": "Kd7",
         "blunder_move": "e6e7",
-        "cpl": 555,
+        "cpl": 590,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -750,
-        "eval_best": -195,
-        "eval_before": -195,
+        "eval_model": -760,
+        "eval_best": -170,
+        "eval_before": -170,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8500,7 +8643,13 @@
         "position_id": "optional-blunder-015",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 14
+        "legacy_position_idx": 14,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 15,
@@ -8510,13 +8659,13 @@
         "best_move": "d8h4",
         "best_move_san": "Qh4+",
         "blunder_move": "e4c3",
-        "cpl": 10283,
+        "cpl": 9306,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": 697,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 674,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8529,7 +8678,13 @@
         "position_id": "optional-blunder-016",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 15
+        "legacy_position_idx": 15,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 16,
@@ -8539,13 +8694,13 @@
         "best_move": "d8h4",
         "best_move_san": "Qh4#",
         "blunder_move": "c7c5",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 10000,
-        "eval_best": 10990,
-        "eval_before": 10990,
+        "eval_model": 9990,
+        "eval_best": 9990,
+        "eval_before": 9990,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8558,7 +8713,13 @@
         "position_id": "optional-blunder-017",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 16
+        "legacy_position_idx": 16,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 17,
@@ -8568,13 +8729,13 @@
         "best_move": "e7f8",
         "best_move_san": "Kf8",
         "blunder_move": "e7d7",
-        "cpl": 204,
+        "cpl": 209,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -447,
-        "eval_best": -243,
-        "eval_before": -243,
+        "eval_model": -443,
+        "eval_best": -234,
+        "eval_before": -234,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8587,7 +8748,13 @@
         "position_id": "optional-blunder-018",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 17
+        "legacy_position_idx": 17,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 18,
@@ -8597,13 +8764,13 @@
         "best_move": "a8a7",
         "best_move_san": "Ra7",
         "blunder_move": "c8d7",
-        "cpl": 44,
+        "cpl": 51,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -325,
-        "eval_best": -281,
-        "eval_before": -281,
+        "eval_model": -321,
+        "eval_best": -270,
+        "eval_before": -270,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8616,7 +8783,13 @@
         "position_id": "optional-blunder-019",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 18
+        "legacy_position_idx": 18,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 19,
@@ -8626,13 +8799,13 @@
         "best_move": "d8h4",
         "best_move_san": "Qh4#",
         "blunder_move": "d7d5",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 10000,
-        "eval_best": 10990,
-        "eval_before": 10990,
+        "eval_model": 9990,
+        "eval_best": 9990,
+        "eval_before": 9990,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8645,7 +8818,13 @@
         "position_id": "optional-blunder-020",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 19
+        "legacy_position_idx": 19,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 20,
@@ -8655,13 +8834,13 @@
         "best_move": "e5e6",
         "best_move_san": "e6+",
         "blunder_move": "c1g5",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 9980,
-        "eval_best": 10970,
-        "eval_before": 10970,
+        "eval_model": 9970,
+        "eval_best": 9970,
+        "eval_before": 9970,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8674,7 +8853,13 @@
         "position_id": "optional-blunder-021",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 20
+        "legacy_position_idx": 20,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 21,
@@ -8684,13 +8869,13 @@
         "best_move": "e8c8",
         "best_move_san": "O-O-O",
         "blunder_move": "b2a1q",
-        "cpl": 1238,
+        "cpl": 9686,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -1462,
-        "eval_best": -224,
-        "eval_before": -224,
+        "eval_model": -9890,
+        "eval_best": -204,
+        "eval_before": -204,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8703,7 +8888,13 @@
         "position_id": "optional-blunder-022",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 21
+        "legacy_position_idx": 21,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 22,
@@ -8713,13 +8904,13 @@
         "best_move": "a1d1",
         "best_move_san": "Rd1",
         "blunder_move": "d3g6",
-        "cpl": 68,
+        "cpl": 116,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": true,
-        "eval_model": -405,
-        "eval_best": -337,
-        "eval_before": -337,
+        "eval_model": -418,
+        "eval_best": -302,
+        "eval_before": -302,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8732,7 +8923,13 @@
         "position_id": "optional-blunder-023",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 22
+        "legacy_position_idx": 22,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 23,
@@ -8742,13 +8939,13 @@
         "best_move": "d1h5",
         "best_move_san": "Qh5+",
         "blunder_move": "d2d4",
-        "cpl": 10676,
+        "cpl": 9707,
         "is_legal": true,
         "is_best": false,
         "avoided_blunder": false,
-        "eval_model": 304,
-        "eval_best": 10980,
-        "eval_before": 10980,
+        "eval_model": 273,
+        "eval_best": 9980,
+        "eval_before": 9980,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8761,7 +8958,13 @@
         "position_id": "optional-blunder-024",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 23
+        "legacy_position_idx": 23,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       },
       {
         "position_idx": 24,
@@ -8771,13 +8974,13 @@
         "best_move": "d8h4",
         "best_move_san": "Qh4#",
         "blunder_move": "h7h5",
-        "cpl": 990,
+        "cpl": 0,
         "is_legal": true,
         "is_best": true,
         "avoided_blunder": true,
-        "eval_model": 10000,
-        "eval_best": 10990,
-        "eval_before": 10990,
+        "eval_model": 9990,
+        "eval_best": 9990,
+        "eval_before": 9990,
         "move_rank": null,
         "top3": false,
         "top5": false,
@@ -8790,12 +8993,31 @@
         "position_id": "optional-blunder-025",
         "result_schema_version": 2,
         "panel": "optional-blunder",
-        "legacy_position_idx": 24
+        "legacy_position_idx": 24,
+        "scoring_version": "root-reference-v1",
+        "scoring_profile": {
+          "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+          "engine": "Stockfish 15.1",
+          "depth": 30
+        }
       }
     ],
     "token_usage": {
       "prompt": 45659,
       "completion": 75291
+    },
+    "rescoring": {
+      "input_sha256": "c2bb40030c5287d78a4b3c7ce0ad15c25309ebb3bc435aba0de3e2d2cc711769",
+      "positions_sha256": "ccf25adb61b34814d2fdb6af2bc395be4350cd055f357897e31368d5036ddaeb",
+      "scoring_version": "root-reference-v1",
+      "scoring_profile": {
+        "sha256": "cb5c8c4c627a20db2b3a43d7c0ac47226782d1d3904a8fe061b8dc59df37f3d7",
+        "engine": "Stockfish 15.1",
+        "depth": 30
+      },
+      "stockfish_depth": 30,
+      "panel": "blunder",
+      "output_sha256": "fb1aea04c2f1d1589b0ab8514f31bbf96b93f4582a0eb4d779851d4d9e084720"
     }
   },
   "mimo-v2-flash (no thinking)": {

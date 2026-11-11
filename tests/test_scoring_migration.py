@@ -58,6 +58,15 @@ class Transaction:
         self.db.docs.update(self.writes)
 
 
+def fake_engine_profile(name):
+    """Build coherent CPU-only engine provenance without retaining canonical audit data."""
+    from position_benchmark.evaluation import SCORING_VERSION
+    return {
+        "scoring_version": SCORING_VERSION, "engine": {"name": name},
+        "depth": 30, "options": {}, "nnue": {},
+    }
+
+
 def panel(player="model", *, corrected=False):
     data = {"summary": {"player_id": player}, "results": [{
         "model_move": "e2e4", "raw_response": "e4", "prompt_tokens": 10,
@@ -251,8 +260,11 @@ def test_real_validation_accepts_a_complete_corrected_core_and_rejects_mixed_row
     records = json.loads(CORE_RESULTS_PATH.read_text())
     player, original = next((pid, record) for pid, record in records.items() if module._ready(record, "core"))
     corrected = copy.deepcopy(original)
-    provenance = {"scoring_version": SCORING_VERSION, "scoring_profile": {"engine": "test", "depth": 30}}
+    from position_benchmark.evaluation import scoring_profile_identity
+    engine_profile = fake_engine_profile("test")
+    provenance = {"scoring_version": SCORING_VERSION, "scoring_profile": scoring_profile_identity(engine_profile)}
     corrected["summary"].update(provenance)
+    corrected["summary"]["scoring_engine_profile"] = engine_profile
     for row in corrected["results"]:
         row.update(provenance)
         if row.get("is_best"):
@@ -274,8 +286,11 @@ def test_real_rescore_file_output_prepares_without_changing_saved_evidence(tmp_p
     original = copy.deepcopy(original)
     original["results"][0]["move_rank"] = 2
 
+    from position_benchmark.evaluation import scoring_profile_identity
+
     class Evaluator:
-        scoring_profile = {"engine": "cpu-test", "depth": 30}
+        engine_profile = fake_engine_profile("cpu-test")
+        scoring_profile = scoring_profile_identity(engine_profile)
 
         def score(self, board, move):
             best = move or next(iter(board.legal_moves))
@@ -421,8 +436,11 @@ def test_real_corrected_optional_panel_validates_provenance_and_player_identity(
     from position_benchmark.layout import BLUNDER_RESULTS_PATH
     player = "gpt-5.2 (high)"
     corrected = copy.deepcopy(json.loads(BLUNDER_RESULTS_PATH.read_text())[player])
-    provenance = {"scoring_version": SCORING_VERSION, "scoring_profile": {"engine": "test", "depth": 30}}
+    from position_benchmark.evaluation import scoring_profile_identity
+    engine_profile = fake_engine_profile("test")
+    provenance = {"scoring_version": SCORING_VERSION, "scoring_profile": scoring_profile_identity(engine_profile)}
     corrected["summary"].update(provenance)
+    corrected["summary"]["scoring_engine_profile"] = engine_profile
     for row in corrected["results"]:
         row.update(provenance)
         if row.get("is_best"):
