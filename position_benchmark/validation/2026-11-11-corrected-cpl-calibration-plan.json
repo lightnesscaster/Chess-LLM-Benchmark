@@ -55,7 +55,13 @@
     "maximum_single_family_mae_worsening": 100,
     "maximum_reliable_subset_metric_ratio": 1.05,
     "maximum_mature_subset_metric_ratio": 1.05,
-    "maximum_provider_heldout_metric_ratio": 1.05
+    "maximum_provider_heldout_metric_ratio": 1.05,
+    "stress_metrics": [
+      "mae",
+      "rmse",
+      "macro_mae",
+      "macro_rmse"
+    ]
   },
   "uncertainty_gate": {
     "minimum_configurations": 30,
