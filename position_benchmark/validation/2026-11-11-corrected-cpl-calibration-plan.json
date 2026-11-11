@@ -1,0 +1,84 @@
+{
+  "experiment_id": "corrected-cpl-calibration-20261111-v1",
+  "status": "frozen-before-target-replay-and-analysis",
+  "scoring_version": "root-reference-v1",
+  "target": "all-production-games-replayed-with-all-benchmark-seeds-disabled-RD350",
+  "primary_cohort": {
+    "minimum_games": 8,
+    "maximum_game_only_rd": 200,
+    "exclude_family": "gemini-4-carbon"
+  },
+  "reliable_cohort": {
+    "minimum_games": 20,
+    "maximum_game_only_rd": 150
+  },
+  "mature_cohort": {
+    "minimum_games": 30,
+    "maximum_game_only_rd": 120
+  },
+  "candidates": [
+    "fixed",
+    "offset",
+    "affine",
+    "core-ridge-0",
+    "core-ridge-1",
+    "core-ridge-10",
+    "core-ridge-100"
+  ],
+  "features": [
+    "log1p-core-mean-cpl",
+    "core-best-percent",
+    "survival40-percent"
+  ],
+  "coefficient_constraints": {
+    "log_cpl": "nonpositive",
+    "best": "nonnegative",
+    "survival": "nonnegative",
+    "affine_slope": "nonnegative"
+  },
+  "weighting": "equal-total-weight-per-model-line-family",
+  "selection": "inner-leave-family-out-macro-MAE-then-macro-RMSE-then-simplicity",
+  "evaluation": "outer-leave-family-out-of-complete-selection-procedure",
+  "stress_evaluation": "outer-leave-provider-out-with-inner-family-selection",
+  "bootstrap": {
+    "resamples": 5000,
+    "seed": 1729,
+    "unit": "model-line-family"
+  },
+  "mean_promotion_gate": {
+    "minimum_configurations": 30,
+    "minimum_families": 8,
+    "minimum_macro_mae_improvement_fraction": 0.1,
+    "minimum_macro_rmse_improvement_fraction": 0.05,
+    "minimum_bootstrap_mae_improvement_probability": 0.9,
+    "minimum_family_win_fraction": 0.5,
+    "maximum_single_family_mae_worsening": 100,
+    "maximum_reliable_subset_metric_ratio": 1.05,
+    "maximum_mature_subset_metric_ratio": 1.05,
+    "maximum_provider_heldout_metric_ratio": 1.05
+  },
+  "uncertainty_gate": {
+    "minimum_configurations": 30,
+    "minimum_families": 8,
+    "existing_rd": 166,
+    "bootstrap_rmse_lower_percentile": 5,
+    "lower_bound_must_exceed_existing_rd": true,
+    "estimate": "larger-of-row-and-macro-family-heldout-RMSE-rounded-up-to-next25",
+    "maximum_rd": 350,
+    "allow_reducing_rd": false
+  },
+  "carbon_policy": "excluded-from-training-and-model-selection-diagnostic-only",
+  "production_policy": "publish-only-components-that-pass-their-predeclared-gates",
+  "model_calls": 0,
+  "simplicity_order": [
+    "fixed",
+    "offset",
+    "affine",
+    "core-ridge-100",
+    "core-ridge-10",
+    "core-ridge-1",
+    "core-ridge-0"
+  ],
+  "numeric_tie_tolerance": 1e-09,
+  "macro_metrics": "mean-family-MAE and sqrt(mean-family-MSE)"
+}
