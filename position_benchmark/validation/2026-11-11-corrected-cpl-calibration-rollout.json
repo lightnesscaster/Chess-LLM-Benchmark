@@ -1,0 +1,74 @@
+{
+  "calibration_version": "root-reference-v1-20261111-rd300",
+  "source_commit": "632cc2c3f9da38ee43c54e071faa992123eb2fd3",
+  "deployment": {
+    "id": "dep-dbqdd8mc6qcc73f0373g",
+    "status": "live",
+    "finished_at": "2026-11-11T20:59:26.170005Z"
+  },
+  "decision": {
+    "prediction_mean": "retained",
+    "caps": "retained",
+    "benchmark_seed_rd_before": 166,
+    "benchmark_seed_rd_after": 300,
+    "sibling_only_seed_rd": 166,
+    "games_rd": 350
+  },
+  "tests": {
+    "passed": 891,
+    "subtests_passed": 21
+  },
+  "receipt": {
+    "after_hash": "3e491188efeaf448beb3ca743703f83e8a1184e5d393d405fe2c6a80e94f9184",
+    "before_hash": "a9c97d048f3969c8cc9c1e9cce331056eb5a7bab7c0da8b305dd5ffbe2ca1040",
+    "benchmark_after_hash": "ff81d6d824737d543f5a4450972527b7671b2748aee135a1f9985cdcfe82f02a",
+    "benchmark_before_hash": "ff81d6d824737d543f5a4450972527b7671b2748aee135a1f9985cdcfe82f02a",
+    "calibration_version": "root-reference-v1-20261111-rd300",
+    "changed_benchmark_models": 0,
+    "corrected_panels": {
+      "blunder": 1,
+      "core": 56,
+      "game_like": 50,
+      "stability": 49
+    },
+    "games": 6570,
+    "generation": 16,
+    "migration_id": "scoring-302f89398bb4240637214420",
+    "models": 140,
+    "plan_hash": "8ac8900e924912f271fc3a8c8b383f3c98e66e4a99e49e5c681f18ef5956e292",
+    "predictions_after_hash": "328e9bc552ffd5f38db730c8a15c2419e3c5d1482e07293066e91857bf1c6f0c",
+    "predictions_before_hash": "328e9bc552ffd5f38db730c8a15c2419e3c5d1482e07293066e91857bf1c6f0c",
+    "prepared_at": 1794430522.950358,
+    "results_hash": "d87b8357055f1760c399a696d6a19b35019a566259ffcff76ecf4ec130eb46c8",
+    "scoring_profile_hash": "1dc676fc543687b8a485ad9f3c36bff1ba40520f9a5db1cb9ad0a381f668abc6",
+    "scoring_version": "root-reference-v1",
+    "seed_rd": 300.0,
+    "status": "applied"
+  },
+  "state_generation": 16,
+  "active_turns": 0,
+  "immutable_game_and_benchmark_hashes_verified": true,
+  "carbon": {
+    "gemini-4-carbon (low)": {
+      "before": 2121.7102826051955,
+      "after": 2150.810035559672,
+      "rd": 114.40758200481852
+    },
+    "gemini-4-carbon (medium)": {
+      "before": 2249.196923675333,
+      "after": 2208.4980754082944,
+      "rd": 112.91570933356405
+    }
+  },
+  "live_api_verification": {
+    "ratings": 140,
+    "current_predictions": 56,
+    "all_rating_and_game_stat_values_match": true,
+    "all_position_predictions_unchanged": true,
+    "pages": {
+      "/positions": 200,
+      "/live": 200
+    }
+  },
+  "limitations": "Retrospective predictive-error proxy on the existing game graph; no individual coverage guarantee. No new model calls or games."
+}
