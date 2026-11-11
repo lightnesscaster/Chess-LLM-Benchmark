@@ -65,7 +65,8 @@
     "lower_bound_must_exceed_existing_rd": true,
     "estimate": "larger-of-row-and-macro-family-heldout-RMSE-rounded-up-to-next25",
     "maximum_rd": 350,
-    "allow_reducing_rd": false
+    "allow_reducing_rd": false,
+    "bootstrap_statistic": "max(row-weighted-RMSE, macro-family-RMSE), identical to point-estimate statistic"
   },
   "carbon_policy": "excluded-from-training-and-model-selection-diagnostic-only",
   "production_policy": "publish-only-components-that-pass-their-predeclared-gates",
@@ -80,5 +81,10 @@
     "core-ridge-0"
   ],
   "numeric_tie_tolerance": 1e-09,
-  "macro_metrics": "mean-family-MAE and sqrt(mean-family-MSE)"
+  "macro_metrics": "mean-family-MAE and sqrt(mean-family-MSE)",
+  "limitations": [
+    "Retrospective validation on the existing game graph, not independent prospective evidence.",
+    "Incumbent formula/cap development may overlap historical model cohorts; family holdout excludes families from this audit refit only.",
+    "Keep the separate frozen prospective stability-cap study unchanged."
+  ]
 }
