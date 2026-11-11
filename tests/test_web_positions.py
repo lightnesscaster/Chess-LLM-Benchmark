@@ -92,3 +92,25 @@ def test_error_only_uses_established_game_ratings():
     row = next(r for r in build_position_rows(inputs, leaderboard) if r["player_id"] == model)
     assert row["error"] is None
     assert row["game_rating"] == prediction + 120
+
+
+def test_live_optional_panel_is_shared_by_page_and_rating_seeds(monkeypatch):
+    from dataclasses import replace
+    from position_benchmark.predictions import benchmark_result_readiness
+    import web.position_results as page
+
+    inputs = load_position_benchmark_inputs(use_firestore=False)
+    model, record = next((pid, r) for pid, r in inputs.core_results.items()
+                         if benchmark_result_readiness(r, inputs.core_positions).is_ready)
+    core = {**record, "supplements": {"blunder": {"source": "live"}}}
+    inputs = replace(inputs, core_results={model: core},
+                     blunder_results={model: {"source": "bundled"}})
+
+    def prediction(data, positions, **kwargs):
+        return 1200 if kwargs["blunder_model_data"] == {"source": "live"} else 1800
+
+    monkeypatch.setattr(page, "predict_rating_from_model_data_with_supplement", prediction)
+    monkeypatch.setattr(rating_store_module, "predict_rating_from_model_data_with_supplement", prediction)
+    seed = rating_store_module.benchmark_predictions_from_inputs(inputs)[model]
+    assert seed == 1200
+    assert build_position_rows(inputs, [])[0]["prediction"] == seed

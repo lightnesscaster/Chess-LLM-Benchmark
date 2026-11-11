@@ -14,6 +14,7 @@ import time
 from typing import Any, Callable, Iterable
 
 from position_benchmark.layout import (
+    BLUNDER_RESULTS_PATH,
     CORE_RESULTS_PATH,
     GAME_LIKE_RESULTS_PATH,
     STABILITY_RESULTS_PATH,
@@ -43,7 +44,7 @@ _cache_lock = threading.Lock()
 _cached_inputs: PositionBenchmarkInputs | None = None
 _cached_time: float = 0.0
 
-_RESULT_PATHS = (CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, STABILITY_RESULTS_PATH)
+_RESULT_PATHS = (CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, STABILITY_RESULTS_PATH, BLUNDER_RESULTS_PATH)
 
 
 def _results_changed_since(timestamp: float) -> bool:
@@ -118,11 +119,7 @@ def build_position_rows(
             prediction = predict_rating_from_model_data_with_supplement(
                 model_data,
                 positions,
-                blunder_model_data=(
-                    inputs.blunder_results.get(model)
-                    if isinstance(inputs.blunder_results, dict)
-                    else None
-                ),
+                blunder_model_data=_supplement(model_data, "blunder", inputs.blunder_results, model),
                 blunder_positions=inputs.blunder_positions,
                 game_like_model_data=game_like_data,
                 game_like_positions=inputs.game_like_positions,
