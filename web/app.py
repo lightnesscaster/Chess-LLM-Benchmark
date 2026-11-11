@@ -27,7 +27,7 @@ from rating.leaderboard import Leaderboard
 from game.pgn_logger import PGNLogger
 from game.live_games import get_live_game_store
 from game.stats_collector import StatsCollector
-from web.timeline_chart import get_timeline_html
+from web.timeline_chart import build_timeline_data
 from web.cost_chart import get_cost_chart_html
 from web.position_results import build_position_rows, get_position_benchmark_inputs, summarize_errors
 from utils import is_reasoning_model
@@ -868,8 +868,7 @@ def methodology():
 def timeline():
     """Show timeline visualization."""
     leaderboard_data = get_leaderboard_data(min_games=5)
-    chart_html = get_timeline_html(leaderboard_data)
-    return render_template("timeline.html", chart_html=chart_html)
+    return render_template("timeline.html", timeline=build_timeline_data(leaderboard_data))
 
 
 @app.route("/cost")

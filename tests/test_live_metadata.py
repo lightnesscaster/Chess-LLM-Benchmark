@@ -161,7 +161,7 @@ def test_failed_or_invalid_refresh_preserves_last_good_prices(monkeypatch, broke
 
 
 def test_leaderboard_and_charts_use_live_release_metadata(monkeypatch):
-    from web.timeline_chart import create_timeline_chart
+    from web.timeline_chart import build_timeline_data
     from web.cost_chart import create_cost_chart
 
     monkeypatch.setenv("LIVE_MODEL_PUBLISH_DATES_URL", "https://example.test/dates.json")
@@ -178,9 +178,11 @@ def test_leaderboard_and_charts_use_live_release_metadata(monkeypatch):
     assert entry["publish_date"] == "11/26"
     assert entry["publish_timestamp"] == 1794268800
     assert entry["avg_cost_per_game"] == 0.25
-    for chart in (create_timeline_chart, create_cost_chart):
-        figure = chart([entry])
-        assert any(trace.name == "Google" for trace in figure.data)
+    assert any(trace.name == "Google" for trace in create_cost_chart([entry]).data)
+    timeline = build_timeline_data([entry])
+    assert [point["lab_name"] for point in timeline["points"]] == ["Google"]
+    assert timeline["points"][0]["ts"] == 1794268800
+    assert [record["id"] for record in timeline["records"]] == ["new (high)"]
 
 
 def test_live_dates_reach_rating_seeding_freeze_and_scheduling(monkeypatch):
