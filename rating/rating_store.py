@@ -86,14 +86,16 @@ class PositionBenchmarkInputs:
     stability_results: Optional[Dict[str, dict]]
 
 
-def load_position_benchmark_inputs(use_firestore: bool) -> Optional[PositionBenchmarkInputs]:
+def load_position_benchmark_inputs(
+    use_firestore: bool, *, remote_results: Optional[Dict[str, dict]] = None,
+) -> Optional[PositionBenchmarkInputs]:
     """
     Load position-benchmark results, preferring ready Firestore core records
     and falling back per model to the bundled local result files.
 
     Returns None when the core positions file is unavailable.
     """
-    results_data = None
+    results_data = remote_results
     positions_data = None
     game_like_results_data = None
     game_like_positions_data = None
@@ -102,7 +104,7 @@ def load_position_benchmark_inputs(use_firestore: bool) -> Optional[PositionBenc
     stability_results_data = None
 
     # Try Firestore first (per-model documents to avoid 1 MiB limit)
-    if use_firestore:
+    if use_firestore and remote_results is None:
         try:
             from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
             db = get_firestore_client()
@@ -251,6 +253,57 @@ def _extract_effort(player_id: str) -> Optional[int]:
 # Module-level cache for benchmark predictions (rarely changes)
 _benchmark_predictions_cache: Optional[Dict[str, float]] = None
 _benchmark_predictions_cache_time: float = 0
+
+
+def benchmark_predictions_from_inputs(inputs: PositionBenchmarkInputs) -> Dict[str, float]:
+    """Compute production seeds from one explicit snapshot of position panels."""
+    results_data = inputs.core_results
+    positions = inputs.core_positions
+    blunder_results_data = inputs.blunder_results
+    blunder_positions = inputs.blunder_positions
+    game_like_results_data = inputs.game_like_results
+    game_like_positions = inputs.game_like_positions
+    stability_results_data = inputs.stability_results
+
+    predictions = {}
+    skipped_reasons: Dict[str, int] = {}
+    for model_name, model_data in results_data.items():
+        readiness = benchmark_result_readiness(model_data, positions)
+        if not readiness.is_ready:
+            skipped_reasons[readiness.reason] = skipped_reasons.get(readiness.reason, 0) + 1
+            continue
+
+        predicted = predict_rating_from_model_data_with_supplement(
+            model_data,
+            positions,
+            blunder_model_data=(
+                blunder_results_data.get(model_name)
+                if isinstance(blunder_results_data, dict)
+                else None
+            ),
+            blunder_positions=blunder_positions,
+            game_like_model_data=(
+                model_data.get("supplements", {}).get("game_like")
+                or (game_like_results_data.get(model_name)
+                    if isinstance(game_like_results_data, dict) else None)
+            ),
+            game_like_positions=game_like_positions,
+            stability_probe_model_data=(
+                model_data.get("supplements", {}).get("stability")
+                or (stability_results_data.get(model_name)
+                    if isinstance(stability_results_data, dict) else None)
+            ),
+            require_ready=True,
+        )
+        if predicted is not None:
+            predictions[model_name] = predicted
+
+    if predictions:
+        logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
+    if skipped_reasons:
+        logger.info(f"Skipped stale/incomplete benchmark predictions: {skipped_reasons}")
+
+    return predictions
 
 
 class RatingStore:
@@ -440,51 +493,7 @@ class RatingStore:
         inputs = load_position_benchmark_inputs(use_firestore=self._use_firestore)
         if inputs is None:
             return {}
-        results_data = inputs.core_results
-        positions = inputs.core_positions
-        blunder_results_data = inputs.blunder_results
-        blunder_positions = inputs.blunder_positions
-        game_like_results_data = inputs.game_like_results
-        game_like_positions = inputs.game_like_positions
-        stability_results_data = inputs.stability_results
-
-        predictions = {}
-        skipped_reasons: Dict[str, int] = {}
-        for model_name, model_data in results_data.items():
-            readiness = benchmark_result_readiness(model_data, positions)
-            if not readiness.is_ready:
-                skipped_reasons[readiness.reason] = skipped_reasons.get(readiness.reason, 0) + 1
-                continue
-
-            predicted = predict_rating_from_model_data_with_supplement(
-                model_data,
-                positions,
-                blunder_model_data=(
-                    blunder_results_data.get(model_name)
-                    if isinstance(blunder_results_data, dict)
-                    else None
-                ),
-                blunder_positions=blunder_positions,
-                game_like_model_data=(
-                    model_data.get("supplements", {}).get("game_like")
-                    or (game_like_results_data.get(model_name)
-                        if isinstance(game_like_results_data, dict) else None)
-                ),
-                game_like_positions=game_like_positions,
-                stability_probe_model_data=(
-                    model_data.get("supplements", {}).get("stability")
-                    or (stability_results_data.get(model_name)
-                        if isinstance(stability_results_data, dict) else None)
-                ),
-                require_ready=True,
-            )
-            if predicted is not None:
-                predictions[model_name] = predicted
-
-        if predictions:
-            logger.info(f"Loaded benchmark predictions for {len(predictions)} models")
-        if skipped_reasons:
-            logger.info(f"Skipped stale/incomplete benchmark predictions: {skipped_reasons}")
+        predictions = benchmark_predictions_from_inputs(inputs)
 
         # Cache at module level
         _benchmark_predictions_cache = dict(predictions)

@@ -48,15 +48,27 @@ def validate_panel(player_id: str, panel: str, record: dict) -> None:
 
 
 def write_panel(db, payload: dict) -> dict:
-    """Atomic per-panel update. Never writes ratings or full-game results."""
+    """Save a panel and apply its ready production prior to saved game history."""
     from firebase_admin import firestore
+    from rating.benchmark_recalculation import queue_recalculation, recalculate_pending
+    from rating.rating_store import load_position_benchmark_inputs
     validate_panel(payload["player_id"], payload["panel"], payload["record"])
     ref = db.collection("benchmark_results").document(payload["player_id"])
+    core_positions = json.loads(CORE_POSITIONS_PATH.read_text())["positions"]
+    bundled_inputs = load_position_benchmark_inputs(False)
+    bundled_core = (bundled_inputs.core_results.get(payload["player_id"], {})
+                    if bundled_inputs is not None else {})
 
     @firestore.transactional
     def save(tx):
         old = ref.get(transaction=tx)
-        merged = merge_panel_record(old.to_dict() or {}, payload["panel"], payload["record"])
+        previous = old.to_dict() or {}
+        merged = merge_panel_record(previous, payload["panel"], payload["record"])
+        # Production can combine a bundled core with independently synced panels.
+        ready = (benchmark_result_readiness(merged, core_positions).is_ready
+                 or benchmark_result_readiness(bundled_core, core_positions).is_ready)
+        if merged != previous and ready:
+            queue_recalculation(tx, db)
         tx.set(ref, merged)
     save(db.transaction())
     # Read back before reporting success; retries replace the same panel.
@@ -66,7 +78,9 @@ def write_panel(db, payload: dict) -> dict:
         actual = {k: v for k, v in actual.items() if k != "supplements"}
     if actual != payload["record"]:
         raise RuntimeError("Position sync readback mismatch")
-    return {"player_id": payload["player_id"], "panel": payload["panel"], "synced": True}
+    receipt = recalculate_pending(db)
+    return {"player_id": payload["player_id"], "panel": payload["panel"], "synced": True,
+            "rating_recalculation": receipt}
 
 
 def sync_via_render(payload: dict) -> dict:

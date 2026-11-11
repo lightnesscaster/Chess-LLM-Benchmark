@@ -598,7 +598,7 @@ def show_cap_holdout_status(args):
     return 0
 
 
-async def recalculate_ratings(args):
+async def recalculate_ratings(args, *, results_snapshot=None, benchmark_predictions=None):
     """Recalculate ratings from stored game results."""
     from datetime import datetime
 
@@ -616,6 +616,9 @@ async def recalculate_ratings(args):
         return 1
     if disable_benchmark_seeds and not validation_mode:
         print("Error: --validation-disable-benchmark-seeds requires validation mode")
+        return 1
+    if (results_snapshot is not None or benchmark_predictions is not None) and not validation_mode:
+        print("Error: explicit recalculation snapshots require validation mode")
         return 1
 
     ratings_path = Path(validation_output or "data/ratings.json")
@@ -672,11 +675,11 @@ async def recalculate_ratings(args):
         if ghost_ids:
             print(f"Ghosts (opponents don't get rating updates): {ghost_ids}")
 
-    # Load all results
-    pgn_logger = PGNLogger()
-    results = pgn_logger.load_all_results(verbose=args.verbose)
+    # Automated recalculation supplies one immutable input snapshot.
+    results = (list(results_snapshot) if results_snapshot is not None
+               else PGNLogger().load_all_results(verbose=args.verbose))
 
-    if not results:
+    if not results and not benchmark_predictions:
         print("No game results found in data/results/")
         return 1
 
@@ -727,7 +730,7 @@ async def recalculate_ratings(args):
         ghost_ids=ghost_ids,
         use_firestore=False if validation_mode else None,
         benchmark_seed_rd=benchmark_seed_rd,
-        use_benchmark_predictions=not disable_benchmark_seeds,
+        use_benchmark_predictions=not disable_benchmark_seeds and benchmark_predictions is None,
     )
 
     # Always reset when recalculating to avoid double-counting
@@ -819,7 +822,7 @@ async def recalculate_ratings(args):
             'anchor_ratings': anchor_ratings_by_game[result.game_id],
         })
 
-    if not valid_games:
+    if not valid_games and not benchmark_predictions:
         print("No valid games to process")
         return 1
 
@@ -864,7 +867,8 @@ async def recalculate_ratings(args):
     # Pre-initialize all non-anchor players with appropriate starting ratings
     # Priority: benchmark prediction > legal move rate heuristic > model type default
     benchmark_preds = (
-        {} if disable_benchmark_seeds else load_benchmark_predictions()
+        {} if disable_benchmark_seeds else
+        (benchmark_predictions if benchmark_predictions is not None else load_benchmark_predictions())
     )
     # Include models with benchmark predictions even if they haven't played games yet
     all_players |= set(benchmark_preds.keys())
@@ -1152,7 +1156,8 @@ async def recalculate_ratings(args):
 
     # Show leaderboard (stats_collector already created earlier)
     leaderboard = Leaderboard(rating_store, stats_collector)
-    print(leaderboard.format_table(min_games=1))
+    if not getattr(args, "suppress_result_table", False):
+        print(leaderboard.format_table(min_games=1))
 
     # Invalidate web cache so leaderboard refreshes
     if not validation_mode:

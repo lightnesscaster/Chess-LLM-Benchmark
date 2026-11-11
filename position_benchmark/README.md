@@ -70,8 +70,17 @@ When no local Firebase key is available, an authenticated Render CLI runs the
 writer using server-side credentials; no key needs to be copied to the laptop.
 Core data stays at `benchmark_results/<player_id>`; game-like and stability data
 are retained under that document's `supplements`, without replacing the core.
-Syncing results does not rewrite full-game ratings. Failed syncs can be retried
-without any model calls:
+Publishing a changed, ready production panel automatically replays saved games
+with the current benchmark seeds, including for models that already have games.
+The complete rating table is replaced atomically, with an audit receipt in
+`rating_recalculations` and a durable revision in `benchmark_rating_updates`.
+Concurrent game finishes cause a fresh calculation; saved games are never replayed
+against an already updated table. The site refreshes its rating cache when the
+applied revision changes.
+
+If publication or recalculation fails, the panel stays saved and its revision
+remains pending. Retrying the same panel resumes the update without double
+counting games or making any model calls:
 
 ```bash
 python -m position_benchmark.sync --player 'gpt-6-astra (medium)'

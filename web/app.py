@@ -32,6 +32,8 @@ from web.cost_chart import get_cost_chart_html
 from web.position_results import build_position_rows, get_position_benchmark_inputs, summarize_errors
 from utils import is_reasoning_model
 from model_metadata import metadata_changed_since
+from rating.benchmark_recalculation import applied_generation as applied_benchmark_generation
+from rating.rating_store import invalidate_cache as invalidate_rating_cache
 from web.auth import (
     admin_api_required,
     admin_required,
@@ -97,6 +99,7 @@ app.jinja_env.filters['is_reasoning'] = is_reasoning_model
 # Leaderboard cache
 _leaderboard_cache: list = []
 _leaderboard_cache_time: float = 0
+_leaderboard_benchmark_generation: int = 0
 _leaderboard_cache_min_games: int | None = None
 _leaderboard_lock = threading.Lock()
 _leaderboard_refreshing = False
@@ -222,17 +225,22 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
     """Get leaderboard data from rating store with thread-safe caching."""
     global _leaderboard_cache, _leaderboard_cache_time
     global _leaderboard_cache_min_games, _leaderboard_refreshing
+    global _leaderboard_benchmark_generation
 
     # Fetch expired metadata before taking the page lock so slow upstream reads
     # do not block other threads from serving their cached leaderboard.
     metadata_changed = metadata_changed_since(_leaderboard_cache_time)
+    benchmark_generation = applied_benchmark_generation()
 
     # Check cache under lock
     with _leaderboard_lock:
         cache_age = time.time() - _leaderboard_cache_time
         cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
         cache_matches = _leaderboard_cache_min_games == min_games
-        should_invalidate = metadata_changed or _should_invalidate_cache(_leaderboard_cache_time)
+        benchmark_changed = benchmark_generation != _leaderboard_benchmark_generation
+        if benchmark_changed:
+            invalidate_rating_cache()
+        should_invalidate = benchmark_changed or metadata_changed or _should_invalidate_cache(_leaderboard_cache_time)
 
         if cache_valid and cache_matches and sort_by == "rating" and not should_invalidate:
             app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")
@@ -274,6 +282,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
             if sort_by == "rating":
                 _leaderboard_cache = result
                 _leaderboard_cache_time = time.time()
+                _leaderboard_benchmark_generation = benchmark_generation
                 _leaderboard_cache_min_games = min_games
             _leaderboard_refreshing = False
 

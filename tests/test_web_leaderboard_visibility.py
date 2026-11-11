@@ -1,6 +1,36 @@
 import web.app as web_app
 
 
+def test_applied_benchmark_revision_refreshes_warm_leaderboard(monkeypatch):
+    from types import SimpleNamespace
+    from tests.test_leaderboard_metadata import FakeRatingStore
+
+    current = {"generation": 1, "rating": 1700}
+    store = FakeRatingStore()
+    original = store.get_sorted_ratings
+
+    def ratings(**kwargs):
+        rows = original(**kwargs)
+        rows[0].rating = current["rating"]
+        return rows
+
+    store.get_sorted_ratings = ratings
+    monkeypatch.setattr(web_app, "RatingStore", lambda **_: store)
+    monkeypatch.setattr(web_app, "PGNLogger", lambda: SimpleNamespace(load_all_results=lambda: []))
+    monkeypatch.setattr(web_app, "get_anchors_from_config", lambda: {})
+    monkeypatch.setattr(web_app, "get_all_engine_ids_from_config", lambda: set())
+    monkeypatch.setattr(web_app, "applied_benchmark_generation", lambda: current["generation"])
+    for name, value in (("_leaderboard_cache", []), ("_leaderboard_cache_time", 0),
+                        ("_leaderboard_cache_min_games", None), ("_leaderboard_refreshing", False),
+                        ("_leaderboard_benchmark_generation", 0)):
+        monkeypatch.setattr(web_app, name, value)
+    assert web_app.get_leaderboard_data()[0]["rating"] == 1700
+    current["rating"] = 1900
+    assert web_app.get_leaderboard_data()[0]["rating"] == 1700
+    current["generation"] = 2
+    assert web_app.get_leaderboard_data()[0]["rating"] == 1900
+
+
 def test_public_leaderboard_requests_models_after_their_first_game(monkeypatch):
     requested_minimums = []
 
