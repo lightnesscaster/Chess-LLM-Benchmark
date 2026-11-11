@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Optional, Set
 
 from .glicko2 import PlayerRating, Glicko2System
+from model_metadata import load_publish_dates
 from position_benchmark.predictions import (
     benchmark_result_readiness,
     predict_rating_from_model_data_with_supplement,
@@ -162,12 +163,7 @@ class RatingStore:
 
     def _load_model_id_mapping(self) -> None:
         """Load player_id → model_id and model_id → [player_ids] from publish dates."""
-        path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
-        try:
-            with open(path) as f:
-                data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return
+        data = load_publish_dates()
         for player_id, info in data.items():
             model_id = info.get("model_id", "")
             if model_id:

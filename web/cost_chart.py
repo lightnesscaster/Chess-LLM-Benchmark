@@ -5,13 +5,12 @@ Creates an interactive Plotly visualization showing the relationship
 between LLM chess rating and cost per game.
 """
 
-import json
-from pathlib import Path
 from typing import Any
 
 import plotly.graph_objects as go
 
 from utils import is_reasoning_model
+from model_metadata import load_publish_dates
 
 # Provider colors - consistent branding (same as timeline_chart.py)
 PROVIDER_COLORS = {
@@ -48,15 +47,10 @@ def create_cost_chart(leaderboard_data: list[dict[str, Any]]) -> go.Figure:
         Plotly Figure object
     """
     # Load model_id lookup for provider extraction
-    publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
-    model_id_lookup = {}
-    try:
-        with open(publish_dates_path) as f:
-            publish_data = json.load(f)
-            for player_id, info in publish_data.items():
-                model_id_lookup[player_id] = info.get("model_id", "")
-    except (FileNotFoundError, json.JSONDecodeError):
-        pass
+    model_id_lookup = {
+        player_id: info.get("model_id", "")
+        for player_id, info in load_publish_dates().items()
+    }
 
     # Filter to models with cost data, sufficient confidence (RD <= 150),
     # exclude anchors, and rating >= -500

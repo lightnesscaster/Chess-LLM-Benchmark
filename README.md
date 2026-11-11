@@ -221,15 +221,23 @@ Claude web opponent and writes an availability catalog. The admin dropdown
 fails closed and lists only models that the deployed subscription successfully
 accessed during that check.
 
-Adding a model to the arena does not need a deploy. On Render, the arena reads
+Adding a model does not need a deploy. On Render, the arena reads
 the `web_play_models` and `llms` sections of `config/benchmark.yaml` from `main`
 on GitHub (cached for two minutes, falling back to the bundled copy), and Claude
 models that appear after startup are verified in the background and listed once
 the check passes. Set `LIVE_MODEL_CONFIG_URL` to override the source, or to an
-empty value to use only the bundled config.
+empty value to use only the bundled config. Pricing (`config/pricing.json`) and
+release metadata (`data/model_publish_dates.json`) also refresh from `main` every
+two minutes. The leaderboard, cost estimates, charts, and model seeding use these
+live records. A metadata change invalidates the leaderboard cache. Failed or
+invalid downloads retain the last valid snapshot, with bundled files as the
+initial fallback; local development and explicit alternate data files stay local.
+Set `LIVE_PRICING_URL` or `LIVE_MODEL_PUBLISH_DATES_URL` to override either source,
+or set either to an empty value to disable its live updates independently.
 
-Model additions become available after committing and pushing the configuration
-to `main`; local edits alone are not visible to the site. Include `[skip render]`
+Model additions become available after committing and pushing the configuration,
+pricing, and release metadata to `main`; local edits alone are not visible to the
+site. Include `[skip render]`
 in a model-only commit message to prevent Render from starting an automatic
 deploy. Allow up to two minutes for the arena's model list to refresh. The
 leaderboard separately requires at least one completed published rated game;

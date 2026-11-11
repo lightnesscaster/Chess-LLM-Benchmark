@@ -30,6 +30,7 @@ from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
 from utils import is_reasoning_model
+from model_metadata import metadata_changed_since
 from web.auth import (
     admin_api_required,
     admin_required,
@@ -221,12 +222,16 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
     global _leaderboard_cache, _leaderboard_cache_time
     global _leaderboard_cache_min_games, _leaderboard_refreshing
 
+    # Fetch expired metadata before taking the page lock so slow upstream reads
+    # do not block other threads from serving their cached leaderboard.
+    metadata_changed = metadata_changed_since(_leaderboard_cache_time)
+
     # Check cache under lock
     with _leaderboard_lock:
         cache_age = time.time() - _leaderboard_cache_time
         cache_valid = _leaderboard_cache and cache_age < _LEADERBOARD_CACHE_TTL
         cache_matches = _leaderboard_cache_min_games == min_games
-        should_invalidate = _should_invalidate_cache(_leaderboard_cache_time)
+        should_invalidate = metadata_changed or _should_invalidate_cache(_leaderboard_cache_time)
 
         if cache_valid and cache_matches and sort_by == "rating" and not should_invalidate:
             app.logger.debug(f"Using cached leaderboard data ({cache_age:.0f}s old)")

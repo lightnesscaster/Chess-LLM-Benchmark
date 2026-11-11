@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 
 from rating.rating_store import RatingStore, _EFFORT_LEVELS as _RS_EFFORT_LEVELS
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
+from model_metadata import load_publish_dates
 from game.stats_collector import StatsCollector
 from position_benchmark.layout import CORE_RESULTS_PATH
 
@@ -112,27 +113,21 @@ class FreezeChecker:
         self._cost_data_cache: Optional[Dict[str, Any]] = None
 
     def _load_publish_dates(self) -> None:
-        publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
-        try:
-            with open(publish_dates_path) as f:
-                data = json.load(f)
-                for player_id, info in data.items():
-                    if "created_timestamp" in info:
-                        self._publish_dates[player_id] = info["created_timestamp"]
-                    model_id = info.get("model_id", "")
-                    if "/" in model_id:
-                        provider = model_id.split("/")[0]
-                        self._player_providers[player_id] = provider
-                        if provider not in self._models_by_provider:
-                            self._models_by_provider[provider] = []
-                        self._models_by_provider[provider].append(player_id)
-                    if model_id:
-                        self._player_model_ids[player_id] = model_id
-                        if model_id not in self._models_by_model_id:
-                            self._models_by_model_id[model_id] = []
-                        self._models_by_model_id[model_id].append(player_id)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
+        for player_id, info in load_publish_dates().items():
+            if "created_timestamp" in info:
+                self._publish_dates[player_id] = info["created_timestamp"]
+            model_id = info.get("model_id", "")
+            if "/" in model_id:
+                provider = model_id.split("/")[0]
+                self._player_providers[player_id] = provider
+                if provider not in self._models_by_provider:
+                    self._models_by_provider[provider] = []
+                self._models_by_provider[provider].append(player_id)
+            if model_id:
+                self._player_model_ids[player_id] = model_id
+                if model_id not in self._models_by_model_id:
+                    self._models_by_model_id[model_id] = []
+                self._models_by_model_id[model_id].append(player_id)
 
     def get_player_cost(self, player_id: str) -> float:
         """Get estimated cost per game for a player."""

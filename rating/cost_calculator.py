@@ -5,13 +5,16 @@ Cost calculation for LLM players based on token usage and OpenRouter pricing.
 import json
 import logging
 import math
+import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union, Protocol
 
 import yaml
 
+from model_metadata import load_pricing
 from utils import resolve_player_id
+from web.live_models import apply_live_models
 
 from game.models import GameResult
 
@@ -122,13 +125,8 @@ class CostCalculator:
         self._load_player_config(config_path)
 
     def _load_pricing(self, path: str) -> Dict[str, Dict[str, float]]:
-        """Load pricing data from JSON file."""
-        pricing_file = Path(path)
-        if not pricing_file.exists():
-            return {}
-
-        with open(pricing_file) as f:
-            return json.load(f)
+        """Load current token rates, preserving explicit local pricing files."""
+        return load_pricing(path)
 
     def _load_player_config(self, config_path: str) -> None:
         """Load player cost metadata from benchmark config."""
@@ -138,6 +136,9 @@ class CostCalculator:
 
         with open(config_file) as f:
             config = yaml.safe_load(f)
+
+        if config_file.resolve() == (self._PROJECT_ROOT / "config/benchmark.yaml").resolve():
+            config = apply_live_models(config, os.environ)
 
         entries = list(config.get("llms", []))
         for model in config.get("web_play_models", []):

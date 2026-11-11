@@ -26,6 +26,7 @@ from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import RatingStore
 from rating.prompt_context import rating_snapshot
 from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
+from model_metadata import load_publish_dates
 from position_benchmark.acquisition import (
     AcquisitionPanel,
     load_acquisition_policy,
@@ -253,27 +254,21 @@ class MatchScheduler:
 
     def _load_publish_dates(self) -> None:
         """Load model publish dates and provider info from data file."""
-        publish_dates_path = Path(__file__).parent.parent / "data" / "model_publish_dates.json"
-        try:
-            with open(publish_dates_path) as f:
-                data = json.load(f)
-                for player_id, info in data.items():
-                    if "created_timestamp" in info:
-                        self._publish_dates[player_id] = info["created_timestamp"]
-                    model_id = info.get("model_id", "")
-                    if "/" in model_id:
-                        provider = model_id.split("/")[0]
-                        self._player_providers[player_id] = provider
-                        if provider not in self._models_by_provider:
-                            self._models_by_provider[provider] = []
-                        self._models_by_provider[provider].append(player_id)
-                    if model_id:
-                        self._player_model_ids[player_id] = model_id
-                        if model_id not in self._models_by_model_id:
-                            self._models_by_model_id[model_id] = []
-                        self._models_by_model_id[model_id].append(player_id)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass  # No publish dates available
+        for player_id, info in load_publish_dates().items():
+            if "created_timestamp" in info:
+                self._publish_dates[player_id] = info["created_timestamp"]
+            model_id = info.get("model_id", "")
+            if "/" in model_id:
+                provider = model_id.split("/")[0]
+                self._player_providers[player_id] = provider
+                if provider not in self._models_by_provider:
+                    self._models_by_provider[provider] = []
+                self._models_by_provider[provider].append(player_id)
+            if model_id:
+                self._player_model_ids[player_id] = model_id
+                if model_id not in self._models_by_model_id:
+                    self._models_by_model_id[model_id] = []
+                self._models_by_model_id[model_id].append(player_id)
 
     def _load_existing_benchmark_results(self) -> set:
         """Return players with every current automatic acquisition panel ready."""
