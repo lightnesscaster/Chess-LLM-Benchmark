@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Position Benchmark - LLM Chess Benchmark{% endblock %}
+{% block description %}Static-position chess benchmark for LLMs: centipawn loss, best-move rate, and legality on 50 equal positions, with predicted versus actual game ratings.{% endblock %}
+
+{% block head %}
+<style>
+    main.container { max-width: 1400px; }
+
+    .positions-intro {
+        max-width: 860px;
+        margin: 0 auto 1.5rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    .positions-intro code {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+
+    .positions-stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .positions-stat {
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        min-width: 130px;
+        text-align: center;
+    }
+
+    .positions-stat .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .positions-stat .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+    }
+
+    .positions-controls {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .positions-table-wrap { overflow-x: auto; }
+
+    .positions-table { min-width: 1100px; }
+
+    .positions-table th,
+    .positions-table td {
+        padding: 0.75rem 0.5rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .positions-table .player { width: 220px; text-align: left; }
+    .positions-table .rank { width: 40px; }
+
+    .positions-table tr.legacy { opacity: 0.5; }
+    .positions-table tr.legacy:hover { opacity: 0.7; }
+    .positions-table.hide-legacy tr.legacy { display: none; }
+
+    .positions-table .muted { color: var(--text-secondary); }
+    .positions-table .error-high { color: var(--accent); font-weight: 600; }
+
+    .status-badge {
+        display: inline-block;
+        margin-left: 0.35rem;
+        padding: 0 0.35rem;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-nav">
+        <a href="/leaderboard" class="page-nav-link">Leaderboard</a>
+        <a href="/games" class="page-nav-link">Games</a>
+        <a href="/timeline" class="page-nav-link">Timeline</a>
+        <a href="/cost" class="page-nav-link">Cost</a>
+        <h1 class="active">Positions</h1>
+        <a href="/methodology" class="page-nav-link">Methodology</a>
+    </div>
+    <p class="subtitle">Static-position benchmark used to seed ratings before a model plays its first game</p>
+</div>
+
+<p class="positions-intro">
+    Each model chooses a move in 50 roughly equal positions, scored by Stockfish at depth 30.
+    Centipawn loss, best-move rate, and legal-move rate predict a game rating:
+    <code>1298.57 − 200.43·ln(CPL+1) + 15.39·best% + 5.85·survival40</code>.
+    A game-like panel and continuation-stability probe can only lower that prediction.
+</p>
+
+{% if unavailable %}
+<div class="empty-state">
+    <p>Position benchmark results are temporarily unavailable.</p>
+</div>
+{% elif rows %}
+{% set current_rows = rows|selectattr('is_current')|list %}
+{% set legacy_count = rows|length - current_rows|length %}
+<div class="positions-stats">
+    <div class="positions-stat">
+        <div class="value">{{ current_rows|length }}</div>
+        <div class="label">Current results</div>
+    </div>
+    <div class="positions-stat">
+        <div class="value">{{ error_stats.count }}</div>
+        <div class="label">With game ratings</div>
+    </div>
+    <div class="positions-stat" title="Mean absolute error: game rating minus prediction">
+        <div class="value">{% if error_stats.mae is not none %}{{ error_stats.mae }}{% else %}–{% endif %}</div>
+        <div class="label">MAE</div>
+    </div>
+    <div class="positions-stat" title="Root mean squared error: game rating minus prediction">
+        <div class="value">{% if error_stats.rmse is not none %}{{ error_stats.rmse }}{% else %}–{% endif %}</div>
+        <div class="label">RMSE</div>
+    </div>
+    <div class="positions-stat" title="Mean of game rating minus prediction; positive means predictions run low">
+        <div class="value">{% if error_stats.bias is not none %}{{ "%+d"|format(error_stats.bias) }}{% else %}–{% endif %}</div>
+        <div class="label">Bias</div>
+    </div>
+</div>
+
+{% if legacy_count %}
+<div class="positions-controls">
+    <label><input type="checkbox" id="show-legacy"> Show {{ legacy_count }} legacy results</label>
+</div>
+{% endif %}
+
+<div class="leaderboard-container positions-table-wrap">
+    <table class="leaderboard-table positions-table hide-legacy">
+        <thead>
+            <tr>
+                <th class="rank">#</th>
+                <th class="player">Player</th>
+                <th class="sortable sorted" data-sort="prediction" data-dir="desc" title="Production prediction, including supplemental downside caps">Predicted <span class="sort-arrow">▼</span></th>
+                <th class="sortable" data-sort="game" title="Current Glicko-2 rating from games">Game Rating <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="error" title="Game rating minus prediction (established ratings only)">Error <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="cpl" title="Average centipawn loss on the 50 equal positions">Eq. CPL <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="best">Best% <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="legal">Legal% <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="gamelike" title="Average centipawn loss on the 48-position game-like panel (capped at 5000)">Game-like CPL <span class="sort-arrow"></span></th>
+                <th class="sortable" data-sort="risk" title="Forfeit % + catastrophe % in continuation probes">Stability Risk <span class="sort-arrow"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            {% set predicted = row.prediction if row.prediction is not none else row.equal_prediction %}
+            <tr class="clickable-row{% if not row.is_current %} legacy{% endif %}{% if row.is_engine %} anchor{% endif %}"
+                data-player-id="{{ row.player_id|e }}"
+                data-prediction="{{ predicted }}"
+                data-game="{{ row.game_rating if row.game_rating is not none else '' }}"
+                data-error="{{ row.error if row.error is not none else '' }}"
+                data-cpl="{{ row.equal_cpl }}"
+                data-best="{{ row.best_pct }}"
+                data-legal="{{ row.legal_pct }}"
+                data-gamelike="{{ row.game_like_cpl if row.game_like_cpl is not none else '' }}"
+                data-risk="{{ row.stability_risk if row.stability_risk is not none else '' }}">
+                <td class="rank">{{ loop.index }}</td>
+                <td class="player">
+                    {{ row.player_id }}
+                    {% if row.is_engine %}<span class="status-badge">Engine</span>{% endif %}
+                    {% if not row.is_current %}<span class="status-badge" title="{{ row.status_reason|e }} — not used to seed ratings">Legacy</span>{% endif %}
+                </td>
+                <td class="rating">
+                    {% if row.prediction is not none %}
+                        {{ row.prediction }}{% if row.capped %}<span class="status-badge" title="Lowered from {{ row.equal_prediction }} by a supplemental panel">capped</span>{% endif %}
+                    {% else %}
+                        <span class="muted" title="Equal-position formula only; legacy results do not seed ratings">{{ row.equal_prediction }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.game_rating is not none %}
+                        <span class="{% if not row.rating_reliable %}muted{% endif %}" title="{{ row.games_played }} games{% if not row.rating_reliable %}, still preliminary{% endif %}">{{ row.game_rating }}</span>
+                    {% else %}<span class="muted">–</span>{% endif %}
+                </td>
+                <td class="{% if row.error is not none and (row.error > 300 or row.error < -300) %}error-high{% endif %}">
+                    {% if row.error is not none %}{{ "%+d"|format(row.error) }}{% else %}<span class="muted">–</span>{% endif %}
+                </td>
+                <td>{{ row.equal_cpl }}</td>
+                <td>{{ "%.0f"|format(row.best_pct) }}%</td>
+                <td>{{ "%.0f"|format(row.legal_pct) }}%</td>
+                <td>{% if row.game_like_cpl is not none %}{{ row.game_like_cpl }}{% else %}<span class="muted">–</span>{% endif %}</td>
+                <td>{% if row.stability_risk is not none %}{{ "%.1f"|format(row.stability_risk) }}%{% else %}<span class="muted">–</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="legend">
+    <p><strong>Predicted</strong> = Rating predicted from position results; <em>capped</em> means the game-like panel or stability probe lowered it</p>
+    <p><strong>Error</strong> = Game rating minus prediction, shown once the game rating is established (RD ≤ 150); summary stats cover current results only</p>
+    <p><strong>Eq. CPL</strong> = Average centipawn loss on 50 equal positions (illegal moves score as a large loss)</p>
+    <p><strong>Best%</strong> = Moves matching Stockfish's best move; <strong>Legal%</strong> = Legal moves on the first attempt</p>
+    <p><strong>Stability Risk</strong> = Forfeit rate plus catastrophic-blunder rate when play continues from probe positions</p>
+    <p><span class="unreliable-indicator">Legacy</span> = Results from an older protocol; shown for reference but not used to seed ratings</p>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No position benchmark results yet.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('.positions-table');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    const headers = table.querySelectorAll('th.sortable');
+    let currentSort = 'prediction';
+    let currentDir = 'desc';
+
+    function renumber() {
+        let rank = 0;
+        tbody.querySelectorAll('tr').forEach(row => {
+            if (getComputedStyle(row).display !== 'none') {
+                row.querySelector('.rank').textContent = ++rank;
+            }
+        });
+    }
+
+    function sortTable(key, dir) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            const aRaw = a.dataset[key], bRaw = b.dataset[key];
+            const aMissing = aRaw === '' || isNaN(parseFloat(aRaw));
+            const bMissing = bRaw === '' || isNaN(parseFloat(bRaw));
+            if (aMissing && bMissing) return 0;
+            if (aMissing) return 1;  // missing values always last
+            if (bMissing) return -1;
+            const diff = parseFloat(aRaw) - parseFloat(bRaw);
+            return dir === 'desc' ? -diff : diff;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+        headers.forEach(h => {
+            h.classList.remove('sorted');
+            h.querySelector('.sort-arrow').textContent = '';
+        });
+        const active = table.querySelector(`th[data-sort="${key}"]`);
+        active.classList.add('sorted');
+        active.querySelector('.sort-arrow').textContent = dir === 'desc' ? '▼' : '▲';
+        currentSort = key;
+        currentDir = dir;
+        renumber();
+    }
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const key = this.dataset.sort;
+            const dir = key === currentSort && currentDir === 'desc' ? 'asc' : 'desc';
+            sortTable(key, dir);
+        });
+    });
+
+    tbody.querySelectorAll('.clickable-row').forEach(row => {
+        row.addEventListener('click', function() {
+            window.location.href = '/games?model=' + encodeURIComponent(this.dataset.playerId);
+        });
+    });
+
+    const toggle = document.getElementById('show-legacy');
+    if (toggle) {
+        toggle.addEventListener('change', function() {
+            table.classList.toggle('hide-legacy', !this.checked);
+            renumber();
+        });
+    }
+});
+</script>
+{% endblock %}

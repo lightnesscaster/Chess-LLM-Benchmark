@@ -29,6 +29,7 @@ from game.live_games import get_live_game_store
 from game.stats_collector import StatsCollector
 from web.timeline_chart import get_timeline_html
 from web.cost_chart import get_cost_chart_html
+from web.position_results import build_position_rows, get_position_benchmark_inputs, summarize_errors
 from utils import is_reasoning_model
 from model_metadata import metadata_changed_since
 from web.auth import (
@@ -65,7 +66,7 @@ class PublicDataSessionInterface(SecureCookieSessionInterface):
 
     def should_set_cookie(self, app: Flask, session: SecureCookieSession) -> bool:
         public_read = request.method in {"GET", "HEAD"} and request.endpoint in {
-            "api_live_games", "api_game", "api_games", "api_leaderboard", "static",
+            "api_live_games", "api_game", "api_games", "api_leaderboard", "api_positions", "static",
         }
         if not session.modified and (public_read or request.endpoint == "api_play_recover"):
             return False
@@ -837,6 +838,30 @@ def cost():
     return render_template("cost.html", chart_html=chart_html)
 
 
+def get_position_rows() -> list | None:
+    """Position-benchmark rows joined with current game ratings, or None if unavailable."""
+    inputs = get_position_benchmark_inputs(_should_invalidate_cache)
+    if inputs is None:
+        return None
+    return build_position_rows(
+        inputs,
+        get_leaderboard_data(min_games=1),
+        engine_ids=get_all_engine_ids_from_config(),
+    )
+
+
+@app.route("/positions")
+def positions():
+    """Show position benchmark results."""
+    rows = get_position_rows()
+    return render_template(
+        "positions.html",
+        rows=rows or [],
+        unavailable=rows is None,
+        error_stats=summarize_errors(r for r in (rows or []) if r["is_current"]),
+    )
+
+
 @app.route("/game/<game_id>")
 def game(game_id: str):
     """Show individual game viewer."""
@@ -879,6 +904,15 @@ def api_leaderboard():
 def api_games():
     """Get all games as JSON."""
     return jsonify(get_all_games())
+
+
+@app.route("/api/positions")
+def api_positions():
+    """Get position benchmark results as JSON."""
+    rows = get_position_rows()
+    if rows is None:
+        return jsonify({"error": "Position benchmark results are unavailable."}), 503
+    return jsonify(rows)
 
 
 @app.route("/api/game/<game_id>")

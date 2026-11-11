@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -60,6 +60,162 @@ def _should_invalidate_cache() -> bool:
     except OSError as e:
         logger.warning(f"Failed to check cache invalidation file: {e}")
         return False
+
+
+def should_use_firestore() -> bool:
+    """Whether Firestore is enabled by env var or a local credentials file."""
+    if os.environ.get("FIREBASE_ENABLED", "").lower() in ("1", "true", "yes"):
+        return True
+    possible_paths = [
+        Path(__file__).parent.parent / "firebase-key.json",
+        Path.cwd() / "firebase-key.json",
+    ]
+    return any(p.exists() for p in possible_paths)
+
+
+@dataclass(frozen=True)
+class PositionBenchmarkInputs:
+    """Merged position-benchmark panels used for rating predictions and display."""
+
+    core_results: Dict[str, dict]
+    core_positions: list
+    blunder_results: Optional[Dict[str, dict]]
+    blunder_positions: Optional[list]
+    game_like_results: Optional[Dict[str, dict]]
+    game_like_positions: Optional[list]
+    stability_results: Optional[Dict[str, dict]]
+
+
+def load_position_benchmark_inputs(use_firestore: bool) -> Optional[PositionBenchmarkInputs]:
+    """
+    Load position-benchmark results, preferring ready Firestore core records
+    and falling back per model to the bundled local result files.
+
+    Returns None when the core positions file is unavailable.
+    """
+    results_data = None
+    positions_data = None
+    game_like_results_data = None
+    game_like_positions_data = None
+    blunder_results_data = None
+    blunder_positions_data = None
+    stability_results_data = None
+
+    # Try Firestore first (per-model documents to avoid 1 MiB limit)
+    if use_firestore:
+        try:
+            from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
+            db = get_firestore_client()
+            docs = db.collection(BENCHMARK_RESULTS_COLLECTION).stream()
+            results_data = {}
+            for doc in docs:
+                results_data[doc.id] = doc.to_dict()
+            if results_data:
+                logger.info(f"Loaded benchmark results from Firestore ({len(results_data)} models)")
+        except Exception as e:
+            logger.warning(f"Failed to load benchmark results from Firestore: {e}")
+
+    # A partially synced collection must not hide valid bundled models.
+    cloud_results = results_data or {}
+    results_data = {}
+    results_path = CORE_RESULTS_PATH
+    if results_path.exists():
+        try:
+            with open(results_path) as f:
+                results_data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load benchmark results: {e}")
+
+    # Positions file is static and always local
+    positions_path = CORE_POSITIONS_PATH
+    if not positions_path.exists():
+        return None
+    try:
+        with open(positions_path) as f:
+            positions_data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning(f"Failed to load positions data: {e}")
+        return None
+
+    positions = positions_data.get("positions", [])
+
+    for model_name, cloud_record in cloud_results.items():
+        if benchmark_result_readiness(cloud_record, positions).is_ready:
+            results_data[model_name] = cloud_record
+        elif model_name in results_data:
+            # Supplements sync independently of core. Keep them available to
+            # the predictor, which validates each panel before using it.
+            results_data[model_name] = {
+                **results_data[model_name],
+                "supplements": cloud_record.get("supplements", {}),
+            }
+            logger.info("Using bundled core fallback for %s", model_name)
+
+    blunder_results_path = BLUNDER_RESULTS_PATH
+    blunder_positions_path = BLUNDER_POSITIONS_PATH
+    game_like_results_path = GAME_LIKE_RESULTS_PATH
+    game_like_positions_path = GAME_LIKE_POSITIONS_PATH
+    stability_results_path = STABILITY_RESULTS_PATH
+    if blunder_results_path.exists() and blunder_positions_path.exists():
+        try:
+            with open(blunder_results_path) as f:
+                blunder_results_data = json.load(f)
+            with open(blunder_positions_path) as f:
+                blunder_positions_data = json.load(f)
+            logger.info(
+                f"Loaded optional blunder benchmark results "
+                f"({len(blunder_results_data)} models)"
+            )
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load optional blunder benchmark results: {e}")
+            blunder_results_data = None
+            blunder_positions_data = None
+    if game_like_results_path.exists() and game_like_positions_path.exists():
+        try:
+            with open(game_like_results_path) as f:
+                game_like_results_data = json.load(f)
+            with open(game_like_positions_path) as f:
+                game_like_positions_data = json.load(f)
+            logger.info(
+                f"Loaded supplemental game-like benchmark results "
+                f"({len(game_like_results_data)} models)"
+            )
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load supplemental game-like benchmark results: {e}")
+            game_like_results_data = None
+            game_like_positions_data = None
+    if stability_results_path.exists():
+        try:
+            with open(stability_results_path) as f:
+                stability_results_data = json.load(f)
+            logger.info(
+                f"Loaded supplemental stability probe results "
+                f"({len(stability_results_data)} models)"
+            )
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load supplemental stability probe results: {e}")
+            stability_results_data = None
+
+    game_like_positions = (
+        game_like_positions_data.get("positions", [])
+        if isinstance(game_like_positions_data, dict)
+        else None
+    )
+    blunder_positions = (
+        blunder_positions_data.get("positions", [])
+        if isinstance(blunder_positions_data, dict)
+        else None
+    )
+
+    return PositionBenchmarkInputs(
+        core_results=results_data,
+        core_positions=positions,
+        blunder_results=blunder_results_data,
+        blunder_positions=blunder_positions,
+        game_like_results=game_like_results_data,
+        game_like_positions=game_like_positions,
+        stability_results=stability_results_data,
+    )
 
 
 # Benchmark-seeded initial rating parameters (from position benchmark RMSE=166)
@@ -256,21 +412,7 @@ class RatingStore:
 
     def _should_use_firestore(self) -> bool:
         """Check if we should use Firestore."""
-        # Check env var
-        if os.environ.get("FIREBASE_ENABLED", "").lower() in ("1", "true", "yes"):
-            return True
-
-        # Check for credentials file
-        from pathlib import Path
-        possible_paths = [
-            Path(__file__).parent.parent / "firebase-key.json",
-            Path.cwd() / "firebase-key.json",
-        ]
-        for p in possible_paths:
-            if p.exists():
-                return True
-
-        return False
+        return should_use_firestore()
 
     def _load_benchmark_predictions(self, force_refresh: bool = False) -> Dict[str, float]:
         """
@@ -295,119 +437,16 @@ class RatingStore:
                 logger.debug(f"Using cached benchmark predictions ({len(_benchmark_predictions_cache)} models, age={cache_age:.0f}s)")
                 return dict(_benchmark_predictions_cache)
 
-        results_data = None
-        positions_data = None
-        game_like_results_data = None
-        game_like_positions_data = None
-        blunder_results_data = None
-        blunder_positions_data = None
-        stability_results_data = None
-
-        # Try Firestore first (per-model documents to avoid 1 MiB limit)
-        if self._use_firestore:
-            try:
-                from firebase_client import get_firestore_client, BENCHMARK_RESULTS_COLLECTION
-                db = get_firestore_client()
-                docs = db.collection(BENCHMARK_RESULTS_COLLECTION).stream()
-                results_data = {}
-                for doc in docs:
-                    results_data[doc.id] = doc.to_dict()
-                if results_data:
-                    logger.info(f"Loaded benchmark results from Firestore ({len(results_data)} models)")
-            except Exception as e:
-                logger.warning(f"Failed to load benchmark results from Firestore: {e}")
-
-        # A partially synced collection must not hide valid bundled models.
-        cloud_results = results_data or {}
-        results_data = {}
-        results_path = CORE_RESULTS_PATH
-        if results_path.exists():
-            try:
-                with open(results_path) as f:
-                    results_data = json.load(f)
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"Failed to load benchmark results: {e}")
-
-        # Positions file is static and always local
-        positions_path = CORE_POSITIONS_PATH
-        if not positions_path.exists():
+        inputs = load_position_benchmark_inputs(use_firestore=self._use_firestore)
+        if inputs is None:
             return {}
-        try:
-            with open(positions_path) as f:
-                positions_data = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load positions data: {e}")
-            return {}
-
-        positions = positions_data.get("positions", [])
-
-        for model_name, cloud_record in cloud_results.items():
-            if benchmark_result_readiness(cloud_record, positions).is_ready:
-                results_data[model_name] = cloud_record
-            elif model_name in results_data:
-                # Supplements sync independently of core. Keep them available to
-                # the predictor, which validates each panel before using it.
-                results_data[model_name] = {
-                    **results_data[model_name],
-                    "supplements": cloud_record.get("supplements", {}),
-                }
-                logger.info("Using bundled core fallback for %s", model_name)
-
-        blunder_results_path = BLUNDER_RESULTS_PATH
-        blunder_positions_path = BLUNDER_POSITIONS_PATH
-        game_like_results_path = GAME_LIKE_RESULTS_PATH
-        game_like_positions_path = GAME_LIKE_POSITIONS_PATH
-        stability_results_path = STABILITY_RESULTS_PATH
-        if blunder_results_path.exists() and blunder_positions_path.exists():
-            try:
-                with open(blunder_results_path) as f:
-                    blunder_results_data = json.load(f)
-                with open(blunder_positions_path) as f:
-                    blunder_positions_data = json.load(f)
-                logger.info(
-                    f"Loaded optional blunder benchmark results "
-                    f"({len(blunder_results_data)} models)"
-                )
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"Failed to load optional blunder benchmark results: {e}")
-                blunder_results_data = None
-                blunder_positions_data = None
-        if game_like_results_path.exists() and game_like_positions_path.exists():
-            try:
-                with open(game_like_results_path) as f:
-                    game_like_results_data = json.load(f)
-                with open(game_like_positions_path) as f:
-                    game_like_positions_data = json.load(f)
-                logger.info(
-                    f"Loaded supplemental game-like benchmark results "
-                    f"({len(game_like_results_data)} models)"
-                )
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"Failed to load supplemental game-like benchmark results: {e}")
-                game_like_results_data = None
-                game_like_positions_data = None
-        if stability_results_path.exists():
-            try:
-                with open(stability_results_path) as f:
-                    stability_results_data = json.load(f)
-                logger.info(
-                    f"Loaded supplemental stability probe results "
-                    f"({len(stability_results_data)} models)"
-                )
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"Failed to load supplemental stability probe results: {e}")
-                stability_results_data = None
-
-        game_like_positions = (
-            game_like_positions_data.get("positions", [])
-            if isinstance(game_like_positions_data, dict)
-            else None
-        )
-        blunder_positions = (
-            blunder_positions_data.get("positions", [])
-            if isinstance(blunder_positions_data, dict)
-            else None
-        )
+        results_data = inputs.core_results
+        positions = inputs.core_positions
+        blunder_results_data = inputs.blunder_results
+        blunder_positions = inputs.blunder_positions
+        game_like_results_data = inputs.game_like_results
+        game_like_positions = inputs.game_like_positions
+        stability_results_data = inputs.stability_results
 
         predictions = {}
         skipped_reasons: Dict[str, int] = {}
