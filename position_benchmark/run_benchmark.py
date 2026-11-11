@@ -903,7 +903,7 @@ def load_player_configs():
             players.setdefault(player_id, {
                 **model,
                 "player_id": player_id,
-                "model_name": model.get("web_model_name", model["model_name"]),
+                "model_name": model["model_name"],
                 "api": "claude_code",
                 "reasoning_effort": effort,
             })

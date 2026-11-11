@@ -69,7 +69,9 @@ def test_subscription_effort_is_available_to_position_and_continuation_commands(
     assert pid in configs
     assert configs[pid]["api"] == "claude_code"
     assert configs[pid]["reasoning_effort"] == "high"
-    assert configs[pid]["model_name"].removeprefix("anthropic/") == "claude-fable-5-2"
+    # Retain the provider-qualified identifier used by pricing and metadata;
+    # ClaudeCodePlayer normalizes its CLI argument itself.
+    assert configs[pid]["model_name"] == "anthropic/claude-fable-5-2"
 
 
 @pytest.mark.parametrize("configured", [False, True])
