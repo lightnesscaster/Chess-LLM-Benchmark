@@ -70,6 +70,38 @@ together.
 
 ## Production decision
 
+### Consistent evaluation references (November 11, 2026)
+
+New scores use `scoring_version: root-reference-v1`, independently of the
+unchanged `history-replay-v2` prompt protocol. Both the unrestricted reference
+and the selected move are analysed from the **same full-history root** at depth
+30. The selected move is constrained with UCI `searchmoves`; it is not evaluated
+by comparing a new child search with the panel's stored screening evaluation.
+The reference best move reuses the reference score and therefore has zero CPL.
+Exact-best accuracy follows this fresh reference. Panel screening evaluations
+and MultiPV ranks remain historical acquisition metadata.
+
+The scorer fixes one thread, 64 MiB hash, full strength and no tablebase path,
+clears search state before each uncached analysis, and caches immutable scores
+in `data/position_scoring.sqlite3`. Cache identities include the engine/options/
+NNUE profile, depth, root FEN, complete move history and selected move. Static
+panels and continuation scoring share this implementation. Each result and its
+summary record their scoring version and profile. Production publication rejects
+mixed profiles and, after migration, rejects older scoring versions.
+
+`scripts/rescore_position_results.py` rescans saved static responses into an
+explicit output file; `scripts/run_stability_probe.py --rescore-existing
+--output <copy-of-stability.json> --score-depth 30` rescans saved continuation
+PGNs. Neither makes model calls. Preserve the original results as an audit
+snapshot, validate the corrected copies, then publish all corrected panels and
+the rating replay together using `position_benchmark.scoring_migration`.
+Historical prompt rows stay historical after rescoring. Predictor coefficients,
+seed uncertainty, retry rules and saved game outcomes are unchanged. Earlier
+validation artifacts document their original scorer; this correction does not
+retroactively rewrite those research results.
+
+### Core rating readiness
+
 The required benchmark is exactly **50 equal positions** from
 `panels/core_equal_50.json`.
 Each position must:

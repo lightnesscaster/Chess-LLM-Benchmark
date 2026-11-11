@@ -13,6 +13,7 @@ import zlib
 
 from position_benchmark.layout import CORE_POSITIONS_PATH, GAME_LIKE_POSITIONS_PATH
 from position_benchmark.predictions import benchmark_result_readiness, stability_probe_readiness
+from position_benchmark.scoring_provenance import validate_scoring_record
 
 WEB_URL = "https://chessbenchllm.onrender.com"
 SERVICE_ID = "srv-d4mlb0m3jp1c73a172v0"
@@ -22,6 +23,10 @@ def merge_panel_record(existing: dict, panel: str, record: dict) -> dict:
     """Replace only this panel, preserving other independently acquired panels."""
     if panel not in {"core", "game_like", "stability"}:
         raise ValueError("Only production panels may be synced")
+    previous_panel = existing if panel == "core" else existing.get("supplements", {}).get(panel, {})
+    previous_summary = previous_panel.get("summary", {})
+    validate_scoring_record(record, required_version=previous_summary.get("scoring_version"),
+                            required_profile=previous_summary.get("scoring_profile"))
     if panel == "core":
         merged = copy.deepcopy(record)
         if "supplements" in existing:
@@ -33,6 +38,7 @@ def merge_panel_record(existing: dict, panel: str, record: dict) -> dict:
 
 
 def validate_panel(player_id: str, panel: str, record: dict) -> None:
+    validate_scoring_record(record)
     if record.get("summary", {}).get("player_id") != player_id:
         raise ValueError("Panel player ID mismatch")
     if panel == "stability":
@@ -63,6 +69,10 @@ def write_panel(db, payload: dict) -> dict:
     def save(tx):
         old = ref.get(transaction=tx)
         previous = old.to_dict() or {}
+        from rating.benchmark_recalculation import state_reference
+        scoring_state = state_reference(db).get(transaction=tx).to_dict() or {}
+        validate_scoring_record(payload["record"], required_version=scoring_state.get("scoring_version"),
+                                required_profile=scoring_state.get("scoring_profile"))
         merged = merge_panel_record(previous, payload["panel"], payload["record"])
         # Production can combine a bundled core with independently synced panels.
         ready = (benchmark_result_readiness(merged, core_positions).is_ready

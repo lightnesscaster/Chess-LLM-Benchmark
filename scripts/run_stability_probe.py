@@ -25,6 +25,7 @@ import chess.pgn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from position_benchmark.evaluation import ConsistentEvaluator, SCORING_VERSION  # noqa: E402
 from engines.random_engine import RandomEngine  # noqa: E402
 from game.game_runner import GameRunner  # noqa: E402
 from llm import ClaudeCodePlayer, CodexSubagentPlayer, GeminiPlayer, OpenRouterPlayer  # noqa: E402
@@ -32,7 +33,8 @@ from llm.openrouter_completion_client import OpenRouterCompletionPlayer  # noqa:
 from position_benchmark.run_benchmark import (  # noqa: E402
     config_is_engine,
     config_uses_reasoning,
-    eval_to_cp,
+    stamp_scoring_summary,
+    stamp_scoring_engine_profile,
     load_player_configs,
     replay_position_board,
 )
@@ -256,57 +258,25 @@ def score_continuation_moves_from_pgn(
     if game is None:
         return [], []
 
-    board = chess.Board()
+    board = game.board()
+    evaluator = ConsistentEvaluator(stockfish, depth=depth)
     model_scores: list[dict[str, Any]] = []
     opponent_scores: list[dict[str, Any]] = []
     model_turn_index = 0
     opponent_turn_index = 0
     preceding_opponent_cpl: float | None = None
-    cached_info: chess.engine.InfoDict | None = None
 
-    def analyse(position: chess.Board) -> chess.engine.InfoDict:
-        cache_key = position.fen()
-        if analysis_cache is not None:
-            if analysis_cache_lock is None:
-                cached = analysis_cache.get(cache_key)
-            else:
-                with analysis_cache_lock:
-                    cached = analysis_cache.get(cache_key)
-            if cached is not None:
-                return cached
-        info = stockfish.analyse(position, chess.engine.Limit(depth=depth))
-        if analysis_cache is not None:
-            if analysis_cache_lock is None:
-                analysis_cache.setdefault(cache_key, info)
-            else:
-                with analysis_cache_lock:
-                    analysis_cache.setdefault(cache_key, info)
-        return info
-
+    # The evaluator owns versioned, history-aware caching. Legacy caller caches
+    # contain FEN-only child evaluations and must never feed root scoring.
     for ply, move in enumerate(game.mainline_moves(), start=1):
-        should_score = ply > pre_move_count
-        if should_score:
-            perspective = board.turn
-            is_model_move = perspective == model_side
-            info_before = cached_info
-            if info_before is None:
-                info_before = analyse(board)
-            eval_before = eval_to_cp(info_before, perspective)
-            move_san = board.san(move)
-        board.push(move)
-        if should_score:
-            info_after = analyse(board)
-            cached_info = info_after
-            eval_model = -eval_to_cp(info_after, not perspective)
-            cpl = max(0.0, eval_before - eval_model)
+        if ply > pre_move_count:
+            is_model_move = board.turn == model_side
             score = {
                 "ply": ply,
                 "continuation_ply": ply - pre_move_count,
                 "move": move.uci(),
-                "move_san": move_san,
-                "eval_before": eval_before,
-                "eval_model": eval_model,
-                "cpl": cpl,
+                "move_san": board.san(move),
+                **evaluator.score(board, move),
             }
             if is_model_move:
                 model_turn_index += 1
@@ -317,7 +287,8 @@ def score_continuation_moves_from_pgn(
                 opponent_turn_index += 1
                 score["opponent_turn_index"] = opponent_turn_index
                 opponent_scores.append(score)
-                preceding_opponent_cpl = cpl
+                preceding_opponent_cpl = score["cpl"]
+        board.push(move)
     return model_scores, opponent_scores
 
 
@@ -469,6 +440,12 @@ def create_llm_player(
     )
 
 
+def stamp_probe_row_scoring(row: dict[str, Any], scoring_profile: dict[str, Any]) -> None:
+    """Record the applied scoring contract even when a probe has no legal moves."""
+    row["scoring_version"] = SCORING_VERSION
+    row["scoring_profile"] = scoring_profile
+
+
 def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
     attempted = len(rows)
     model_legal = sum(int(row["model_legal_moves"]) for row in rows)
@@ -611,6 +588,15 @@ def summarize_player(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "known_outcomes": known_retry_outcomes,
         "recovery_pct": summary["model_retry_recovery_pct"],
     }
+    scoring_rows = []
+    for row in rows:
+        scores = row.get("model_move_scores", []) + row.get("opponent_move_scores", [])
+        scoring_rows.extend(scores)
+        # A first-turn forfeit still has an explicit applied scoring contract.
+        # Include row provenance when present to detect disagreements with moves.
+        if not scores or row.get("scoring_version") or row.get("scoring_profile"):
+            scoring_rows.append(row)
+    stamp_scoring_summary(summary, scoring_rows)
     return summary
 
 
@@ -681,8 +667,7 @@ def rescore_existing_results(
     local = threading.local()
     engines: list[chess.engine.SimpleEngine] = []
     engines_lock = threading.Lock()
-    analysis_cache: dict[str, chess.engine.InfoDict] = {}
-    analysis_cache_lock = threading.Lock()
+    engine_profiles: dict[str, dict[str, Any] | None] = {}
 
     def get_engine() -> chess.engine.SimpleEngine:
         engine = getattr(local, "engine", None)
@@ -699,30 +684,33 @@ def rescore_existing_results(
 
     def score_task(
         task: tuple[str, int, dict[str, Any]],
-    ) -> tuple[str, int, list[dict[str, Any]], list[dict[str, Any]]]:
+    ) -> tuple[str, int, list[dict[str, Any]], list[dict[str, Any]], dict[str, Any], dict[str, Any] | None]:
         player_id, row_index, row = task
         model_side = chess.WHITE if row["model_side"] == "white" else chess.BLACK
+        engine = get_engine()
         model_scores, opponent_scores = score_continuation_moves_from_pgn(
             str(row["pgn"]),
             model_side=model_side,
             pre_move_count=int(row.get("pre_moves", 0) or 0),
-            stockfish=get_engine(),
+            stockfish=engine,
             depth=score_depth,
-            analysis_cache=analysis_cache,
-            analysis_cache_lock=analysis_cache_lock,
         )
-        return player_id, row_index, model_scores, opponent_scores
+        evaluator = ConsistentEvaluator(engine, depth=score_depth)
+        return (player_id, row_index, model_scores, opponent_scores,
+                evaluator.scoring_profile, getattr(evaluator, "engine_profile", None))
 
     completed = 0
     try:
         with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
             futures = {executor.submit(score_task, task): task for task in tasks}
             for future in as_completed(futures):
-                player_id, row_index, model_scores, opponent_scores = future.result()
+                player_id, row_index, model_scores, opponent_scores, profile, engine_profile = future.result()
+                engine_profiles[player_id] = engine_profile
                 row = selected[player_id]["results"][row_index]
                 row["model_move_scores"] = model_scores
                 row["opponent_move_scores"] = opponent_scores
                 row["score_depth"] = score_depth
+                stamp_probe_row_scoring(row, profile)
                 completed += 1
                 if completed % 8 == 0 or completed == len(tasks):
                     print(
@@ -737,6 +725,7 @@ def rescore_existing_results(
     for player_id, record in selected.items():
         old_summary = record.get("summary", {})
         summary = summarize_player(record.get("results", []))
+        stamp_scoring_engine_profile(summary, engine_profiles.get(player_id))
         for field in (
             "player_id",
             "positions_file",
@@ -807,14 +796,23 @@ async def run_probe_for_player(
         respect_config_api=respect_config_api,
     )
     rows: list[dict[str, Any]] = []
+    scoring_evaluator = None
+
+    def summarize_scored_rows() -> dict[str, Any]:
+        summary = summarize_player(rows)
+        stamp_scoring_engine_profile(summary, getattr(scoring_evaluator, "engine_profile", None))
+        return summary
+
     try:
+        if stockfish is not None and score_depth > 0:
+            scoring_evaluator = ConsistentEvaluator(stockfish, depth=score_depth)
         preflight = getattr(player, "preflight", None)
         if preflight is not None and indexed_positions:
             try:
                 await preflight(replay_position_board(indexed_positions[0][1]))
             except Exception as exc:
                 record = {
-                    "summary": summarize_player(rows),
+                    "summary": summarize_scored_rows(),
                     "results": rows,
                 }
                 detail = getattr(player, "last_api_error", "") or str(exc)
@@ -892,6 +890,8 @@ async def run_probe_for_player(
                     "opponent_move_scores": opponent_move_scores,
                     "pgn": pgn,
                 }
+            if scoring_evaluator is not None:
+                stamp_probe_row_scoring(row, scoring_evaluator.scoring_profile)
             annotate_retry_metrics(row)
             rows.append(row)
             score_suffix = ""
@@ -906,7 +906,7 @@ async def run_probe_for_player(
             )
             if game_result.termination == "api_error":
                 record = {
-                    "summary": summarize_player(rows),
+                    "summary": summarize_scored_rows(),
                     "results": rows,
                 }
                 detail = getattr(player, "last_api_error", "")
@@ -921,7 +921,7 @@ async def run_probe_for_player(
             await close()
 
     return {
-        "summary": summarize_player(rows),
+        "summary": summarize_scored_rows(),
         "results": rows,
     }
 

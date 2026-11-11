@@ -2,6 +2,13 @@
   "schema_version": 3,
   "result_schema_version": 3,
   "production_benchmark_version": "history-replay-v2",
+  "scoring": {
+    "version": "root-reference-v1",
+    "reference_policy": "same-history-root-depth30-searchmoves",
+    "cache_identity": "engine-profile-depth-root-fen-full-history-selected-move",
+    "migration_plan": "docs/superpowers/plans/2026-11-11-consistent-position-scoring.md",
+    "predictor_coefficients": "unchanged"
+  },
   "conditional_retry_protocol_version": "production-game-retry-v1",
   "stable_result_key": "position_id",
   "error_definition": "actual_game_rating - predicted_rating",

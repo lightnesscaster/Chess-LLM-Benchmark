@@ -1386,9 +1386,10 @@ class FakeSequencePlayer:
 
 
 class FakeAnalysisEngine:
-    def analyse(self, board, _limit) -> dict:
+    def analyse(self, board, _limit, *, root_moves=None, game=None) -> dict:
         return {
             "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+            "pv": [root_moves[0] if root_moves else next(iter(board.legal_moves))],
         }
 
 
@@ -1399,12 +1400,12 @@ class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
 
         position = next(p for p in positions if p.get("type") == "equal")
         player = FakeSequencePlayer(["a1a1", "a1a1"])
-        result = await run_llm_on_position(player, position, engine=None, depth=1)
+        result = await run_llm_on_position(player, position, engine=FakeAnalysisEngine(), depth=1)
 
         self.assertEqual(result.fen, position["fen"])
         self.assertFalse(result.is_legal)
         self.assertEqual(result.model_move, "a1a1")
-        self.assertEqual(result.cpl, position["eval_before"] + 5000)
+        self.assertEqual(result.cpl, 5000)
         self.assertTrue(result.retry_attempted)
         self.assertFalse(result.retry_is_legal)
         self.assertEqual(len(player.calls), 2)
@@ -1418,7 +1419,7 @@ class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
             usage=[(100, 10), (120, 12)],
         )
 
-        result = await run_llm_on_position(player, position, engine=None, depth=1)
+        result = await run_llm_on_position(player, position, engine=FakeAnalysisEngine(), depth=1)
 
         self.assertFalse(result.is_legal)
         self.assertEqual(result.model_move, "NOT-A-MOVE")
@@ -1465,7 +1466,7 @@ class PositionBenchmarkResultTests(unittest.IsolatedAsyncioTestCase):
             position = json.load(f)["positions"][0]
         player = FakeSequencePlayer(["", position["best_move"]])
 
-        result = await run_llm_on_position(player, position, engine=None, depth=1)
+        result = await run_llm_on_position(player, position, engine=FakeAnalysisEngine(), depth=1)
 
         self.assertFalse(result.is_legal)
         self.assertTrue(result.retry_is_legal)
@@ -2168,17 +2169,18 @@ class StabilityProbeTests(unittest.TestCase):
         self.assertIn("stability/model-a: summary depth mismatch", issues)
         self.assertIn("stability/model-a: result row depth mismatch", issues)
 
-    def test_continuation_scoring_reuses_shared_board_evaluations(self) -> None:
+    def test_continuation_scoring_reuses_history_aware_root_evaluations(self) -> None:
         class CountingEngine:
             def __init__(self) -> None:
                 self.calls = 0
 
-            def analyse(self, board, limit):
+            def analyse(self, board, limit, *, root_moves=None, game=None):
                 self.calls += 1
                 return {
                     "score": chess.engine.PovScore(
                         chess.engine.Cp(0), chess.WHITE
-                    )
+                    ),
+                    "pv": [root_moves[0] if root_moves else next(iter(board.legal_moves))],
                 }
 
         engine = CountingEngine()
@@ -2194,7 +2196,7 @@ class StabilityProbeTests(unittest.TestCase):
 
         self.assertEqual(len(model_scores), 2)
         self.assertEqual(len(opponent_scores), 2)
-        self.assertEqual(engine.calls, 5)
+        self.assertEqual(engine.calls, 8)
 
         score_continuation_moves_from_pgn(
             '[Result "*"]\n\n1. e4 e5 2. Nf3 Nc6 *\n',
@@ -2204,7 +2206,7 @@ class StabilityProbeTests(unittest.TestCase):
             depth=30,
             analysis_cache=cache,
         )
-        self.assertEqual(engine.calls, 5)
+        self.assertEqual(engine.calls, 8)
 
     def test_rescore_skips_summary_only_legacy_records_by_default(self) -> None:
         results = {"legacy": {"summary": {"score_depth": 10}}}

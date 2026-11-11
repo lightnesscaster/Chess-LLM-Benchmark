@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import Any
+from position_benchmark.scoring_provenance import validate_scoring_record
 
 
 CURRENT_BENCHMARK_VERSION = "history-replay-v2"
@@ -199,6 +200,10 @@ def benchmark_result_readiness(
     history replay should not seed ratings or be treated as authoritative
     prediction evidence.
     """
+    try:
+        validate_scoring_record(model_data)
+    except ValueError as error:
+        return PredictionReadiness(False, str(error))
     coverage = collect_equal_position_coverage(
         model_data.get("results", []),
         positions,
@@ -422,6 +427,10 @@ def stability_probe_readiness(
     min_score_depth: int = DEFAULT_MIN_STABILITY_SCORE_DEPTH,
 ) -> PredictionReadiness:
     """Check whether a continuation-probe summary is strong enough to cap ratings."""
+    try:
+        validate_scoring_record(model_data)
+    except ValueError as error:
+        return PredictionReadiness(False, str(error))
     summary = model_data.get("summary", model_data)
     if (
         summary.get("stability_probe_version") != CURRENT_STABILITY_PROBE_VERSION

@@ -36,7 +36,7 @@ from position_benchmark.retry_protocol import (
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
     attach_conditional_retry_summary,
 )
-from position_benchmark.scoring import ILLEGAL_MOVE_EVAL, illegal_move_cpl
+from position_benchmark.evaluation import ConsistentEvaluator, scoring_profile_identity
 from rating.cost_calculator import CostCalculator
 from utils import resolve_player_id
 
@@ -73,6 +73,8 @@ class PositionResult:
     initial_completion_tokens: int = 0
     retry_prompt_tokens: int = 0
     retry_completion_tokens: int = 0
+    scoring_version: Optional[str] = None
+    scoring_profile: Optional[dict] = None
 
 
 def _calculate_median(values: list[float]) -> float:
@@ -95,8 +97,33 @@ def stamp_current_benchmark_rows(rows: list[dict], depth: int) -> None:
         row["stockfish_depth"] = depth
 
 
+def stamp_scoring_summary(summary: dict, rows: list[dict]) -> None:
+    """Stamp scoring provenance only when every scored row agrees."""
+    summary.pop("scoring_version", None)
+    summary.pop("scoring_profile", None)
+    if not rows:
+        return
+    version = rows[0].get("scoring_version")
+    profile = rows[0].get("scoring_profile")
+    if version and profile and all(
+        row.get("scoring_version") == version
+        and row.get("scoring_profile") == profile
+        for row in rows
+    ):
+        summary["scoring_version"] = version
+        summary["scoring_profile"] = profile
+
+
+def stamp_scoring_engine_profile(summary: dict, engine_profile: dict | None) -> None:
+    """Keep a full engine audit once, only when it matches the scored rows."""
+    summary.pop("scoring_engine_profile", None)
+    if engine_profile and summary.get("scoring_profile") == scoring_profile_identity(engine_profile):
+        summary["scoring_engine_profile"] = engine_profile
+
+
 def stamp_benchmark_summary(summary: dict, rows: list[dict], depth: int) -> None:
     """Attach summary-level freshness metadata without hiding mixed legacy rows."""
+    stamp_scoring_summary(summary, rows)
     current_rows = sum(1 for row in rows if result_row_is_current(row, min_stockfish_depth=depth))
     summary["stockfish_depth"] = depth
     summary["current_result_rows"] = current_rows
@@ -309,16 +336,11 @@ async def test_llm_on_position(
 ) -> PositionResult:
     """Test an LLM on a single position."""
     fen = position["fen"]
-    best_move_uci = position["best_move"]
     blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
 
     board = replay_position_board(position)
-    perspective = board.turn
-
-    # One illegal is half a forfeit. Floor at zero so a forced-mate position
-    # already below the penalty evaluation cannot receive negative CPL.
-    eval_before = position["eval_before"]
-    illegal_cpl = illegal_move_cpl(eval_before)
+    evaluator = ConsistentEvaluator(engine, depth=depth)
+    reference = evaluator.score(board, None)
 
     # Let TransientAPIError propagate: provider failures are not illegal moves.
     # Empty/invalid model responses, however, follow the production game retry
@@ -359,16 +381,10 @@ async def test_llm_on_position(
             fen=fen,
             model_move=model_move_uci,
             model_move_san="",
-            best_move=best_move_uci,
-            best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=illegal_cpl,
             is_legal=False,
-            is_best=False,
             avoided_blunder=model_move_uci != blunder_move_uci,
-            eval_model=ILLEGAL_MOVE_EVAL,
-            eval_best=eval_before,
-            eval_before=eval_before,
+            **reference,
             prompt_tokens=initial_prompt_tokens + retry_prompt_tokens,
             completion_tokens=initial_completion_tokens + retry_completion_tokens,
             conditional_retry_protocol_version=CONDITIONAL_RETRY_PROTOCOL_VERSION,
@@ -382,33 +398,17 @@ async def test_llm_on_position(
             retry_completion_tokens=retry_completion_tokens,
         ))
 
-    # Evaluate model's move
-    board.push(move)
-    info_after = engine.analyse(board, chess.engine.Limit(depth=depth))
-    eval_model = -eval_to_cp(info_after, not perspective)  # Negate for side that moved
-    board.pop()
-
-    # Get best move eval
-    eval_best = position["eval_before"]
-
-    # Calculate CPL
-    cpl = max(0, eval_best - eval_model)
+    scored = evaluator.score(board, move)
 
     return annotate_result_with_multipv(position, PositionResult(
         position_idx=0,
         fen=fen,
         model_move=model_move_uci,
         model_move_san=model_move_san,
-        best_move=best_move_uci,
-        best_move_san=position["best_move_san"],
         blunder_move=blunder_move_uci,
-        cpl=cpl,
         is_legal=True,
-        is_best=model_move_uci == best_move_uci,
         avoided_blunder=model_move_uci != blunder_move_uci,
-        eval_model=eval_model,
-        eval_best=eval_best,
-        eval_before=eval_before,
+        **scored,
         prompt_tokens=initial_prompt_tokens,
         completion_tokens=initial_completion_tokens,
         conditional_retry_protocol_version=CONDITIONAL_RETRY_PROTOCOL_VERSION,
@@ -423,63 +423,40 @@ def test_engine_on_position(
     stockfish: chess.engine.SimpleEngine,
     depth: int = 30,
 ) -> PositionResult:
-    """Test an engine on a single position."""
-    fen = position["fen"]
-    best_move_uci = position["best_move"]
-    blunder_move_uci = position.get("blunder_move", "")  # Optional for equal positions
+    """Test an engine using the same replayed root and scorer as LLMs."""
+    board = replay_position_board(position)
+    evaluator = ConsistentEvaluator(stockfish, depth=depth)
+    reference = evaluator.score(board, None)
+    blunder_move_uci = position.get("blunder_move", "")
 
-    board = chess.Board(fen)
-    perspective = board.turn
-
-    eval_before = position["eval_before"]
-
-    # Get engine's move
     try:
         move = engine_player.select_move(board)
+        if move not in board.legal_moves:
+            raise ValueError("Engine selected an illegal move")
         model_move_uci = move.uci()
         model_move_san = board.san(move)
-        is_legal = True
-    except Exception as e:
+    except Exception:
         return annotate_result_with_multipv(position, PositionResult(
             position_idx=0,
-            fen=fen,
+            fen=position["fen"],
             model_move="",
             model_move_san="",
-            best_move=best_move_uci,
-            best_move_san=position["best_move_san"],
             blunder_move=blunder_move_uci,
-            cpl=illegal_move_cpl(eval_before),
             is_legal=False,
-            is_best=False,
             avoided_blunder=True,
-            eval_model=-10000,
-            eval_best=eval_before,
-            eval_before=eval_before,
+            **reference,
         ))
 
-    # Evaluate engine's move
-    board.push(move)
-    info_after = stockfish.analyse(board, chess.engine.Limit(depth=depth))
-    eval_model = -eval_to_cp(info_after, not perspective)
-    board.pop()
-
-    cpl = max(0, eval_before - eval_model)
-
+    scored = evaluator.score(board, move)
     return annotate_result_with_multipv(position, PositionResult(
         position_idx=0,
-        fen=fen,
+        fen=position["fen"],
         model_move=model_move_uci,
         model_move_san=model_move_san,
-        best_move=best_move_uci,
-        best_move_san=position["best_move_san"],
         blunder_move=blunder_move_uci,
-        cpl=cpl,
         is_legal=True,
-        is_best=model_move_uci == best_move_uci,
         avoided_blunder=model_move_uci != blunder_move_uci,
-        eval_model=eval_model,
-        eval_best=eval_before,
-        eval_before=eval_before,
+        **scored,
     ))
 
 
@@ -741,6 +718,9 @@ async def run_benchmark(
     if len(panels) == 1:
         summary["panel"] = panels.pop()
     stamp_benchmark_summary(summary, result_dicts, depth)
+    if summary.get("scoring_profile"):
+        evaluator = ConsistentEvaluator(stockfish, depth=depth)
+        stamp_scoring_engine_profile(summary, getattr(evaluator, "engine_profile", None))
     attach_conditional_retry_summary(summary, result_dicts)
     summary["positions_attempted"] = len(positions)
     summary["positions_skipped"] = len(positions) - len(results)
