@@ -30,6 +30,7 @@ from llm.openrouter_client import OpenRouterPlayer
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
 from llm.codex_subagent_client import CodexSubagentPlayer
+from llm.claude_code_client import ClaudeCodePlayer
 from game.game_runner import GameRunner
 from game.pgn_logger import PGNLogger
 from game.stats_collector import StatsCollector
@@ -1330,7 +1331,15 @@ async def run_manual_game(args):
         if _cfg_path.exists():
             with open(_cfg_path) as _f:
                 _cfg = _yaml.safe_load(_f) or {}
-            for _entry in _cfg.get("llms", []) or []:
+            # Subscription-only web models are available for explicitly
+            # requested manual matches without adding them to scheduling.
+            _manual_models = list(_cfg.get("llms", []) or [])
+            _manual_models.extend(
+                {**entry, "api": entry["web_api"]}
+                for entry in _cfg.get("web_play_models", []) or []
+                if entry.get("web_api") == "claude_code"
+            )
+            for _entry in _manual_models:
                 _llm_configs_by_player[_entry.get("player_id")] = _entry
                 _mn = _entry.get("model_name")
                 if _mn:
@@ -1340,6 +1349,26 @@ async def run_manual_game(args):
                     _llm_api_by_model[_mn] = _api
     except Exception:
         pass
+
+    def manual_effort(model_name, reasoning_effort):
+        """Resolve a subscription model's default before assigning its identity."""
+        model_config = _llm_configs_by_model.get(model_name, {})
+        if model_config.get("api") == "claude_code":
+            return reasoning_effort or model_config.get("web_default_reasoning_effort", "high")
+        return reasoning_effort
+
+    for side in ("white", "black"):
+        if getattr(args, f"{side}_engine"):
+            continue
+        model_name = getattr(args, f"{side}_model")
+        model_config = _llm_configs_by_model.get(model_name, {})
+        if model_config.get("api") == "claude_code":
+            effort = manual_effort(model_name, getattr(args, f"{side}_reasoning_effort"))
+            if (getattr(args, f"{side}_reasoning") is False
+                    or getattr(args, f"{side}_reasoning_max_tokens") is not None
+                    or effort not in model_config.get("web_reasoning_efforts", ["low", "medium", "high"])):
+                print("Error: Claude Code models require a supported reasoning effort; no-reasoning and token budgets are unavailable")
+                return 1
 
     def manual_player_id(
         model_name,
@@ -1351,10 +1380,10 @@ async def run_manual_game(args):
         """Resolve the exact persisted player ID without starting a client."""
         if custom_name:
             return custom_name
-        player_id = resolve_player_id(
-            model_name.split("/")[-1],
-            reasoning_effort,
-        )
+        model_config = _llm_configs_by_model.get(model_name, {})
+        base_id = (model_config["player_id"] if model_config.get("api") == "claude_code"
+                   else model_name.split("/")[-1])
+        player_id = resolve_player_id(base_id, manual_effort(model_name, reasoning_effort))
         if (
             not reasoning_effort
             and not reasoning_max_tokens
@@ -1377,8 +1406,15 @@ async def run_manual_game(args):
             player_id, _llm_configs_by_model.get(model_name, {}),
         )
         selected_backend = api_backend
-        if api_backend == "openrouter" and _llm_api_by_model.get(model_name) in {"codex", "completion", "gemini"}:
+        if api_backend == "openrouter" and _llm_api_by_model.get(model_name) in {"codex", "completion", "gemini", "claude_code"}:
             selected_backend = _llm_api_by_model.get(model_name, api_backend)
+        if selected_backend == "claude_code":
+            return ClaudeCodePlayer(
+                player_id=player_id,
+                model_name=player_config.get("web_model_name", model_name),
+                reasoning_effort=manual_effort(model_name, reasoning_effort),
+                timeout=player_config.get("timeout", 600),
+            )
         if selected_backend == "gemini":
             gemini_model = model_name.removeprefix("google/")
             return GeminiPlayer(

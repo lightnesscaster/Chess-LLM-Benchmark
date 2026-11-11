@@ -8,7 +8,7 @@ from game import publication
 from tests.test_publication import payload
 
 
-@pytest.mark.parametrize("mixed", [False, True, "gemini"])
+@pytest.mark.parametrize("mixed", [False, True, "gemini", "claude", "claude-default"])
 @pytest.mark.parametrize("flags,published,saved,termination", [([], 1, 1, "resignation"), (["--local-only"], 0, 1, "resignation"), (["--no-save"], 0, 0, "resignation"), ([], 0, 0, "api_error"), ([], 0, 0, "error")])
 def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatch, tmp_path, flags, published, saved, termination, mixed):
     captured = []
@@ -24,11 +24,17 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     if mixed == "gemini":
         models = ["--white-model", "google/gemini-4-argon", "--white-reasoning-effort", "low",
                   "--black-model", "openai/gpt-6-astra", "--black-reasoning-effort", "high"]
+    if str(mixed).startswith("claude"):
+        models = ["--white-model", "anthropic/claude-fable-5-2",
+                  "--black-model", "openai/gpt-6-astra", "--black-reasoning-effort", "medium"]
+        if mixed == "claude":
+            models += ["--white-reasoning-effort", "high"]
     monkeypatch.setattr("sys.argv", ["cli.py", "manual", *models, *flags])
     cli.main()
     calls = []
     writes = []
     constructed = []
+    player_ids = []
     live_flags = []
     r, pgn = payload()
     r.termination = termination
@@ -36,6 +42,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     class Player:
         def __init__(self, player_id, **kwargs):
             self.player_id = player_id
+            player_ids.append(player_id)
             constructed.append((type(self).__name__, kwargs))
 
         async def close(self):
@@ -45,6 +52,9 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
         pass
 
     class GeminiFake(Player):
+        pass
+
+    class ClaudeFake(Player):
         pass
 
     class Runner:
@@ -68,6 +78,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     monkeypatch.setattr(cli, "CodexSubagentPlayer", Player)
     monkeypatch.setattr(cli, "OpenRouterPlayer", OpenRouterFake)
     monkeypatch.setattr(cli, "GeminiPlayer", GeminiFake)
+    monkeypatch.setattr(cli, "ClaudeCodePlayer", ClaudeFake, raising=False)
     monkeypatch.setattr(cli, "GameRunner", Runner)
     monkeypatch.setattr(cli, "PGNLogger", Logger)
     monkeypatch.setattr(cli, "RatingStore", lambda **kwargs: SimpleNamespace(get=lambda pid: SimpleNamespace(rating=1500, rating_deviation=100, games_played=3, games_rd=100)))
@@ -80,7 +91,13 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     assert len(calls) == published
     assert len(writes) == saved
     assert live_flags == [not flags]
-    if mixed == "gemini":
+    if str(mixed).startswith("claude"):
+        assert [kind for kind, _ in constructed] == ["ClaudeFake", "Player"]
+        assert player_ids == ["claude-fable-5.2 (high)", "gpt-6-astra (medium)"]
+        assert constructed[0][1]["model_name"] == "claude-fable-5-2"
+        assert constructed[0][1]["reasoning_effort"] == "high"
+        assert constructed[1][1]["reasoning_effort"] == "medium"
+    elif mixed == "gemini":
         assert [kind for kind, _ in constructed] == ["GeminiFake", "Player"]
         assert constructed[0][1]["model_name"] == "gemini-4-argon"
         assert constructed[0][1]["api_key"] == "gemini-test-only"
@@ -93,3 +110,21 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
         assert constructed[0][1]["provider_ignore"] == ["deepinfra"]
         assert constructed[0][1]["timeout"] == 1200
         assert constructed[1][1]["reasoning_effort"] == "medium"
+
+
+@pytest.mark.parametrize("flags", [["--white-no-reasoning"], ["--white-reasoning-max-tokens", "1024"], ["--white-reasoning-effort", "minimal"]])
+def test_manual_claude_rejects_unsupported_reasoning_before_loading_ratings(monkeypatch, capsys, flags):
+    original = cli.run_manual_game
+    captured = []
+
+    async def capture(args):
+        captured.append(args)
+
+    monkeypatch.setattr(cli, "run_manual_game", capture)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-only")
+    monkeypatch.setattr("sys.argv", ["cli.py", "manual", "--white-model", "anthropic/claude-fable-5-2",
+                                   "--black-model", "openai/gpt-6-astra", *flags])
+    cli.main()
+    monkeypatch.setattr(publication, "load_production_ratings", lambda _: pytest.fail("must reject before production reads"))
+    assert asyncio.run(original(captured[0])) == 1
+    assert "Claude Code" in capsys.readouterr().out
