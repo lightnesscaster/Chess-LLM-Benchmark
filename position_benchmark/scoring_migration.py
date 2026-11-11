@@ -20,6 +20,7 @@ from time import time
 
 from game.models import GameResult
 from position_benchmark.layout import (
+    BLUNDER_POSITIONS_PATH, BLUNDER_RESULTS_PATH,
     CORE_POSITIONS_PATH, CORE_RESULTS_PATH, GAME_LIKE_POSITIONS_PATH,
     GAME_LIKE_RESULTS_PATH, STABILITY_RESULTS_PATH,
 )
@@ -108,7 +109,7 @@ def _same_evidence(source: dict, candidate: dict, panel: str) -> bool:
     """
     if evidence_fingerprint(source) == evidence_fingerprint(candidate):
         return True
-    if panel not in {"core", "game_like"} or not _ready(source, panel) or not _ready(candidate, panel):
+    if panel not in {"core", "game_like", "blunder"} or not _ready(source, panel) or not _ready(candidate, panel):
         return False
     positions = _positions(panel)
     registry_fields = {"position_id", "position_idx", "legacy_position_idx", "panel", "result_schema_version"}
@@ -135,7 +136,8 @@ def _snapshot_collection(db, collection: str, transaction=None) -> dict:
 
 
 def _positions(panel: str) -> list:
-    path = CORE_POSITIONS_PATH if panel == "core" else GAME_LIKE_POSITIONS_PATH
+    path = {"core": CORE_POSITIONS_PATH, "game_like": GAME_LIKE_POSITIONS_PATH,
+            "blunder": BLUNDER_POSITIONS_PATH}[panel]
     return json.loads(path.read_text())["positions"]
 
 
@@ -144,18 +146,29 @@ def _baseline_panels() -> tuple[dict, dict, dict]:
                  for path in (CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, STABILITY_RESULTS_PATH))
 
 
+def _baseline_blunder() -> dict:
+    return json.loads(BLUNDER_RESULTS_PATH.read_text()) if BLUNDER_RESULTS_PATH.exists() else {}
+
+
 def _ready(record: dict, panel: str) -> bool:
     if panel == "stability":
         return stability_probe_readiness(record).is_ready
     positions = _positions(panel)
-    return benchmark_result_readiness(record, positions, min_equal_positions=len(positions)).is_ready
+    return benchmark_result_readiness(
+        record, positions, min_equal_positions=len(positions),
+        position_type="blunder" if panel == "blunder" else "equal",
+    ).is_ready
 
 
 def _validate_corrected(player: str, panel: str, record: dict) -> None:
     from position_benchmark.evaluation import SCORING_VERSION
     from position_benchmark.scoring_provenance import validate_scoring_record
     from position_benchmark.sync import validate_panel
-    validate_panel(player, panel, record)
+    if panel == "blunder":
+        if record.get("summary", {}).get("player_id") != player or not _ready(record, panel):
+            raise ValueError("Optional blunder panel is incomplete or has a mismatched player ID")
+    else:
+        validate_panel(player, panel, record)
     validate_scoring_record(record, required_version=SCORING_VERSION)
     # A legal selected reference move must never have a positive loss.
     for row in record.get("results", []):
@@ -169,10 +182,10 @@ def _core(record: dict) -> dict:
     return {key: copy.deepcopy(value) for key, value in record.items() if key != "supplements"}
 
 
-def _inputs(core: dict, game_like: dict, stability: dict) -> PositionBenchmarkInputs:
+def _inputs(core: dict, game_like: dict, stability: dict, blunder: dict | None = None) -> PositionBenchmarkInputs:
     return PositionBenchmarkInputs(
         core_results=core, core_positions=_positions("core"),
-        blunder_results=None, blunder_positions=None,
+        blunder_results=blunder, blunder_positions=_positions("blunder") if blunder else None,
         game_like_results=game_like, game_like_positions=_positions("game_like"),
         stability_results=stability,
     )
@@ -245,17 +258,22 @@ def _durable_write(path: Path, value: dict) -> None:
 
 
 def prepare(db, candidate_core: dict, candidate_game_like: dict, candidate_stability: dict,
-            backup_dir: Path) -> dict:
+            backup_dir: Path, *, candidate_blunder: dict | None = None) -> dict:
     """Build a reviewable, durable plan from saved corrected records; perform no writes to db."""
     snapshot = {name: _snapshot_collection(db, name) for name in ("benchmark_results", "ratings", "results")}
     snapshot["state"] = _encode(state_reference(db).get().to_dict() or {})
     baseline = _baseline_panels()
-    before_inputs = _inputs(*_merge_baseline(*baseline, snapshot["benchmark_results"]))
+    baseline_blunder = _baseline_blunder()
+    before_inputs = _inputs(*_merge_baseline(*baseline, snapshot["benchmark_results"]),
+                            blunder=baseline_blunder)
     predictions_before = benchmark_predictions_from_inputs(before_inputs)
     after = copy.deepcopy(snapshot["benchmark_results"])
-    candidates = {"core": candidate_core, "game_like": candidate_game_like, "stability": candidate_stability}
+    effective_blunder = {**copy.deepcopy(baseline_blunder), **copy.deepcopy(candidate_blunder or {})}
+    candidates = {"core": candidate_core, "game_like": candidate_game_like,
+                  "stability": candidate_stability, "blunder": effective_blunder}
     provenance = None
-    baseline_by_panel = dict(zip(candidates, baseline))
+    baseline_by_panel = {**dict(zip(("core", "game_like", "stability"), baseline)),
+                         "blunder": baseline_blunder}
     corrected_counts = {}
     for panel, records in candidates.items():
         corrected_counts[panel] = 0
@@ -303,7 +321,7 @@ def prepare(db, candidate_core: dict, candidate_game_like: dict, candidate_stabi
                 raise ValueError(f"Ready panel lacks corrected scoring provenance: {player}/{panel}")
             _validate_corrected(player, panel, rows)
     predictions_after = benchmark_predictions_from_inputs(_inputs(
-        candidate_inputs_core, candidate_game_like, candidate_stability,
+        candidate_inputs_core, candidate_game_like, candidate_stability, blunder=effective_blunder,
     ))
     # Invalid saved games must stop publication, never silently disappear from replay.
     games = [GameResult.from_json(_decode(data)) for data in snapshot["results"].values()]
@@ -326,6 +344,7 @@ def prepare(db, candidate_core: dict, candidate_game_like: dict, candidate_stabi
     plan = {
         "schema_version": 1, "migration_id": migration_id, "snapshot": snapshot,
         "baseline_hashes": [_hash(panel) for panel in baseline],
+        "baseline_blunder": baseline_blunder,
         "candidate_hashes": {key: _hash(value) for key, value in candidates.items()},
         "scoring_profile": provenance[1], "benchmark_after": after,
         "ratings_after": ratings_after, "predictions_before": predictions_before,

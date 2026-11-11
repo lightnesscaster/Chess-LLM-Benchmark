@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from position_benchmark.evaluation import ConsistentEvaluator, SCORING_VERSION
 from position_benchmark.layout import (
     CORE_POSITIONS_PATH, CORE_RESULTS_PATH, GAME_LIKE_POSITIONS_PATH,
-    GAME_LIKE_RESULTS_PATH, RESULTS_DIR,
+    GAME_LIKE_RESULTS_PATH, BLUNDER_POSITIONS_PATH, BLUNDER_RESULTS_PATH, RESULTS_DIR,
 )
 from position_benchmark.predictions import benchmark_result_readiness, result_row_is_current
 from position_benchmark.run_benchmark import _calculate_median, replay_position_board, stamp_scoring_summary
@@ -42,6 +42,7 @@ SCORING_FIELDS = frozenset({
 PANEL_PATHS = {
     "core": (CORE_POSITIONS_PATH, CORE_RESULTS_PATH, 50),
     "game_like": (GAME_LIKE_POSITIONS_PATH, GAME_LIKE_RESULTS_PATH, 48),
+    "blunder": (BLUNDER_POSITIONS_PATH, BLUNDER_RESULTS_PATH, 25),
 }
 RANK_SOURCE = "screening-multipv"
 
@@ -200,7 +201,10 @@ def rescore_file(
     result = copy.deepcopy(inputs)
     eligible = []
     for player, record in inputs.items():
-        readiness = benchmark_result_readiness(record, positions, min_equal_positions=minimum)
+        readiness = benchmark_result_readiness(
+            record, positions, min_equal_positions=minimum,
+            position_type="blunder" if panel == "blunder" else "equal",
+        )
         if readiness.is_ready:
             # Validate identity and legal flags before starting expensive searches.
             resolved = _positions_for_rows(record["results"], positions)

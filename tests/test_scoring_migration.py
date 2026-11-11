@@ -86,6 +86,7 @@ def migration(monkeypatch):
     monkeypatch.setattr(module, "_ready", lambda record, panel: bool(record.get("results")))
     monkeypatch.setattr(module, "_validate_corrected", lambda *_: None)
     monkeypatch.setattr(module, "_baseline_panels", lambda: ({}, {}, {}))
+    monkeypatch.setattr(module, "_baseline_blunder", lambda: {}, raising=False)
     monkeypatch.setattr(module, "_positions", lambda *_: [])
     monkeypatch.setattr(module, "benchmark_predictions_from_inputs", lambda inputs: {
         key: 1400.0 if record["results"][0]["cpl"] else 1800.0
@@ -294,6 +295,7 @@ def test_real_rescore_file_output_prepares_without_changing_saved_evidence(tmp_p
     db = Database({("benchmark_results", player): original,
                    ("ratings", player): PlayerRating(player_id=player).to_dict()})
     monkeypatch.setattr(module, "_baseline_panels", lambda: ({player: original}, {}, {}))
+    monkeypatch.setattr(module, "_baseline_blunder", lambda: {}, raising=False)
     monkeypatch.setattr(module, "_calculate", lambda results, predictions: {
         pid: PlayerRating(player_id=pid, rating=value).to_dict() for pid, value in predictions.items()})
     plan = module.prepare(db, corrected, {}, {}, tmp_path / "backups")
@@ -347,3 +349,84 @@ def test_registry_normalization_never_hides_context_or_response_changes(field, v
     candidate["results"][0].pop("panel", None)
     candidate["results"][0][field] = value
     assert not module._same_evidence(source, candidate, "core")
+
+
+def test_optional_blunder_old_and_corrected_caps_are_explicit_and_published(migration, tmp_path, monkeypatch):
+    old_optional = {"model": panel()}
+    corrected_optional = {"model": panel(corrected=True)}
+    monkeypatch.setattr(migration, "_baseline_blunder", lambda: old_optional)
+    captured = []
+
+    def predictions(inputs):
+        captured.append(inputs)
+        optional = inputs.blunder_results["model"]["results"][0]
+        return {"model": 1500.0 if optional["cpl"] else 1750.0}
+
+    monkeypatch.setattr(migration, "benchmark_predictions_from_inputs", predictions)
+    plan = migration.prepare(database(), {"model": panel(corrected=True)}, {}, {}, tmp_path,
+                             candidate_blunder=corrected_optional)
+    assert captured[0].blunder_results == old_optional
+    assert captured[1].blunder_results == corrected_optional
+    assert plan["predictions_before"] == {"model": 1500.0}
+    assert plan["predictions_after"] == {"model": 1750.0}
+    assert plan["benchmark_after"]["model"]["supplements"]["blunder"] == corrected_optional["model"]
+    assert plan["receipt"]["corrected_panels"]["blunder"] == 1
+    assert plan["baseline_blunder"] == old_optional
+
+
+def test_ready_optional_blunder_cannot_be_silently_dropped(migration, tmp_path, monkeypatch):
+    monkeypatch.setattr(migration, "_baseline_blunder", lambda: {"model": panel()})
+    with pytest.raises(ValueError, match="provenance"):
+        migration.prepare(database(), {"model": panel(corrected=True)}, {}, {}, tmp_path)
+
+
+def test_corrected_optional_blunder_raw_evidence_is_guarded(migration, tmp_path, monkeypatch):
+    monkeypatch.setattr(migration, "_baseline_blunder", lambda: {"model": panel()})
+    corrected = panel(corrected=True)
+    corrected["results"][0]["raw_response"] = "changed"
+    with pytest.raises(ValueError, match="evidence"):
+        migration.prepare(database(), {"model": panel(corrected=True)}, {}, {}, tmp_path,
+                          candidate_blunder={"model": corrected})
+
+
+def test_real_optional_blunder_readiness_uses_all_25_blunder_rows():
+    from position_benchmark import scoring_migration as module
+    from position_benchmark.layout import BLUNDER_RESULTS_PATH
+    records = json.loads(BLUNDER_RESULTS_PATH.read_text())
+    record = records["gpt-5.2 (high)"]
+    assert module._ready(record, "blunder")
+    incomplete = copy.deepcopy(record)
+    incomplete["results"].pop()
+    assert not module._ready(incomplete, "blunder")
+
+
+def test_real_old_optional_blunder_prediction_cap_is_retained():
+    from position_benchmark import scoring_migration as module
+    from position_benchmark.layout import CORE_RESULTS_PATH, BLUNDER_RESULTS_PATH
+    from rating.rating_store import benchmark_predictions_from_inputs
+    player = "gpt-5.2 (high)"
+    core = {player: json.loads(CORE_RESULTS_PATH.read_text())[player]}
+    optional = {player: copy.deepcopy(json.loads(BLUNDER_RESULTS_PATH.read_text())[player])}
+    # Make the optional cap binding regardless of future canonical score updates.
+    for row in optional[player]["results"]:
+        row.update(cpl=5000, is_legal=False, model_move="", is_best=False)
+    with_cap = benchmark_predictions_from_inputs(module._inputs(core, {}, {}, blunder=optional))
+    without_cap = benchmark_predictions_from_inputs(module._inputs(core, {}, {}))
+    assert with_cap[player] < without_cap[player]
+
+
+def test_real_corrected_optional_panel_validates_provenance_and_player_identity():
+    from position_benchmark import scoring_migration as module
+    from position_benchmark.evaluation import SCORING_VERSION
+    from position_benchmark.layout import BLUNDER_RESULTS_PATH
+    player = "gpt-5.2 (high)"
+    corrected = copy.deepcopy(json.loads(BLUNDER_RESULTS_PATH.read_text())[player])
+    provenance = {"scoring_version": SCORING_VERSION, "scoring_profile": {"engine": "test", "depth": 30}}
+    corrected["summary"].update(provenance)
+    for row in corrected["results"]:
+        row.update(provenance)
+        if row.get("is_best"):
+            row["cpl"] = 0
+    module._validate_corrected(player, "blunder", corrected)
+    with pytest.raises(ValueError, match="player ID"):
+        module._validate_corrected("different player", "blunder", corrected)

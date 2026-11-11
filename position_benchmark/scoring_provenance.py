@@ -87,5 +87,14 @@ def validate_scoring_record(
         return
     if not isinstance(version, str) or not version or not isinstance(profile, dict) or not profile:
         raise ValueError("Mixed or missing scoring provenance in panel summary")
+    if summary.get("scoring_engine_profile"):
+        from position_benchmark.evaluation import scoring_profile_identity
+        try:
+            audit_identity = scoring_profile_identity(summary["scoring_engine_profile"])
+            expected_identity = scoring_profile_identity(profile)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Invalid full scoring engine profile") from error
+        if audit_identity != expected_identity:
+            raise ValueError("Full scoring engine profile does not match its compact identity")
     if any(score.get("scoring_version") != version or score.get("scoring_profile") != profile for score in scores):
         raise ValueError("Mixed scoring versions or engine profiles in panel")

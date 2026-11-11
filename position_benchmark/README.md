@@ -95,6 +95,11 @@ explicit output file; `scripts/run_stability_probe.py --rescore-existing
 PGNs. Neither makes model calls. Preserve the original results as an audit
 snapshot, validate the corrected copies, then publish all corrected panels and
 the rating replay together using `position_benchmark.scoring_migration`.
+Audit Firestore as well as bundled files: production-only ready cores must be
+included. Any ready historical optional blunder panel still participates in the
+predictor and must also be rescored (`--panel blunder`), rather than omitted.
+The migration publishes that corrected panel under `supplements.blunder`, which
+the rating reader prefers over its bundled fallback.
 Historical prompt rows stay historical after rescoring. Predictor coefficients,
 seed uncertainty, retry rules and saved game outcomes are unchanged. Earlier
 validation artifacts document their original scorer; this correction does not

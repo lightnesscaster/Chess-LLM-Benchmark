@@ -58,6 +58,7 @@ def test_compacting_running_job_output_preserves_full_profile_and_responses():
     full = {"scoring_version": "root-reference-v1", "engine": {"name": "Stockfish"}, "depth": 30, "options": {"Hash": 64}}
     stamp = {"scoring_version": "root-reference-v1", "scoring_profile": full}
     old = {"summary": dict(stamp), "results": [{**stamp, "cpl": 0, "model_move": "e2e4", "prompt_tokens": 10}]}
+    old["summary"]["scoring_engine_profile"] = copy.deepcopy(full)
     saved = copy.deepcopy(old)
     compact = compact_record_profiles(old)
     assert old == saved
@@ -67,3 +68,6 @@ def test_compacting_running_job_output_preserves_full_profile_and_responses():
     assert compact["results"][0]["prompt_tokens"] == 10
     validate_scoring_record(compact)
     assert compact_record_profiles(compact) == compact
+    compact["summary"]["scoring_engine_profile"]["options"]["Hash"] = 128
+    with pytest.raises(ValueError, match="Full scoring engine profile"):
+        validate_scoring_record(compact)

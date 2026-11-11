@@ -52,7 +52,8 @@ def test_rating_reader_passes_synced_supplements_to_predictor(monkeypatch, stale
     core = json.loads(CORE_RESULTS_PATH.read_text())[pid]
     if stale_core:
         core["results"] = []
-    core["supplements"] = {"game_like": {"remote": "game-like"}, "stability": {"remote": "stability"}}
+    core["supplements"] = {"game_like": {"remote": "game-like"}, "stability": {"remote": "stability"},
+                           "blunder": {"remote": "blunder"}}
     doc = SimpleNamespace(id=pid, to_dict=lambda: core)
     monkeypatch.setattr(firebase_client, "get_firestore_client", lambda: SimpleNamespace(collection=lambda name: SimpleNamespace(stream=lambda: [doc])))
     monkeypatch.setattr(module, "_benchmark_predictions_cache", None)
@@ -61,6 +62,7 @@ def test_rating_reader_passes_synced_supplements_to_predictor(monkeypatch, stale
         if data.get("supplements"):
             assert kwargs["game_like_model_data"] == {"remote": "game-like"}
             assert kwargs["stability_probe_model_data"] == {"remote": "stability"}
+            assert kwargs["blunder_model_data"] == {"remote": "blunder"}
             assert data["results"]
             return 1234
         return 0

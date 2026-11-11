@@ -30,7 +30,7 @@ class FakeEvaluator:
 
 def fixture_data(count=50):
     positions = [
-        {"position_id": f"test-{i}", "fen": chess.STARTING_FEN, "type": "equal"}
+        {"position_id": f"test-{i}", "fen": chess.STARTING_FEN, "type": "blunder" if count == 25 else "equal"}
         for i in range(count)
     ]
     rows = [
@@ -50,7 +50,7 @@ def fixture_data(count=50):
                    retry_attempted=True, retry_move="e2e4", retry_is_legal=True,
                    retry_prompt_tokens=24, raw_response="bad")
     record = {"results": rows, "summary": {"run_actual_api_cost": 1.25,
-              "equal": {"avg_cpl": 150, "top3_pct": 100}},
+              ("blunder" if count == 25 else "equal"): {"avg_cpl": 150, "top3_pct": 100}},
               "token_usage": {"prompt": 750, "completion": 150}, "extra": "keep"}
     legacy = copy.deepcopy(record)
     legacy["results"][0].pop("prompt_history_replay")
@@ -61,13 +61,13 @@ def run(tmp_path, monkeypatch, positions, data, calls, **kwargs):
     source = tmp_path / "input.json"
     source.write_text(json.dumps(data))
     return module.rescore_file(
-        panel="core" if len(positions) == 50 else "game_like",
+        panel={50: "core", 48: "game_like", 25: "blunder"}[len(positions)],
         input_path=source, output_path=tmp_path / "corrected.json", positions=positions,
         evaluator_factory=lambda: FakeEvaluator(calls), workers=2, **kwargs,
     )
 
 
-@pytest.mark.parametrize("count", [50, 48])
+@pytest.mark.parametrize("count", [50, 48, 25])
 def test_rescores_ready_only_preserving_response_evidence(tmp_path, monkeypatch, count):
     positions, data = fixture_data(count)
     original = copy.deepcopy(data)
@@ -85,8 +85,9 @@ def test_rescores_ready_only_preserving_response_evidence(tmp_path, monkeypatch,
     assert summary["avg_cpl"] == pytest.approx(5020 / count)
     assert summary["avg_cpl_legal"] == summary["median_cpl"] == 0
     assert summary["best_pct"] == pytest.approx((count - 1) / count * 100)
-    assert summary["equal"]["avg_cpl"] == summary["avg_cpl"]
-    assert summary["equal"]["top3_pct"] == 100
+    kind = "blunder" if count == 25 else "equal"
+    assert summary[kind]["avg_cpl"] == summary["avg_cpl"]
+    assert summary[kind]["top3_pct"] == 100
     assert summary["run_actual_api_cost"] == 1.25
     assert summary["scoring_version"] == module.SCORING_VERSION
     assert result["ready"]["token_usage"] == original["ready"]["token_usage"]
@@ -207,3 +208,12 @@ def test_full_engine_profile_is_recorded_once_in_summary(tmp_path, monkeypatch):
     assert all("scoring_engine_profile" not in row for row in record["results"])
     assert "scoring_engine_profile" not in record["summary"]["equal"]
     assert "scoring_engine_profile" not in result["legacy"]["summary"]
+
+
+def test_incomplete_blunder_record_is_preserved_without_engine(tmp_path, monkeypatch):
+    positions, data = fixture_data(25)
+    data["ready"]["results"].pop()
+    calls = []
+    result = run(tmp_path, monkeypatch, positions, data, calls)
+    assert result == data
+    assert calls == []

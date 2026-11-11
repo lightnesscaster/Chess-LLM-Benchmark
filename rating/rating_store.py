@@ -277,9 +277,9 @@ def benchmark_predictions_from_inputs(inputs: PositionBenchmarkInputs) -> Dict[s
             model_data,
             positions,
             blunder_model_data=(
-                blunder_results_data.get(model_name)
-                if isinstance(blunder_results_data, dict)
-                else None
+                model_data.get("supplements", {}).get("blunder")
+                or (blunder_results_data.get(model_name)
+                    if isinstance(blunder_results_data, dict) else None)
             ),
             blunder_positions=blunder_positions,
             game_like_model_data=(
