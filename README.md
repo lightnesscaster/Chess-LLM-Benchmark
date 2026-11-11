@@ -20,10 +20,11 @@ In **Play an LLM**, select “Offer a draw with my next move” before moving, o
 
 More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
 
-The separate position benchmark used to predict/seed ratings is documented in the
-[canonical position benchmark specification](position_benchmark/README.md). That
-specification records the finalized June 2026 methodology, validation results,
-optional downside checks, and the exact GPT-5.5 limitation.
+The separate position benchmark used to predict/seed ratings has a **full production
+suite: 50 core positions, 48 game-like positions, and 8 continuation probes**
+(130 planned first-attempt model calls, plus conditional retries). A ready core
+permits a seed but does not complete the full benchmark. Follow the
+[full-suite workflow and completion checks](position_benchmark/README.md#run-the-full-production-benchmark).
 
 ## Installation
 

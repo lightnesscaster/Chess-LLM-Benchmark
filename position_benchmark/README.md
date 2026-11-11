@@ -1,5 +1,63 @@
 # Position Benchmark: Canonical Production Specification
 
+## Run the full production benchmark
+
+**An unqualified request to run a model's position benchmark means the complete
+production suite below.** The 50-position core is only its first panel. Core
+readiness allows a rating seed; it is not full-suite completion. Run core-only
+only when explicitly requested.
+
+The source of truth is `benchmark_manifest.json` →
+`automatic_acquisition.panel_order`:
+
+| Order | Panel | Workload | Scoring |
+|---|---|---|---|
+| 1 | Core | 50 history-replayed positions | Stockfish depth 30 |
+| 2 | Game-like | 48 history-replayed positions | Stockfish depth 30 |
+| 3 | Continuation stability | 8 stratified starts × 8 plies; up to 32 model turns | Stockfish depth 30 |
+
+The planned base is **130 first-attempt calls**, plus conditional retries
+(130–236 calls in total; terminal continuations can finish early). “Optional” and
+“downside-only” below describe how supplements affect the rating formula. The
+normal production acquisition workflow still includes both supplements.
+
+For a configured player, run these commands in order, replacing the example ID:
+
+```bash
+python position_benchmark/run_benchmark.py --players 'gemini-4-carbon (medium)' --depth 30 --retry-missing
+python position_benchmark/run_benchmark.py --players 'gemini-4-carbon (medium)' --positions position_benchmark/panels/game_like_48.json --output position_benchmark/results/game_like.json --depth 30 --retry-missing
+python scripts/run_stability_probe.py --players 'gemini-4-carbon (medium)' --limit 8 --probe-plies 8 --score-depth 30 --random-seed 1729
+```
+
+The configured provider and reasoning effort must match the rated player. Keep
+ready panels and acquire only missing or stale panels; do not repeat an already
+ready continuation panel. `--retry-missing` resumes absent rows; it does not
+refresh existing rows with an obsolete version, prompt history, or scoring depth.
+If readiness identifies a stale static panel, rerun that panel without
+`--retry-missing`. Canonical runs publish results and automatically apply
+changed seeds to saved rating history. If sync fails, retry the saved panel using
+`python -m position_benchmark.sync`; do not repeat model calls.
+
+Before reporting **full benchmark complete**, verify all manifest panels:
+
+```bash
+python - <<'PY'
+from position_benchmark.acquisition import load_acquisition_policy, panel_readiness
+player_id = "gemini-4-carbon (medium)"  # replace with the requested player
+states = {panel.name: panel_readiness(panel, player_id)
+          for panel in load_acquisition_policy().panels}
+for name, state in states.items():
+    print(name, "ready" if state.is_ready else state.reason)
+assert all(state.is_ready for state in states.values()), "Full production suite is incomplete"
+PY
+```
+
+Also confirm all three panels are published, the latest automatic rating-update
+receipt is applied, and the live rating matches production. Report a completed
+core as **core complete, supplemental panels pending** until these checks pass.
+
+## Specification and rating readiness
+
 This document is the source of truth for the position benchmark used to predict a
 model's game-playing rating. The production design was finalized on June 23, 2026
 and implemented in commit `08ffc44` (`improve position benchmark prediction`).

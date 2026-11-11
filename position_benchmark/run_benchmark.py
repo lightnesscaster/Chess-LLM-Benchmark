@@ -1,8 +1,8 @@
 """Run the history-replayed position benchmark on model configurations.
 
-The production core is the 50 equal positions at Stockfish depth 30. Blunder
-positions are an optional historical downside panel. See
-``position_benchmark/README.md`` for the canonical methodology and call counts.
+This command runs one static panel, defaulting to the 50-position core. The full
+production suite also includes 48 game-like positions and 8 continuation probes.
+See the full-suite workflow at the top of ``position_benchmark/README.md``.
 """
 
 import asyncio
@@ -23,6 +23,7 @@ from llm.openrouter_client import OpenRouterPlayer, TransientAPIError
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer
 from llm.gemini_client import GeminiPlayer
 from llm.codex_subagent_client import CodexSubagentPlayer
+from llm.claude_code_client import ClaudeCodePlayer
 from llm.base_llm import request_llm_move
 from llm.prompts import board_to_ascii
 from engines.stockfish_engine import StockfishEngine
@@ -37,6 +38,7 @@ from position_benchmark.retry_protocol import (
 )
 from position_benchmark.scoring import ILLEGAL_MOVE_EVAL, illegal_move_cpl
 from rating.cost_calculator import CostCalculator
+from utils import resolve_player_id
 
 
 @dataclass
@@ -494,6 +496,11 @@ async def run_benchmark(
     token_acc = {"prompt": 0, "completion": 0}
     model_call_acc = [0]
 
+    if player_config.get("api") == "claude_code" or api_backend == "claude_code":
+        effort = player_config.get("reasoning_effort") or "medium"
+        if player_config.get("reasoning") is False or effort not in {"low", "medium", "high", "xhigh", "max"}:
+            raise ValueError("Claude Code requires a supported reasoning effort; no-reasoning is unavailable")
+
     is_engine = player_config.get("type") in ["stockfish", "maia", "random", "uci", "survival"]
 
     if is_engine:
@@ -550,6 +557,14 @@ async def run_benchmark(
                 "timeout": player_config.get("timeout", 600),
             }
 
+            if player_config.get("api") == "claude_code" or api_backend == "claude_code":
+                return ClaudeCodePlayer(
+                    player_id=player_id,
+                    model_name=player_config.get("model_name"),
+                    reasoning_effort=common_kwargs["reasoning_effort"] or "medium",
+                    timeout=common_kwargs["timeout"],
+                )
+
             if player_config.get("api") == "codex" or api_backend == "codex":
                 return CodexSubagentPlayer(
                     player_id=common_kwargs["player_id"],
@@ -599,7 +614,9 @@ async def run_benchmark(
         # Each position owns its player so initial/retry token deltas and debug
         # state cannot race across concurrent tasks. The semaphore still bounds
         # provider concurrency.
-        if player_config.get("api") == "codex" or api_backend == "codex":
+        if player_config.get("api") == "claude_code" or api_backend == "claude_code":
+            max_concurrent = player_config.get("claude_position_max_concurrent", 1)
+        elif player_config.get("api") == "codex" or api_backend == "codex":
             max_concurrent = player_config.get("codex_position_max_concurrent", 1)
         elif player_config.get("api") == "gemini" or api_backend == "gemini":
             max_concurrent = player_config.get(
@@ -876,6 +893,21 @@ def load_player_configs():
     for llm in config.get("llms", []):
         players[llm["player_id"]] = llm
 
+    # Explicit position/probe selection may use registered subscription models.
+    # This does not add them to the full-game scheduler's configured LLM list.
+    for model in config.get("web_play_models", []):
+        if model.get("web_api") != "claude_code":
+            continue
+        for effort in model.get("web_reasoning_efforts", [model.get("web_default_reasoning_effort", "high")]):
+            player_id = resolve_player_id(model["player_id"], effort)
+            players.setdefault(player_id, {
+                **model,
+                "player_id": player_id,
+                "model_name": model.get("web_model_name", model["model_name"]),
+                "api": "claude_code",
+                "reasoning_effort": effort,
+            })
+
     return players
 
 
@@ -1047,7 +1079,9 @@ def calculate_actual_benchmark_cost(
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Run position benchmark")
+    parser = argparse.ArgumentParser(
+        description="Run one static position panel; full production also requires game-like and continuation panels (see position_benchmark/README.md)",
+    )
     parser.add_argument(
         "--positions",
         type=Path,
@@ -1115,7 +1149,7 @@ async def main():
     )
     parser.add_argument(
         "--api",
-        choices=["openrouter", "gemini", "codex"],
+        choices=["openrouter", "gemini", "codex", "claude_code"],
         default="openrouter",
         help="API backend to use (default: openrouter)",
     )
@@ -1201,7 +1235,7 @@ async def main():
         f"({blunder_count} blunder, {equal_count} equal)"
     )
     if panel_metadata.get("panel") == "core-equal":
-        print("Production core: exactly 50 equal positions; optional panels are excluded.")
+        print("CORE PANEL ONLY: 50 equal positions. Full production also requires 48 game-like positions and 8 continuation probes; see position_benchmark/README.md.")
 
     # Load player configs
     all_players = load_player_configs()

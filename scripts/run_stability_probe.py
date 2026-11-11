@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engines.random_engine import RandomEngine  # noqa: E402
 from game.game_runner import GameRunner  # noqa: E402
-from llm import CodexSubagentPlayer, GeminiPlayer, OpenRouterPlayer  # noqa: E402
+from llm import ClaudeCodePlayer, CodexSubagentPlayer, GeminiPlayer, OpenRouterPlayer  # noqa: E402
 from llm.openrouter_completion_client import OpenRouterCompletionPlayer  # noqa: E402
 from position_benchmark.run_benchmark import (  # noqa: E402
     config_is_engine,
@@ -412,6 +412,17 @@ def create_llm_player(
         "reasoning_effort": player_config.get("reasoning_effort"),
         "timeout": player_config.get("timeout", 600),
     }
+
+    if (respect_config_api and player_config.get("api") == "claude_code") or api_backend == "claude_code":
+        effort = common_kwargs["reasoning_effort"] or "medium"
+        if player_config.get("reasoning") is False or effort not in {"low", "medium", "high", "xhigh", "max"}:
+            raise ValueError("Claude Code requires a supported reasoning effort; no-reasoning is unavailable")
+        return ClaudeCodePlayer(
+            player_id=player_id,
+            model_name=player_config.get("model_name"),
+            reasoning_effort=effort,
+            timeout=common_kwargs["timeout"],
+        )
 
     if (respect_config_api and player_config.get("api") == "codex") or api_backend == "codex":
         return CodexSubagentPlayer(
@@ -1043,7 +1054,7 @@ async def main_async() -> None:
     parser.add_argument("--probe-plies", type=int)
     parser.add_argument("--score-depth", type=int, default=DEFAULT_SCORE_DEPTH)
     parser.add_argument("--stockfish-path", default="stockfish")
-    parser.add_argument("--api", choices=["openrouter", "gemini", "codex"], default="openrouter")
+    parser.add_argument("--api", choices=["openrouter", "gemini", "codex", "claude_code"], default="openrouter")
     parser.add_argument(
         "--ignore-config-api",
         action="store_true",
