@@ -153,11 +153,15 @@ def verify_automatic_acquisition(manifest: dict[str, Any]) -> list[str]:
     expected_order = ["core", "game_like", "continuation_stability"]
     if config.get("enabled") is not True:
         issues.append("automatic_acquisition: must remain enabled")
-    if config.get("policy_version") != "production-supplements-depth30-v2":
+    if config.get("policy_version") != "production-lower-effort-screen-v1":
         issues.append("automatic_acquisition: policy version mismatch")
+    if config.get("supplement_deferral", {}).get("effort_order") != [
+        "minimal", "low", "medium", "high", "xhigh", "max",
+    ]:
+        issues.append("automatic_acquisition: explicit reasoning effort order mismatch")
     if config.get("panel_order") != expected_order:
         issues.append("automatic_acquisition: panel order mismatch")
-    if config.get("completion_policy") != "current-readiness-v2":
+    if config.get("completion_policy") != "measured-or-screened-core-v1":
         issues.append("automatic_acquisition: readiness policy mismatch")
     if (
         config.get("legacy_static_retry_policy")

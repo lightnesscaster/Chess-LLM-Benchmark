@@ -13,6 +13,7 @@ import threading
 import time
 from typing import Any, Callable, Iterable
 
+from position_benchmark.acquisition import deferred_supplement_source
 from position_benchmark.layout import (
     BLUNDER_RESULTS_PATH,
     CORE_RESULTS_PATH,
@@ -111,6 +112,9 @@ def build_position_rows(
         readiness = benchmark_result_readiness(model_data, positions)
         game_like_data = _supplement(model_data, "game_like", inputs.game_like_results, model)
         stability_data = _supplement(model_data, "stability", inputs.stability_results, model)
+        deferred_source = None
+        if readiness.is_ready and game_like_data is None and stability_data is None:
+            deferred_source = deferred_supplement_source(model, inputs)
 
         equal_prediction = predict_rating(metrics.equal_cpl, metrics.best_pct, metrics.legal_pct)
         prediction = None
@@ -170,6 +174,7 @@ def build_position_rows(
             "legal_pct": _round(metrics.legal_pct, 1),
             "game_like_cpl": _round(game_like_cpl),
             "stability_risk": _round(stability_risk, 1),
+            "deferred_supplement_source": deferred_source,
             "equal_prediction": _round(equal_prediction),
             "prediction": _round(prediction),
             "capped": prediction is not None and prediction < equal_prediction - 0.5,

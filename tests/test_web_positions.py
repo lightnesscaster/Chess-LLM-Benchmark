@@ -114,3 +114,32 @@ def test_live_optional_panel_is_shared_by_page_and_rating_seeds(monkeypatch):
     seed = rating_store_module.benchmark_predictions_from_inputs(inputs)[model]
     assert seed == 1200
     assert build_position_rows(inputs, [])[0]["prediction"] == seed
+
+
+def test_deferred_supplements_show_source_and_keep_targets_own_prediction(monkeypatch):
+    from dataclasses import replace
+
+    source, target = "gpt-6-astra (medium)", "gpt-6-astra (high)"
+    inputs = load_position_benchmark_inputs(use_firestore=False)
+    inputs = replace(
+        inputs,
+        core_results={player: inputs.core_results[player] for player in (source, target)},
+        game_like_results={source: inputs.game_like_results[source]},
+        stability_results={source: inputs.stability_results[source]},
+    )
+    rows = {row["player_id"]: row for row in build_position_rows(inputs, [])}
+    assert rows[target].get("deferred_supplement_source") == source
+    assert rows[source]["deferred_supplement_source"] is None
+    assert rows[target]["game_like_cpl"] is None
+    assert rows[target]["stability_risk"] is None
+    assert rows[target]["prediction"] == round(
+        rating_store_module.benchmark_predictions_from_inputs(inputs)[target]
+    )
+    assert rows[source]["game_like_cpl"] is not None
+    assert rows[source]["stability_risk"] is not None
+
+    monkeypatch.setattr(web_app, "get_position_rows", lambda: [rows[target]])
+    with web_app.app.test_client() as client:
+        html = client.get("/positions").get_data(as_text=True)
+    assert html.count(">Deferred</span>") == 2
+    assert source in html

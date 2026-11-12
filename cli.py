@@ -1549,6 +1549,7 @@ async def run_manual_game(args):
                 decision = ensure_shadow_lock_before_saved_game(
                     player_id,
                     game_snapshot=game_snapshot,
+                    use_firestore=not getattr(args, "local_only", False),
                 )
                 if not decision.allowed:
                     print(

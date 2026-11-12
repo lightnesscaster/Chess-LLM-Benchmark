@@ -88,11 +88,14 @@ class PositionBenchmarkInputs:
 
 def load_position_benchmark_inputs(
     use_firestore: bool, *, remote_results: Optional[Dict[str, dict]] = None,
+    published_only: bool = False,
 ) -> Optional[PositionBenchmarkInputs]:
     """
     Load position-benchmark results, preferring ready Firestore core records
     and falling back per model to the bundled local result files.
 
+    With published_only, keep even partial remote evidence and exclude local result
+    files. This lets production acquisition distinguish missing from unpublished work.
     Returns None when the core positions file is unavailable.
     """
     results_data = remote_results
@@ -115,13 +118,15 @@ def load_position_benchmark_inputs(
             if results_data:
                 logger.info(f"Loaded benchmark results from Firestore ({len(results_data)} models)")
         except Exception as e:
+            if published_only:
+                raise RuntimeError("Unable to verify published position measurements") from e
             logger.warning(f"Failed to load benchmark results from Firestore: {e}")
 
     # A partially synced collection must not hide valid bundled models.
     cloud_results = results_data or {}
     results_data = {}
     results_path = CORE_RESULTS_PATH
-    if results_path.exists():
+    if not published_only and results_path.exists():
         try:
             with open(results_path) as f:
                 results_data = json.load(f)
@@ -142,7 +147,7 @@ def load_position_benchmark_inputs(
     positions = positions_data.get("positions", [])
 
     for model_name, cloud_record in cloud_results.items():
-        if benchmark_result_readiness(cloud_record, positions).is_ready:
+        if published_only or benchmark_result_readiness(cloud_record, positions).is_ready:
             results_data[model_name] = cloud_record
         elif model_name in results_data:
             # Supplements sync independently of core. Keep them available to
@@ -158,45 +163,23 @@ def load_position_benchmark_inputs(
     game_like_results_path = GAME_LIKE_RESULTS_PATH
     game_like_positions_path = GAME_LIKE_POSITIONS_PATH
     stability_results_path = STABILITY_RESULTS_PATH
-    if blunder_results_path.exists() and blunder_positions_path.exists():
+
+    def load_optional_json(path: Path) -> dict | None:
         try:
-            with open(blunder_results_path) as f:
-                blunder_results_data = json.load(f)
-            with open(blunder_positions_path) as f:
-                blunder_positions_data = json.load(f)
-            logger.info(
-                f"Loaded optional blunder benchmark results "
-                f"({len(blunder_results_data)} models)"
-            )
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load optional blunder benchmark results: {e}")
-            blunder_results_data = None
-            blunder_positions_data = None
-    if game_like_results_path.exists() and game_like_positions_path.exists():
-        try:
-            with open(game_like_results_path) as f:
-                game_like_results_data = json.load(f)
-            with open(game_like_positions_path) as f:
-                game_like_positions_data = json.load(f)
-            logger.info(
-                f"Loaded supplemental game-like benchmark results "
-                f"({len(game_like_results_data)} models)"
-            )
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load supplemental game-like benchmark results: {e}")
-            game_like_results_data = None
-            game_like_positions_data = None
-    if stability_results_path.exists():
-        try:
-            with open(stability_results_path) as f:
-                stability_results_data = json.load(f)
-            logger.info(
-                f"Loaded supplemental stability probe results "
-                f"({len(stability_results_data)} models)"
-            )
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load supplemental stability probe results: {e}")
-            stability_results_data = None
+            with path.open() as handle:
+                return json.load(handle)
+        except FileNotFoundError:
+            return None
+        except (OSError, ValueError) as error:
+            logger.warning("Failed to load optional benchmark file %s: %s", path, error)
+            return None
+
+    blunder_positions_data = load_optional_json(blunder_positions_path)
+    game_like_positions_data = load_optional_json(game_like_positions_path)
+    if not published_only:
+        blunder_results_data = load_optional_json(blunder_results_path)
+        game_like_results_data = load_optional_json(game_like_results_path)
+        stability_results_data = load_optional_json(stability_results_path)
 
     game_like_positions = (
         game_like_positions_data.get("positions", [])

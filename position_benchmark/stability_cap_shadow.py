@@ -9,16 +9,16 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import subprocess
 from typing import Any
 
+from position_benchmark.acquisition import (
+    deferred_supplement_source, load_acquisition_policy, player_panel_records,
+)
 from position_benchmark.layout import (
     BLUNDER_POSITIONS_PATH,
-    BLUNDER_RESULTS_PATH,
     CORE_POSITIONS_PATH,
-    CORE_RESULTS_PATH,
     GAME_LIKE_POSITIONS_PATH,
-    GAME_LIKE_RESULTS_PATH,
-    STABILITY_RESULTS_PATH,
 )
 from position_benchmark.predictions import (
     STABILITY_CAP_BASE,
@@ -31,6 +31,7 @@ from position_benchmark.predictions import (
     predict_rating_from_model_data_with_supplement,
     stability_probe_readiness,
 )
+from rating.rating_store import load_position_benchmark_inputs
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +54,10 @@ class ShadowGameGuard:
     status: str
     message: str
     record: dict[str, Any] | None = None
+
+
+class _SupplementsDeferred(ValueError):
+    """No prospective cap prediction can be measured for this configuration."""
 
 
 def _load_json(path: Path) -> Any:
@@ -350,34 +355,35 @@ def _load_policy_and_freeze() -> tuple[dict[str, Any], dict[str, Any]]:
     return policy, _load_json(freeze_path)
 
 
-def _load_player_inputs(player_id: str) -> dict[str, Any]:
-    core_results = _load_json(CORE_RESULTS_PATH)
-    game_like_results = _load_json(GAME_LIKE_RESULTS_PATH)
-    stability_results = _load_json(STABILITY_RESULTS_PATH)
-    if player_id not in core_results:
-        raise ValueError(f"{player_id}: missing core result")
-    if player_id not in game_like_results:
-        raise ValueError(f"{player_id}: missing game-like result")
-    if player_id not in stability_results:
-        raise ValueError(f"{player_id}: missing continuation result")
-
-    blunder_results = (
-        _load_json(BLUNDER_RESULTS_PATH)
-        if BLUNDER_RESULTS_PATH.exists()
-        else {}
+def _load_player_inputs(
+    player_id: str, remote_results: dict[str, dict] | None,
+) -> dict[str, Any]:
+    inputs = load_position_benchmark_inputs(
+        False, remote_results=remote_results, published_only=remote_results is not None,
     )
+    if inputs is None or player_id not in inputs.core_results:
+        raise ValueError(f"{player_id}: missing core result")
+    core, game_like, stability = player_panel_records(inputs, player_id)
+    supplements = core.get("supplements", {})
+    if game_like is None and stability is None:
+        source = deferred_supplement_source(player_id, inputs)
+        if source is not None:
+            raise _SupplementsDeferred(
+                f"{player_id}: supplements deferred using {source}. "
+                "No prospective stability-cap prediction."
+            )
+    if game_like is None or not inputs.game_like_positions:
+        raise ValueError(f"{player_id}: missing game-like result or positions")
+    if stability is None:
+        raise ValueError(f"{player_id}: missing continuation result")
     return {
-        "core_record": core_results[player_id],
-        "core_positions": _load_json(CORE_POSITIONS_PATH)["positions"],
-        "game_like_record": game_like_results[player_id],
-        "game_like_positions": _load_json(GAME_LIKE_POSITIONS_PATH)["positions"],
-        "stability_record": stability_results[player_id],
-        "blunder_record": blunder_results.get(player_id),
-        "blunder_positions": (
-            _load_json(BLUNDER_POSITIONS_PATH)["positions"]
-            if BLUNDER_POSITIONS_PATH.exists()
-            else None
-        ),
+        "core_record": {key: value for key, value in core.items() if key != "supplements"},
+        "core_positions": inputs.core_positions,
+        "game_like_record": game_like,
+        "game_like_positions": inputs.game_like_positions,
+        "stability_record": stability,
+        "blunder_record": supplements.get("blunder", (inputs.blunder_results or {}).get(player_id)),
+        "blunder_positions": inputs.blunder_positions,
     }
 
 
@@ -386,10 +392,11 @@ def build_shadow_record(
     *,
     recorded_at: str | None = None,
     game_snapshot: dict[str, Any] | None = None,
+    remote_results: dict[str, dict] | None = None,
 ) -> dict[str, Any]:
     """Build one immutable prediction record before evaluating game outcomes."""
     policy, freeze = _load_policy_and_freeze()
-    inputs = _load_player_inputs(player_id)
+    inputs = _load_player_inputs(player_id, remote_results)
     prediction = calculate_candidate_predictions(**inputs)
     recorded_at = recorded_at or datetime.now(timezone.utc).isoformat()
     recorded_time = datetime.fromisoformat(recorded_at.replace("Z", "+00:00"))
@@ -463,12 +470,71 @@ def build_shadow_record(
     }
 
 
+def production_shadow_receipt(
+    player_id: str, recorded_at: str | None, game_snapshot: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Compute a candidate from published family records without writing a ledger."""
+    from firebase_client import get_firestore_client
+    from position_benchmark.run_production import published_family_results
+
+    receipt = {
+        "player_id": player_id,
+        "acquisition_policy": load_acquisition_policy().version,
+        "shadow_policy_sha256": _sha256_path(POLICY_PATH),
+    }
+    try:
+        records = published_family_results(get_firestore_client(), player_id)
+        receipt["record"] = build_shadow_record(
+            player_id, recorded_at=recorded_at, game_snapshot=game_snapshot, remote_results=records,
+        )
+    except _SupplementsDeferred as deferred:
+        receipt["deferred"] = str(deferred)
+    except Exception as error:
+        # Return the failure in the job receipt so the client can block the game immediately.
+        receipt["error"] = str(error)
+    return receipt
+
+
+def _production_shadow_record(
+    player_id: str, *, recorded_at: str | None, game_snapshot: dict[str, Any] | None,
+) -> dict[str, Any]:
+    from firebase_client import get_firestore_client
+    from position_benchmark.sync import render_job_receipt
+
+    try:
+        get_firestore_client()
+    except FileNotFoundError:
+        code = (
+            "import json; from position_benchmark.stability_cap_shadow import production_shadow_receipt; "
+            f"receipt=production_shadow_receipt({player_id!r}, {recorded_at!r}, {game_snapshot!r}); "
+            "print('POSITION_SHADOW '+json.dumps(receipt),flush=True)"
+        )
+        receipt = render_job_receipt(code, "POSITION_SHADOW")
+    else:
+        receipt = production_shadow_receipt(player_id, recorded_at, game_snapshot)
+    if (receipt.get("player_id") != player_id
+            or receipt.get("acquisition_policy") != load_acquisition_policy().version
+            or receipt.get("shadow_policy_sha256") != _sha256_path(POLICY_PATH)):
+        raise ValueError("Production shadow receipt does not match the requested player and policies")
+    if "error" in receipt:
+        raise ValueError(receipt["error"])
+    if receipt.get("deferred"):
+        raise _SupplementsDeferred(receipt["deferred"])
+    record = receipt.get("record") or {}
+    if (record.get("player_id") != player_id or record.get("prediction_locked") is not True
+            or record.get("policy_sha256") != receipt["shadow_policy_sha256"]
+            or record.get("eligibility", {}).get("game_snapshot") != game_snapshot):
+        raise ValueError("Production shadow prediction does not match the player or game snapshot")
+    return record
+
+
 def record_shadow_prediction(
     player_id: str,
     *,
     ledger_path: Path = SHADOW_LEDGER_PATH,
     recorded_at: str | None = None,
     game_snapshot: dict[str, Any] | None = None,
+    use_firestore: bool = False,
 ) -> tuple[dict[str, Any] | None, bool]:
     """Append one locked record; development configurations are never re-enrolled."""
     _, freeze = _load_policy_and_freeze()
@@ -490,11 +556,8 @@ def record_shadow_prediction(
     if player_id in entries:
         return entries[player_id], False
 
-    record = build_shadow_record(
-        player_id,
-        recorded_at=recorded_at,
-        game_snapshot=game_snapshot,
-    )
+    build = _production_shadow_record if use_firestore else build_shadow_record
+    record = build(player_id, recorded_at=recorded_at, game_snapshot=game_snapshot)
     exclusion = ledger.setdefault("exclusions", {}).get(player_id)
     if exclusion is not None:
         record["eligibility"] = {
@@ -556,6 +619,7 @@ def ensure_shadow_lock_before_saved_game(
     *,
     game_snapshot: dict[str, Any],
     ledger_path: Path = SHADOW_LEDGER_PATH,
+    use_firestore: bool = False,
 ) -> ShadowGameGuard:
     """Fail closed for a future configuration's first saved rated game."""
     try:
@@ -608,6 +672,7 @@ def ensure_shadow_lock_before_saved_game(
             player_id,
             ledger_path=ledger_path,
             game_snapshot=game_snapshot,
+            use_firestore=use_firestore,
         )
         if record is None or not record.get("prediction_locked"):
             raise ValueError("shadow prediction was not locked")
@@ -617,7 +682,9 @@ def ensure_shadow_lock_before_saved_game(
             "immutable shadow prediction locked before first saved game",
             record,
         )
-    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+    except _SupplementsDeferred as deferred:
+        return ShadowGameGuard(True, "supplements-deferred", str(deferred))
+    except (KeyError, OSError, TypeError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         return ShadowGameGuard(
             False,
             "shadow-lock-failed",

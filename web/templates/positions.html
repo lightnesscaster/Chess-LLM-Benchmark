@@ -121,7 +121,7 @@
 <div class="positions-stats">
     <div class="positions-stat">
         <div class="value">{{ current_rows|length }}</div>
-        <div class="label">Current results</div>
+        <div class="label">Current core results</div>
     </div>
     <div class="positions-stat">
         <div class="value">{{ error_stats.count }}</div>
@@ -181,6 +181,7 @@
                     {{ row.player_id }}
                     {% if row.is_engine %}<span class="status-badge">Engine</span>{% endif %}
                     {% if not row.is_current %}<span class="status-badge" title="{{ row.status_reason|e }} — not used to seed ratings">Legacy</span>{% endif %}
+                    {% if row.deferred_supplement_source %}<small class="muted"><br>Supplements deferred using {{ row.deferred_supplement_source }}</small>{% endif %}
                 </td>
                 <td class="rating">
                     {% if row.prediction is not none %}
@@ -200,8 +201,8 @@
                 <td>{{ row.equal_cpl }}</td>
                 <td>{{ "%.0f"|format(row.best_pct) }}%</td>
                 <td>{{ "%.0f"|format(row.legal_pct) }}%</td>
-                <td>{% if row.game_like_cpl is not none %}{{ row.game_like_cpl }}{% else %}<span class="muted">–</span>{% endif %}</td>
-                <td>{% if row.stability_risk is not none %}{{ "%.1f"|format(row.stability_risk) }}%{% else %}<span class="muted">–</span>{% endif %}</td>
+                <td>{% if row.game_like_cpl is not none %}{{ row.game_like_cpl }}{% elif row.deferred_supplement_source %}<span class="muted">Deferred</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+                <td>{% if row.stability_risk is not none %}{{ "%.1f"|format(row.stability_risk) }}%{% elif row.deferred_supplement_source %}<span class="muted">Deferred</span>{% else %}<span class="muted">–</span>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -214,6 +215,9 @@
     <p><strong>Eq. CPL</strong> = Average centipawn loss on 50 equal positions (illegal moves score as a large loss)</p>
     <p><strong>Best%</strong> = Moves matching Stockfish's best move; <strong>Legal%</strong> = Legal moves on the first attempt</p>
     <p><strong>Stability Risk</strong> = Forfeit rate plus catastrophic-blunder rate when play continues from probe positions</p>
+    {% if rows|selectattr('deferred_supplement_source')|first %}
+    <p><strong>Deferred</strong> means a lower reasoning effort qualified this player to skip both supplemental panels. Each prediction uses the player's own measurements.</p>
+    {% endif %}
     <p><span class="unreliable-indicator">Legacy</span> = Results from an older protocol; shown for reference but not used to seed ratings</p>
 </div>
 {% else %}

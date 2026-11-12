@@ -142,7 +142,7 @@ async def run(args: argparse.Namespace) -> int:
     queued: list[tuple[str, Any, float]] = []
     for player_id in players:
         config = configs[player_id]
-        for panel in missing_panels(player_id, policy, state):
+        for panel in missing_panels(player_id, policy, state, full_audit=True):
             estimate = estimated_panel_cost(
                 calculator,
                 player_id,
@@ -172,7 +172,7 @@ async def run(args: argparse.Namespace) -> int:
     try:
         for player_id in players:
             config = configs[player_id]
-            for panel in missing_panels(player_id, policy, state):
+            for panel in missing_panels(player_id, policy, state, full_audit=True):
                 estimate = estimated_panel_cost(
                     calculator,
                     player_id,

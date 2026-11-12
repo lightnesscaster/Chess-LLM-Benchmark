@@ -1,60 +1,54 @@
 # Position Benchmark: Canonical Production Specification
 
-## Run the full production benchmark
+## Run a production position benchmark
 
-**An unqualified request to run a model's position benchmark means the complete
-production suite below.** The 50-position core is only its first panel. Core
-readiness allows a rating seed; it is not full-suite completion. Run core-only
-only when explicitly requested.
-
-The source of truth is `benchmark_manifest.json` →
-`automatic_acquisition.panel_order`:
-
-| Order | Panel | Workload | Scoring |
-|---|---|---|---|
-| 1 | Core | 50 history-replayed positions | Stockfish depth 30 |
-| 2 | Game-like | 48 history-replayed positions | Stockfish depth 30 |
-| 3 | Continuation stability | 8 stratified starts × 8 plies; up to 32 model turns | Stockfish depth 30 |
-
-The planned base is **130 first-attempt calls**, plus conditional retries
-(130–236 calls in total; terminal continuations can finish early). “Optional” and
-“downside-only” below describe how supplements affect the rating formula. The
-normal production acquisition workflow still includes both supplements.
-
-For a configured player, run these commands in order, replacing the example ID:
+For one configured model, use its exact rated player ID, including effort:
 
 ```bash
-python position_benchmark/run_benchmark.py --players 'gemini-4-carbon (medium)' --depth 30 --retry-missing
-python position_benchmark/run_benchmark.py --players 'gemini-4-carbon (medium)' --positions position_benchmark/panels/game_like_48.json --output position_benchmark/results/game_like.json --depth 30 --retry-missing
-python scripts/run_stability_probe.py --players 'gemini-4-carbon (medium)' --limit 8 --probe-plies 8 --score-depth 30 --random-seed 1729
+python -m position_benchmark.run_production --player 'gemini-4-carbon (medium)'
 ```
 
-The configured provider and reasoning effort must match the rated player. Keep
-ready panels and acquire only missing or stale panels; do not repeat an already
-ready continuation panel. `--retry-missing` resumes absent rows; it does not
-refresh existing rows with an obsolete version, prompt history, or scoring depth.
-If readiness identifies a stale static panel, rerun that panel without
-`--retry-missing`. Canonical runs publish results and automatically apply
-changed seeds to saved rating history. If sync fails, retry the saved panel using
-`python -m position_benchmark.sync`; do not repeat model calls.
+The command measures the 50-position core at Stockfish depth 30 and checks the
+manifest's acquisition policy after publication. It reuses ready measurements in
+production, publishes locally saved ready panels when needed, and runs the
+remaining required panels in manifest order. The model's configured provider and
+reasoning effort apply to each panel.
 
-Before reporting **full benchmark complete**, verify all manifest panels:
+| Panel | Workload | When acquired |
+|---|---|---|
+| Core | 50 history-replayed positions | Every configuration needs its own current core |
+| Game-like | 48 history-replayed positions | When required by the screen or an explicit full audit |
+| Continuation stability | 8 stratified starts × 8 plies, up to 32 model turns | When required by the screen or an explicit full audit |
+
+For an eligible higher effort, the screen examines the nearest lower effort of
+the same model with all three panels measured and published. Its downside panels must leave
+both its own baseline and the target's baseline unchanged under the current
+scorer and matching profile. The target must have no supplemental evidence.
+A passing screen defers both supplements, saving up to 80 first-attempt calls.
+The target's own measured core supplies its prediction. The completion report
+names the supporting lower effort and lists each deferred panel separately.
+
+To explicitly measure every panel for a spot audit or an all-panel request:
 
 ```bash
-python - <<'PY'
-from position_benchmark.acquisition import load_acquisition_policy, panel_readiness
-player_id = "gemini-4-carbon (medium)"  # replace with the requested player
-states = {panel.name: panel_readiness(panel, player_id)
-          for panel in load_acquisition_policy().panels}
-for name, state in states.items():
-    print(name, "ready" if state.is_ready else state.reason)
-assert all(state.is_ready for state in states.values()), "Full production suite is incomplete"
-PY
+python -m position_benchmark.run_production --player 'gemini-4-carbon (medium)' --full-audit
 ```
 
-Also confirm all three panels are published, the latest automatic rating-update
-receipt is applied, and the live rating matches production. Report a completed
-core as **core complete, supplemental panels pending** until these checks pass.
+A fresh three-panel measurement plans 130 first attempts and up to 106 conditional
+retries. Terminal continuations can finish early. Rerunning the command preserves
+published measurements. For a specifically requested core-only run, use
+`python position_benchmark/run_benchmark.py --players 'PLAYER_ID' --depth 30`
+after checking existing core readiness.
+
+Both targeted modes verify the measured panels in Firestore, the applied
+rating-update generation and receipt, and the rounded live leaderboard rating
+before reporting completion. The final JSON distinguishes measured panels from
+policy deferrals. Status reads use local Firebase credentials when configured,
+or the authenticated Render CLI with the same policy deployed. The command checks
+the local Stockfish profile before acquisition. For a static panel with valid saved
+responses and obsolete scores, it rescores those moves before filling missing rows.
+After interrupted publication, rerun the targeted command to publish saved ready
+panels or resume a pending rating replay without repeating model calls.
 
 ## Specification and rating readiness
 
@@ -131,12 +125,11 @@ uses 50–100 total calls per configuration. For 12 configurations, the base is 
 calls and the exact total is `600 + the number of first-attempt illegals` (at most
 1200). That remains the correct count when discussing the core alone.
 
-The scheduler's complete automatic acquisition suite is larger: 50 core calls, 48
-game-like calls, and up to 32 first-attempt continuation turns, or **130 planned
-first-attempt calls per configuration**. Conditional retries add 0–50 core calls,
-0–48 game-like calls, and at most eight continuation calls. The automatic suite is
-therefore 130–236 calls per configuration; for 12 configurations its planned base
-is 1,560 calls, not 600.
+For a fresh configuration that needs all panels, the workload adds 48 game-like
+calls and up to 32 first-attempt continuation turns, giving 130 planned first
+attempts. Conditional retries add up to 50 core calls, 48 game-like calls and
+eight continuation calls. With both supplements deferred, a fresh configuration
+uses only its 50 core first attempts plus any conditional core retries.
 
 The retry call uses the same player method and arguments as a production game:
 the unchanged history-replayed board, `is_retry=True`, and
@@ -206,17 +199,14 @@ Historical tools may override that protection only by explicitly passing
 
 ## Automatic acquisition policy
 
-`benchmark_manifest.json` defines `production-supplements-depth30-v2`. For every model
-selected in a normal benchmark run that is configured, non-engine, and not frozen,
-the scheduler checks current readiness and acquires missing panels in this fixed
-order:
+`benchmark_manifest.json` defines `production-lower-effort-screen-v1`. For each
+eligible configured model, the scheduler checks the core first. It reevaluates
+the lower-effort screen after acquisition. Targets with no eligible source, an
+incompatible scorer, a binding downside panel or existing partial supplemental
+evidence proceed to the missing game-like and continuation panels in that order.
+An explicit full audit uses the same order and measures all missing panels.
 
-1. `core`;
-2. `game_like`;
-3. `continuation_stability`.
-
-This is not an operator choice. A model with a valid core but missing or stale
-supplements is still queued. Static rows must have history replay, the required
+Static rows must have history replay, the required
 Stockfish depth, and complete position coverage. Every new acquisition records the
 production retry protocol; otherwise-current historical static rows are not
 invalidated solely because retry recovery was not measured, since it remains
@@ -289,11 +279,10 @@ A negative error therefore means the position benchmark overestimated the model.
 
 ## Automatic downside checks
 
-These panels address specific optimistic failure modes. The scheduler acquires them
-automatically, but they are not required for a production-ready core result, do not
-provide positive evidence, and never increase the core estimate. This distinction
-allows historical core-only results to remain readable without making acquisition
-for new or actively selected models manual.
+These panels address specific optimistic failure modes and can only lower the
+core estimate. The scheduler acquires them when the lower-effort screen calls
+for measurement. A configuration with deferred supplements keeps its own core
+estimate and its eligibility for ordinary games.
 
 ### Non-opening game-like panel
 
@@ -636,8 +625,7 @@ python position_benchmark/run_benchmark.py \
 Use `--limit 1` and a temporary `--output` for a smoke test. Do not merge smoke-test
 rows into the production results file.
 
-The normal scheduler runs the core and both automatic supplements without separate
-commands:
+The normal scheduler applies the same lower-effort screen when acquiring panels for its selected models:
 
 ```bash
 python cli.py run -c config/benchmark.yaml -v
@@ -744,7 +732,7 @@ Any future change to the production methodology must include all of the followin
 3. Record the exact validation cohort, commit, MAE, RMSE, error definition, and
    target-failure count.
 4. Separate current rows from legacy or provider-mismatched rows.
-5. State the core and full automatic-acquisition call counts explicitly.
+5. State the core, deferred and fully measured workloads explicitly.
 6. Preserve the model API/provider surface between the position benchmark, automatic
    probes, and rated games, or label the comparison as provider-mismatched.
 

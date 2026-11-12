@@ -106,11 +106,19 @@ def sync_via_render(payload: dict) -> dict:
         "urllib.request.urlopen(req,timeout=30).close(); "
         "print('POSITION_SYNC_COMPLETE '+json.dumps(receipt),flush=True)"
     )
+    receipt = render_job_receipt(code, "POSITION_SYNC_COMPLETE")
+    if receipt.get("player_id") != payload["player_id"] or receipt.get("panel") != payload["panel"]:
+        raise ValueError("Position sync receipt mismatch")
+    return receipt
+
+
+def render_job_receipt(code: str, marker: str) -> dict:
+    """Run a service-side Python command and read its compact completion receipt."""
     created = subprocess.run(["render", "jobs", "create", SERVICE_ID, "--start-command",
                               "python -c " + shlex.quote(code), "--output", "json", "--confirm"],
                              capture_output=True, text=True, timeout=90, check=True)
     job_id = json.loads(created.stdout)["id"]
-    print(f"Position sync job: {job_id}", flush=True)
+    print(f"Position benchmark job: {job_id}", flush=True)
     deadline = time.monotonic() + 600
     while time.monotonic() < deadline:
         output = subprocess.run(["render", "logs", "--resources", job_id, "--limit", "8",
@@ -121,13 +129,10 @@ def sync_via_render(payload: dict) -> dict:
             entry, end = decoder.raw_decode(output.lstrip())
             output = output.lstrip()[end:]
             message = entry.get("message", "")
-            if message.startswith("POSITION_SYNC_COMPLETE "):
-                receipt = json.loads(message.removeprefix("POSITION_SYNC_COMPLETE "))
-                if receipt.get("player_id") != payload["player_id"] or receipt.get("panel") != payload["panel"]:
-                    raise ValueError("Position sync receipt mismatch")
-                return receipt
+            if message.startswith(marker + " "):
+                return json.loads(message.removeprefix(marker + " "))
         time.sleep(10)
-    raise TimeoutError(f"Sync not confirmed; inspect Render job {job_id}. Retry sync, not model calls.")
+    raise TimeoutError(f"{marker} not confirmed; inspect Render job {job_id} before retrying.")
 
 
 def sync_panel(player_id: str, panel: str, record: dict) -> dict:

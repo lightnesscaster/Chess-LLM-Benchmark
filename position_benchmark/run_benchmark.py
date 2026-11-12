@@ -1,8 +1,8 @@
 """Run the history-replayed position benchmark on model configurations.
 
-This command runs one static panel, defaulting to the 50-position core. The full
-production suite also includes 48 game-like positions and 8 continuation probes.
-See the full-suite workflow at the top of ``position_benchmark/README.md``.
+This command runs one static panel, defaulting to the 50-position core.
+Use ``python -m position_benchmark.run_production`` to apply the supplemental
+acquisition policy and verify production publication.
 """
 
 import asyncio
@@ -31,6 +31,7 @@ from engines.maia_engine import MaiaEngine
 from engines.random_engine import RandomEngine
 from position_benchmark.predictions import CURRENT_BENCHMARK_VERSION, result_row_is_current
 from position_benchmark.layout import CORE_POSITIONS_PATH, CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, RESULT_SCHEMA_VERSION
+from position_benchmark.panel_records import merge_player_record
 from position_benchmark.token_accounting import sum_result_row_tokens
 from position_benchmark.retry_protocol import (
     CONDITIONAL_RETRY_PROTOCOL_VERSION,
@@ -780,7 +781,7 @@ async def run_benchmark_for_scheduler(
                          combined position registry.
         results_path: Canonical output for the selected panel.
         sync_firestore: Whether to sync the result to the production core
-                        collection. Defaults to true only for ``CORE_RESULTS_PATH``.
+                        collection. Defaults to true for canonical static panel paths.
 
     Returns:
         {"success": True, "summary": dict, "token_usage": dict} on success
@@ -804,12 +805,7 @@ async def run_benchmark_for_scheduler(
                     r["position_idx"] = original_indices[subset_idx]
 
         # Merge into the canonical panel results file.
-        all_results = {}
-        if results_path.exists():
-            with open(results_path) as f:
-                all_results = json.load(f)
-
-        all_results[player_id] = {
+        record = {
             "summary": result["summary"],
             "results": result["results"],
             "token_usage": result.get("token_usage", {"prompt": 0, "completion": 0}),
@@ -817,26 +813,26 @@ async def run_benchmark_for_scheduler(
             "run_model_calls": result.get("run_model_calls", 0),
         }
 
-        results_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(results_path, "w") as f:
-            json.dump(all_results, f, indent=2)
+        merge_player_record(results_path, player_id, record)
 
         should_sync_firestore = (
             results_path.resolve() in {CORE_RESULTS_PATH.resolve(), GAME_LIKE_RESULTS_PATH.resolve()}
             if sync_firestore is None
             else sync_firestore
         )
+        sync_error = None
         if should_sync_firestore:
             # Core rows are synced per model to avoid Firestore's 1 MiB document limit.
             try:
                 from position_benchmark.sync import sync_panel
                 panel = "game_like" if results_path.resolve() == GAME_LIKE_RESULTS_PATH.resolve() else "core"
-                await asyncio.to_thread(sync_panel, player_id, panel, all_results[player_id])
+                await asyncio.to_thread(sync_panel, player_id, panel, record)
             except Exception as e:
-                print(f"  Warning: Failed to sync benchmark results to Firestore: {e}")
+                sync_error = str(e) or type(e).__name__
 
         return {
             "success": True,
+            "sync_error": sync_error,
             "summary": result["summary"],
             # The scheduler uses this to charge the run budget, including retries.
             "token_usage": result.get(
@@ -1060,7 +1056,7 @@ def calculate_actual_benchmark_cost(
 
 async def main():
     parser = argparse.ArgumentParser(
-        description="Run one static position panel; full production also requires game-like and continuation panels (see position_benchmark/README.md)",
+        description="Run one static position panel. For adaptive production acquisition use python -m position_benchmark.run_production.",
     )
     parser.add_argument(
         "--positions",
@@ -1215,7 +1211,7 @@ async def main():
         f"({blunder_count} blunder, {equal_count} equal)"
     )
     if panel_metadata.get("panel") == "core-equal":
-        print("CORE PANEL ONLY: 50 equal positions. Full production also requires 48 game-like positions and 8 continuation probes; see position_benchmark/README.md.")
+        print("Core panel: 50 equal positions. Use the production acquisition command to check whether supplemental panels are needed.")
 
     # Load player configs
     all_players = load_player_configs()
@@ -1514,11 +1510,7 @@ async def main():
                     print(f"  [{ptype}] Legal: {ts['legal_pct']:.1f}%  Best: {ts['best_pct']:.1f}%  CPL: {ts['avg_cpl']:.1f}")
             print(f"  Time: {elapsed:.1f}s")
 
-            all_results[player_id] = result
-
-            # Save intermediate results
-            with open(args.output, "w") as f:
-                json.dump(all_results, f, indent=2)
+            all_results = merge_player_record(args.output, player_id, result)
 
             if should_sync_firestore:
                 # Sync to Firestore (per-model document to avoid 1 MiB limit)

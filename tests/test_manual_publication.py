@@ -83,7 +83,12 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     monkeypatch.setattr(cli, "PGNLogger", Logger)
     monkeypatch.setattr(cli, "RatingStore", lambda **kwargs: SimpleNamespace(get=lambda pid: SimpleNamespace(rating=1500, rating_deviation=100, games_played=3, games_rd=100)))
     monkeypatch.setattr("rating.prompt_context.rating_snapshot", lambda *args: {})
-    monkeypatch.setattr("position_benchmark.stability_cap_shadow.ensure_shadow_lock_before_saved_game", lambda *a, **k: SimpleNamespace(allowed=True, record=None))
+    guard_sources = []
+    def admit_game(player_id, *, game_snapshot, use_firestore):
+        guard_sources.append(use_firestore)
+        return SimpleNamespace(allowed=True, record=None)
+
+    monkeypatch.setattr("position_benchmark.stability_cap_shadow.ensure_shadow_lock_before_saved_game", admit_game)
     monkeypatch.setattr(cli, "invalidate_remote_cache", lambda: None)
     monkeypatch.setattr(publication, "publish_saved_game", lambda path: calls.append(path) or {"status": "published"})
     monkeypatch.setattr(publication, "load_production_ratings", lambda store: None)
@@ -91,6 +96,7 @@ def test_manual_completion_publishes_by_default_but_respects_opt_outs(monkeypatc
     assert len(calls) == published
     assert len(writes) == saved
     assert live_flags == [not flags]
+    assert guard_sources == ([] if "--no-save" in flags else ["--local-only" not in flags] * 2)
     if str(mixed).startswith("claude"):
         assert [kind for kind, _ in constructed] == ["ClaudeFake", "Player"]
         assert player_ids == ["claude-fable-5.2 (high)", "gpt-6-astra (medium)"]

@@ -25,14 +25,21 @@
   "error_definition": "actual_game_rating - predicted_rating",
   "automatic_acquisition": {
     "enabled": true,
-    "policy_version": "production-supplements-depth30-v2",
+    "policy_version": "production-lower-effort-screen-v1",
     "eligibility": "selected-configured-non-engine-non-frozen",
     "panel_order": [
       "core",
       "game_like",
       "continuation_stability"
     ],
-    "completion_policy": "current-readiness-v2",
+    "completion_policy": "measured-or-screened-core-v1",
+    "supplement_deferral": {
+      "effort_order": ["minimal", "low", "medium", "high", "xhigh", "max"],
+      "target": "current-core-with-no-supplemental-records",
+      "source": "nearest-lower-effort-of-the-same-model-with-all-three-panels-measured",
+      "condition": "source-supplements-leave-both-source-and-target-seeds-unchanged",
+      "audit_override": "--full-audit"
+    },
     "legacy_static_retry_policy": "additive-does-not-invalidate-ready-rows",
     "resume_policy": "first-missing-panel",
     "budget_policy": "check-before-each-panel",

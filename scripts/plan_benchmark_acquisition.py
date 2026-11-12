@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the exact zero-call automatic benchmark acquisition preflight."""
+"""Preview automatic benchmark acquisition without model calls."""
 
 from __future__ import annotations
 
@@ -43,6 +43,11 @@ class AcquisitionPlanRow:
     rating: float
     rating_deviation: float
     priority: float
+    measured_panels: tuple[str, ...]
+    publish_saved_panels: tuple[str, ...]
+    source_player_id: str | None
+    policy_deferred_panels: tuple[str, ...]
+    conditional_panels: tuple[str, ...]
     missing_panels: tuple[str, ...]
     scheduled_panels: tuple[str, ...]
     deferred_panels: tuple[str, ...]
@@ -141,18 +146,34 @@ def build_acquisition_plan(
         priority = rating.rating_deviation / (
             1 + PRIORITY_COST_SENSITIVITY * player_cost
         )
+        measured = acquisition_state.get(player_id, set())
+        source = getattr(acquisition_state, "deferred_sources", {}).get(player_id)
+        missing_names = tuple(panel.name for panel in missing)
+        local = getattr(acquisition_state, "local_ready_panels", {}).get(player_id, set())
+        billable = [panel for panel in missing if panel.name not in local]
         common = {
             "player_id": player_id,
             "rating": float(rating.rating),
             "rating_deviation": float(rating.rating_deviation),
             "priority": float(priority),
+            "measured_panels": tuple(panel.name for panel in policy.panels if panel.name in measured),
+            "source_player_id": source,
+            "policy_deferred_panels": tuple(
+                panel.name for panel in policy.panels
+                if source and panel.name not in measured and panel.name not in missing_names
+            ),
+            "conditional_panels": tuple(
+                panel.name for panel in billable
+                if not measured and not (local - {"core"}) and panel.name != "core"
+            ),
+            "missing_panels": missing_names,
         }
         if not missing:
             completed_rows.append(
                 AcquisitionPlanRow(
                     **common,
-                    status="complete",
-                    missing_panels=(),
+                    status="policy-deferred" if source else "complete",
+                    publish_saved_panels=(),
                     scheduled_panels=(),
                     deferred_panels=(),
                     planned_first_attempt_calls=0,
@@ -170,7 +191,7 @@ def build_acquisition_plan(
                 AcquisitionPlanRow(
                     **common,
                     status="frozen",
-                    missing_panels=tuple(panel.name for panel in missing),
+                    publish_saved_panels=(),
                     scheduled_panels=(),
                     deferred_panels=tuple(panel.name for panel in missing),
                     planned_first_attempt_calls=0,
@@ -179,24 +200,26 @@ def build_acquisition_plan(
                 )
             )
             continue
+        common["publish_saved_panels"] = tuple(panel.name for panel in missing if panel.name in local)
         candidates.append(
             {
-                **common,
+                "common": common,
                 "config": player_config,
-                "missing": missing,
+                "missing": billable,
             }
         )
 
-    candidates.sort(key=lambda row: row["priority"], reverse=True)
+    candidates.sort(key=lambda row: row["common"]["priority"], reverse=True)
     projected_cost = 0.0
     queued_rows: list[AcquisitionPlanRow] = []
     for candidate in candidates:
+        common = candidate["common"]
         scheduled: list[AcquisitionPanel] = []
         deferred: list[AcquisitionPanel] = []
         row_cost = 0.0
         for index, panel in enumerate(candidate["missing"]):
             panel_cost = estimate_panel_cost(
-                candidate["player_id"],
+                common["player_id"],
                 candidate["config"],
                 panel,
                 reasoning_ids=reasoning_ids,
@@ -214,18 +237,13 @@ def build_acquisition_plan(
             if scheduled and deferred
             else "queued"
             if scheduled
-            else "budget-deferred"
+            else "budget-deferred" if deferred
+            else "publish-only"
         )
         queued_rows.append(
             AcquisitionPlanRow(
-                player_id=candidate["player_id"],
+                **common,
                 status=status,
-                rating=candidate["rating"],
-                rating_deviation=candidate["rating_deviation"],
-                priority=candidate["priority"],
-                missing_panels=tuple(
-                    panel.name for panel in candidate["missing"]
-                ),
                 scheduled_panels=tuple(panel.name for panel in scheduled),
                 deferred_panels=tuple(panel.name for panel in deferred),
                 planned_first_attempt_calls=sum(
@@ -249,8 +267,10 @@ def plan_summary(rows: list[AcquisitionPlanRow], policy: AcquisitionPolicy) -> d
         "zero_model_calls": True,
         "configured_models": len(rows),
         "complete_models": sum(row.status == "complete" for row in rows),
+        "policy_deferred_models": sum(row.status == "policy-deferred" for row in rows),
         "frozen_models": sum(row.status == "frozen" for row in rows),
         "queued_models": len(scheduled),
+        "publish_only_models": sum(row.status == "publish-only" for row in rows),
         "budget_deferred_models": sum(
             row.status in {"queued-partial", "budget-deferred"} for row in rows
         ),
@@ -274,27 +294,39 @@ def print_plan(summary: dict[str, Any]) -> None:
     print(
         "Models: "
         f"{summary['queued_models']} queued, "
-        f"{summary['complete_models']} complete, "
+        f"{summary['complete_models']} measured complete, "
+        f"{summary['policy_deferred_models']} policy-deferred, "
         f"{summary['frozen_models']} frozen, "
-        f"{summary['budget_deferred_models']} budget-deferred"
+        f"{summary['budget_deferred_models']} budget-deferred, "
+        f"{summary['publish_only_models']} publish-only"
     )
     print(
         f"Scheduled workload: {summary['planned_first_attempt_calls']} base calls + "
         f"up to {summary['maximum_retry_calls']} retries, "
         f"estimated base cost ${summary['estimated_base_cost']:.4f}"
     )
+    if any(row["conditional_panels"] for row in summary["rows"]):
+        print("Estimates include potential supplemental work pending core results.")
     print()
     for row in summary["rows"]:
-        if not row["missing_panels"]:
+        if not row["missing_panels"] and not row["policy_deferred_panels"]:
             continue
         scheduled = ",".join(row["scheduled_panels"]) or "-"
         deferred = ",".join(row["deferred_panels"]) or "-"
+        policy_note = (
+            f"  policy-defer={','.join(row['policy_deferred_panels'])}"
+            f" (source: {row['source_player_id']})" if row["policy_deferred_panels"] else ""
+        )
+        if row["publish_saved_panels"]:
+            policy_note += f"  publish-saved={','.join(row['publish_saved_panels'])}"
+        if row["conditional_panels"]:
+            policy_note += f"  pending-core={','.join(row['conditional_panels'])}"
         print(
             f"{row['status']:>15}  {row['player_id']}  "
             f"RD={row['rating_deviation']:.0f}  "
             f"run={scheduled}  defer={deferred}  "
             f"calls={row['planned_first_attempt_calls']}  "
-            f"cost=${row['estimated_base_cost']:.4f}"
+            f"cost=${row['estimated_base_cost']:.4f}{policy_note}"
         )
 
 
@@ -338,7 +370,7 @@ def run_preflight(
         engine_ids,
     )
     policy = load_acquisition_policy()
-    state = load_acquisition_state(policy)
+    state = load_acquisition_state(policy, use_firestore=rating_store._use_firestore)
     cost_calculator = CostCalculator(config_path=config_path)
     effective_max_cost = (
         float(max_cost)

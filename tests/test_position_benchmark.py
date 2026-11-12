@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 import hashlib
 import json
 import tempfile
@@ -9,9 +10,11 @@ from unittest.mock import AsyncMock, patch
 from pathlib import Path
 
 import chess
+import pytest
 
 from game.match_scheduler import MatchScheduler
 from position_benchmark.acquisition import (
+    AcquisitionState,
     SUPPORTED_AUTOMATIC_PANELS,
     load_acquisition_policy,
     load_acquisition_state,
@@ -200,26 +203,17 @@ class ProductionContractTests(unittest.TestCase):
             all(row["score_depth"] == 30 for row in record["results"])
         )
 
-    def test_scheduler_runs_missing_supplements_in_manifest_order(self) -> None:
-        policy = load_acquisition_policy()
+    def make_panel_scheduler(self, state, players):
         scheduler = object.__new__(MatchScheduler)
-        scheduler.players = {"core-only": object()}
-        scheduler._llm_configs = {"core-only": {"model_name": "test/model"}}
-        scheduler._acquisition_policy = policy
-        scheduler._acquisition_state = {"core-only": {"core"}}
+        scheduler.players = {player: object() for player in players}
+        scheduler._llm_configs = {player: {"model_name": "test/model"} for player in players}
+        scheduler._acquisition_policy = load_acquisition_policy()
+        scheduler._acquisition_state = state
         scheduler._benchmark_completed = set()
         scheduler._games_played = {}
         scheduler.verbose = False
         scheduler.rating_store = SimpleNamespace(
-            get=lambda _player_id: SimpleNamespace(
-                rating=1000,
-                rating_deviation=300,
-                games_rd=350,
-                games_played=0,
-                wins=0,
-                losses=0,
-                draws=0,
-            ),
+            get=lambda _player_id: SimpleNamespace(rating_deviation=300),
             refresh_benchmark_predictions=lambda: None,
         )
         scheduler._freeze_checker = SimpleNamespace(
@@ -227,67 +221,174 @@ class ProductionContractTests(unittest.TestCase):
         )
         scheduler._calculate_priority = lambda _player_id: 1.0
         scheduler._estimate_benchmark_cost = lambda _player_id, _panel: 0.01
-        scheduler._actual_benchmark_cost = (
-            lambda _player_id, _tokens, model_calls: 0.01
-        )
+        scheduler._actual_benchmark_cost = lambda _pid, _tokens, model_calls: 0.01
+        scheduler._record_stability_cap_shadow = lambda _player_id: True
+        return scheduler
 
-        calls: list[str] = []
-        shadow_calls: list[str] = []
-        scheduler._record_stability_cap_shadow = (
-            lambda player_id: not shadow_calls.append(player_id)
-        )
+    def run_scheduler_with_fake_measurements(self, scheduler, measured, source_after_run=None):
+        calls = []
+        players = list(scheduler.players)
+        panels = {panel.results_path: panel for panel in scheduler._acquisition_policy.panels}
 
-        async def fake_positions(**kwargs):
-            calls.append(kwargs["results_path"].name)
+        async def save_result(**kwargs):
+            panel = panels[kwargs["results_path"]]
+            player_id = kwargs["player_id"]
+            calls.append((player_id, panel.name))
+            # Canonical static results use the runner's default publication behavior.
+            if panel.runner == "positions":
+                self.assertIsNot(kwargs.get("sync_firestore"), False)
+            measured.setdefault(player_id, set()).add(panel.name)
+            if source_after_run:
+                source_after_run(measured)
             return {
                 "success": True,
                 "summary": {"avg_cpl": 10.0, "legal_pct": 100.0},
                 "token_usage": {"prompt": 1, "completion": 1},
-                "model_calls": 48,
+                "model_calls": panel.planned_first_attempt_calls,
             }
 
-        async def fake_continuation(**_kwargs):
-            calls.append("stability.json")
-            return {
-                "success": True,
-                "summary": {"model_avg_cpl": 20.0, "model_legal_pct": 100.0},
-                "token_usage": {"prompt": 1, "completion": 1},
-                "model_calls": 32,
-            }
-
-        engine = SimpleNamespace(quit=lambda: None)
         counters = {"total_cost": 0.0}
         with (
             patch(
                 "position_benchmark.run_benchmark.run_benchmark_for_scheduler",
-                side_effect=fake_positions,
+                side_effect=save_result,
             ),
+            patch("scripts.run_stability_probe.run_probe_for_scheduler", side_effect=save_result),
+            patch("game.match_scheduler.panel_readiness", return_value=PredictionReadiness(True, "ready")),
             patch(
-                "scripts.run_stability_probe.run_probe_for_scheduler",
-                side_effect=fake_continuation,
+                "game.match_scheduler.load_acquisition_state",
+                side_effect=lambda _policy, **_kwargs: deepcopy(measured),
             ),
-            patch(
-                "game.match_scheduler.panel_readiness",
-                return_value=PredictionReadiness(True, "ready"),
-            ),
-            patch("chess.engine.SimpleEngine.popen_uci", return_value=engine),
+            patch("chess.engine.SimpleEngine.popen_uci"),
         ):
-            deferred = asyncio.run(
-                scheduler._run_position_benchmarks(
-                    ["core-only"],
-                    counters,
-                    max_cost=10.0,
-                )
-            )
+            deferred_games = asyncio.run(scheduler._run_position_benchmarks(players, counters, 10.0))
+        return calls, deferred_games, counters["total_cost"]
 
-        self.assertEqual(calls, ["game_like.json", "stability.json"])
-        self.assertEqual(deferred, {"core-only"})
-        self.assertEqual(
-            scheduler._acquisition_state["core-only"],
-            set(SUPPORTED_AUTOMATIC_PANELS),
-        )
+    def test_scheduler_runs_missing_supplements_in_manifest_order(self) -> None:
+        measured = {"core-only": {"core"}}
+        scheduler = self.make_panel_scheduler(measured, ["core-only"])
+        shadow_calls = []
+        scheduler._record_stability_cap_shadow = lambda player_id: not shadow_calls.append(player_id)
+
+        calls, deferred_games, cost = self.run_scheduler_with_fake_measurements(scheduler, measured)
+
+        self.assertEqual(calls, [("core-only", "game_like"), ("core-only", "continuation_stability")])
+        self.assertEqual(deferred_games, {"core-only"})
+        self.assertAlmostEqual(cost, 0.02)
         self.assertIn("core-only", scheduler._benchmark_completed)
         self.assertEqual(shadow_calls, ["core-only"])
+
+    def test_scheduler_rechecks_siblings_and_new_core_before_paid_supplements(self) -> None:
+        lower, middle, higher = "example (low)", "example (medium)", "example (high)"
+        initial = AcquisitionState()
+        initial.update({lower: {"core", "game_like"}, middle: {"core"}})
+        measured = deepcopy(initial)
+        scheduler = self.make_panel_scheduler(initial, [lower, middle, higher])
+
+        def update_sources(state):
+            if "continuation_stability" in state[lower]:
+                for sibling in (middle, higher):
+                    if "core" in state.get(sibling, set()):
+                        state.deferred_sources[sibling] = lower
+
+        calls, deferred_games, cost = self.run_scheduler_with_fake_measurements(
+            scheduler, measured, update_sources
+        )
+        self.assertEqual(calls, [(lower, "continuation_stability"), (higher, "core")])
+        self.assertEqual(deferred_games, {lower, higher})
+        self.assertEqual(scheduler._benchmark_completed, {lower})
+        self.assertEqual(scheduler._games_played, {lower: 1, higher: 1})
+        self.assertAlmostEqual(cost, 0.02)
+
+    def test_nearer_measured_source_can_revoke_an_initial_deferral(self) -> None:
+        lower, middle, higher = "example (low)", "example (medium)", "example (high)"
+        for order in ([middle, higher], [higher, middle]):
+            with self.subTest(order=order):
+                initial = AcquisitionState()
+                initial.update({middle: {"core", "game_like"}, higher: {"core"}})
+                initial.deferred_sources[higher] = lower
+                measured = deepcopy(initial)
+                measured.deferred_sources.clear()
+                scheduler = self.make_panel_scheduler(initial, order)
+                calls, excluded, _ = self.run_scheduler_with_fake_measurements(scheduler, measured)
+                expected = [(middle, "continuation_stability")]
+                if order[0] == middle:
+                    expected.extend([(higher, "game_like"), (higher, "continuation_stability")])
+                self.assertEqual(calls, expected)
+                self.assertEqual(excluded, {middle, higher})
+
+    def test_scheduler_charges_saved_core_and_blocks_supplements_until_publication(self) -> None:
+        player = "fresh (high)"
+        state = AcquisitionState()
+        scheduler = self.make_panel_scheduler(state, [player])
+        scheduler.rating_store._use_firestore = True
+        counters = {"total_cost": 0.0}
+        async def measure(**kwargs):
+            return {
+                "success": True,
+                "summary": {"avg_cpl": 3, "legal_pct": 100},
+                "token_usage": {"prompt": 10, "completion": 5},
+                "model_calls": 51,
+            }
+
+        with (
+            patch("position_benchmark.run_benchmark.run_benchmark_for_scheduler", side_effect=measure) as paid,
+            patch("scripts.run_stability_probe.run_probe_for_scheduler", side_effect=measure) as probe,
+            patch("game.match_scheduler.load_acquisition_state", return_value=state),
+            patch("game.match_scheduler.panel_readiness", return_value=PredictionReadiness(True, "ready")),
+            patch("chess.engine.SimpleEngine.popen_uci"),
+        ):
+            excluded = asyncio.run(scheduler._run_position_benchmarks([player], counters, 10.0))
+
+        self.assertEqual(paid.await_count, 1)
+        probe.assert_not_awaited()
+        self.assertAlmostEqual(counters["total_cost"], 0.01)
+        self.assertEqual(excluded, {player})
+        self.assertNotIn(player, scheduler._benchmark_completed)
+
+    def test_scheduler_retries_local_core_publication_with_zero_budget(self) -> None:
+        player = "saved (high)"
+        state = AcquisitionState()
+        state.local_ready_panels = {player: {"core"}}
+        scheduler = self.make_panel_scheduler(state, [player])
+        scheduler.rating_store._use_firestore = True
+        counters = {"total_cost": 0.0}
+        with (
+            patch("position_benchmark.run_production.publish_saved", side_effect=RuntimeError("offline")) as publish,
+            patch("position_benchmark.run_benchmark.run_benchmark_for_scheduler") as paid,
+            patch("scripts.run_stability_probe.run_probe_for_scheduler") as probe,
+            patch("chess.engine.SimpleEngine.popen_uci"),
+        ):
+            excluded = asyncio.run(scheduler._run_position_benchmarks([player], counters, 0.0))
+
+        publish.assert_called_once_with(scheduler._acquisition_policy.panels[0], player)
+        paid.assert_not_awaited()
+        probe.assert_not_awaited()
+        self.assertEqual(counters["total_cost"], 0.0)
+        self.assertEqual(excluded, {player})
+        self.assertEqual(scheduler._games_played, {})
+
+    def test_scheduler_resumes_saved_panels_without_an_engine_or_paid_calls(self) -> None:
+        player = "saved (medium)"
+        state = AcquisitionState()
+        state.local_ready_panels = {player: set(SUPPORTED_AUTOMATIC_PANELS)}
+        scheduler = self.make_panel_scheduler(state, [player])
+        scheduler.rating_store._use_firestore = True
+        published = AcquisitionState()
+        published[player] = set(SUPPORTED_AUTOMATIC_PANELS)
+        counters = {"total_cost": 0.0}
+        with (
+            patch("position_benchmark.run_production.publish_saved") as publish,
+            patch("game.match_scheduler.load_acquisition_state", return_value=published),
+            patch("chess.engine.SimpleEngine.popen_uci") as engine,
+        ):
+            excluded = asyncio.run(scheduler._run_position_benchmarks([player], counters, 0.0))
+        self.assertEqual([call.args[0].name for call in publish.call_args_list],
+                         ["core", "game_like", "continuation_stability"])
+        engine.assert_not_called()
+        self.assertFalse(excluded)
+        self.assertIn(player, scheduler._benchmark_completed)
+        self.assertEqual(counters["total_cost"], 0.0)
 
     def test_scheduler_defers_games_when_shadow_lock_fails(self) -> None:
         policy = load_acquisition_policy()
@@ -2778,6 +2879,97 @@ class OverlayReevaluationTests(unittest.TestCase):
         )
 
         self.assertFalse(current_marker)
+
+
+def test_first_saved_game_skips_shadow_only_for_verified_supplement_deferral(tmp_path, monkeypatch):
+    from rating import rating_store
+
+    source, target = "gpt-6-astra (medium)", "gpt-6-astra (high)"
+    ledger = tmp_path / "shadow.json"
+    for attr in ("GAME_LIKE_RESULTS_PATH", "STABILITY_RESULTS_PATH"):
+        records = json.loads(getattr(rating_store, attr).read_text())
+        subset = tmp_path / f"{attr}.json"
+        subset.write_text(json.dumps({source: records[source]}))
+        monkeypatch.setattr(rating_store, attr, subset)
+
+    def guard():
+        return ensure_shadow_lock_before_saved_game(
+            target, ledger_path=ledger, game_snapshot={"games_played": 0},
+        )
+
+    decision = guard()
+    assert decision.allowed, decision.message
+    assert decision.status == "supplements-deferred"
+    assert source in decision.message
+    assert decision.record is None
+    assert not ledger.exists()
+
+    incomplete = tmp_path / "core.json"
+    cores = json.loads(CORE_RESULTS_PATH.read_text())
+    monkeypatch.setattr(rating_store, "CORE_RESULTS_PATH", incomplete)
+    for target_record in ({target: {"results": []}}, {}):
+        incomplete.write_text(json.dumps({source: cores[source], **target_record}))
+        assert not guard().allowed
+        assert not ledger.exists()
+
+
+@pytest.mark.parametrize("use_render", [False, True], ids=["firestore", "render"])
+def test_first_production_game_uses_published_supplements(tmp_path, monkeypatch, use_render):
+    from contextlib import redirect_stdout
+    from io import StringIO
+
+    from rating.rating_store import load_position_benchmark_inputs
+    import firebase_client
+
+    source, target = "gpt-6-astra (medium)", "gpt-6-astra (high)"
+    original = load_position_benchmark_inputs(False)
+    cores = {pid: original.core_results[pid] for pid in (source, target)}
+
+    def publish(pid):
+        cores[pid] = {**cores[pid], "supplements": {
+            "game_like": original.game_like_results[pid],
+            "stability": original.stability_results[pid],
+        }}
+
+    remote_db = object()
+    monkeypatch.setattr(firebase_client, "get_firestore_client", lambda: remote_db)
+    monkeypatch.setattr("position_benchmark.run_production.published_family_results",
+                        lambda db, player: dict(cores))
+    publish(source)
+    ledger = tmp_path / "shadow.json"
+    if use_render:
+        def missing_credentials():
+            raise FileNotFoundError("Render-only workstation")
+
+        monkeypatch.setattr(firebase_client, "get_firestore_client", missing_credentials)
+
+        def run_render_worker(code, marker):
+            with monkeypatch.context() as server, redirect_stdout(StringIO()) as stdout:
+                server.setattr(firebase_client, "get_firestore_client", lambda: remote_db)
+                exec(code, {})
+                return json.loads(stdout.getvalue().split(marker + " ")[-1])
+
+        monkeypatch.setattr("position_benchmark.sync.render_job_receipt", run_render_worker)
+
+    def guard():
+        return ensure_shadow_lock_before_saved_game(
+            target, ledger_path=ledger, game_snapshot={"games_played": 0}, use_firestore=True,
+        )
+
+    decision = guard()
+    assert decision.status == "supplements-deferred", decision.message
+    assert not ledger.exists()
+
+    # A missing published target core cannot be replaced by the complete local copy.
+    measured_target = cores.pop(target)
+    assert not guard().allowed
+    cores[target] = measured_target
+
+    publish(target)
+    decision = guard()
+    assert decision.allowed, decision.message
+    assert decision.record["eligibility"]["prospective_holdout"] is True
+    assert target in json.loads(ledger.read_text())["entries"]
 
 
 if __name__ == "__main__":

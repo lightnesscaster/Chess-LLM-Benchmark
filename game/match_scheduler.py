@@ -29,6 +29,7 @@ from rating.cost_calculator import CostCalculator, filter_results_by_rating_diff
 from model_metadata import load_publish_dates
 from position_benchmark.acquisition import (
     AcquisitionPanel,
+    AcquisitionState,
     load_acquisition_policy,
     load_acquisition_state,
     missing_panels,
@@ -204,7 +205,7 @@ class MatchScheduler:
 
         # Load the manifest-backed core + supplemental acquisition contract once.
         self._acquisition_policy = load_acquisition_policy()
-        self._acquisition_state = load_acquisition_state(self._acquisition_policy)
+        self._acquisition_state = self._load_acquisition_state()
         # Retain the historical attribute, now meaning the full automatic suite.
         self._benchmark_completed = self._load_existing_benchmark_results()
         self._shadow_priority_ids = affected_prospective_player_ids()
@@ -270,6 +271,21 @@ class MatchScheduler:
                     self._models_by_model_id[model_id] = []
                 self._models_by_model_id[model_id].append(player_id)
 
+    def _load_acquisition_state(self) -> AcquisitionState:
+        return load_acquisition_state(
+            self._acquisition_policy,
+            use_firestore=getattr(self.rating_store, "_use_firestore", False),
+        )
+
+    def _finish_position_acquisition(self, player_id: str) -> bool:
+        """Record measured completion or report the policy's supplemental deferral."""
+        source = getattr(self._acquisition_state, "deferred_sources", {}).get(player_id)
+        if source:
+            print(f"  {player_id}: supplements deferred by policy (measured source: {source})")
+        else:
+            self._benchmark_completed.add(player_id)
+        return self._record_stability_cap_shadow(player_id)
+
     def _load_existing_benchmark_results(self) -> set:
         """Return players with every current automatic acquisition panel ready."""
         required = {panel.name for panel in self._acquisition_policy.panels}
@@ -304,6 +320,7 @@ class MatchScheduler:
         decision = ensure_shadow_lock_before_saved_game(
             player_id,
             game_snapshot=self._game_snapshot(player_id),
+            use_firestore=getattr(self.rating_store, "_use_firestore", False),
         )
         if not decision.allowed:
             print(
@@ -391,6 +408,48 @@ class MatchScheduler:
         }
         return self._cost_calculator.calculate_game_cost(tokens, model_name) or 0.0
 
+    async def _reconcile_saved_panels(self, llm_ids: list[str]) -> set[str]:
+        """Publish previously measured panels before spending this run's budget."""
+        from position_benchmark.run_production import publish_saved
+
+        blocked = set()
+        published: list[tuple[str, str]] = []
+        local = getattr(self._acquisition_state, "local_ready_panels", {})
+        for player_id in llm_ids:
+            pending = local.get(player_id, set()) - self._acquisition_state.get(player_id, set())
+            if (
+                not pending
+                or player_id not in self._llm_configs
+                or isinstance(self.players.get(player_id), BaseEngine)
+            ):
+                continue
+            rating = self.rating_store.get(player_id)
+            if self._freeze_checker.is_frozen(player_id, rating.rating_deviation):
+                continue
+            for panel in self._acquisition_policy.panels:
+                if panel.name not in pending:
+                    continue
+                try:
+                    await asyncio.to_thread(publish_saved, panel, player_id)
+                except Exception as error:
+                    print(f"  {player_id}/{panel.name}: saved panel publication pending ({error})")
+                    blocked.add(player_id)
+                    break
+                published.append((player_id, panel.name))
+
+        if published:
+            try:
+                self._acquisition_state = self._load_acquisition_state()
+            except Exception as error:
+                print(f"  Production acquisition state unavailable after publication: {error}")
+                return set(llm_ids)
+            for player_id, panel_name in published:
+                if panel_name not in self._acquisition_state.get(player_id, set()):
+                    print(f"  {player_id}/{panel_name}: publication could not be verified")
+                    blocked.add(player_id)
+            self.rating_store.refresh_benchmark_predictions()
+        return blocked
+
     async def _run_position_benchmarks(
         self,
         llm_ids: List[str],
@@ -412,14 +471,17 @@ class MatchScheduler:
         from scripts.run_stability_probe import run_probe_for_scheduler
 
         benchmarked = set()
-        shadow_blocked = set()
+        game_blocked = await self._reconcile_saved_panels(llm_ids)
 
         acquisition_complete = []
+        policy_deferred: set[str] = set()
         missing_config = []
         frozen = []
-        eligible: list[tuple[str, list[AcquisitionPanel]]] = []
+        eligible: list[str] = []
 
         for llm_id in llm_ids:
+            if llm_id in game_blocked:
+                continue
             if isinstance(self.players.get(llm_id), BaseEngine):
                 continue
             if llm_id not in self._llm_configs:
@@ -432,10 +494,14 @@ class MatchScheduler:
                 self._acquisition_state,
             )
             if not missing:
-                acquisition_complete.append(llm_id)
-                self._benchmark_completed.add(llm_id)
-                if not self._record_stability_cap_shadow(llm_id):
-                    shadow_blocked.add(llm_id)
+                if llm_id in getattr(self._acquisition_state, "deferred_sources", {}):
+                    # A nearer sibling might be measured earlier in this run.
+                    eligible.append(llm_id)
+                    policy_deferred.add(llm_id)
+                else:
+                    acquisition_complete.append(llm_id)
+                    if not self._finish_position_acquisition(llm_id):
+                        game_blocked.add(llm_id)
                 continue
 
             rating = self.rating_store.get(llm_id)
@@ -443,12 +509,13 @@ class MatchScheduler:
                 frozen.append((llm_id, self._format_rating_snapshot(rating)))
                 continue
 
-            eligible.append((llm_id, missing))
+            eligible.append(llm_id)
 
         print(
             "Phase 1: Position benchmark precheck: "
-            f"{len(eligible)} queued, "
-            f"{len(acquisition_complete)} complete, "
+            f"{len(eligible) - len(policy_deferred)} queued, "
+            f"{len(acquisition_complete)} measured complete, "
+            f"{len(policy_deferred)} policy-deferred, "
             f"{len(frozen)} frozen, "
             f"{len(missing_config)} missing config"
         )
@@ -466,10 +533,13 @@ class MatchScheduler:
                 f"{self._format_player_list(missing_config)}"
             )
 
-        if not eligible:
+        if len(eligible) == len(policy_deferred):
+            for llm_id in eligible:
+                if not self._finish_position_acquisition(llm_id):
+                    game_blocked.add(llm_id)
             print("  No automatic benchmark panels to acquire.")
             print()
-            return shadow_blocked
+            return game_blocked
 
         print(
             f"Phase 1: Automatic benchmark acquisition "
@@ -477,7 +547,7 @@ class MatchScheduler:
         )
 
         # Sort by priority (highest RD / lowest cost first)
-        eligible.sort(key=lambda item: self._calculate_priority(item[0]), reverse=True)
+        eligible.sort(key=self._calculate_priority, reverse=True)
 
         # Load and validate every automatic panel before making any model call.
         panel_positions: dict[str, list[dict[str, Any]]] = {}
@@ -505,25 +575,45 @@ class MatchScheduler:
         try:
             stockfish = ce.SimpleEngine.popen_uci("stockfish")
 
-            for llm_id, initially_missing in eligible:
+            for llm_id in eligible:
+                if llm_id in game_blocked:
+                    continue
+                if llm_id in getattr(self._acquisition_state, "deferred_sources", {}):
+                    policy_deferred.add(llm_id)
+                    continue
+                if llm_id in policy_deferred:
+                    # Its deferral was revoked by a nearer measurement. Apply
+                    # the usual freeze check before acquiring any supplements.
+                    rating = self.rating_store.get(llm_id)
+                    if self._freeze_checker.is_frozen(llm_id, rating.rating_deviation):
+                        continue
                 config = self._llm_configs[llm_id]
                 acquired_any = False
-                print(
-                    f"  {llm_id}: missing "
-                    f"{', '.join(panel.name for panel in initially_missing)}"
-                )
 
-                for panel in initially_missing:
+                # A completed lower-effort sibling or this player's newly
+                # scored core can change the decision before the next panel.
+                for panel in self._acquisition_policy.panels:
+                    if panel not in missing_panels(
+                        llm_id, self._acquisition_policy, self._acquisition_state
+                    ):
+                        continue
+                    local = getattr(self._acquisition_state, "local_ready_panels", {})
+                    if panel.name in local.get(llm_id, set()):
+                        # Another run may have saved work since the initial reconciliation.
+                        if await self._reconcile_saved_panels([llm_id]):
+                            game_blocked.add(llm_id)
+                            break
+                        continue
                     estimated_cost = self._estimate_benchmark_cost(llm_id, panel)
                     if counters["total_cost"] + estimated_cost >= max_cost:
                         print(
-                            f"    Deferring {panel.name}: would exceed budget "
+                            f"    Deferring {llm_id}/{panel.name}: would exceed budget "
                             f"(${counters['total_cost']:.2f} + ${estimated_cost:.2f} "
                             f">= ${max_cost:.2f})"
                         )
                         break
 
-                    print(f"    Running {panel.name}...")
+                    print(f"    Running {llm_id}/{panel.name}...")
                     if panel.runner == "positions":
                         result = await run_benchmark_for_scheduler(
                             player_id=llm_id,
@@ -533,7 +623,6 @@ class MatchScheduler:
                             depth=panel.score_depth,
                             original_indices=None,
                             results_path=panel.results_path,
-                            sync_firestore=panel.name == "core",
                         )
                     else:
                         result = await run_probe_for_scheduler(
@@ -556,15 +645,6 @@ class MatchScheduler:
                         )
                         break
 
-                    readiness = panel_readiness(panel, llm_id)
-                    if not readiness.is_ready:
-                        print(
-                            f"    Warning: {panel.name} saved but is not current: "
-                            f"{readiness.reason}"
-                        )
-                        break
-
-                    self._acquisition_state.setdefault(llm_id, set()).add(panel.name)
                     acquired_any = True
                     token_usage = result.get(
                         "token_usage", {"prompt": 0, "completion": 0}
@@ -591,24 +671,44 @@ class MatchScheduler:
                         )
                     print(f"    {panel.name}: {metrics}, Cost=${actual_cost:.4f}")
 
+                    # The calls are billable even if publication or readback fails.
+                    sync_error = result.get("sync_error")
+                    readiness = panel_readiness(panel, llm_id)
+                    if sync_error or not readiness.is_ready:
+                        print(f"    {llm_id}/{panel.name}: {sync_error or readiness.reason}")
+                        game_blocked.add(llm_id)
+                        break
+                    try:
+                        self._acquisition_state = self._load_acquisition_state()
+                    except Exception as error:
+                        print(f"    Production acquisition state unavailable after {panel.name}: {error}")
+                        game_blocked.update(eligible)
+                        break
+                    if panel.name not in self._acquisition_state.get(llm_id, set()):
+                        print(f"    {llm_id}/{panel.name}: publication unverified. Retry the saved panel.")
+                        game_blocked.add(llm_id)
+                        break
+
                 if acquired_any:
                     benchmarked.add(llm_id)
                     # One suite acquisition pass counts as one game, preserving the
                     # historical reasoning-model cap behavior.
                     self._games_played[llm_id] = self._games_played.get(llm_id, 0) + 1
 
-                if not missing_panels(
-                    llm_id,
-                    self._acquisition_policy,
-                    self._acquisition_state,
-                ):
-                    self._benchmark_completed.add(llm_id)
-                    if not self._record_stability_cap_shadow(llm_id):
-                        shadow_blocked.add(llm_id)
+                if llm_id in getattr(self._acquisition_state, "deferred_sources", {}):
+                    policy_deferred.add(llm_id)
 
         finally:
             if stockfish is not None:
                 stockfish.quit()
+
+        for llm_id in eligible:
+            if not missing_panels(llm_id, self._acquisition_policy, self._acquisition_state):
+                if not self._finish_position_acquisition(llm_id):
+                    game_blocked.add(llm_id)
+            elif llm_id in policy_deferred:
+                print(f"  {llm_id}: supplemental deferral ended. Acquire outstanding panels before games.")
+                game_blocked.add(llm_id)
 
         # Refresh once after all newly acquired core or downside-only evidence.
         if benchmarked:
@@ -616,8 +716,8 @@ class MatchScheduler:
 
         print()
         if self._acquisition_policy.defer_games_after_acquisition:
-            return benchmarked | shadow_blocked
-        return shadow_blocked
+            return benchmarked | game_blocked
+        return game_blocked
 
     # Default cost for models with unknown pricing (conservative estimate)
     UNKNOWN_MODEL_DEFAULT_COST = 1.0  # $1.00 per game

@@ -20,11 +20,10 @@ In **Play an LLM**, select “Offer a draw with my next move” before moving, o
 
 More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
 
-The separate position benchmark used to predict/seed ratings has a **full production
-suite: 50 core positions, 48 game-like positions, and 8 continuation probes**
-(130 planned first-attempt model calls, plus conditional retries). A ready core
-permits a seed but does not complete the full benchmark. Follow the
-[full-suite workflow and completion checks](position_benchmark/README.md#run-the-full-production-benchmark).
+The position benchmark measures 50 core positions for each model configuration.
+Its acquisition policy can defer the 48 game-like positions and eight continuation
+probes when a fully measured lower effort passes the downside screen. A full
+audit fills all missing panels. [Run and verify a production position benchmark](position_benchmark/README.md#run-a-production-position-benchmark).
 
 ## Installation
 
