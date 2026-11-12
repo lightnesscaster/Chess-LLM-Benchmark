@@ -14,6 +14,7 @@ import urllib.request
 
 from firebase_client import get_firestore_client
 from game.checkpoints import CheckpointError, CheckpointStore
+from model_metadata import load_publish_dates
 from position_benchmark.acquisition import (
     AcquisitionPanel, AcquisitionPolicy, ROOT, load_acquisition_policy,
     load_acquisition_state, missing_panels, panel_readiness,
@@ -25,7 +26,8 @@ from position_benchmark.run_benchmark import load_player_configs
 from position_benchmark.scoring_provenance import validate_scoring_record
 from position_benchmark.sync import WEB_URL, render_job_receipt, sync_panel
 from rating.benchmark_recalculation import recalculate_pending, state_reference
-from rating.rating_store import load_position_benchmark_inputs
+from rating.glicko2 import PlayerRating
+from rating.rating_store import RatingStore, benchmark_predictions_from_inputs, load_position_benchmark_inputs
 from scripts.rescore_position_results import _EngineEvaluator, rescore_record
 from utils import REASONING_SUFFIXES, REASONING_SUFFIX_RE
 
@@ -103,13 +105,20 @@ def run_panel(panel: AcquisitionPanel, player: str, *, expected_profile: dict | 
     subprocess.run([sys.executable, "-m", module, *args], cwd=ROOT, check=True)
 
 
-def published_family_results(db, player: str) -> dict[str, dict]:
+def published_family_results(db, player: str, *, collection_name: str = "benchmark_results") -> dict[str, dict]:
     """Fetch published records for one player and its explicit effort siblings."""
     base = REASONING_SUFFIX_RE.sub("", player).rstrip()
     family_ids = {base, player, *(f"{base} ({effort})" for effort in REASONING_SUFFIXES)}
-    collection = db.collection("benchmark_results")
+    # RatingStore identifies effort siblings by the published model ID, which
+    # can also link different display names for the same model.
+    metadata = load_publish_dates()
+    model_id = metadata.get(player, {}).get("model_id")
+    if model_id:
+        family_ids.update(pid for pid, info in metadata.items() if info.get("model_id") == model_id)
+    collection = db.collection(collection_name)
     refs = [collection.document(pid) for pid in sorted(family_ids)]
-    return {doc.id: doc.to_dict() for doc in db.get_all(refs) if doc.exists}
+    records = {doc.id: doc.to_dict() for doc in db.get_all(refs) if doc.exists}
+    return {pid: records[pid] for pid in sorted(records)}
 
 
 def firestore_snapshot(player: str, policy: AcquisitionPolicy) -> dict[str, Any]:
@@ -123,11 +132,18 @@ def firestore_snapshot(player: str, policy: AcquisitionPolicy) -> dict[str, Any]
     measured = state.get(player, set())
     published = [panel.name for panel in policy.panels if panel.name in measured]
     revision = state_reference(db).get().to_dict() or {}
-    rating = db.collection("ratings").document(player).get().to_dict() or {}
+    ratings = published_family_results(db, player, collection_name="ratings")
+    predictions = benchmark_predictions_from_inputs(inputs)
+    persisted = ratings.get(player, {}).get("rating")
+    expected_live = persisted
+    if persisted is not None and ratings[player].get("games_played", 0) == 0:
+        family = {pid: PlayerRating.from_dict({"player_id": pid, **data}) for pid, data in ratings.items()}
+        expected_live = RatingStore(snapshot=(family, predictions)).get(player).rating
     receipt = revision.get("receipt") or {}
     return {"player": player, "policy": policy.version, "published": published,
             "pending": [p.name for p in missing_panels(player, policy, state)],
-            "source": state.deferred_sources.get(player), "rating": rating.get("rating"),
+            "source": state.deferred_sources.get(player), "rating": persisted,
+            "position_prediction": predictions.get(player), "expected_live_rating": expected_live,
             "generation": revision.get("generation"), "applied_generation": revision.get("applied_generation"),
             "scoring_version": revision.get("scoring_version"), "scoring_profile": revision.get("scoring_profile"),
             "receipt": {"status": receipt.get("status"), "generation": receipt.get("generation")}}
@@ -228,9 +244,11 @@ def _run(player: str, *, full_audit: bool) -> dict[str, Any]:
         raise RuntimeError(f"Missing production rating for {player}")
     # The site's workers cache the applied revision for ten seconds.
     for attempt in range(4):
-        if live_rating(player) == round(snapshot["rating"]):
+        live = live_rating(player)
+        if live == round(snapshot["expected_live_rating"]):
             return {"player": player, "policy": policy.version, "measured": measured, "deferred": deferred,
                     "source": snapshot["source"] if deferred else None, "rating": snapshot["rating"],
+                    "position_prediction": snapshot["position_prediction"], "live_rating": live,
                     "applied_generation": generation}
         if attempt < 3:
             time.sleep(5)

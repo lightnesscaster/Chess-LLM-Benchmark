@@ -28,6 +28,7 @@ from position_benchmark.predictions import (
     predict_rating,
     predict_rating_from_model_data_with_supplement,
 )
+from rating import benchmark_recalculation
 from rating.rating_store import (
     PositionBenchmarkInputs,
     load_position_benchmark_inputs,
@@ -44,6 +45,7 @@ _CACHE_TTL = 3600
 _cache_lock = threading.Lock()
 _cached_inputs: PositionBenchmarkInputs | None = None
 _cached_time: float = 0.0
+_cached_generation: int | None = None
 
 _RESULT_PATHS = (CORE_RESULTS_PATH, GAME_LIKE_RESULTS_PATH, STABILITY_RESULTS_PATH, BLUNDER_RESULTS_PATH)
 
@@ -59,10 +61,12 @@ def get_position_benchmark_inputs(
     should_invalidate: Callable[[float], bool] | None = None,
 ) -> PositionBenchmarkInputs | None:
     """Load merged benchmark inputs, cached for an hour or until data changes."""
-    global _cached_inputs, _cached_time
+    global _cached_inputs, _cached_time, _cached_generation
     with _cache_lock:
+        generation = benchmark_recalculation.applied_generation()
         fresh = (
             _cached_inputs is not None
+            and _cached_generation == generation
             and time.time() - _cached_time < _CACHE_TTL
             and not _results_changed_since(_cached_time)
             and not (should_invalidate and should_invalidate(_cached_time))
@@ -77,6 +81,7 @@ def get_position_benchmark_inputs(
         if inputs is not None:
             _cached_inputs = inputs
             _cached_time = time.time()
+            _cached_generation = generation
         return inputs if inputs is not None else _cached_inputs
 
 

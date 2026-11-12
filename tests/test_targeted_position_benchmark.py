@@ -29,6 +29,7 @@ def launch(monkeypatch, *, measured=(), published=(), defer_after_core=False,
             "source": "model (low)" if deferred else None,
             "generation": 4, "applied_generation": 4 if applied else 3,
             "receipt": {"status": "applied", "generation": 4}, "rating": 1950.4,
+            "expected_live_rating": 1950.4, "position_prediction": 1920.0,
         }
 
     def resume_rating_update():
@@ -241,3 +242,47 @@ def test_complete_local_mixed_scores_repaired_and_published_without_acquisition(
     runner.assert_not_called()
     sync.assert_called_once()
     assert sync.call_args.args[2]["results"][0] == old_score
+
+
+@pytest.mark.parametrize("games,expected", [(0, 2207.69), (3, 2204.413)])
+def test_verification_uses_live_zero_game_seed_and_keeps_played_rating(monkeypatch, games, expected):
+    policy = load_acquisition_policy()
+    target = "gemini-4-carbon (high)"
+    sibling = "gemini-4-carbon (medium)"
+    core = json.loads(policy.panels[0].results_path.read_text())["gemini-3.1-pro-preview (medium)"]
+    core["summary"]["player_id"] = target
+    values = {
+        ("benchmark_results", target): core,
+        ("ratings", target): {"player_id": target, "rating": 2204.413, "games_played": games},
+        ("ratings", sibling): {"player_id": sibling, "rating": 2207.69, "games_played": 60},
+        ("benchmark_rating_updates", "current"): {"generation": 17, "applied_generation": 17,
+                                                   "receipt": {"generation": 17, "status": "applied"}},
+    }
+
+    def reference(collection, pid):
+        contents = values.get((collection, pid))
+        doc = SimpleNamespace(id=pid, exists=bool(contents), to_dict=lambda: contents)
+        return SimpleNamespace(get=lambda: doc)
+
+    db = SimpleNamespace(
+        collection=lambda name: SimpleNamespace(document=lambda pid: reference(name, pid)),
+        get_all=lambda refs: [ref.get() for ref in refs],
+    )
+    monkeypatch.setattr(production, "get_firestore_client", lambda: db)
+    snapshot = production.firestore_snapshot(target, policy)
+    assert snapshot["expected_live_rating"] == pytest.approx(expected)
+    assert snapshot["position_prediction"] == pytest.approx(1779.7131432539018)
+    assert snapshot["rating"] == 2204.413
+
+    snapshot.update(published=[p.name for p in policy.panels], pending=[])
+    monkeypatch.setattr(production, "production_snapshot", lambda *_: snapshot)
+    monkeypatch.setattr(production, "live_rating", lambda _: round(expected))
+    result = production.run(target)
+    assert result["live_rating"] == round(expected)
+    assert result["rating"] == 2204.413
+    assert result["position_prediction"] == snapshot["position_prediction"]
+    if games:
+        monkeypatch.setattr(production, "live_rating", lambda _: 2208)
+        monkeypatch.setattr(production.time, "sleep", lambda _: None)
+        with pytest.raises(RuntimeError, match="Live leaderboard rating"):
+            production.run(target)

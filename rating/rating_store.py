@@ -308,6 +308,7 @@ class RatingStore:
         use_firestore: bool = None,
         benchmark_seed_rd: Optional[float] = None,
         use_benchmark_predictions: bool = True,
+        snapshot: Optional[tuple[Dict[str, PlayerRating], Dict[str, float]]] = None,
     ):
         """
         Initialize the rating store.
@@ -325,6 +326,8 @@ class RatingStore:
             use_benchmark_predictions: Load and apply position-benchmark seeds.
                                        Disable only for isolated counterfactual
                                        validation; production defaults to True.
+            snapshot: Already-read ratings and predictions to seed in memory without
+                      reading the default storage backend or its caches.
         """
         self.path = Path(path)
         self.anchor_ids = anchor_ids or set()
@@ -335,14 +338,18 @@ class RatingStore:
         self._ratings: Dict[str, PlayerRating] = {}
 
         # Determine storage backend (must be set before _load_benchmark_predictions)
+        if snapshot is not None:
+            use_firestore = False
         if use_firestore is None:
             use_firestore = self._should_use_firestore()
         self._use_firestore = use_firestore
 
         # Load benchmark predictions for seeding new players
-        self._benchmark_predictions = (
-            self._load_benchmark_predictions() if use_benchmark_predictions else {}
-        )
+        if snapshot is None:
+            self._benchmark_predictions = self._load_benchmark_predictions() if use_benchmark_predictions else {}
+        else:
+            self._ratings = {pid: replace(r) for pid, r in snapshot[0].items()}
+            self._benchmark_predictions = dict(snapshot[1]) if use_benchmark_predictions else {}
 
         # Load model_id → [player_ids...] mapping for effort-variant seeding
         self._player_model_ids: Dict[str, str] = {}
@@ -353,7 +360,9 @@ class RatingStore:
         # so seeding on pass N can see end-of-pass-(N-1) sibling ratings).
         self._previous_pass_ratings: Dict[str, PlayerRating] = {}
 
-        if self._use_firestore:
+        if snapshot is not None:
+            self._apply_benchmark_seeds_to_zero_game_players()
+        elif self._use_firestore:
             self._init_firestore()
         else:
             self._load()

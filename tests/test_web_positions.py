@@ -143,3 +143,23 @@ def test_deferred_supplements_show_source_and_keep_targets_own_prediction(monkey
         html = client.get("/positions").get_data(as_text=True)
     assert html.count(">Deferred</span>") == 2
     assert source in html
+
+
+def test_first_positions_read_after_rating_replay_loads_new_core(monkeypatch):
+    from web import position_results
+    from rating import benchmark_recalculation
+
+    revision = [16]
+    monkeypatch.setattr(benchmark_recalculation, "applied_generation", lambda: revision[0])
+    monkeypatch.setattr(position_results, "_cached_inputs", None)
+    monkeypatch.setattr(position_results, "_cached_time", 0)
+    monkeypatch.setattr(position_results, "_cached_generation", None)
+    monkeypatch.setattr(position_results, "_results_changed_since", lambda _: False)
+    old, new = object(), object()
+    loads = iter([old, new])
+    monkeypatch.setattr(position_results, "load_position_benchmark_inputs", lambda **kwargs: next(loads))
+
+    assert position_results.get_position_benchmark_inputs() is old
+    assert position_results.get_position_benchmark_inputs() is old
+    revision[0] += 1
+    assert position_results.get_position_benchmark_inputs() is new
