@@ -61,30 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
             child = {id: nextId++, fen: position.fen(), parent: current, children: [],
                 move, ply: current.ply + 1, original: false};
             current.children.push(child);
+            notationDirty = true;
             nodes.set(child.id, child);
         }
         navigate(child);
         return true;
     }
-    $('analysis-move-form').addEventListener('submit', event => {
-        event.preventDefault();
-        const position = new Chess(current.fen);
-        const move = position.move($('analysis-move').value.trim(), {sloppy: true});
-        if (!move) {
-            $('analysis-move-error').textContent = 'Enter a legal move for this position.';
-            return;
-        }
-        addMove(move.from, move.to, move.promotion);
-        $('analysis-move').value = '';
-    });
-    $('copy-analysis-pgn').addEventListener('click', async () => {
-        const line = new Chess(root.fen);
-        path(current).forEach(node => line.move(node.move));
-        try {
-            await navigator.clipboard.writeText(line.pgn());
-            $('copy-analysis-pgn').textContent = 'Copied current line';
-        } catch (_) { $('copy-analysis-pgn').textContent = 'Copy failed'; }
-    });
     function tryMove(from, to) {
         if (promotion) return false;
         const position = new Chess(current.fen);
@@ -97,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else addMove(from, to);
         return true;
     }
+    let suppressBoardClick = false;
     const board = Chessboard('board', {
         position: root.fen, draggable: true,
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
@@ -104,31 +87,56 @@ document.addEventListener('DOMContentLoaded', () => {
             return !promotion && piece[0] === new Chess(current.fen).turn();
         },
         onDrop(from, to) {
+            suppressBoardClick = true;
             if (from === to) {
-                selectedSquare = from;
-                highlightSelection();
+                selectedSquare = selectedSquare === from ? null : from;
+                paintBoard();
                 return 'snapback';
             }
             selectedSquare = null;
+            paintBoard();
             if (!tryMove(from, to) || promotion) return 'snapback';
         },
-        onSnapEnd() { board.position(current.fen); },
+        onSnapEnd() { board.position(current.fen); paintBoard(); },
     });
-    function highlightSelection() {
+    function paintBoard() {
+        const legal = selectedSquare ? new Chess(current.fen).moves({square: selectedSquare, verbose: true}) : [];
+        const destinations = new Set(legal.map(move => move.to));
         $('board').querySelectorAll('[data-square]').forEach(el => {
-            el.classList.toggle('analysis-selected', el.dataset.square === selectedSquare);
+            const square = el.dataset.square;
+            el.classList.toggle('board-selected', square === selectedSquare);
+            el.classList.toggle('board-legal', destinations.has(square));
+            el.classList.toggle('board-last-move', square === current.move?.from || square === current.move?.to);
         });
     }
+    function clearSelection() {
+        selectedSquare = null;
+        paintBoard();
+    }
+    $('board').addEventListener('pointerdown', () => { suppressBoardClick = false; });
     $('board').addEventListener('click', event => {
+        if (suppressBoardClick) { suppressBoardClick = false; return; }
         const square = event.target.closest('[data-square]')?.dataset.square;
         if (!square || promotion) return;
-        if (selectedSquare && selectedSquare !== square && tryMove(selectedSquare, square)) {
-            selectedSquare = null;
-        } else {
+        if (selectedSquare === square) clearSelection();
+        else if (selectedSquare && tryMove(selectedSquare, square)) clearSelection();
+        else {
             const piece = new Chess(current.fen).get(square);
             selectedSquare = piece?.color === new Chess(current.fen).turn() ? square : null;
+            paintBoard();
         }
-        highlightSelection();
+    });
+    document.addEventListener('pointerdown', event => {
+        if (!event.target.closest('#board, #analysis-promotion')) clearSelection();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            clearSelection();
+            if (!$('notation-menu').hidden) {
+                closeMenu();
+                $('notation-actions').focus({preventScroll: true});
+            }
+        }
     });
     $('analysis-promotion').addEventListener('click', event => {
         const choice = event.target.closest('button')?.dataset.piece;
@@ -139,60 +147,151 @@ document.addEventListener('DOMContentLoaded', () => {
         if (choice) addMove(from, to, choice);
         board.position(current.fen);
     });
-    function nodeButton(node) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'variation-move' + (node === current ? ' current' : '');
-        button.textContent = moveLabel(node);
-        button.dataset.node = node.id;
-        return button;
-    }
-    function renderBranches() {
-        const container = $('analysis-variations');
-        container.replaceChildren();
-        // A row per analysis leaf preserves all forks while keeping the recorded score sheet familiar.
-        const leaves = [...nodes.values()].filter(node => !node.original && node.parent && !node.children.length);
-        for (const leaf of leaves) {
-            const row = document.createElement('div');
-            row.className = 'variation-line';
-            path(leaf).filter(node => !node.original).forEach(node => row.append(nodeButton(node)));
-            container.append(row);
+    let notationDirty = true;
+    let menuNode = null;
+    const collapsed = new Set();
+    function renderNotation() {
+        const container = $('moves-container');
+        if (notationDirty) {
+            const scroll = container.scrollTop;
+            container.replaceChildren();
+            const stack = [container];
+            const hidden = [];
+            for (const token of AnalysisNotation.notationTokens(root)) {
+                if (token.type === 'open') {
+                    const variation = document.createElement('span');
+                    variation.className = 'notation-variation';
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'variation-toggle';
+                    toggle.dataset.toggle = token.node.id;
+                    toggle.setAttribute('aria-label', (collapsed.has(token.node.id) ? 'Expand' : 'Collapse') + ' variation beginning ' + moveLabel(token.node));
+                    toggle.setAttribute('aria-expanded', String(!collapsed.has(token.node.id)));
+                    toggle.textContent = collapsed.has(token.node.id) ? '(…)' : '(';
+                    variation.append(toggle);
+                    if (!hidden.includes(true)) stack.at(-1).append(variation);
+                    stack.push(variation);
+                    hidden.push(collapsed.has(token.node.id));
+                } else if (token.type === 'close') {
+                    if (!hidden.at(-1)) stack.at(-1).append(document.createTextNode(') '));
+                    stack.pop();
+                    stack.at(-1).append(document.createTextNode(' '));
+                    hidden.pop();
+                } else if (!hidden.includes(true)) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'notation-move' + (token.mainline ? ' mainline' : '');
+                    button.dataset.node = token.node.id;
+                    button.textContent = token.text;
+                    stack.at(-1).append(button, document.createTextNode(' '));
+                }
+            }
+            container.scrollTop = scroll;
+            notationDirty = false;
         }
-        $('analysis-branches').hidden = leaves.length === 0;
+        container.querySelectorAll('[data-node]').forEach(el => {
+            const active = Number(el.dataset.node) === current.id;
+            el.classList.toggle('current', active);
+            if (active) {
+                el.setAttribute('aria-current', 'step');
+                // Keep the selected move visible inside the score sheet without moving the page.
+                const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+                if (top < container.scrollTop) container.scrollTop = top;
+                else if (top + el.offsetHeight > container.scrollTop + container.clientHeight) {
+                    container.scrollTop = top + el.offsetHeight - container.clientHeight;
+                }
+            } else el.removeAttribute('aria-current');
+        });
         $('btn-return-game').hidden = mainline.includes(current);
-        $('analysis-position-status').textContent = mainline.includes(current) ? '' : 'Analysis variation';
+        $('analysis-position-status').textContent = mainline.includes(current) ? '' : 'Variation';
     }
     function navigate(node) {
         if (node.parent) node.parent.preferredChild = node;
         current = node;
-        $('analysis-move-error').textContent = '';
         selectedSquare = null;
         promotion = null;
+        closeMenu();
         $('analysis-promotion').hidden = true;
         board.position(current.fen);
+        paintBoard();
+        for (const ancestor of path(node)) {
+            if (collapsed.delete(ancestor.id)) notationDirty = true;
+        }
         $('current-move').textContent = Math.ceil(current.ply / 2);
-        document.querySelectorAll('.move[data-node]').forEach(el => el.classList.toggle('current', Number(el.dataset.node) === current.id));
-        renderBranches();
+        renderNotation();
         if (enabled) scheduleAnalysis();
     }
-    let html = '<table class="moves-table"><tbody>';
-    for (let i = 1; i < mainline.length; i++) {
-        const node = mainline[i];
-        const number = node.parent.fen.split(' ')[5];
-        if (node.move.color === 'w') html += '<tr><td class="move-num">' + number + '.</td>';
-        else if (i === 1) html += '<tr><td class="move-num">' + number + '.</td><td></td>';
-        html += '<td class="move" data-node="' + node.id + '"><button type="button" data-node="' + node.id + '">' + node.move.san + '</button></td>';
-        if (node.move.color === 'b') html += '</tr>';
-    }
-    if (mainline.at(-1).move?.color === 'w') html += '<td></td></tr>';
-    $('moves-container').innerHTML = html + '</tbody></table>';
     $('total-moves').textContent = Math.ceil(history.length / 2);
-    for (const id of ['moves-container', 'analysis-variations']) {
-        $(id).addEventListener('click', event => {
-            const id = event.target.closest('[data-node]')?.dataset.node;
-            if (id !== undefined) navigate(nodes.get(Number(id)));
-        });
+    $('moves-container').addEventListener('click', event => {
+        const toggle = event.target.closest('[data-toggle]');
+        if (toggle) {
+            const id = Number(toggle.dataset.toggle);
+            if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
+            notationDirty = true;
+            renderNotation();
+            return;
+        }
+        const id = event.target.closest('[data-node]')?.dataset.node;
+        if (id !== undefined) navigate(nodes.get(Number(id)));
+    });
+    function closeMenu() {
+        $('notation-menu').hidden = true;
+        $('notation-actions').setAttribute('aria-expanded', 'false');
     }
+    function openMenu(node, x, y) {
+        menuNode = node;
+        const branch = AnalysisNotation.variationRoot(node);
+        $('notation-menu').querySelector('[data-action="promote"]').disabled = !branch || branch.parent.children[0] === branch;
+        $('notation-menu').querySelector('[data-action="delete"]').disabled = !branch || branch.original;
+        $('notation-menu').hidden = false;
+        const anchor = $('notation-actions').getBoundingClientRect();
+        const menu = $('notation-menu');
+        menu.style.left = Math.max(8, Math.min(x ?? anchor.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+        menu.style.top = Math.max(8, Math.min(y ?? anchor.bottom, window.innerHeight - menu.offsetHeight - 8)) + 'px';
+        $('notation-actions').setAttribute('aria-expanded', 'true');
+        $('notation-menu').querySelector('button:not(:disabled)').focus();
+    }
+    $('notation-actions').addEventListener('click', () => {
+        if ($('notation-menu').hidden) openMenu(current); else closeMenu();
+    });
+    $('moves-container').addEventListener('contextmenu', event => {
+        const id = event.target.closest('[data-node]')?.dataset.node;
+        if (id === undefined) return;
+        event.preventDefault();
+        navigate(nodes.get(Number(id)));
+        openMenu(current, event.clientX, event.clientY);
+    });
+    document.addEventListener('pointerdown', event => {
+        if (!event.target.closest('#notation-menu, #notation-actions, #moves-container')) closeMenu();
+    });
+    $('notation-menu').addEventListener('keydown', event => {
+        const buttons = [...$('notation-menu').querySelectorAll('button:not(:disabled)')];
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const delta = event.key === 'ArrowDown' ? 1 : -1;
+            buttons[(buttons.indexOf(document.activeElement) + delta + buttons.length) % buttons.length].focus();
+        }
+    });
+    $('notation-menu').addEventListener('click', async event => {
+        const action = event.target.closest('[data-action]')?.dataset.action;
+        if (!action || !menuNode) return;
+        if (action === 'promote') AnalysisNotation.promoteVariation(menuNode);
+        if (action === 'delete') {
+            const parent = AnalysisNotation.deleteVariation(menuNode);
+            if (parent) current = parent;
+        }
+        if (action === 'copy' || action === 'export') {
+            const line = new Chess(root.fen);
+            path(menuNode).forEach(node => line.move(node.move));
+            const text = action === 'copy' ? line.pgn() :
+                (root.fen === new Chess().fen() ? '' : '[SetUp "1"]\n[FEN "' + root.fen + '"]\n\n') + AnalysisNotation.notationPgn(root);
+            try { await navigator.clipboard.writeText(text); }
+            catch (_) { $('analysis-position-status').textContent = 'Clipboard unavailable'; return; }
+        }
+        notationDirty = true;
+        navigate(current);
+        ($('moves-container').querySelector('[data-node="' + current.id + '"]') || $('notation-actions')).focus({preventScroll: true});
+    });
     function go(direction) {
         if (direction === 'start') navigate(root);
         if (direction === 'prev' && current.parent) navigate(current.parent);
@@ -214,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     $('btn-flip').addEventListener('click', () => board.flip());
     document.addEventListener('keydown', event => {
-        if (event.target.closest('input, textarea, select, button, [contenteditable="true"]') || promotion) return;
+        if (event.target.closest('input, textarea, select, #notation-menu, [contenteditable="true"]') || promotion) return;
         const direction = {ArrowLeft: 'prev', ArrowRight: 'next', Home: 'start', End: 'end'}[event.key];
         if (direction) { event.preventDefault(); go(direction); }
     });

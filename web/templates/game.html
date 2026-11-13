@@ -58,17 +58,10 @@
                 </button>
             </div>
 
-            <div class="analysis-explore">
+            <div class="analysis-position-tools">
                 <span id="analysis-position-status" role="status"></span>
-                <span>Move pieces to explore a line.</span>
                 <button id="btn-return-game" type="button" hidden>Return to game</button>
             </div>
-            <form id="analysis-move-form" class="analysis-move-form">
-                <label for="analysis-move">Analysis move</label>
-                <input id="analysis-move" autocomplete="off" placeholder="Nf3 or g1f3" required>
-                <button type="submit">Play</button>
-                <span id="analysis-move-error" role="status"></span>
-            </form>
             <div id="analysis-promotion" class="analysis-promotion" hidden role="group" aria-label="Choose promotion piece">
                 Promote to
                 <button type="button" data-piece="q">Queen</button>
@@ -131,17 +124,19 @@
             </div>
 
             <div class="moves-panel">
-                <div class="panel-header">
+                <div class="panel-header notation-header">
                     <h3>Moves</h3>
+                    <button id="notation-actions" type="button" aria-label="Variation actions" aria-haspopup="menu" aria-expanded="false">⋯</button>
                 </div>
-                <div id="moves-container" class="moves-container"></div>
+                <div id="moves-container" class="moves-container notation" aria-label="Game notation"></div>
+                <div id="notation-menu" class="notation-menu" role="menu" hidden>
+                    <button type="button" role="menuitem" data-action="promote">Promote variation</button>
+                    <button type="button" role="menuitem" data-action="delete">Delete variation</button>
+                    <button type="button" role="menuitem" data-action="copy">Copy line PGN</button>
+                    <button type="button" role="menuitem" data-action="export">Copy PGN with variations</button>
+                </div>
             </div>
 
-            <div id="analysis-branches" class="moves-panel" hidden>
-                <div class="panel-header"><h3>Analysis variations</h3></div>
-                <div id="analysis-variations"></div>
-                <button id="copy-analysis-pgn" type="button" class="copy-btn">Copy current line PGN</button>
-            </div>
             <div class="pgn-panel">
                 <button class="pgn-toggle" id="pgn-toggle" aria-expanded="false" aria-controls="pgn-content">
                     <span>PGN</span>
@@ -163,5 +158,6 @@
 {% block scripts %}
 <script type="application/json" id="game-pgn">{{ game.pgn|tojson }}</script>
 <script src="{{ url_for('static', filename='js/analysis-engine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analysis-notation.js') }}"></script>
 <script src="{{ url_for('static', filename='js/game-analysis.js') }}"></script>
 {% endblock %}
