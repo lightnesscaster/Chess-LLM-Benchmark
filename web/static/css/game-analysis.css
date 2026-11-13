@@ -1,0 +1,24 @@
+
+/* Interactive analysis uses the same board and type scale as game replay. */
+.analysis-explore { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; color: var(--text-secondary); font-size: .8rem; margin: .5rem 0; }
+.analysis-explore button, .analysis-promotion button, .variation-move { color: var(--text-primary); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: .35rem .5rem; cursor: pointer; }
+.analysis-promotion { padding: .75rem; background: var(--bg-secondary); margin-bottom: .5rem; }
+.analysis-selected { box-shadow: inset 0 0 0 4px var(--success); }
+.variation-line { padding: .5rem .75rem; display: flex; flex-wrap: wrap; gap: .25rem; border-bottom: 1px solid var(--border); }
+.variation-move.current { border-color: var(--success); }
+.analysis-line .line-pv { white-space: normal; overflow: visible; }
+.line-pv button, .moves-table .move button { color: inherit; background: none; border: 0; font: inherit; cursor: pointer; padding: .15rem .2rem; }
+.line-pv button:hover, .variation-move:hover { background: var(--bg-secondary); text-decoration: underline; }
+.moves-table .move button { width: 100%; text-align: left; }
+#analysis-position-status:empty { display: none; }
+.line-pv { display: flex; flex-wrap: wrap; gap: .1rem .25rem; }
+
+.container { width: 100%; min-width: 0; }
+.board-column, .info-column { min-width: 0; }
+.game-title-row h1 { overflow-wrap: anywhere; }
+@media (max-width: 1024px) { .game-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.analysis-move-form { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: .8rem; }
+.analysis-move-form input { min-width: 0; width: 8rem; padding: .4rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; }
+.analysis-move-form button { padding: .4rem .65rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); cursor: pointer; }
+#analysis-move-error { color: var(--accent-light); }

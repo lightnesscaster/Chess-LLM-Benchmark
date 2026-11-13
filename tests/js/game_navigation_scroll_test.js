@@ -1,47 +1,42 @@
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const vm = require("node:vm");
-
-const template = fs.readFileSync("web/templates/game.html", "utf8");
-const navigation = template.slice(template.indexOf("    // Update display\n    function updateDisplay"), template.indexOf("    // Set total moves"));
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const script = fs.readFileSync('web/static/js/game-analysis.js', 'utf8');
+const navigation = script.slice(script.indexOf('    function go(direction)'), script.indexOf("    window.addEventListener('resize'"));
 const listeners = {};
 const positionsSeen = [];
-let pageScrolls = 0;
-let highlights = 0;
-const element = {textContent: "", addEventListener() {}};
-const document = {
-    getElementById() { return element; },
-    querySelectorAll() { return []; },
-    querySelector() { return {classList: {add() { highlights++; }}, scrollIntoView() { pageScrolls++; }}; },
-    addEventListener(type, listener) { listeners[type] = listener; },
-};
-vm.runInNewContext(`let currentPosition = 0;
-    let positions = ['start', 'e4', 'e5'];
-    let analysisEnabled = false;
-    let flipped = false;
-    function toggleAnalysis() {}
+let scrolls = 0;
+const root = {parent: null, children: []};
+const middle = {parent: root, children: []};
+const last = {parent: middle, children: []};
+root.children = [middle]; middle.children = [last];
+const document = {addEventListener(type, handler) { listeners[type] = handler; }};
+vm.runInNewContext(`let current = root;
+    let mainline = [root, middle, last];
+    let promotion = null;
+    function navigate(node) { current = node; positionsSeen.push(node); }
     ${navigation}`, {
-    document, board: {position(fen) { positionsSeen.push(fen); }},
-    movesContainer: element,
+    root, middle, last, positionsSeen, document,
+    $: () => ({addEventListener() {}}),
+    board: {flip() {}},
+    window: {scrollTo() { scrolls++; }},
 });
-function press(key, target = {tagName: "BODY"}) {
+function press(key, typing = false) {
     let prevented = false;
-    listeners.keydown({key, target, preventDefault() { prevented = true; }});
+    listeners.keydown({key, target: {closest() { return typing; }}, preventDefault() { prevented = true; }});
     return prevented;
 }
-press("ArrowRight");
-assert.equal(positionsSeen.at(-1), "e4");
-assert.equal(highlights, 1);
-assert.equal(pageScrolls, 0, "move navigation must not scroll the page to the score sheet");
-assert.equal(press("ArrowRight"), true);
-assert.equal(positionsSeen.at(-1), "e5");
-assert.equal(press("ArrowLeft"), true);
-assert.equal(positionsSeen.at(-1), "e4");
-assert.equal(press("Home"), true);
-assert.equal(positionsSeen.at(-1), "start");
-assert.equal(press("End"), true);
-assert.equal(positionsSeen.at(-1), "e5");
-assert.equal(press("ArrowRight"), true, "prevent default scrolling even at the last move");
-assert.equal(press("ArrowLeft", {tagName: "INPUT"}), false);
-assert.equal(positionsSeen.at(-1), "e5");
-assert.equal(pageScrolls, 0);
+assert.equal(press('ArrowRight'), true);
+assert.equal(positionsSeen.at(-1), middle);
+press('ArrowRight');
+assert.equal(positionsSeen.at(-1), last);
+press('ArrowLeft');
+assert.equal(positionsSeen.at(-1), middle);
+press('Home');
+assert.equal(positionsSeen.at(-1), root);
+press('End');
+assert.equal(positionsSeen.at(-1), last);
+assert.equal(press('ArrowRight'), true);
+assert.equal(press('ArrowLeft', true), false);
+assert.equal(positionsSeen.at(-1), last);
+assert.equal(scrolls, 0);
