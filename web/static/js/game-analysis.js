@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderNotation() {
         const container = $('moves-container');
         if (notationDirty) {
-            const scroll = container.scrollTop;
             container.replaceChildren();
             const stack = [container];
             const hidden = [];
@@ -186,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     stack.at(-1).append(button, document.createTextNode(' '));
                 }
             }
-            container.scrollTop = scroll;
             notationDirty = false;
         }
         container.querySelectorAll('[data-node]').forEach(el => {
@@ -194,12 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
             el.classList.toggle('current', active);
             if (active) {
                 el.setAttribute('aria-current', 'step');
-                // Keep the selected move visible inside the score sheet without moving the page.
-                const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-                if (top < container.scrollTop) container.scrollTop = top;
-                else if (top + el.offsetHeight > container.scrollTop + container.clientHeight) {
-                    container.scrollTop = top + el.offsetHeight - container.clientHeight;
-                }
             } else el.removeAttribute('aria-current');
         });
         $('btn-return-game').hidden = mainline.includes(current);

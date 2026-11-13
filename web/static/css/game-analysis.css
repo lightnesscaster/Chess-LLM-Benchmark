@@ -23,7 +23,7 @@
 .moves-panel { position: relative; }
 .notation-header { display: flex; align-items: center; justify-content: space-between; padding-block: .5rem; }
 #notation-actions { font: bold 1.4rem/1 sans-serif; color: var(--text-secondary); background: none; border: 0; padding: .1rem .5rem; cursor: pointer; }
-.notation { position: relative; padding: .85rem 1rem; font-size: 1rem; line-height: 2; color: var(--text-primary); }
+.notation { max-height: none; overflow: visible; position: relative; padding: .85rem 1rem; font-size: 1rem; line-height: 2; color: var(--text-primary); }
 .notation-move { color: inherit; background: none; border: 0; border-radius: 3px; padding: .15rem .25rem; font: inherit; line-height: 1.65; cursor: pointer; }
 .notation-move.mainline { font-weight: 650; }
 .notation-move:hover { background: rgba(255, 255, 255, .08); }
