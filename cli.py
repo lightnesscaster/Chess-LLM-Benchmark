@@ -40,6 +40,10 @@ from rating.glicko2 import Glicko2System, PlayerRating
 from rating.anchor_history import anchor_rating_at
 from rating.rating_store import RatingStore, invalidate_cache, BENCHMARK_SEED_RD
 from rating.leaderboard import Leaderboard
+from rating.joint_fit import (
+    LEGAL_MOVE_THRESHOLD_LOW, LEGAL_MOVE_THRESHOLD_MED, LOW_LEGAL_MOVE_RATING,
+    NON_REASONING_START_RATING, REASONING_START_RATING, fit_leaderboard,
+)
 from position_benchmark.predictions import predict_rating_from_model_data_with_supplement
 from position_benchmark.layout import (
     BLUNDER_POSITIONS_PATH,
@@ -50,16 +54,6 @@ from position_benchmark.layout import (
     GAME_LIKE_RESULTS_PATH,
     STABILITY_RESULTS_PATH,
 )
-
-# Starting ratings based on model type and legal move rate
-REASONING_START_RATING = 1200
-NON_REASONING_START_RATING = 400
-LOW_LEGAL_MOVE_RATING = 0  # For models with legal move rate < 90%
-
-# Legal move rate thresholds for initial rating
-LEGAL_MOVE_THRESHOLD_LOW = 0.90  # Below this: start at 0
-LEGAL_MOVE_THRESHOLD_MED = 0.95  # Below this: start at 400 (even for reasoning models)
-
 
 def load_benchmark_predictions() -> dict:
     """
@@ -518,12 +512,13 @@ async def run_benchmark(args):
 
 async def show_leaderboard(args):
     """Show current leaderboard."""
-    rating_store = RatingStore(path="data/ratings.json")
-
-    # Load results for stats
-    pgn_logger = PGNLogger()
+    engines = load_config(str(Path(__file__).parent / "config/benchmark.yaml"))["engines"]
+    anchors = {e["player_id"] for e in engines if e.get("anchor", True)}
+    rating_store = RatingStore(path="data/ratings.json", anchor_ids=anchors)
+    results = PGNLogger().load_all_results()
+    fit_leaderboard(rating_store, results, engines)
     stats_collector = StatsCollector()
-    stats_collector.add_results(pgn_logger.load_all_results())
+    stats_collector.add_results(results)
 
     leaderboard = Leaderboard(rating_store, stats_collector)
     print(leaderboard.format_table(min_games=args.min_games, sort_by=args.sort))

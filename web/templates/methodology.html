@@ -17,7 +17,7 @@
 <div class="methodology-content">
     <section class="methodology-section">
         <h2>Overview</h2>
-        <p>This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the <strong>Glicko-2</strong> rating system, calibrated to approximate <strong>Lichess Classical</strong> ratings. Full implementation details can be found on <a href="https://github.com/lightnesscaster/Chess-LLM-Benchmark">Github</a>.</p>
+        <p>This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Leaderboard Elo ratings are fitted jointly to game outcomes, calibrated to approximate <strong>Lichess Classical</strong> ratings. Full implementation details can be found on <a href="https://github.com/lightnesscaster/Chess-LLM-Benchmark">Github</a>.</p>
     </section>
 
     <section class="methodology-section">
@@ -33,13 +33,9 @@
 
     <section class="methodology-section">
         <h2>Rating System</h2>
-        <p>We use the <strong>Glicko-2</strong> rating system, which improves upon traditional Elo by tracking rating deviation (uncertainty) and rating volatility.</p>
-        <ul>
-            <li><strong>Initial rating:</strong> New players start at 1500 with high uncertainty</li>
-            <li><strong>Rating deviation (RD):</strong> Represents confidence in the rating. Lower RD means more certainty. Minimum RD is 30.</li>
-            <li><strong>95% Confidence Interval:</strong> There is 95% confidence the true rating lies within this range</li>
-            <li><strong>No rating floor:</strong> Traditional chess federations and servers apply rating floors for practical reasons, such as abuse prevention and ego preservation. If given a standard minimum rating, many early LLMs would collapse to the same minimum, despite having quite different capabilities. Thus, our rating system has no minimum. This allows us to compare performance between models at the bottom of the rating ladder. Some may be surprised by the negative ratings this produces, but the Glicko scale is relative. All significance is derived from differences between models, rather than the absolute numbers. Therefore, negative ratings are just as mathematically valid as positive ones.</li>
-        </ul>
+        <p>The leaderboard estimates one color-neutral Elo per player and a shared advantage for White. A regularized Bradley–Terry model fits all saved rated results together. Wins count as one point, draws as half a point, and losses as zero.</p>
+        <p>Position benchmarks provide a starting estimate when available. Other players receive a broad prior based on model type and legal move rate. Each game uses the engine anchor rating in effect on its date. Rated human challenges use the recorded human rating. Games against survival-bot update its own estimate only.</p>
+        <p>RD is the approximate posterior standard deviation in Elo points. The displayed interval spans the rating plus or minus 1.96 RD. Players with few informative results can have wide intervals.</p>
     </section>
 
     <section class="methodology-section">

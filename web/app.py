@@ -24,6 +24,7 @@ from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
 
 from rating.rating_store import RatingStore, _CACHE_INVALIDATE_FILE
 from rating.leaderboard import Leaderboard
+from rating.joint_fit import fit_leaderboard
 from game.pgn_logger import PGNLogger
 from game.live_games import get_live_game_store
 from game.stats_collector import StatsCollector
@@ -267,7 +268,11 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
 
         pgn_logger = PGNLogger()
         stats_collector = StatsCollector()
-        stats_collector.add_results(pgn_logger.load_all_results())
+        results = pgn_logger.load_all_results()
+        with CONFIG_PATH.open() as config_file:
+            engines = yaml.safe_load(config_file)["engines"]
+        fit_leaderboard(rating_store, results, engines)
+        stats_collector.add_results(results)
 
         leaderboard = Leaderboard(rating_store, stats_collector)
         result = leaderboard.get_leaderboard(min_games=min_games, sort_by=sort_by)
@@ -276,6 +281,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
         all_engine_ids = get_all_engine_ids_from_config()
         for entry in result:
             entry["is_engine"] = entry["player_id"] in all_engine_ids
+            entry["rating_system"] = "joint_elo_shared_white"
 
         # Update cache under lock
         with _leaderboard_lock:

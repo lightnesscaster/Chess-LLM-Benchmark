@@ -501,6 +501,10 @@ class RatingStore:
 
         return predictions
 
+    def benchmark_predictions(self) -> Dict[str, float]:
+        """Return the position-only prior means for a new fit."""
+        return dict(self._benchmark_predictions)
+
     def refresh_benchmark_predictions(self) -> None:
         """
         Reload benchmark predictions and apply to models that haven't played games yet.

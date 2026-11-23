@@ -1,6 +1,6 @@
 # Chess LLM Benchmark
 
-This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Ratings are calculated using the Glicko-2 rating system, calibrated to approximate Lichess Classical ratings. 
+This benchmark evaluates LLM chess-playing ability by having models play games against calibrated engine anchors and other LLMs. Leaderboard Elo ratings are fitted jointly to all rated games, calibrated to approximate Lichess Classical ratings.
 
 Results can be seen [here](https://chessbenchllm.onrender.com/)
 
@@ -16,7 +16,7 @@ In **Play an LLM**, select “Offer a draw with my next move” before moving, o
 
 **Anchor Engines** Games are played against engines with known Lichess Classical in order to anchor our rating pool to the Lichess Classical pool. Engines reproduce their lichess bot's classical conditions; see the [eubos anchor calibration](docs/anchor_calibration/2026-09-30-eubos/README.md).
 
-**Rating Calculation** Glicko-2 ratings are calculated based on game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
+**Rating Calculation** The leaderboard fits color-neutral Elo ratings and a shared White advantage to game outcomes. FIDE rating is estimated using [ChessGoals.com FIDE conversion data](https://chessgoals.com/rating-comparison/).
 
 More general methodology notes are [on the website](https://chessbenchllm.onrender.com/methodology).
 
@@ -169,7 +169,7 @@ python web/app.py
 ```
 
 Features:
-- **Leaderboard** with Glicko-2 ratings, FIDE estimates, confidence intervals, legal move rates, $/game, and release dates
+- **Leaderboard** with jointly fitted Elo ratings, FIDE estimates, confidence intervals, legal move rates, $/game, and release dates
 - **Game library** with filtering by player and pagination
 - **Interactive game viewer** with move-by-move navigation
 - **Client-side Stockfish analysis** (toggle-able eval bar + top engine lines)
@@ -352,12 +352,9 @@ llms:
 
 ## Rating System
 
-Uses Glicko-2 with:
-- **Rating (μ)**: Estimated skill level (starts at 1500)
-- **Rating Deviation (RD)**: Uncertainty (decreases with more games)
-- **Volatility (σ)**: Expected rating fluctuation
-- **FIDE Estimate**: Approximate FIDE rating based on ChessGoals.com Lichess-to-FIDE conversion (valid for 1715-2500 range)
-- **Legal Move Rate**: Percentage of moves that were legal on first attempt
+The web leaderboard, its JSON API, and `cli.py leaderboard` use a regularized Bradley–Terry fit over saved rated games. The fit estimates a color-neutral Elo for each player and one shared White advantage. RD is the approximate posterior standard deviation. Position benchmark means provide priors for measured players.
+
+The game scheduler and per-game publication receipts continue to use incremental Glicko-2 ratings. The public leaderboard refits from the published results on cache refresh.
 
 Engine anchors have fixed ratings based on their approximate Elo and are never updated.
 

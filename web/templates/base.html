@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LLM Chess Benchmark{% endblock %}</title>
-    {% set page_description %}{% block description %}Compare LLM chess-playing ability with Glicko-2 ratings, match results, and replayable games.{% endblock %}{% endset %}
+    {% set page_description %}{% block description %}Compare LLM chess-playing ability with jointly fitted Elo ratings, match results, and replayable games.{% endblock %}{% endset %}
     {% set preview_image = config.PUBLIC_BASE_URL ~ url_for('static', filename='images/social-preview.png') %}
     {% set preview_alt = 'LLM Chess Benchmark — ratings, results, and replayable games beside a chessboard.' %}
     <meta name="description" content="{{ page_description|trim }}">
@@ -59,7 +59,7 @@
     </main>
 
     <footer class="footer">
-        <p>LLM Chess Benchmark - Evaluating LLM chess-playing ability with Glicko-2 ratings - <a href="https://github.com/lightnesscaster/chess-llm-benchmark" target="_blank">GitHub</a></p>
+        <p>LLM Chess Benchmark - Evaluating LLM chess-playing ability with jointly fitted Elo ratings - <a href="https://github.com/lightnesscaster/chess-llm-benchmark" target="_blank">GitHub</a></p>
     </footer>
 
     {% block scripts %}{% endblock %}
