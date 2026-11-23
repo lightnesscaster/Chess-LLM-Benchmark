@@ -38,3 +38,11 @@ def test_fit_uses_each_score_once_and_respects_fixed_and_one_way_opponents():
         assert updated[n].rating_deviation == pytest.approx(ordinary[n].rating_deviation, abs=.001)
         assert updated[n].rating_deviation < 300
     assert updated["ghost"].wins == 1
+
+    def unseeded(games):
+        store = RatingStore(snapshot=({}, {}))
+        fit_leaderboard(store, games, engines)
+        return store.get("a").rating
+
+    many_illegal = game("ghost", "a", "white").model_copy(update={"illegal_moves_black": 100})
+    assert unseeded(games + [many_illegal]) == pytest.approx(unseeded(games), abs=.001)

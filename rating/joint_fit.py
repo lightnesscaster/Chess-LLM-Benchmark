@@ -12,7 +12,6 @@ from scipy.sparse import csr_matrix
 from scipy.special import expit
 
 from game.models import GameResult
-from game.stats_collector import StatsCollector
 from rating.anchor_history import anchor_rating_at
 from rating.glicko2 import Glicko2System, PlayerRating
 from rating.rating_store import BENCHMARK_SEED_RD, RatingStore
@@ -54,9 +53,8 @@ def fit_leaderboard(store: RatingStore, results: Sequence[GameResult], engines: 
     anchors = {e["player_id"]: e for e in engines if e.get("anchor", True)}
     ghosts = {e["player_id"] for e in engines if e.get("ghost")}
     priors = store.benchmark_predictions()
-    stats = StatsCollector()
-    stats.add_results([g for g in games if g.game_type != "human_challenge"])
-    legality = stats.get_player_stats()
+    legal_moves = Counter()
+    attempts = Counter()
     records: dict[str, Counter] = {}
     fitted: dict[str, tuple[float, float]] = {}
     batches = ([], [])
@@ -74,10 +72,17 @@ def fit_leaderboard(store: RatingStore, results: Sequence[GameResult], engines: 
             record[outcome] += 1
             if name in anchors:
                 fixed[name] = anchor_rating_at(anchors[name], game.created_at)
-            elif name not in fitted:
-                mean = priors.get(name, _initial_elo(name, legality.get(name, {}).get("legal_move_rate", 1.)))
-                fitted[name] = (mean, BENCHMARK_SEED_RD if name in priors else 350.)
+            elif human is None and (name in ghosts or not ghosts.intersection(players)):
+                legal = game.total_moves_white if side == "white" else game.total_moves_black
+                illegal = game.illegal_moves_white if side == "white" else game.illegal_moves_black
+                legal_moves[name] += legal
+                attempts[name] += legal + illegal
         batches[any(name in ghosts for name in players)].append((players, fixed, WHITE_SCORE[game.winner]))
+
+    for name in records.keys() - anchors.keys():
+        rate = legal_moves[name] / attempts[name] if attempts[name] else 1.
+        mean = priors.get(name, _initial_elo(name, rate))
+        fitted[name] = (mean, BENCHMARK_SEED_RD if name in priors else 350.)
 
     white_bonus = 0.
     for is_ghost, batch in enumerate(batches):
