@@ -869,6 +869,33 @@ llms:
     reasoning_effort: high
     timeout: 1200
 
+  # Gemini 4 Neon, direct Gemini API.
+  - player_id: "gemini-4-neon (low)"
+    model_name: "google/gemini-4-neon"
+    api: gemini
+    reasoning_effort: low
+    timeout: 1200
+
+  - player_id: "gemini-4-neon (medium)"
+    model_name: "google/gemini-4-neon"
+    api: gemini
+    reasoning_effort: medium
+    timeout: 1200
+
+  - player_id: "gemini-4-neon (high)"
+    model_name: "google/gemini-4-neon"
+    api: gemini
+    reasoning_effort: high
+    timeout: 1200
+    web_reasoning_efforts: [low, medium, high, xhigh]
+    web_default_reasoning_effort: high
+
+  - player_id: "gemini-4-neon (xhigh)"
+    model_name: "google/gemini-4-neon"
+    api: gemini
+    reasoning_effort: xhigh
+    timeout: 1200
+
   # grok-4-fast - disabled: OpenRouter currently reports no active endpoints
   # - player_id: "grok-4-fast"
   #   model_name: "x-ai/grok-4-fast"

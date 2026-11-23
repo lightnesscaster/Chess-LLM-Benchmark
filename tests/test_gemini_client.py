@@ -89,6 +89,12 @@ class GeminiGenerationConfigTests(unittest.IsolatedAsyncioTestCase):
                     {"thinking_level": effort},
                 )
 
+    async def test_neon_preserves_extra_high_thinking(self) -> None:
+        request = await self._request_for("gemini-4-neon", "xhigh")
+        self.assertEqual(
+            request["config"].kwargs["thinking_config"].kwargs, {"thinking_level": "XHIGH"}
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

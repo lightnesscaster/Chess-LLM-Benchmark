@@ -190,6 +190,8 @@ class GeminiPlayer(BaseLLMPlayer):
                     "medium": "medium",
                     "high": "high",
                 }.get(self.reasoning_effort, "high")
+                if self.model_name == "gemini-4-neon" and self.reasoning_effort == "xhigh":
+                    thinking_level = "XHIGH"
                 config_kwargs["thinking_config"] = self._genai.types.ThinkingConfig(
                     thinking_level=thinking_level,
                 )
