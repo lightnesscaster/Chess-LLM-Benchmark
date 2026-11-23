@@ -245,7 +245,7 @@ def test_complete_local_mixed_scores_repaired_and_published_without_acquisition(
 
 
 @pytest.mark.parametrize("games,expected", [(0, 2207.69), (3, 2204.413)])
-def test_verification_uses_live_zero_game_seed_and_keeps_played_rating(monkeypatch, games, expected):
+def test_verification_checks_seed_or_live_joint_revision(monkeypatch, games, expected):
     policy = load_acquisition_policy()
     target = "gemini-4-carbon (high)"
     sibling = "gemini-4-carbon (medium)"
@@ -276,13 +276,17 @@ def test_verification_uses_live_zero_game_seed_and_keeps_played_rating(monkeypat
 
     snapshot.update(published=[p.name for p in policy.panels], pending=[])
     monkeypatch.setattr(production, "production_snapshot", lambda *_: snapshot)
-    monkeypatch.setattr(production, "live_rating", lambda _: round(expected))
+    from io import BytesIO
+    row = {"player_id": target, "rating": 2010 if games else round(expected), "games_played": games,
+           "rating_system": "joint_elo_shared_white", "rating_generation": 17}
+    monkeypatch.setattr(production.urllib.request, "urlopen",
+                        lambda *a, **kw: BytesIO(json.dumps([row]).encode()))
     result = production.run(target)
-    assert result["live_rating"] == round(expected)
+    assert result["live_rating"] == row["rating"]
     assert result["rating"] == 2204.413
     assert result["position_prediction"] == snapshot["position_prediction"]
     if games:
-        monkeypatch.setattr(production, "live_rating", lambda _: 2208)
+        row["rating_generation"] = 16
         monkeypatch.setattr(production.time, "sleep", lambda _: None)
         with pytest.raises(RuntimeError, match="Live leaderboard rating"):
             production.run(target)

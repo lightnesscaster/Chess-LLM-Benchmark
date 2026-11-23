@@ -282,6 +282,7 @@ def get_leaderboard_data(min_games: int = 1, sort_by: str = "rating") -> list:
         for entry in result:
             entry["is_engine"] = entry["player_id"] in all_engine_ids
             entry["rating_system"] = "joint_elo_shared_white"
+            entry["rating_generation"] = benchmark_generation
 
         # Update cache under lock
         with _leaderboard_lock:

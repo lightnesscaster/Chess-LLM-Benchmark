@@ -144,6 +144,7 @@ def firestore_snapshot(player: str, policy: AcquisitionPolicy) -> dict[str, Any]
             "pending": [p.name for p in missing_panels(player, policy, state)],
             "source": state.deferred_sources.get(player), "rating": persisted,
             "position_prediction": predictions.get(player), "expected_live_rating": expected_live,
+            "rated_games": ratings.get(player, {}).get("games_played", 0),
             "generation": revision.get("generation"), "applied_generation": revision.get("applied_generation"),
             "scoring_version": revision.get("scoring_version"), "scoring_profile": revision.get("scoring_profile"),
             "receipt": {"status": receipt.get("status"), "generation": receipt.get("generation")}}
@@ -179,9 +180,19 @@ def resume_rating_update() -> None:
         recalculate_pending(db)
 
 
-def live_rating(player: str) -> int | None:
+def live_rating(player: str, *, generation: int | None = None, games: int = 0) -> int | None:
+    """Read the public Elo, optionally requiring the applied fit revision and game history."""
     with urllib.request.urlopen(WEB_URL + "/api/leaderboard", timeout=30) as response:
-        return next((row["rating"] for row in json.load(response) if row["player_id"] == player), None)
+        row = next((row for row in json.load(response) if row["player_id"] == player), None)
+    if row is None:
+        return None
+    if generation is not None and (
+        row.get("rating_system") != "joint_elo_shared_white"
+        or row.get("rating_generation", 0) < generation
+        or row.get("games_played", 0) < games
+    ):
+        return None
+    return row["rating"]
 
 
 def run(player: str, *, full_audit: bool = False) -> dict[str, Any]:
@@ -244,8 +255,13 @@ def _run(player: str, *, full_audit: bool) -> dict[str, Any]:
         raise RuntimeError(f"Missing production rating for {player}")
     # The site's workers cache the applied revision for ten seconds.
     for attempt in range(4):
-        live = live_rating(player)
-        if live == round(snapshot["expected_live_rating"]):
+        if snapshot.get("rated_games", 0):
+            live = live_rating(player, generation=generation, games=snapshot["rated_games"])
+            confirmed = live is not None
+        else:
+            live = live_rating(player)
+            confirmed = live == round(snapshot["expected_live_rating"])
+        if confirmed:
             return {"player": player, "policy": policy.version, "measured": measured, "deferred": deferred,
                     "source": snapshot["source"] if deferred else None, "rating": snapshot["rating"],
                     "position_prediction": snapshot["position_prediction"], "live_rating": live,
